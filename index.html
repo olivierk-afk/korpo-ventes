@@ -1110,13 +1110,13 @@
               <p class="text-[11px] text-slate-500">Laissez le champ Client vide pour modifier l'objectif d'une compagnie, ou saisissez un nom de client pour suivre un compte clé.</p>
             </div>
 
-            <form id="form-client-target" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 items-end">
+            <form id="form-client-target" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3 items-end">
               <div>
                 <label class="block text-[11px] font-bold text-slate-600 mb-1">Compagnie partenaire *</label>
                 <select id="target-ent-select" required class="w-full px-3 py-2 text-xs font-semibold bg-slate-50 border border-slate-200 rounded-xl"></select>
               </div>
               <div>
-                <label class="block text-[11px] font-bold text-slate-600 mb-1">Client (laisser vide = toute la compagnie)</label>
+                <label class="block text-[11px] font-bold text-slate-600 mb-1">Client (vide = toute la compagnie)</label>
                 <input id="target-client-input" list="target-clients-datalist" placeholder="Ex. Jean Tremblay (ou vide)" class="w-full px-3 py-2 text-xs font-semibold bg-slate-50 border border-slate-200 rounded-xl" />
                 <datalist id="target-clients-datalist"></datalist>
               </div>
@@ -1132,11 +1132,18 @@
                 </select>
               </div>
               <div>
-                <label class="block text-[11px] font-bold text-slate-600 mb-1">Objectif mensuel ($ CAD) *</label>
+                <label class="block text-[11px] font-bold text-slate-600 mb-1">Périodicité de l'objectif *</label>
+                <select id="target-periodicity-select" class="w-full px-3 py-2 text-xs font-bold bg-slate-50 border border-slate-200 rounded-xl">
+                  <option value="monthly">Mensuel ($ / mois)</option>
+                  <option value="annual">Annuel ($ / année)</option>
+                </select>
+              </div>
+              <div>
+                <label id="target-amount-label" class="block text-[11px] font-bold text-slate-600 mb-1">Montant ($ CAD) *</label>
                 <input id="target-amount-input" type="number" step="100" min="0" required placeholder="25000" class="w-full px-3 py-2 text-xs font-bold bg-slate-50 border border-slate-200 rounded-xl tabular-nums" />
               </div>
               <div class="flex items-center gap-2">
-                <label class="flex items-center gap-1.5 text-[11px] font-semibold text-slate-600 cursor-pointer">
+                <label id="target-all-months-wrapper" class="flex items-center gap-1.5 text-[11px] font-semibold text-slate-600 cursor-pointer">
                   <input id="target-apply-all-months" type="checkbox" checked class="rounded border-slate-300 text-emerald-600" />
                   Tous les mois
                 </label>
@@ -1181,7 +1188,7 @@
           <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
             <div>
               <h3 class="text-base font-extrabold text-slate-900">Résultats par compagnie partenaire</h3>
-              <p class="text-xs text-slate-500">Progression du volume de ventes ($) par rapport aux objectifs mensuels de chaque entreprise</p>
+              <p id="kpi-entreprises-subtitle" class="text-xs text-slate-500">Progression du volume de ventes ($) par rapport aux objectifs de chaque entreprise</p>
             </div>
           </div>
           <div id="kpi-entreprises-cards" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
@@ -1790,6 +1797,14 @@
             const coData = JSON.parse(r.representant_nom);
             if (coData && coData.origYm) {
               carriedOverSalesStore[String(r.mois_commission)] = coData;
+            }
+          } catch (e) {}
+        } else if (sIdx === -8 && r.mois_commission && r.representant_nom) {
+          try {
+            const cMeta = JSON.parse(r.representant_nom);
+            if (cMeta && typeof cMeta === 'object') {
+              companyTargetsMetaStore[String(r.mois_commission)] = cMeta;
+              localStorage.setItem('korpo_company_targets_meta_v1', JSON.stringify(companyTargetsMetaStore));
             }
           } catch (e) {}
         } else if (sIdx === -7 && r.mois_commission && r.representant_nom) {
@@ -2673,9 +2688,26 @@
     // GESTION DES OBJECTIFS PAR CLIENT & COMPAGNIE (ACTIVABLES)
     // =========================================================================
     let clientTargetsStore = JSON.parse(localStorage.getItem('korpo_client_targets_v1') || '[]');
+    let companyTargetsMetaStore = JSON.parse(localStorage.getItem('korpo_company_targets_meta_v1') || '{}');
 
     function saveClientTargetsStore() {
       localStorage.setItem('korpo_client_targets_v1', JSON.stringify(clientTargetsStore));
+    }
+
+    async function saveCompanyTargetMeta(entNom, repNom, metaObj) {
+      const key = `${entNom}__${repNom || 'ALL'}`;
+      companyTargetsMetaStore[key] = metaObj;
+      localStorage.setItem('korpo_company_targets_meta_v1', JSON.stringify(companyTargetsMetaStore));
+      if (sb && currentProfile) {
+        await safeUpsertKpiHebdoRow({
+          mois_commission: key,
+          semaine_index: -8,
+          representant_nom: JSON.stringify(metaObj),
+          booke: 0,
+          rdv_realise: 0,
+          updated_at: new Date().toISOString()
+        });
+      }
     }
 
     window.openClientTargetsPanel = (presetEnt = '', presetClient = '') => {
@@ -2894,19 +2926,33 @@
       const entSel = document.getElementById('target-ent-select');
       if (entSel) entSel.addEventListener('change', updateTargetClientDatalist);
 
+      const perSel = document.getElementById('target-periodicity-select');
+      if (perSel) {
+        perSel.addEventListener('change', () => {
+          const isAnnual = perSel.value === 'annual';
+          const wrap = document.getElementById('target-all-months-wrapper');
+          if (wrap) wrap.classList.toggle('hidden', isAnnual);
+        });
+      }
+
       const form = document.getElementById('form-client-target');
       if (form) {
-        form.addEventListener('submit', (e) => {
+        form.addEventListener('submit', async (e) => {
           e.preventDefault();
           const entNom = document.getElementById('target-ent-select').value;
           const clientNom = document.getElementById('target-client-input').value.trim();
           const repNom = document.getElementById('target-rep-select').value;
-          const objectif = parseFloat(document.getElementById('target-amount-input').value) || 0;
-          const allMonths = document.getElementById('target-apply-all-months').checked;
+          const periodicity = document.getElementById('target-periodicity-select')?.value || 'monthly';
+          const isAnnualInput = periodicity === 'annual';
+          const rawAmount = parseFloat(document.getElementById('target-amount-input').value) || 0;
+          const allMonths = isAnnualInput ? true : document.getElementById('target-apply-all-months').checked;
           const curSelMonth = document.getElementById('kpi-select-month').value;
           const targetMonth = allMonths ? 'ALL' : (curSelMonth.startsWith('YEAR_') ? currentMonthStr : curSelMonth);
 
-          if (objectif <= 0) return toast('Entrez un objectif supérieur à 0 $', 'error');
+          if (rawAmount <= 0) return toast('Entrez un objectif supérieur à 0 $', 'error');
+
+          const monthlyEquivalent = isAnnualInput ? Math.round((rawAmount / 12) * 100) / 100 : rawAmount;
+          const annualEquivalent = isAnnualInput ? rawAmount : (rawAmount * 12);
 
           // Si aucun client précis n'est saisi, mettre à jour l'objectif de la compagnie dans kpiStore
           if (!clientNom) {
@@ -2915,14 +2961,21 @@
               const mObj = ensureKpiMonthStructure(ym);
               if (!mObj.entreprises[entNom]) return;
               if (repNom === 'ALL') {
-                mObj.entreprises[entNom].total.objectif = objectif;
+                mObj.entreprises[entNom].total.objectif = monthlyEquivalent;
               } else if (mObj.entreprises[entNom].reps[repNom]) {
-                mObj.entreprises[entNom].reps[repNom].objectif = objectif;
+                mObj.entreprises[entNom].reps[repNom].objectif = monthlyEquivalent;
                 mObj.entreprises[entNom].total.objectif = Object.values(mObj.entreprises[entNom].reps).reduce((s, r) => s + Number(r.objectif || 0), 0);
               }
             });
+            await saveCompanyTargetMeta(entNom, repNom, {
+              periodicity,
+              monthlyAmount: monthlyEquivalent,
+              annualAmount: annualEquivalent
+            });
             localStorage.setItem('korpo_kpi_store_v1', JSON.stringify(kpiStore));
-            toast(`Objectif compagnie mis à jour pour ${entNom} (${fmtMoney0(objectif)}/mois)`);
+            toast(isAnnualInput
+              ? `Objectif annuel mis à jour pour ${entNom} : ${fmtMoney0(annualEquivalent)}/an (${fmtMoney0(monthlyEquivalent)}/mois)`
+              : `Objectif mensuel mis à jour pour ${entNom} : ${fmtMoney0(monthlyEquivalent)}/mois`);
           } else {
             // Enregistrer ou remplacer l'objectif spécifique à ce client
             const existingIdx = clientTargetsStore.findIndex(x =>
@@ -2930,11 +2983,22 @@
               x.clientNom.toLowerCase() === clientNom.toLowerCase() &&
               x.repNom === repNom
             );
-            const entry = { entNom, clientNom, repNom, objectif, monthScope: targetMonth, active: true };
+            const entry = {
+              entNom,
+              clientNom,
+              repNom,
+              objectif: monthlyEquivalent,
+              annualObjectif: isAnnualInput ? annualEquivalent : null,
+              periodicity,
+              monthScope: targetMonth,
+              active: true
+            };
             if (existingIdx >= 0) clientTargetsStore[existingIdx] = entry;
             else clientTargetsStore.push(entry);
             saveClientTargetsStore();
-            toast(`Objectif activé pour le client ${clientNom} (${fmtMoney0(objectif)}/mois)`);
+            toast(isAnnualInput
+              ? `Objectif annuel activé pour ${clientNom} (${fmtMoney0(annualEquivalent)}/an)`
+              : `Objectif mensuel activé pour ${clientNom} (${fmtMoney0(monthlyEquivalent)}/mois)`);
           }
 
           document.getElementById('target-client-input').value = '';
@@ -4493,39 +4557,61 @@
       }
 
       // 4. Cartes visuelles par entreprise partenaire (plus lisible qu'un tableau de 35 lignes !)
+      const entSubEl = document.getElementById('kpi-entreprises-subtitle');
+      if (entSubEl) {
+        entSubEl.textContent = isYear
+          ? "Progression du volume de ventes ($) par rapport aux objectifs annuels de chaque entreprise"
+          : "Progression du volume de ventes ($) par rapport aux objectifs mensuels de chaque entreprise";
+      }
+
       const entList = Object.keys(mObj.entreprises);
       document.getElementById('kpi-entreprises-cards').innerHTML = entList.map(entName => {
         const eObj = mObj.entreprises[entName];
+        const metaKey = `${entName}__${repFilter}`;
+        const meta = companyTargetsMetaStore[metaKey];
         const totVal = repFilter === 'ALL' ? (eObj.total?.cumul || 0) : (eObj.reps[repFilter]?.cumul || 0);
-        const totObj = repFilter === 'ALL' ? (eObj.total?.objectif || 0) : (eObj.reps[repFilter]?.objectif || 0);
+        let totObj = repFilter === 'ALL' ? (eObj.total?.objectif || 0) : (eObj.reps[repFilter]?.objectif || 0);
+        if (isYear && meta?.periodicity === 'annual' && meta.annualAmount > 0) {
+          totObj = Number(meta.annualAmount);
+        }
         const pct = totObj > 0 ? Math.round((totVal / totObj) * 100) : 0;
+        const objScopeTag = isYear ? 'Obj. annuel' : 'Obj. mensuel';
 
         const activeReps = Object.entries(eObj.reps)
           .filter(([rn, rv]) => (repFilter === 'ALL' || rn === repFilter) && (rv.cumul > 0 || rv.objectif > 0))
-          .map(([rn, rv]) => `
-            <div class="flex items-center justify-between text-xs py-1 border-t border-slate-100">
-              <span class="font-medium text-slate-600">${rn}</span>
-              <span class="font-bold text-slate-900 tabular-nums">${fmtMoney0(rv.cumul)}${rv.objectif > 0 ? ` <span class="text-slate-400 font-normal">/ ${fmtMoney0(rv.objectif)}</span>` : ''}</span>
-            </div>
-          `).join('');
+          .map(([rn, rv]) => {
+            const repMeta = companyTargetsMetaStore[`${entName}__${rn}`];
+            const repObjVal = (isYear && repMeta?.periodicity === 'annual' && repMeta.annualAmount > 0)
+              ? Number(repMeta.annualAmount)
+              : rv.objectif;
+            return `
+              <div class="flex items-center justify-between text-xs py-1 border-t border-slate-100">
+                <span class="font-medium text-slate-600">${rn}</span>
+                <span class="font-bold text-slate-900 tabular-nums">${fmtMoney0(rv.cumul)}${repObjVal > 0 ? ` <span class="text-slate-400 font-normal">/ ${fmtMoney0(repObjVal)}</span>` : ''}</span>
+              </div>
+            `;
+          }).join('');
 
         return `
           <div class="rounded-2xl border border-slate-200/90 p-4 bg-slate-50/40 flex flex-col justify-between space-y-3">
             <div class="space-y-2">
-              <div class="flex items-center justify-between">
+              <div class="flex items-center justify-between gap-2">
                 ${entBadge(entName)}
-                <span class="text-xs font-extrabold ${pct >= 100 ? 'text-emerald-600' : 'text-slate-600'} tabular-nums">${totObj > 0 ? pct + ' %' : '—'}</span>
+                <div class="flex items-center gap-1.5">
+                  <span class="px-2 py-0.5 text-[10px] font-bold rounded-full ${isYear ? 'bg-indigo-50 text-indigo-700 border border-indigo-200' : 'bg-slate-100 text-slate-600'}">${objScopeTag}</span>
+                  <span class="text-xs font-extrabold ${pct >= 100 ? 'text-emerald-600' : 'text-slate-600'} tabular-nums">${totObj > 0 ? pct + ' %' : '—'}</span>
+                </div>
               </div>
               <div class="flex items-baseline justify-between pt-1">
                 <span class="text-xl font-extrabold text-slate-900 tabular-nums">${fmtMoney0(totVal)}</span>
-                <span class="text-[11px] text-slate-400">Obj : ${totObj > 0 ? fmtMoney0(totObj) : 'Aucun'}</span>
+                <span class="text-[11px] text-slate-500 font-semibold">${objScopeTag} : ${totObj > 0 ? fmtMoney0(totObj) : 'Aucun'}</span>
               </div>
               <div class="w-full h-2 bg-slate-200/70 rounded-full overflow-hidden">
                 <div class="h-full ${progressColor(pct)} rounded-full" style="width: ${Math.min(100, pct)}%"></div>
               </div>
             </div>
             <div class="pt-1">
-              ${activeReps || '<div class="text-[11px] text-slate-400 italic">Aucune vente ce mois-ci</div>'}
+              ${activeReps || `<div class="text-[11px] text-slate-400 italic">${isYear ? 'Aucune vente cette année' : 'Aucune vente ce mois-ci'}</div>`}
             </div>
           </div>
         `;
