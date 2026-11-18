@@ -5253,8 +5253,7 @@
           r['Vente $'].objectif
         ]);
       });
-      const csv = rows.map(r => r.join(',')).join('
-');
+      const csv = rows.map(r => r.join(',')).join('\n');
       const a = document.createElement('a');
       a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8;' }));
       a.download = `korpo-kpi-${selVal.toLowerCase()}.csv`;
@@ -5288,8 +5287,7 @@
         ['2026-04', 'Jean-Sébastien', 66, 62, 9, 15, 232152],
         ['2026-04', 'Gabryel', 74, 68, 13, 19, 189688]
       ];
-      const csv = sample.map(r => r.join(',')).join('
-');
+      const csv = sample.map(r => r.join(',')).join('\n');
       const a = document.createElement('a');
       a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8;' }));
       a.download = 'modele-fichier-condense-korpo.csv';
@@ -5787,8 +5785,7 @@
           ]);
         });
       });
-      const csv = rows.map(r => r.join(',')).join('
-');
+      const csv = rows.map(r => r.join(',')).join('\n');
       const a = document.createElement('a');
       a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8;' }));
       a.download = 'korpo-kpi-condense-export.csv';
