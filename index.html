@@ -736,38 +736,77 @@
           </div>
         </div>
 
-        <!-- BARRE DE PROGRESSION OBJECTIF MENSUEL PERSONNALISABLE -->
-        <div id="monthly-goal-card" class="bg-white rounded-2xl border border-slate-200/80 p-4 sm:p-5 shadow-xs space-y-3">
+        <!-- BARRES DE PROGRESSION : OBJECTIF VENTES & TARGET COMMISSION MENSUEL -->
+        <div id="monthly-goal-card" class="bg-white rounded-2xl border border-slate-200/80 p-4 sm:p-5 shadow-xs space-y-4">
           <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
             <div class="flex items-center gap-2.5">
-              <span class="w-9 h-9 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center text-base font-extrabold shrink-0">🎯</span>
+              <span class="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-base font-extrabold shrink-0">💰</span>
               <div>
-                <div class="flex items-center gap-2">
-                  <span id="goal-bar-title" class="text-xs sm:text-sm font-extrabold text-slate-900">Objectif mensuel de ventes</span>
-                  <span id="goal-bar-pct-badge" class="px-2 py-0.5 text-[11px] font-extrabold rounded-full bg-indigo-50 text-indigo-700 tabular-nums">0 %</span>
-                </div>
-                <div id="goal-bar-subtitle" class="text-[11px] text-slate-500 tabular-nums">0,00 $ / 150 000,00 $</div>
+                <div id="goal-card-header-title" class="text-xs sm:text-sm font-extrabold text-slate-900">Mes objectifs du mois</div>
+                <div class="text-[11px] text-slate-500">Chaque vente enregistrée fait avancer vos barres de progression en direct</div>
               </div>
             </div>
             <button type="button" id="btn-toggle-personal-goal" class="self-start sm:self-auto px-3 py-1.5 text-xs font-bold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 rounded-xl transition">
-              ✎ Ajuster mon target ($)
+              ✎ Ajuster les targets ($)
             </button>
           </div>
 
-          <div class="w-full h-3.5 bg-slate-100 rounded-full overflow-hidden p-0.5 border border-slate-200/60">
-            <div id="goal-bar-fill" class="h-full rounded-full bg-gradient-to-r from-indigo-600 to-emerald-500 transition-all duration-700 ease-out" style="width: 0%"></div>
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <!-- BARRE 1 : TARGET COMMISSION ($) -->
+            <div class="bg-gradient-to-br from-emerald-50/70 to-teal-50/40 rounded-2xl border border-emerald-200/80 p-3.5 space-y-2">
+              <div class="flex items-center justify-between gap-2">
+                <span id="comm-bar-title" class="text-xs font-extrabold text-emerald-950">💵 Target Commission (Mois)</span>
+                <span id="comm-bar-pct-badge" class="px-2 py-0.5 text-[11px] font-extrabold rounded-full bg-emerald-100 text-emerald-800 tabular-nums">0 %</span>
+              </div>
+              <div id="comm-bar-subtitle" class="text-xs font-extrabold text-emerald-800 tabular-nums">0,00 $ / 8 000,00 $</div>
+              <div class="w-full h-3.5 bg-white rounded-full overflow-hidden p-0.5 border border-emerald-200/80">
+                <div id="comm-bar-fill" class="h-full rounded-full bg-gradient-to-r from-emerald-500 to-teal-400 transition-all duration-700 ease-out" style="width: 0%"></div>
+              </div>
+              <div class="flex items-center justify-between text-[11px] text-emerald-900/80 tabular-nums">
+                <span id="comm-bar-remaining">Reste à gagner : 0,00 $</span>
+                <span id="comm-bar-status-msg" class="font-bold"></span>
+              </div>
+            </div>
+
+            <!-- BARRE 2 : OBJECTIF VOLUME DE VENTES ($) -->
+            <div class="bg-slate-50/80 rounded-2xl border border-slate-200/80 p-3.5 space-y-2">
+              <div class="flex items-center justify-between gap-2">
+                <span id="goal-bar-title" class="text-xs font-extrabold text-slate-900">🎯 Objectif Ventes (Mois)</span>
+                <span id="goal-bar-pct-badge" class="px-2 py-0.5 text-[11px] font-extrabold rounded-full bg-indigo-50 text-indigo-700 tabular-nums">0 %</span>
+              </div>
+              <div id="goal-bar-subtitle" class="text-xs font-bold text-slate-700 tabular-nums">0,00 $ / 150 000,00 $</div>
+              <div class="w-full h-3.5 bg-white rounded-full overflow-hidden p-0.5 border border-slate-200">
+                <div id="goal-bar-fill" class="h-full rounded-full bg-gradient-to-r from-indigo-600 to-sky-500 transition-all duration-700 ease-out" style="width: 0%"></div>
+              </div>
+              <div class="flex items-center justify-between text-[11px] text-slate-500 tabular-nums">
+                <span id="goal-bar-remaining">Reste à vendre : 0,00 $</span>
+                <span id="goal-bar-status-msg" class="font-bold text-slate-700"></span>
+              </div>
+            </div>
           </div>
 
-          <div class="flex items-center justify-between text-[11px] text-slate-500 tabular-nums">
-            <span id="goal-bar-remaining">Reste à atteindre : 0,00 $</span>
-            <span id="goal-bar-status-msg" class="font-bold text-slate-700"></span>
-          </div>
-
-          <form id="form-personal-goal" class="hidden pt-2 border-t border-slate-100 flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
-            <label for="input-personal-goal" class="text-xs font-bold text-slate-700 shrink-0">Nouveau target mensuel ($ CAD) :</label>
-            <input id="input-personal-goal" type="number" step="500" min="100" required placeholder="150000" class="flex-1 px-3 py-2 text-xs font-bold bg-slate-50 border border-slate-200 rounded-xl tabular-nums focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-600" />
+          <!-- FORMULAIRE D'AJUSTEMENT DES TARGETS (ADMIN = CHOIX DU REPRÉSENTANT, REP = SON PROPRE TARGET) -->
+          <form id="form-personal-goal" class="hidden pt-3 border-t border-slate-100 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5 items-end">
+            <div id="goal-rep-picker-wrap" class="hidden">
+              <label for="select-goal-rep" class="block text-[11px] font-bold text-slate-700 mb-1">Représentant :</label>
+              <select id="select-goal-rep" class="w-full px-3 py-2 text-xs font-bold bg-slate-50 border border-slate-200 rounded-xl">
+                <option value="Olivier">Olivier</option>
+                <option value="Jean-Sébastien">Jean-Sébastien</option>
+                <option value="Gabryel">Gabryel</option>
+                <option value="Samuel">Samuel</option>
+                <option value="Alexandre">Alexandre</option>
+              </select>
+            </div>
+            <div>
+              <label for="input-personal-comm-goal" class="block text-[11px] font-bold text-emerald-800 mb-1">Target Commission ($/mois) :</label>
+              <input id="input-personal-comm-goal" type="number" step="100" min="100" required placeholder="8000" class="w-full px-3 py-2 text-xs font-extrabold text-emerald-900 bg-emerald-50/50 border border-emerald-200 rounded-xl tabular-nums focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-600" />
+            </div>
+            <div>
+              <label for="input-personal-goal" class="block text-[11px] font-bold text-slate-700 mb-1">Objectif Ventes ($/mois) :</label>
+              <input id="input-personal-goal" type="number" step="500" min="100" required placeholder="150000" class="w-full px-3 py-2 text-xs font-bold bg-slate-50 border border-slate-200 rounded-xl tabular-nums focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-600" />
+            </div>
             <div class="flex gap-2">
-              <button type="submit" class="flex-1 sm:flex-none px-4 py-2 text-xs font-extrabold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl transition">Enregistrer</button>
+              <button type="submit" class="flex-1 px-4 py-2 text-xs font-extrabold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl transition">Enregistrer</button>
               <button type="button" id="btn-cancel-personal-goal" class="px-3 py-2 text-xs font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-xl transition">Annuler</button>
             </div>
           </form>
@@ -946,7 +985,7 @@
               </div>
             </div>
 
-            <form id="form-rep-target" class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3 items-end">
+            <form id="form-rep-target" class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-9 gap-3 items-end">
               <div class="col-span-2 sm:col-span-2">
                 <label class="block text-[11px] font-bold text-slate-700 mb-1">Représentant *</label>
                 <select id="rep-target-select" class="w-full px-3 py-2 text-xs font-bold bg-white border border-slate-200 rounded-xl">
@@ -956,6 +995,10 @@
                   <option value="Samuel">Samuel</option>
                   <option value="Alexandre">Alexandre</option>
                 </select>
+              </div>
+              <div>
+                <label class="block text-[11px] font-bold text-emerald-800 mb-1">Target Comm. ($) *</label>
+                <input id="rep-obj-comm" type="number" step="100" min="0" required placeholder="8000" class="w-full px-3 py-2 text-xs font-extrabold text-emerald-900 bg-emerald-50/60 border border-emerald-300 rounded-xl tabular-nums" />
               </div>
               <div>
                 <label class="block text-[11px] font-bold text-slate-700 mb-1">Objectif Ventes ($) *</label>
@@ -1961,6 +2004,8 @@
       const ym = curSelMonth.startsWith('YEAR_') ? currentMonthStr : curSelMonth;
       const mObj = ensureKpiMonthStructure(ym);
       const rData = mObj.reps[rn] || {};
+      const commEl = document.getElementById('rep-obj-comm');
+      if (commEl) commEl.value = getCommissionTargetForRep(rn, ym);
       document.getElementById('rep-obj-dollars').value = rData['Vente $']?.objectif ?? 150000;
       document.getElementById('rep-obj-booke').value = rData['Booké']?.objectif ?? 80;
       document.getElementById('rep-obj-rdv').value = rData['RDV Réalisé']?.objectif ?? 60;
@@ -2009,9 +2054,10 @@
 
       const formRepTarget = document.getElementById('form-rep-target');
       if (formRepTarget) {
-        formRepTarget.addEventListener('submit', (e) => {
+        formRepTarget.addEventListener('submit', async (e) => {
           e.preventDefault();
           const rn = document.getElementById('rep-target-select').value;
+          const commGoal = parseFloat(document.getElementById('rep-obj-comm')?.value) || 0;
           const dollars = parseFloat(document.getElementById('rep-obj-dollars').value) || 0;
           const booke = parseFloat(document.getElementById('rep-obj-booke').value) || 0;
           const rdv = parseFloat(document.getElementById('rep-obj-rdv').value) || 0;
@@ -2025,8 +2071,10 @@
           ensureKpiMonthStructure(activeYm);
 
           const scopeKey = applyAll ? `ALL_${rn}` : `${activeYm}_${rn}`;
-          repTargetsOverrides[scopeKey] = { dollars, booke, rdv, ots, suivi, close };
+          repTargetsOverrides[scopeKey] = { dollars, booke, rdv, ots, suivi, close, comm: commGoal };
           localStorage.setItem('korpo_rep_targets_v1', JSON.stringify(repTargetsOverrides));
+
+          await saveRepTargetsToStorageAndCloud(rn, activeYm, dollars, commGoal, applyAll);
 
           const monthsToUpdate = applyAll ? Object.keys(kpiStore) : [activeYm];
           monthsToUpdate.forEach(ym => {
@@ -2043,7 +2091,8 @@
 
           localStorage.setItem('korpo_kpi_store_v1', JSON.stringify(kpiStore));
           renderKpiDashboard();
-          toast(`Objectifs mis à jour pour ${rn} (${fmtMoney0(dollars)}/mois) ✓`);
+          renderMesVentes();
+          toast(`Targets mis à jour pour ${rn} : ${fmtMoney0(commGoal)} comm. / ${fmtMoney0(dollars)} ventes ✓`);
         });
       }
       const btnClose = document.getElementById('btn-kpi-close-targets');
@@ -2360,7 +2409,7 @@
       if (!sb || !currentProfile || currentProfile.role !== 'admin') return;
       try {
         const [{ data: latestVentes }, { data: latestClients }] = await Promise.all([
-          sb.from('ventes').select('*').order('date_vente', { ascending: false }),
+          sb.from('ventes').select('*').order('date_vente', { ascending: false }).order('created_at', { ascending: false }),
           sb.from('clients').select('*').order('nom')
         ]);
         if (latestClients) state.clients = latestClients;
@@ -4405,7 +4454,7 @@
         const [resReps, resTaux, resVentes] = await Promise.all([
           sb.from('representants').select('*').order('nom'),
           sb.from('taux_commission').select('*'),
-          sb.from('ventes').select('*').order('date_vente', { ascending: false })
+          sb.from('ventes').select('*').order('date_vente', { ascending: false }).order('created_at', { ascending: false })
         ]);
         state.representants = resReps.data || [];
         state.taux = resTaux.data || [];
@@ -4434,7 +4483,7 @@
         subscribeToNewSalesRealtime();
       } else {
         const [resMesVentes, resMyTaux] = await Promise.all([
-          sb.from('vue_ventes_representant').select('*').eq('representant_id', currentProfile.id).order('date_vente', { ascending: false }),
+          sb.from('vue_ventes_representant').select('*').eq('representant_id', currentProfile.id).order('date_vente', { ascending: false }).order('created_at', { ascending: false }),
           sb.from('taux_commission').select('*').eq('representant_id', currentProfile.id)
         ]);
         state.representants = [currentProfile];
@@ -4504,13 +4553,19 @@
     };
 
     let personalMonthlyTargets = JSON.parse(localStorage.getItem('korpo_personal_monthly_targets_v1') || '{}');
+    let personalCommTargets = JSON.parse(localStorage.getItem('korpo_personal_comm_targets_v1') || '{}');
 
-    function getPersonalTargetAmount(ym) {
-      const repName = currentProfile?.nom || 'Rep';
-      const specificKey = `${repName}_${ym}`;
-      const globalKey = `${repName}_ALL`;
-      if (personalMonthlyTargets[specificKey] > 0) return Number(personalMonthlyTargets[specificKey]);
-      if (personalMonthlyTargets[globalKey] > 0) return Number(personalMonthlyTargets[globalKey]);
+    function getCloudRepTargetRow(repName, ym) {
+      if (!Array.isArray(kpiHebdoRows)) return null;
+      return kpiHebdoRows.find(r => Number(r.semaine_index) === -1 && r.representant_nom === repName && r.mois_commission === ym)
+        || kpiHebdoRows.find(r => Number(r.semaine_index) === -1 && r.representant_nom === repName && r.mois_commission === 'ALL');
+    }
+
+    function getSalesTargetForRep(repName, ym) {
+      const cloudRow = getCloudRepTargetRow(repName, ym);
+      if (cloudRow && Number(cloudRow.booke) > 0) return Number(cloudRow.booke);
+      if (personalMonthlyTargets[`${repName}_${ym}`] > 0) return Number(personalMonthlyTargets[`${repName}_${ym}`]);
+      if (personalMonthlyTargets[`${repName}_ALL`] > 0) return Number(personalMonthlyTargets[`${repName}_ALL`]);
       if (repTargetsOverrides[`${ym}_${repName}`]?.dollars > 0) return Number(repTargetsOverrides[`${ym}_${repName}`].dollars);
       if (repTargetsOverrides[`ALL_${repName}`]?.dollars > 0) return Number(repTargetsOverrides[`ALL_${repName}`].dollars);
       const mObj = kpiStore[ym];
@@ -4518,22 +4573,132 @@
       return 150000;
     }
 
+    function getCommissionTargetForRep(repName, ym) {
+      const cloudRow = getCloudRepTargetRow(repName, ym);
+      if (cloudRow && Number(cloudRow.rdv_realise) > 0) return Number(cloudRow.rdv_realise);
+      if (personalCommTargets[`${repName}_${ym}`] > 0) return Number(personalCommTargets[`${repName}_${ym}`]);
+      if (personalCommTargets[`${repName}_ALL`] > 0) return Number(personalCommTargets[`${repName}_ALL`]);
+      if (repTargetsOverrides[`${ym}_${repName}`]?.comm > 0) return Number(repTargetsOverrides[`${ym}_${repName}`].comm);
+      if (repTargetsOverrides[`ALL_${repName}`]?.comm > 0) return Number(repTargetsOverrides[`ALL_${repName}`].comm);
+      // Estimation par défaut (~5.5% de l'objectif de ventes si non encore personnalisé)
+      const salesT = getSalesTargetForRep(repName, ym);
+      return Math.max(2500, Math.round((salesT * 0.055) / 500) * 500);
+    }
+
+    async function saveRepTargetsToStorageAndCloud(repName, activeYm, salesGoal, commGoal, applyAll = true) {
+      personalMonthlyTargets[`${repName}_${activeYm}`] = salesGoal;
+      personalCommTargets[`${repName}_${activeYm}`] = commGoal;
+      if (applyAll) {
+        personalMonthlyTargets[`${repName}_ALL`] = salesGoal;
+        personalCommTargets[`${repName}_ALL`] = commGoal;
+      }
+      localStorage.setItem('korpo_personal_monthly_targets_v1', JSON.stringify(personalMonthlyTargets));
+      localStorage.setItem('korpo_personal_comm_targets_v1', JSON.stringify(personalCommTargets));
+
+      const scopes = applyAll ? [activeYm, 'ALL'] : [activeYm];
+      scopes.forEach(sc => {
+        const idx = kpiHebdoRows.findIndex(r => Number(r.semaine_index) === -1 && r.representant_nom === repName && r.mois_commission === sc);
+        if (idx >= 0) {
+          kpiHebdoRows[idx].booke = salesGoal;
+          kpiHebdoRows[idx].rdv_realise = commGoal;
+        } else {
+          kpiHebdoRows.push({ mois_commission: sc, semaine_index: -1, representant_nom: repName, booke: salesGoal, rdv_realise: commGoal });
+        }
+      });
+
+      if (sb && currentProfile) {
+        const rows = scopes.map(sc => ({
+          mois_commission: sc,
+          semaine_index: -1,
+          representant_nom: repName,
+          booke: salesGoal,
+          rdv_realise: commGoal,
+          updated_at: new Date().toISOString()
+        }));
+        const { error } = await sb.from('kpi_hebdo').upsert(rows, { onConflict: 'mois_commission,semaine_index,representant_nom' });
+        if (error) console.warn('Sync targets cloud:', error.message);
+      }
+    }
+
     function updatePersonalGoalProgressBar(monthFilter, scopeFilter) {
       if (!currentProfile) return;
       const isAdmin = currentProfile.role === 'admin';
       const activeYm = monthFilter || currentMonthStr;
-      const targetAmount = getPersonalTargetAmount(activeYm);
+      const pickerWrap = document.getElementById('goal-rep-picker-wrap');
+      const pickerSel = document.getElementById('select-goal-rep');
+      if (pickerWrap) pickerWrap.classList.toggle('hidden', !isAdmin);
 
-      // Volume personnel du représentant (ou ses ventes directes si admin en mode direct, ou total période)
+      // Si Admin choisit un représentant dans le sélecteur (ou regarde sa propre vue), afficher les barres de ce représentant !
+      const inspectedRepName = (isAdmin && pickerSel && pickerSel.value) ? pickerSel.value : currentProfile.nom;
+      const inspectedRepObj = state.representants.find(r => r.nom === inspectedRepName) || currentProfile;
+
+      const salesTarget = getSalesTargetForRep(inspectedRepName, activeYm);
+      const commTarget = getCommissionTargetForRep(inspectedRepName, activeYm);
+
       const myMonthSales = state.mesVentes.filter(v => {
-        if (isAdmin && scopeFilter === 'direct' && v.representant_id !== currentProfile.id) return false;
+        if (isAdmin) {
+          if (inspectedRepObj && inspectedRepObj.role !== 'admin') {
+            if (String(v.representant_id) !== String(inspectedRepObj.id)) return false;
+          } else if (scopeFilter === 'direct') {
+            if (String(v.representant_id) !== String(currentProfile.id)) return false;
+          }
+        }
         if (monthFilter) return v.mois_commission === monthFilter;
         return v.mois_commission === currentMonthStr;
       });
-      const achieved = myMonthSales.reduce((s, v) => s + Number(v.valeur || 0), 0);
-      const pct = targetAmount > 0 ? Math.round((achieved / targetAmount) * 100) : 0;
-      const remaining = Math.max(0, targetAmount - achieved);
 
+      const achievedSales = myMonthSales.reduce((s, v) => s + Number(v.valeur || 0), 0);
+      const achievedComm = myMonthSales.reduce((s, v) => {
+        if (isAdmin && inspectedRepObj && inspectedRepObj.role !== 'admin') {
+          const rawV = state.ventes.find(x => String(x.id) === String(v.id));
+          return s + Number(rawV ? rawV.commission_rep : (v.commission_rep || 0));
+        }
+        return s + Number(v.commission_rep || 0);
+      }, 0);
+
+      const headerTitleEl = document.getElementById('goal-card-header-title');
+      if (headerTitleEl) {
+        headerTitleEl.textContent = isAdmin
+          ? `Objectifs & Targets — ${inspectedRepName} (${activeYm})`
+          : `Mes objectifs du mois (${activeYm})`;
+      }
+
+      // 1. Mise à jour de la barre TARGET COMMISSION ($)
+      const commPct = commTarget > 0 ? Math.round((achievedComm / commTarget) * 100) : 0;
+      const commRem = Math.max(0, commTarget - achievedComm);
+      const cTitle = document.getElementById('comm-bar-title');
+      const cSub = document.getElementById('comm-bar-subtitle');
+      const cBadge = document.getElementById('comm-bar-pct-badge');
+      const cFill = document.getElementById('comm-bar-fill');
+      const cRem = document.getElementById('comm-bar-remaining');
+      const cMsg = document.getElementById('comm-bar-status-msg');
+
+      if (cTitle && cFill) {
+        cTitle.textContent = `💵 Target Commission (${inspectedRepName})`;
+        cSub.textContent = `${fmtMoney(achievedComm)} / ${fmtMoney(commTarget)}`;
+        cBadge.textContent = `${commPct} %`;
+        cFill.style.width = `${Math.min(100, commPct)}%`;
+        if (commPct >= 100) {
+          cBadge.className = 'px-2 py-0.5 text-[11px] font-extrabold rounded-full bg-emerald-600 text-white tabular-nums';
+          cRem.textContent = `Bonus dépassé de + ${fmtMoney(achievedComm - commTarget)} !`;
+          cMsg.textContent = '🔥 Target commission atteint !';
+          cMsg.className = 'font-extrabold text-emerald-700';
+        } else if (commPct >= 65) {
+          cBadge.className = 'px-2 py-0.5 text-[11px] font-extrabold rounded-full bg-amber-100 text-amber-800 tabular-nums';
+          cRem.textContent = `Reste à gagner : ${fmtMoney(commRem)}`;
+          cMsg.textContent = '💪 En feu !';
+          cMsg.className = 'font-bold text-amber-700';
+        } else {
+          cBadge.className = 'px-2 py-0.5 text-[11px] font-extrabold rounded-full bg-emerald-100 text-emerald-800 tabular-nums';
+          cRem.textContent = `Reste à gagner : ${fmtMoney(commRem)}`;
+          cMsg.textContent = 'En progression';
+          cMsg.className = 'font-semibold text-emerald-700/80';
+        }
+      }
+
+      // 2. Mise à jour de la barre OBJECTIF VENTES ($)
+      const salesPct = salesTarget > 0 ? Math.round((achievedSales / salesTarget) * 100) : 0;
+      const salesRem = Math.max(0, salesTarget - achievedSales);
       const titleEl = document.getElementById('goal-bar-title');
       const subEl = document.getElementById('goal-bar-subtitle');
       const badgeEl = document.getElementById('goal-bar-pct-badge');
@@ -4542,40 +4707,59 @@
       const msgEl = document.getElementById('goal-bar-status-msg');
 
       if (!titleEl || !fillEl) return;
-      titleEl.textContent = `Objectif mensuel (${activeYm})`;
-      subEl.textContent = `${fmtMoney(achieved)} / ${fmtMoney(targetAmount)}`;
-      badgeEl.textContent = `${pct} %`;
-      fillEl.style.width = `${Math.min(100, pct)}%`;
+      titleEl.textContent = `🎯 Objectif Ventes (${inspectedRepName})`;
+      subEl.textContent = `${fmtMoney(achievedSales)} / ${fmtMoney(salesTarget)}`;
+      badgeEl.textContent = `${salesPct} %`;
+      fillEl.style.width = `${Math.min(100, salesPct)}%`;
 
-      if (pct >= 100) {
+      if (salesPct >= 100) {
         badgeEl.className = 'px-2 py-0.5 text-[11px] font-extrabold rounded-full bg-emerald-100 text-emerald-800 tabular-nums';
         fillEl.className = 'h-full rounded-full bg-gradient-to-r from-emerald-500 to-teal-400 transition-all duration-700 ease-out';
-        remEl.textContent = `Objectif dépassé de + ${fmtMoney(achieved - targetAmount)} !`;
-        msgEl.textContent = '🔥 Target atteint !';
+        remEl.textContent = `Objectif dépassé de + ${fmtMoney(achievedSales - salesTarget)} !`;
+        msgEl.textContent = '🔥 Target ventes atteint !';
         msgEl.className = 'font-extrabold text-emerald-600';
-      } else if (pct >= 65) {
+      } else if (salesPct >= 65) {
         badgeEl.className = 'px-2 py-0.5 text-[11px] font-extrabold rounded-full bg-amber-100 text-amber-800 tabular-nums';
         fillEl.className = 'h-full rounded-full bg-gradient-to-r from-indigo-600 via-amber-400 to-emerald-500 transition-all duration-700 ease-out';
-        remEl.textContent = `Reste à atteindre : ${fmtMoney(remaining)}`;
+        remEl.textContent = `Reste à vendre : ${fmtMoney(salesRem)}`;
         msgEl.textContent = '💪 Dernière ligne droite !';
         msgEl.className = 'font-bold text-amber-700';
       } else {
         badgeEl.className = 'px-2 py-0.5 text-[11px] font-extrabold rounded-full bg-indigo-50 text-indigo-700 tabular-nums';
         fillEl.className = 'h-full rounded-full bg-gradient-to-r from-indigo-600 to-sky-500 transition-all duration-700 ease-out';
-        remEl.textContent = `Reste à atteindre : ${fmtMoney(remaining)}`;
+        remEl.textContent = `Reste à vendre : ${fmtMoney(salesRem)}`;
         msgEl.textContent = 'En progression';
         msgEl.className = 'font-semibold text-slate-500';
       }
     }
 
+    function fillPersonalGoalFormInputs() {
+      const isAdmin = currentProfile?.role === 'admin';
+      const pickerSel = document.getElementById('select-goal-rep');
+      const targetRepName = (isAdmin && pickerSel) ? pickerSel.value : (currentProfile?.nom || 'Rep');
+      const activeYm = document.getElementById('filter-rep-month').value || currentMonthStr;
+      const commIn = document.getElementById('input-personal-comm-goal');
+      const salesIn = document.getElementById('input-personal-goal');
+      if (commIn) commIn.value = getCommissionTargetForRep(targetRepName, activeYm);
+      if (salesIn) salesIn.value = getSalesTargetForRep(targetRepName, activeYm);
+    }
+
+    document.getElementById('select-goal-rep')?.addEventListener('change', () => {
+      fillPersonalGoalFormInputs();
+      const monthFilter = document.getElementById('filter-rep-month').value;
+      const scopeFilter = currentProfile?.role === 'admin' ? document.getElementById('filter-admin-scope').value : 'all';
+      updatePersonalGoalProgressBar(monthFilter, scopeFilter);
+    });
+
     document.getElementById('btn-toggle-personal-goal')?.addEventListener('click', () => {
       const form = document.getElementById('form-personal-goal');
-      const input = document.getElementById('input-personal-goal');
-      const activeYm = document.getElementById('filter-rep-month').value || currentMonthStr;
+      const isAdmin = currentProfile?.role === 'admin';
+      const pickerWrap = document.getElementById('goal-rep-picker-wrap');
+      if (pickerWrap) pickerWrap.classList.toggle('hidden', !isAdmin);
       form.classList.toggle('hidden');
       if (!form.classList.contains('hidden')) {
-        input.value = getPersonalTargetAmount(activeYm);
-        input.focus();
+        fillPersonalGoalFormInputs();
+        document.getElementById('input-personal-comm-goal')?.focus();
       }
     });
 
@@ -4583,20 +4767,21 @@
       document.getElementById('form-personal-goal').classList.add('hidden');
     });
 
-    document.getElementById('form-personal-goal')?.addEventListener('submit', (e) => {
+    document.getElementById('form-personal-goal')?.addEventListener('submit', async (e) => {
       e.preventDefault();
-      const newVal = parseFloat(document.getElementById('input-personal-goal').value) || 0;
-      if (newVal <= 0) return toast('Entrez un montant supérieur à 0 $', 'error');
-      const repName = currentProfile?.nom || 'Rep';
+      const newCommVal = parseFloat(document.getElementById('input-personal-comm-goal')?.value) || 0;
+      const newSalesVal = parseFloat(document.getElementById('input-personal-goal').value) || 0;
+      if (newCommVal <= 0 || newSalesVal <= 0) return toast('Entrez des montants supérieurs à 0 $', 'error');
+
+      const isAdmin = currentProfile?.role === 'admin';
+      const pickerSel = document.getElementById('select-goal-rep');
+      const repName = (isAdmin && pickerSel) ? pickerSel.value : (currentProfile?.nom || 'Rep');
       const activeYm = document.getElementById('filter-rep-month').value || currentMonthStr;
 
-      personalMonthlyTargets[`${repName}_${activeYm}`] = newVal;
-      personalMonthlyTargets[`${repName}_ALL`] = newVal;
-      localStorage.setItem('korpo_personal_monthly_targets_v1', JSON.stringify(personalMonthlyTargets));
+      await saveRepTargetsToStorageAndCloud(repName, activeYm, newSalesVal, newCommVal, true);
 
-      // Synchroniser aussi dans l'objectif KPI du représentant si présent
       if (kpiStore[activeYm]?.reps?.[repName]?.['Vente $']) {
-        kpiStore[activeYm].reps[repName]['Vente $'].objectif = newVal;
+        kpiStore[activeYm].reps[repName]['Vente $'].objectif = newSalesVal;
         recalcTeamObjectivesForMonth(kpiStore[activeYm]);
         localStorage.setItem('korpo_kpi_store_v1', JSON.stringify(kpiStore));
       }
@@ -4604,7 +4789,7 @@
       document.getElementById('form-personal-goal').classList.add('hidden');
       renderMesVentes();
       renderKpiDashboard();
-      toast(`Nouveau target mensuel enregistré : ${fmtMoney0(newVal)} 🎯`);
+      toast(`Targets enregistrés pour ${repName} : ${fmtMoney0(newCommVal)} comm. / ${fmtMoney0(newSalesVal)} ventes 🎯`);
     });
 
     function renderMesVentes() {
@@ -4639,7 +4824,10 @@
         }
         if (col === 'date_vente') {
           const cmp = compareSaleValues(a.date_vente, b.date_vente, dir, false);
-          return cmp !== 0 ? cmp : compareSaleValues(a.mois_commission, b.mois_commission, dir, false);
+          if (cmp !== 0) return cmp;
+          const cmpCreated = compareSaleValues(a.created_at || '', b.created_at || '', dir, false);
+          if (cmpCreated !== 0) return cmpCreated;
+          return compareSaleValues(a.id || '', b.id || '', dir, false);
         }
         return compareSaleValues(a[col], b[col], dir, false);
       });
@@ -4784,39 +4972,59 @@
 
       state.classement.forEach(row => {
         if (!totalsByRep.has(row.representant_id)) {
-          totalsByRep.set(row.representant_id, { nom: row.representant_nom, total: 0 });
+          totalsByRep.set(row.representant_id, { nom: row.representant_nom, total: 0, monthsCount: new Set() });
         }
+        const entry = totalsByRep.get(row.representant_id);
         if (!monthFilter || row.mois_commission === monthFilter) {
-          totalsByRep.get(row.representant_id).total += Number(row.total_ventes || 0);
+          entry.total += Number(row.total_ventes || 0);
+          if (row.mois_commission) entry.monthsCount.add(row.mois_commission);
         }
       });
 
       const ranked = Array.from(totalsByRep.values()).sort((a, b) => b.total - a.total);
-      const maxTotal = ranked[0]?.total || 1;
       const medals = ['🥇', '🥈', '🥉'];
 
       document.getElementById('classement-cards').innerHTML = ranked.map((r, idx) => {
-        const pct = Math.max(4, Math.round((r.total / maxTotal) * 100));
+        const activeYm = monthFilter || currentMonthStr;
+        const unitTarget = getSalesTargetForRep(r.nom, activeYm);
+        const mult = monthFilter ? 1 : Math.max(1, r.monthsCount.size || Object.keys(kpiStore).length || 1);
+        const repTarget = unitTarget * mult;
+        const targetPct = repTarget > 0 ? Math.round((r.total / repTarget) * 100) : 0;
+        const barWidth = Math.min(100, Math.max(r.total > 0 ? 4 : 0, targetPct));
         const isMe = r.nom === currentProfile.nom;
+        const reached = targetPct >= 100;
+
         return `
           <div class="bg-white p-5 rounded-2xl border ${isMe ? 'border-indigo-400 ring-2 ring-indigo-600/10' : 'border-slate-200/80'} shadow-xs space-y-3">
-            <div class="flex items-center justify-between">
-              <div class="flex items-center gap-3">
-                <span class="w-9 h-9 rounded-xl bg-slate-100 flex items-center justify-center text-base font-bold">${medals[idx] || `#${idx + 1}`}</span>
-                <div>
-                  <div class="font-bold text-slate-900 flex items-center gap-2">
-                    ${r.nom}
+            <div class="flex items-center justify-between gap-2">
+              <div class="flex items-center gap-3 min-w-0">
+                <span class="w-9 h-9 shrink-0 rounded-xl ${reached ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-800'} flex items-center justify-center text-base font-bold">${medals[idx] || `#${idx + 1}`}</span>
+                <div class="min-w-0">
+                  <div class="font-bold text-slate-900 flex items-center gap-2 truncate">
+                    <span>${r.nom}</span>
                     ${isMe ? '<span class="text-[10px] font-bold uppercase px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-600">Vous</span>' : ''}
                   </div>
                   <div class="text-xs text-slate-400">Position #${idx + 1}</div>
                 </div>
               </div>
-              <div class="text-right">
-                <div class="text-lg font-extrabold text-slate-900 tabular-nums">${fmtMoney(r.total)}</div>
+              <div class="text-right shrink-0 tabular-nums">
+                <div class="text-lg font-extrabold text-slate-900">${fmtMoney(r.total)}</div>
+                <div class="text-[11px] font-semibold text-slate-400">Target : ${fmtMoney0(repTarget)}</div>
               </div>
             </div>
-            <div class="w-full h-2.5 bg-slate-100 rounded-full overflow-hidden">
-              <div class="h-full rounded-full ${idx === 0 ? 'bg-gradient-to-r from-indigo-600 to-emerald-500' : 'bg-indigo-500'}" style="width: ${pct}%"></div>
+
+            <div class="space-y-1.5">
+              <div class="flex items-center justify-between text-[11px] tabular-nums">
+                <span class="font-bold ${reached ? 'text-emerald-600' : 'text-slate-600'}">
+                  ${reached ? '🔥 Target atteint !' : `Progression vers le target (${monthFilter || 'Cumul'})`}
+                </span>
+                <span class="px-2 py-0.5 rounded-full font-extrabold ${reached ? 'bg-emerald-100 text-emerald-800' : (targetPct >= 65 ? 'bg-amber-100 text-amber-800' : 'bg-indigo-50 text-indigo-700')}">
+                  ${targetPct} %
+                </span>
+              </div>
+              <div class="w-full h-2.5 bg-slate-100 rounded-full overflow-hidden">
+                <div class="h-full rounded-full transition-all duration-700 ${reached ? 'bg-gradient-to-r from-emerald-500 to-teal-400' : (targetPct >= 65 ? 'bg-gradient-to-r from-indigo-600 to-amber-400' : 'bg-indigo-600')}" style="width: ${barWidth}%"></div>
+              </div>
             </div>
           </div>
         `;
@@ -5018,7 +5226,10 @@
         }
         if (col === 'date_vente') {
           const cmp = compareSaleValues(a.date_vente, b.date_vente, dir, false);
-          return cmp !== 0 ? cmp : compareSaleValues(a.mois_commission, b.mois_commission, dir, false);
+          if (cmp !== 0) return cmp;
+          const cmpCreated = compareSaleValues(a.created_at || '', b.created_at || '', dir, false);
+          if (cmpCreated !== 0) return cmpCreated;
+          return compareSaleValues(a.id || '', b.id || '', dir, false);
         }
         if (col === 'rep_nom') {
           const rA = state.representants.find(r => r.id === a.representant_id)?.nom || '';
@@ -5495,6 +5706,10 @@
       document.getElementById('drawer-subtitle').textContent = 'Votre commission et le tableau KPI se mettent à jour automatiquement';
       document.getElementById('btn-submit-drawer').textContent = 'Enregistrer la vente';
       populateDrawerSelects();
+      const nowLive = new Date();
+      const liveDateStr = `${nowLive.getFullYear()}-${String(nowLive.getMonth() + 1).padStart(2, '0')}-${String(nowLive.getDate()).padStart(2, '0')}`;
+      document.getElementById('vente-date').value = liveDateStr;
+      document.getElementById('vente-mois-comm').value = liveDateStr.slice(0, 7);
       document.getElementById('vente-client-nom').value = '';
       document.getElementById('vente-valeur').value = '';
       document.getElementById('vente-note').value = '';
@@ -5953,6 +6168,7 @@
       renderMesVentes();
     });
 
+    document.getElementById('filter-rank-month').value = currentMonthStr;
     document.getElementById('filter-rank-month').addEventListener('change', renderClassement);
     document.getElementById('btn-rank-all-months').addEventListener('click', () => {
       document.getElementById('filter-rank-month').value = '';
