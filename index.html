@@ -165,6 +165,53 @@
     </div>
   </div>
 
+  <!-- MODALE AJUSTEMENT RAPIDE DU TAUX DE COMMISSION D'UNE VENTE (ADMIN) -->
+  <div id="rate-adjust-modal" class="hidden fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-xs flex items-center justify-center p-4 no-print">
+    <div class="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-md w-full overflow-hidden">
+      <div class="px-5 py-4 bg-slate-900 text-white flex items-center justify-between">
+        <div>
+          <h3 class="text-sm font-extrabold">Ajuster le taux de commission</h3>
+          <p id="rate-adjust-subtitle" class="text-[11px] text-slate-400 mt-0.5"></p>
+        </div>
+        <button id="btn-close-rate-adjust" type="button" class="w-8 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 flex items-center justify-center">✕</button>
+      </div>
+      <form id="form-rate-adjust" class="p-5 space-y-4">
+        <input type="hidden" id="rate-adjust-sale-id" value="" />
+        <div class="bg-slate-50 rounded-xl border border-slate-200/80 p-3 flex items-center justify-between text-xs">
+          <span class="text-slate-500">Valeur de la vente :</span>
+          <strong id="rate-adjust-sale-val" class="text-sm font-extrabold text-slate-900 tabular-nums">0,00 $</strong>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1">Taux Rep (%) *</label>
+            <input id="rate-adjust-in-rep" type="number" step="0.01" min="0" max="100" required class="w-full px-3.5 py-2.5 text-sm font-extrabold bg-slate-50 border border-slate-200 rounded-xl tabular-nums focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-600" />
+            <div id="rate-adjust-preview-rep" class="text-[11px] font-bold text-indigo-600 mt-1 tabular-nums">Comm. Rep : 0,00 $</div>
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-emerald-800 mb-1">Taux Olivier (%) *</label>
+            <input id="rate-adjust-in-oli" type="number" step="0.01" min="0" max="100" required class="w-full px-3.5 py-2.5 text-sm font-extrabold bg-emerald-50/40 border border-emerald-200 rounded-xl tabular-nums focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-600" />
+            <div id="rate-adjust-preview-oli" class="text-[11px] font-bold text-emerald-600 mt-1 tabular-nums">Comm. Olivier : 0,00 $</div>
+          </div>
+        </div>
+
+        <div class="flex flex-wrap items-center justify-between gap-2 pt-1">
+          <button type="button" id="btn-rate-adjust-reset-base" class="px-3 py-1.5 text-[11px] font-bold text-amber-800 bg-amber-50 hover:bg-amber-100 border border-amber-200 rounded-lg transition">
+            ↺ Remettre taux de base (sans bonus)
+          </button>
+          <button type="button" id="btn-rate-adjust-reset-auto" class="px-3 py-1.5 text-[11px] font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg transition">
+            ↻ Recalcul auto
+          </button>
+        </div>
+
+        <div class="pt-3 border-t border-slate-100 flex justify-end gap-2">
+          <button type="button" id="btn-cancel-rate-adjust" class="px-4 py-2 text-xs font-semibold text-slate-700 bg-white border border-slate-300 rounded-xl hover:bg-slate-50">Annuler</button>
+          <button type="submit" class="px-5 py-2 text-xs font-extrabold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl shadow-xs transition">✓ Appliquer ces taux</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <!-- MODALE JOURNAL D'AUDIT D'UNE VENTE -->
   <div id="audit-modal" class="hidden fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-xs flex items-center justify-center p-4 no-print">
     <div class="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-lg w-full max-h-[88vh] flex flex-col overflow-hidden">
@@ -481,14 +528,38 @@
         </div>
 
         <!-- APERÇU EN DIRECT DES COMMISSIONS -->
-        <div class="bg-indigo-50/70 border border-indigo-100 rounded-xl p-4 flex items-center justify-between">
-          <div>
-            <div class="text-[11px] font-semibold uppercase tracking-wider text-indigo-600">Aperçu commission calculée</div>
-            <div id="preview-taux-label" class="text-xs text-slate-500 mt-0.5">Sélectionnez un montant pour estimer</div>
+        <div class="bg-indigo-50/70 border border-indigo-100 rounded-xl p-4 space-y-3">
+          <div class="flex items-center justify-between">
+            <div>
+              <div class="text-[11px] font-semibold uppercase tracking-wider text-indigo-600">Aperçu commission calculée</div>
+              <div id="preview-taux-label" class="text-xs text-slate-500 mt-0.5">Sélectionnez un montant pour estimer</div>
+            </div>
+            <div class="text-right">
+              <div id="preview-comm-rep" class="text-sm font-bold text-slate-900 tabular-nums">Rep : 0,00 $</div>
+              <div id="preview-comm-olivier" class="text-xs font-semibold text-emerald-600 tabular-nums">Olivier : 0,00 $</div>
+            </div>
           </div>
-          <div class="text-right">
-            <div id="preview-comm-rep" class="text-sm font-bold text-slate-900 tabular-nums">Rep : 0,00 $</div>
-            <div id="preview-comm-olivier" class="text-xs font-semibold text-emerald-600 tabular-nums">Olivier : 0,00 $</div>
+
+          <!-- CONTRÔLE ADMIN : BYPASS BONUS OU TAUX PERSONNALISÉ -->
+          <div id="admin-drawer-rate-override-box" class="hidden pt-2.5 border-t border-indigo-200/70 space-y-2.5">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <label for="vente-rate-mode" class="text-[11px] font-extrabold text-indigo-950">⚙️ Règle de commission (Admin) :</label>
+              <select id="vente-rate-mode" class="px-2.5 py-1.5 text-xs font-bold bg-white border border-indigo-200 rounded-lg text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-600">
+                <option value="auto">Automatique (Grille + Bonus Target)</option>
+                <option value="no_bonus">Bypass bonus (Taux de base sans bonus)</option>
+                <option value="custom">Taux manuel personnalisé (%)</option>
+              </select>
+            </div>
+            <div id="vente-custom-rates-row" class="hidden grid grid-cols-2 gap-2.5">
+              <div>
+                <label class="block text-[10px] font-bold text-slate-600 mb-1">Taux Rep (%)</label>
+                <input id="vente-custom-taux-rep" type="number" step="0.01" min="0" max="100" placeholder="6.00" class="w-full px-3 py-1.5 text-xs font-extrabold bg-white border border-indigo-200 rounded-lg tabular-nums" />
+              </div>
+              <div>
+                <label class="block text-[10px] font-bold text-emerald-800 mb-1">Taux Olivier (%)</label>
+                <input id="vente-custom-taux-oli" type="number" step="0.01" min="0" max="100" placeholder="4.00" class="w-full px-3 py-1.5 text-xs font-extrabold bg-white border border-emerald-200 rounded-lg tabular-nums" />
+              </div>
+            </div>
           </div>
         </div>
 
@@ -1892,13 +1963,16 @@
         const sid = String(row.id);
         const ov = saleBonusOverridesStore[sid];
         if (!ov) return row;
+        const baseR = getRateForSale(row.representant_id, row.entreprise_id, row.client_id);
+        const isBonusHigher = baseR ? (Number(ov.tRep) > Number(baseR.taux) + 0.0001) : !ov.noBonus;
         const updated = {
           ...row,
           taux_rep_applique: Number(ov.tRep),
           taux_olivier_applique: Number(ov.tOli),
           commission_rep: isMesVentesForAdmin ? Number(ov.cOli) : Number(ov.cRep),
           commission_olivier: Number(ov.cOli),
-          _bonusApplied: true
+          _bonusApplied: Boolean(isBonusHigher && !ov.noBonus),
+          _customRateApplied: Boolean(ov.customManual || ov.noBonus)
         };
         return updated;
       };
@@ -2293,6 +2367,131 @@
       openTrashModal();
       toast('Supprimée définitivement');
     };
+
+    document.getElementById('vente-rate-mode')?.addEventListener('change', () => {
+      const mode = document.getElementById('vente-rate-mode').value;
+      if (mode === 'custom') {
+        const repId = document.getElementById('vente-rep').value;
+        const entId = document.getElementById('vente-entreprise').value;
+        const ym = document.getElementById('vente-mois-comm')?.value || currentMonthStr;
+        const clientNom = document.getElementById('vente-client-nom').value.trim().toLowerCase();
+        const matchedClient = state.clients.find(c => String(c.entreprise_id) === String(entId) && c.nom.toLowerCase() === clientNom);
+        const eff = getEffectiveRatesWithTargetBonus(repId, entId, matchedClient?.id || null, ym, document.getElementById('vente-edit-id')?.value || null);
+        const inR = document.getElementById('vente-custom-taux-rep');
+        const inO = document.getElementById('vente-custom-taux-oli');
+        if (inR && !inR.value) inR.value = Math.round(eff.tRep * 10000) / 100;
+        if (inO && !inO.value) inO.value = Math.round(eff.tOli * 10000) / 100;
+      }
+      updateDrawerCommissionPreview();
+    });
+    document.getElementById('vente-custom-taux-rep')?.addEventListener('input', updateDrawerCommissionPreview);
+    document.getElementById('vente-custom-taux-oli')?.addEventListener('input', updateDrawerCommissionPreview);
+
+    function updateRateAdjustModalPreview() {
+      const sid = document.getElementById('rate-adjust-sale-id')?.value;
+      const v = state.ventes.find(x => String(x.id) === String(sid));
+      if (!v) return;
+      const val = Number(v.valeur || 0);
+      const rPct = parseFloat(document.getElementById('rate-adjust-in-rep')?.value) || 0;
+      const oPct = parseFloat(document.getElementById('rate-adjust-in-oli')?.value) || 0;
+      document.getElementById('rate-adjust-preview-rep').textContent = `Comm. Rep : ${fmtMoney(val * (rPct / 100))}`;
+      document.getElementById('rate-adjust-preview-oli').textContent = `Comm. Olivier : ${fmtMoney(val * (oPct / 100))}`;
+    }
+
+    window.openRateAdjustModal = (saleId) => {
+      if (currentProfile?.role !== 'admin') return;
+      const v = state.ventes.find(x => String(x.id) === String(saleId));
+      if (!v) return;
+      const rep = state.representants.find(r => String(r.id) === String(v.representant_id))?.nom || '—';
+      const ent = state.entreprises.find(e => String(e.id) === String(v.entreprise_id))?.nom || '—';
+      const cli = state.clients.find(c => String(c.id) === String(v.client_id))?.nom || '—';
+
+      document.getElementById('rate-adjust-sale-id').value = v.id;
+      document.getElementById('rate-adjust-subtitle').textContent = `${rep} • ${ent} — ${cli} (${v.date_vente})`;
+      document.getElementById('rate-adjust-sale-val').textContent = fmtMoney(v.valeur);
+      document.getElementById('rate-adjust-in-rep').value = Math.round(Number(v.taux_rep_applique || 0) * 10000) / 100;
+      document.getElementById('rate-adjust-in-oli').value = Math.round(Number(v.taux_olivier_applique || 0) * 10000) / 100;
+      updateRateAdjustModalPreview();
+      document.getElementById('rate-adjust-modal').classList.remove('hidden');
+    };
+
+    document.getElementById('rate-adjust-in-rep')?.addEventListener('input', updateRateAdjustModalPreview);
+    document.getElementById('rate-adjust-in-oli')?.addEventListener('input', updateRateAdjustModalPreview);
+
+    document.getElementById('btn-rate-adjust-reset-base')?.addEventListener('click', () => {
+      const sid = document.getElementById('rate-adjust-sale-id')?.value;
+      const v = state.ventes.find(x => String(x.id) === String(sid));
+      if (!v) return;
+      const eff = getEffectiveRatesWithTargetBonus(v.representant_id, v.entreprise_id, v.client_id, getSaleStatsMonth(v), v.id);
+      document.getElementById('rate-adjust-in-rep').value = Math.round(eff.baseRep * 10000) / 100;
+      document.getElementById('rate-adjust-in-oli').value = Math.round(eff.baseOli * 10000) / 100;
+      updateRateAdjustModalPreview();
+    });
+
+    document.getElementById('btn-rate-adjust-reset-auto')?.addEventListener('click', () => {
+      const sid = document.getElementById('rate-adjust-sale-id')?.value;
+      const v = state.ventes.find(x => String(x.id) === String(sid));
+      if (!v) return;
+      const eff = getEffectiveRatesWithTargetBonus(v.representant_id, v.entreprise_id, v.client_id, getSaleStatsMonth(v), v.id);
+      document.getElementById('rate-adjust-in-rep').value = Math.round(eff.tRep * 10000) / 100;
+      document.getElementById('rate-adjust-in-oli').value = Math.round(eff.tOli * 10000) / 100;
+      updateRateAdjustModalPreview();
+    });
+
+    document.getElementById('form-rate-adjust')?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      if (currentProfile?.role !== 'admin') return;
+      const sid = document.getElementById('rate-adjust-sale-id')?.value;
+      const v = state.ventes.find(x => String(x.id) === String(sid));
+      if (!v) return;
+
+      const tRep = Math.round(Math.max(0, (parseFloat(document.getElementById('rate-adjust-in-rep').value) || 0) / 100) * 100000) / 100000;
+      const tOli = Math.round(Math.max(0, (parseFloat(document.getElementById('rate-adjust-in-oli').value) || 0) / 100) * 100000) / 100000;
+      const val = Number(v.valeur || 0);
+      const cRep = Math.round(val * tRep * 100) / 100;
+      const cOli = Math.round(val * tOli * 100) / 100;
+
+      const baseR = getRateForSale(v.representant_id, v.entreprise_id, v.client_id);
+      const isExactlyBase = baseR && Math.abs(Number(baseR.taux) - tRep) < 0.00005 && Math.abs(Number(baseR.taux_olivier) - tOli) < 0.00005;
+
+      const { error } = await sb.from('ventes').update({
+        taux_rep_applique: tRep,
+        taux_olivier_applique: tOli,
+        commission_rep: cRep,
+        commission_olivier: cOli
+      }).eq('id', sid);
+      if (error) return toast(error.message, 'error');
+
+      await saveSaleBonusOverride(sid, {
+        tRep,
+        tOli,
+        cRep,
+        cOli,
+        noBonus: Boolean(isExactlyBase),
+        customManual: Boolean(!isExactlyBase)
+      });
+
+      await recordSaleAudit(
+        sid,
+        'Taux de commission ajusté',
+        `Rep : ${fmtPct(tRep)} (${fmtMoney(cRep)}) • Olivier : ${fmtPct(tOli)} (${fmtMoney(cOli)})`,
+        '⚖️'
+      );
+
+      document.getElementById('rate-adjust-modal').classList.add('hidden');
+      toast(`Taux mis à jour : ${fmtPct(tRep)} Rep / ${fmtPct(tOli)} Olivier ✓`);
+      await loadAllData();
+    });
+
+    document.getElementById('btn-close-rate-adjust')?.addEventListener('click', () => {
+      document.getElementById('rate-adjust-modal').classList.add('hidden');
+    });
+    document.getElementById('btn-cancel-rate-adjust')?.addEventListener('click', () => {
+      document.getElementById('rate-adjust-modal').classList.add('hidden');
+    });
+    document.getElementById('rate-adjust-modal')?.addEventListener('click', (e) => {
+      if (e.target.id === 'rate-adjust-modal') document.getElementById('rate-adjust-modal').classList.add('hidden');
+    });
 
     document.getElementById('btn-close-audit')?.addEventListener('click', () => {
       document.getElementById('audit-modal').classList.add('hidden');
@@ -6296,24 +6495,71 @@
       };
     }
 
-    function updateDrawerCommissionPreview() {
+    function getDrawerComputedRates() {
       const editId = document.getElementById('vente-edit-id')?.value || null;
       const repId = document.getElementById('vente-rep').value;
       const entId = document.getElementById('vente-entreprise').value;
       const ym = document.getElementById('vente-mois-comm')?.value || currentMonthStr;
       const clientNom = document.getElementById('vente-client-nom').value.trim().toLowerCase();
-      const val = parseFloat(document.getElementById('vente-valeur').value) || 0;
-
       const matchedClient = state.clients.find(c => String(c.entreprise_id) === String(entId) && c.nom.toLowerCase() === clientNom);
       const eff = getEffectiveRatesWithTargetBonus(repId, entId, matchedClient?.id || null, ym, editId);
+
+      const isAdmin = currentProfile?.role === 'admin';
+      const rateMode = isAdmin ? (document.getElementById('vente-rate-mode')?.value || 'auto') : 'auto';
+      if (rateMode === 'no_bonus') {
+        return {
+          ...eff,
+          rateMode: 'no_bonus',
+          tRep: eff.baseRep,
+          tOli: eff.baseOli,
+          bonusActive: false,
+          bonusDelta: 0
+        };
+      }
+      if (rateMode === 'custom') {
+        const rawR = parseFloat(document.getElementById('vente-custom-taux-rep')?.value);
+        const rawO = parseFloat(document.getElementById('vente-custom-taux-oli')?.value);
+        const cRepRate = isNaN(rawR) ? eff.tRep : Math.max(0, rawR / 100);
+        const cOliRate = isNaN(rawO) ? eff.tOli : Math.max(0, rawO / 100);
+        return {
+          ...eff,
+          hasRule: true,
+          rateMode: 'custom',
+          tRep: Math.round(cRepRate * 100000) / 100000,
+          tOli: Math.round(cOliRate * 100000) / 100000,
+          bonusActive: false,
+          bonusDelta: 0
+        };
+      }
+      return { ...eff, rateMode: 'auto' };
+    }
+
+    function updateDrawerCommissionPreview() {
+      const val = parseFloat(document.getElementById('vente-valeur').value) || 0;
+      const isAdmin = currentProfile?.role === 'admin';
+      const overrideBox = document.getElementById('admin-drawer-rate-override-box');
+      if (overrideBox) overrideBox.classList.toggle('hidden', !isAdmin);
+
+      const rateMode = isAdmin ? (document.getElementById('vente-rate-mode')?.value || 'auto') : 'auto';
+      const customRow = document.getElementById('vente-custom-rates-row');
+      if (customRow) customRow.classList.toggle('hidden', rateMode !== 'custom');
+
+      const eff = getDrawerComputedRates();
       const { hasRule, tRep, tOli, bonusActive, bonusDelta } = eff;
       const bStr = formatBonusPctShort(bonusDelta);
 
-      const isAdmin = currentProfile?.role === 'admin';
       const oliEl = document.getElementById('preview-comm-olivier');
       if (isAdmin) {
+        let tagHtml = '';
+        if (rateMode === 'no_bonus') {
+          tagHtml = ' <span class="inline-block ml-1 px-1.5 py-0.5 text-[10px] font-extrabold rounded-md bg-amber-100 text-amber-800">Bypass bonus</span>';
+        } else if (rateMode === 'custom') {
+          tagHtml = ' <span class="inline-block ml-1 px-1.5 py-0.5 text-[10px] font-extrabold rounded-md bg-indigo-100 text-indigo-800">Taux manuel</span>';
+        } else if (bonusActive) {
+          tagHtml = ` <span class="inline-block ml-1 px-1.5 py-0.5 text-[10px] font-extrabold rounded-md bg-emerald-100 text-emerald-800">🔥 +${bStr} Rep / -${bStr} Oli</span>`;
+        }
         document.getElementById('preview-taux-label').innerHTML = hasRule
-          ? `Règle : <strong>${fmtPct(tRep)}</strong> Rep / <strong>${fmtPct(tOli)}</strong> Olivier${bonusActive ? ` <span class="inline-block ml-1 px-1.5 py-0.5 text-[10px] font-extrabold rounded-md bg-emerald-100 text-emerald-800">🔥 +${bStr} Rep / -${bStr} Oli</span>` : ''}`
+          ? `Règle : <strong>${fmtPct(tRep)}</strong> Rep / <strong>${fmtPct(tOli)}</strong> Olivier${tagHtml}`
           : 'Aucun taux configuré (0 % par défaut)';
         document.getElementById('preview-comm-rep').textContent = `Rep : ${fmtMoney(val * tRep)}`;
         oliEl.textContent = `Olivier : ${fmtMoney(val * tOli)}`;
@@ -6348,6 +6594,24 @@
       const rawN = v.note || '';
       document.getElementById('vente-type-kpi').value = rawN.toUpperCase().includes('[SUIVI]') ? 'SUIVI' : 'OTS';
       document.getElementById('vente-note').value = rawN.replace(/^\[(OTS|SUIVI)\]\s*/i, '');
+
+      const modeSel = document.getElementById('vente-rate-mode');
+      const customRepIn = document.getElementById('vente-custom-taux-rep');
+      const customOliIn = document.getElementById('vente-custom-taux-oli');
+      if (modeSel && customRepIn && customOliIn) {
+        const ov = !duplicate ? saleBonusOverridesStore[String(v.id)] : null;
+        if (ov?.noBonus) {
+          modeSel.value = 'no_bonus';
+        } else if (ov?.customManual) {
+          modeSel.value = 'custom';
+          customRepIn.value = Math.round(Number(ov.tRep) * 10000) / 100;
+          customOliIn.value = Math.round(Number(ov.tOli) * 10000) / 100;
+        } else {
+          modeSel.value = 'auto';
+          customRepIn.value = Math.round(Number(v.taux_rep_applique || 0) * 10000) / 100;
+          customOliIn.value = Math.round(Number(v.taux_olivier_applique || 0) * 10000) / 100;
+        }
+      }
 
       updateDrawerCommissionPreview();
       document.getElementById('sale-drawer-backdrop').classList.remove('hidden');
@@ -6568,8 +6832,10 @@
                 </div>
                 <div class="text-right shrink-0 tabular-nums">
                   <div class="text-sm font-extrabold text-slate-900">${fmtMoney(v.valeur)}</div>
-                  <div class="text-[11px] text-slate-500">Rep: ${fmtMoney(v.commission_rep)}</div>
-                  <div class="text-[11px] font-bold text-emerald-600">Oli: ${fmtMoney(v.commission_olivier)}</div>
+                  <button type="button" onclick="openRateAdjustModal('${v.id}')" class="mt-0.5 inline-flex flex-col items-end text-right hover:opacity-80">
+                    <span class="text-[11px] text-slate-500">Rep: ${fmtMoney(v.commission_rep)} (${fmtPct(v.taux_rep_applique)}) ✎</span>
+                    <span class="text-[11px] font-bold text-emerald-600">Oli: ${fmtMoney(v.commission_olivier)} (${fmtPct(v.taux_olivier_applique)}) ✎</span>
+                  </button>
                 </div>
               </div>
 
@@ -6634,20 +6900,35 @@
             <td class="py-3 px-3 text-right font-bold text-slate-900 tabular-nums">${fmtMoney(v.valeur)}</td>
             <td class="py-3 px-3 text-right tabular-nums">
               <div class="font-semibold text-slate-900">${fmtMoney(v.commission_rep)}</div>
-              <div class="text-[11px] text-slate-400">
-                ${fmtPct(v.taux_rep_applique)}
+              <div class="text-[11px] text-slate-400 flex items-center justify-end gap-1">
+                <button type="button" onclick="openRateAdjustModal('${v.id}')" title="Cliquer pour ajuster le taux de commission de cette vente" class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md hover:bg-indigo-50 hover:text-indigo-700 font-semibold transition">
+                  <span>${fmtPct(v.taux_rep_applique)}</span>
+                  <span class="text-[10px]">✎</span>
+                </button>
                 ${(() => {
                   const baseR = getRateForSale(v.representant_id, v.entreprise_id, v.client_id);
                   const diff = baseR ? (Number(v.taux_rep_applique) - Number(baseR.taux)) : 0;
+                  const ov = saleBonusOverridesStore[String(v.id)];
+                  if (ov?.noBonus) {
+                    return '<span class="px-1 py-0.2 text-[9px] font-extrabold rounded bg-amber-100 text-amber-800">Base</span>';
+                  }
+                  if (ov?.customManual) {
+                    return '<span class="px-1 py-0.2 text-[9px] font-extrabold rounded bg-indigo-100 text-indigo-800">Ajusté</span>';
+                  }
                   return (baseR && diff > 0.0001)
-                    ? `<span class="ml-1 px-1 py-0.2 text-[9px] font-extrabold rounded bg-emerald-100 text-emerald-800">+${formatBonusPctShort(diff)}</span>`
+                    ? `<span class="px-1 py-0.2 text-[9px] font-extrabold rounded bg-emerald-100 text-emerald-800">+${formatBonusPctShort(diff)}</span>`
                     : '';
                 })()}
               </div>
             </td>
             <td class="py-3 px-3 text-right tabular-nums">
               <div class="font-bold text-emerald-600">${fmtMoney(v.commission_olivier)}</div>
-              <div class="text-[11px] text-slate-400">${fmtPct(v.taux_olivier_applique)}</div>
+              <div class="text-[11px] text-slate-400">
+                <button type="button" onclick="openRateAdjustModal('${v.id}')" title="Cliquer pour ajuster le taux de commission de cette vente" class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md hover:bg-emerald-50 hover:text-emerald-700 font-semibold transition">
+                  <span>${fmtPct(v.taux_olivier_applique)}</span>
+                  <span class="text-[10px]">✎</span>
+                </button>
+              </div>
             </td>
             <td class="py-3 px-3">
               <div class="flex items-center flex-wrap gap-1">
@@ -7023,9 +7304,13 @@
         const cRep = Math.round(Number(v.valeur) * tRep * 100) / 100;
         const cOli = Math.round(Number(v.valeur) * tOli * 100) / 100;
 
+        const existingOv = saleBonusOverridesStore[String(v.id)];
+        if (existingOv && (existingOv.customManual || existingOv.noBonus)) {
+          continue;
+        }
         if (eff.bonusActive) {
           await saveSaleBonusOverride(v.id, { tRep, tOli, cRep, cOli });
-        } else if (saleBonusOverridesStore[String(v.id)]) {
+        } else if (existingOv) {
           await saveSaleBonusOverride(v.id, null);
         }
         if (Number(v.taux_rep_applique) !== tRep || Number(v.taux_olivier_applique) !== tOli || Number(v.commission_rep) !== cRep || Number(v.commission_olivier) !== cOli) {
@@ -7045,6 +7330,7 @@
     const drawer = document.getElementById('sale-drawer-backdrop');
     function openNewSaleDrawer() {
       document.getElementById('vente-edit-id').value = '';
+      if (document.getElementById('vente-rate-mode')) document.getElementById('vente-rate-mode').value = 'auto';
       document.getElementById('drawer-title').textContent = currentProfile?.role === 'admin' ? 'Enregistrer une nouvelle vente' : 'Déclarer une vente';
       document.getElementById('drawer-subtitle').textContent = 'Votre commission et le tableau KPI se mettent à jour automatiquement';
       document.getElementById('btn-submit-drawer').textContent = 'Enregistrer la vente';
@@ -7548,8 +7834,8 @@
         };
 
         if (editId) {
-          const eff = getEffectiveRatesWithTargetBonus(repId, entId, clientId, payload.mois_commission, editId);
-          const { tRep, tOli, bonusActive } = eff;
+          const eff = getDrawerComputedRates();
+          const { tRep, tOli, bonusActive, rateMode } = eff;
           const cRep = Math.round(valeur * tRep * 100) / 100;
           const cOli = Math.round(valeur * tOli * 100) / 100;
           payload.taux_rep_applique = tRep;
@@ -7560,23 +7846,35 @@
           const { error } = await sb.from('ventes').update(payload).eq('id', editId);
           if (error) throw error;
 
-          if (bonusActive) {
+          if (bonusActive || rateMode === 'no_bonus' || rateMode === 'custom') {
             await sb.from('ventes').update({
               taux_rep_applique: tRep,
               taux_olivier_applique: tOli,
               commission_rep: cRep,
               commission_olivier: cOli
             }).eq('id', editId);
-            await saveSaleBonusOverride(editId, { tRep, tOli, cRep, cOli });
+            await saveSaleBonusOverride(editId, {
+              tRep,
+              tOli,
+              cRep,
+              cOli,
+              noBonus: rateMode === 'no_bonus',
+              customManual: rateMode === 'custom'
+            });
           } else {
             await saveSaleBonusOverride(editId, null);
           }
 
-          await recordSaleAudit(editId, 'Dossier modifié', `Montant : ${fmtMoney(valeur)}${bonusActive ? ` • Bonus Target +${formatBonusPctShort(eff.bonusDelta)} Rep / -${formatBonusPctShort(eff.bonusDelta)} Olivier` : ''} • Dépôt : ${payload.statut_depot === 'depot_recu' ? 'Reçu' : 'À confirmer'} • Paiement : ${payload.statut_paiement === 'paye' ? 'Payé' : 'Non payé'}`, '✏️');
+          const rateAuditTag = rateMode === 'no_bonus'
+            ? ` • Bypass bonus (${fmtPct(tRep)} / ${fmtPct(tOli)})`
+            : (rateMode === 'custom'
+              ? ` • Taux manuel (${fmtPct(tRep)} / ${fmtPct(tOli)})`
+              : (bonusActive ? ` • Bonus Target +${formatBonusPctShort(eff.bonusDelta)} Rep / -${formatBonusPctShort(eff.bonusDelta)} Olivier` : ''));
+          await recordSaleAudit(editId, 'Dossier modifié', `Montant : ${fmtMoney(valeur)}${rateAuditTag} • Dépôt : ${payload.statut_depot === 'depot_recu' ? 'Reçu' : 'À confirmer'} • Paiement : ${payload.statut_paiement === 'paye' ? 'Payé' : 'Non payé'}`, '✏️');
           toast('Vente mise à jour');
         } else {
-          const eff = getEffectiveRatesWithTargetBonus(repId, entId, clientId, payload.mois_commission, null);
-          const { tRep, tOli, bonusActive } = eff;
+          const eff = getDrawerComputedRates();
+          const { tRep, tOli, bonusActive, rateMode } = eff;
           const cRep = Math.round(valeur * tRep * 100) / 100;
           const cOli = Math.round(valeur * tOli * 100) / 100;
           payload.taux_rep_applique = tRep;
@@ -7595,14 +7893,21 @@
           }
           if (error) throw error;
 
-          if (insertedRow?.id && bonusActive) {
+          if (insertedRow?.id && (bonusActive || rateMode === 'no_bonus' || rateMode === 'custom')) {
             await sb.from('ventes').update({
               taux_rep_applique: tRep,
               taux_olivier_applique: tOli,
               commission_rep: cRep,
               commission_olivier: cOli
             }).eq('id', insertedRow.id);
-            await saveSaleBonusOverride(insertedRow.id, { tRep, tOli, cRep, cOli });
+            await saveSaleBonusOverride(insertedRow.id, {
+              tRep,
+              tOli,
+              cRep,
+              cOli,
+              noBonus: rateMode === 'no_bonus',
+              customManual: rateMode === 'custom'
+            });
           }
 
           if (pendingProofDataUrl) {
