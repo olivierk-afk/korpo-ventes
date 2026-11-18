@@ -4658,35 +4658,33 @@
       return rawName ? `${ym}__${repKey}__${rawName}` : `sale_${v.id}`;
     }
 
-        function getDbWeekCountsForRep(ym, repName, nw = 4) {
+        function resolveKpiRepName(raw) {
+      if (!raw) return '';
+      const norm = normalizeImportedRepName(raw);
+      if (norm) return norm;
+      const trimmed = String(raw).trim();
+      const exact = ALL_KPI_REPS.find(r => r.toLowerCase() === trimmed.toLowerCase());
+      return exact || trimmed;
+    }
+
+    function getDbWeekCountsForRep(ym, repName, nw = 4) {
+      const targetCanon = resolveKpiRepName(repName);
       const res = { ots: Array(nw).fill(0), suivi: Array(nw).fill(0), dollars: Array(nw).fill(0) };
-      const allVentes = [...(state.ventes || [])].sort((a, b) => {
-        const dA = a.date_vente || `${a.mois_commission || '9999-99'}-01`;
-        const dB = b.date_vente || `${b.mois_commission || '9999-99'}-01`;
-        if (dA !== dB) return dA.localeCompare(dB);
-        return String(a.created_at || a.id || '').localeCompare(String(b.created_at || b.id || ''));
-      });
-      const seen = new Set();
-      allVentes.forEach(v => {
-        const uKey = getUniqueClientKpiKey(v);
-        const isFirst = !seen.has(uKey);
-        if (isFirst) seen.add(uKey);
+      (state.ventes || []).forEach(v => {
         if (getSaleStatsMonth(v) !== ym) return;
-        const repObj = state.representants.find(r => r.id === v.representant_id);
-        if (!repObj || repObj.nom !== repName) return;
+        const repObj = state.representants.find(r => String(r.id) === String(v.representant_id));
+        const saleRepCanon = resolveKpiRepName(repObj?.nom || v.rep_nom || '');
+        if (!saleRepCanon || saleRepCanon !== targetCanon) return;
         const wi = getWeekIndexFromDate(v.date_vente, nw);
         res.dollars[wi] = Math.round((res.dollars[wi] + Number(v.valeur || 0)) * 100) / 100;
-        if (isFirst) {
-          if ((v.note || '').toUpperCase().includes('[SUIVI]')) res.suivi[wi] += 1;
-          else res.ots[wi] += 1;
-        }
+        if ((v.note || '').toUpperCase().includes('[SUIVI]')) res.suivi[wi] += 1;
+        else res.ots[wi] += 1;
       });
       return res;
     }
 
     function syncSalesIntoKpi() {
       const isAdmin = currentProfile && currentProfile.role === 'admin';
-      // Trier chronologiquement (date_vente puis mois_commission) afin que la 1re apparition d'un nom client soit comptabilisée 1 seule fois
       const allVentes = [...(state.ventes || [])].sort((a, b) => {
         const dA = a.date_vente || `${a.mois_commission || '9999-99'}-01`;
         const dB = b.date_vente || `${b.mois_commission || '9999-99'}-01`;
@@ -4694,17 +4692,7 @@
         return String(a.created_at || a.id || '').localeCompare(String(b.created_at || b.id || ''));
       });
 
-      // Déduplication globale des noms de clients : un même nom de client (par représentant + compagnie) ne compte qu'une seule fois dans les KPI (OTS / Suivi)
-      const countedClientKeys = new Set();
-      const firstOccurrenceSaleIds = new Set();
-      allVentes.forEach(v => {
-        const uKey = getUniqueClientKpiKey(v);
-        if (!countedClientKeys.has(uKey)) {
-          countedClientKeys.add(uKey);
-          firstOccurrenceSaleIds.add(String(v.id));
-        }
-      });
-      window._kpiCountedFirstSaleIds = firstOccurrenceSaleIds;
+      window._kpiCountedFirstSaleIds = new Set(allVentes.map(v => String(v.id)));
 
       // Regrouper les ventes réelles par leur mois statistique d'origine (hors reports non confirmés)
       const salesByMonth = new Map();
@@ -4715,8 +4703,6 @@
         salesByMonth.get(ym).push(v);
       });
 
-      // Parcourir TOUS les mois présents dans kpiStore ET dans la base de données
-      // Ainsi, même si toutes les ventes d'un mois ou d'un représentant ont été supprimées, leurs compteurs retombent bien à 0 !
       const allMonthsToSync = new Set([...Object.keys(kpiStore), ...salesByMonth.keys()].filter(isValidYearMonth));
 
       allMonthsToSync.forEach(ym => {
@@ -4726,10 +4712,10 @@
         const repNames = Object.keys(mObj.reps);
         const defaultMonthObj = DEFAULT_KPI_DATA[ym];
 
-        // Déterminer quels représentants doivent être recalculés depuis la base de données
+        const myCanonRep = resolveKpiRepName(currentProfile?.nom || '');
         const repsManagedByDb = isAdmin
           ? repNames
-          : (currentProfile && mObj.reps[currentProfile.nom] ? [currentProfile.nom] : []);
+          : (myCanonRep && mObj.reps[myCanonRep] ? [myCanonRep] : []);
 
         // Initialiser chaque représentant et chaque entreprise à partir de leur base historique (DEFAULT_KPI_DATA) avant d'additionner les ventes Supabase
         repsManagedByDb.forEach(rn => {
@@ -4753,7 +4739,7 @@
           });
         });
 
-        // Compteurs hebdomadaires des ventes enregistrées dans Supabase : chaque client unique compte 1 fois (SUIVI si tagué [SUIVI], sinon OTS par défaut)
+        // Compteurs hebdomadaires des ventes enregistrées dans Supabase (SUIVI si tagué [SUIVI], sinon OTS par défaut)
         const taggedCounts = {};
         repNames.forEach(rn => {
           taggedCounts[rn] = { ots: Array(nw).fill(0), suivi: Array(nw).fill(0), dollars: Array(nw).fill(0), rawWeekSales: Array(nw).fill(0), totalDbSales: 0 };
@@ -4761,12 +4747,12 @@
 
         // Additionner chaque vente active de Supabase dans la bonne semaine, le bon représentant et la bonne entreprise
         monthSales.forEach(v => {
-          const repObj = state.representants.find(r => r.id === v.representant_id);
-          const entObj = state.entreprises.find(e => e.id === v.entreprise_id);
-          if (!repObj || !entObj) return;
+          const repObj = state.representants.find(r => String(r.id) === String(v.representant_id));
+          const entObj = state.entreprises.find(e => String(e.id) === String(v.entreprise_id));
+          const repName = resolveKpiRepName(repObj?.nom || v.rep_nom || '');
+          const entName = (entObj?.nom || v.entreprise_nom || '').trim();
+          if (!repName || !entName) return;
 
-          const repName = repObj.nom;
-          const entName = entObj.nom;
           const val = Number(v.valeur || 0);
           const wIdx = getWeekIndexFromDate(v.date_vente, nw);
 
@@ -4775,14 +4761,11 @@
             taggedCounts[repName].totalDbSales += 1;
             taggedCounts[repName].rawWeekSales[wIdx] += 1;
 
-            // Ne comptabiliser le dossier (OTS / SUIVI) que la 1re fois que ce nom de client apparaît ce mois-ci
-            if (firstOccurrenceSaleIds.has(String(v.id))) {
-              const noteUp = (v.note || '').toUpperCase();
-              if (noteUp.includes('[SUIVI]')) {
-                taggedCounts[repName].suivi[wIdx] += 1;
-              } else {
-                taggedCounts[repName].ots[wIdx] += 1;
-              }
+            const noteUp = (v.note || '').toUpperCase();
+            if (noteUp.includes('[SUIVI]')) {
+              taggedCounts[repName].suivi[wIdx] += 1;
+            } else {
+              taggedCounts[repName].ots[wIdx] += 1;
             }
           }
 
@@ -8555,6 +8538,13 @@
           }
         }
 
+        const savedSaleYm = (payload.date_vente && payload.date_vente.length >= 7) ? payload.date_vente.slice(0, 7) : payload.mois_commission;
+        if (savedSaleYm && isValidYearMonth(savedSaleYm)) {
+          ensureKpiMonthStructure(savedSaleYm);
+          populateKpiMonthSelect(false);
+          const kpiMonthSel = document.getElementById('kpi-select-month');
+          if (kpiMonthSel) kpiMonthSel.value = savedSaleYm;
+        }
         drawer.classList.add('hidden');
         await loadAllData();
       } catch (err) {
