@@ -747,13 +747,13 @@
               <option value="Samuel">Samuel</option>
               <option value="Alexandre">Alexandre</option>
             </select>
-            <button id="btn-kpi-targets-toggle" class="px-3.5 py-2.5 text-xs font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-xl transition">
+            <button id="btn-kpi-targets-toggle" class="hidden px-3.5 py-2.5 text-xs font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-xl transition">
               🎯 Fixer les objectifs
             </button>
-            <button id="btn-kpi-edit-toggle" class="px-3.5 py-2.5 text-xs font-bold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 rounded-xl transition">
+            <button id="btn-kpi-edit-toggle" class="hidden px-3.5 py-2.5 text-xs font-bold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 rounded-xl transition">
               ✎ Mettre à jour les RDV
             </button>
-            <button id="btn-kpi-import-open" class="px-3.5 py-2.5 text-xs font-bold text-amber-950 bg-amber-100 hover:bg-amber-200 border border-amber-300 rounded-xl transition">
+            <button id="btn-kpi-import-open" class="hidden px-3.5 py-2.5 text-xs font-bold text-amber-950 bg-amber-100 hover:bg-amber-200 border border-amber-300 rounded-xl transition">
               🔄 Réimporter / Recalculer KPI
             </button>
             <button id="btn-kpi-export-csv" class="px-3.5 py-2.5 text-xs font-semibold text-slate-700 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 transition">
@@ -934,7 +934,7 @@
               <p class="text-xs text-slate-500">Cliquez sur un représentant pour ouvrir son détail semaine par semaine</p>
             </div>
             <div class="flex flex-wrap items-center gap-3 text-[11px] font-semibold text-slate-500">
-              <button type="button" onclick="openRepTargetsPanel()" class="px-3 py-1.5 text-xs font-bold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 rounded-xl transition">
+              <button type="button" id="btn-kpi-rep-targets-inline" onclick="openRepTargetsPanel()" class="hidden px-3 py-1.5 text-xs font-bold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 rounded-xl transition">
                 🎯 Modifier objectifs par représentant
               </button>
               <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span> Objectif atteint (100%+)</span>
@@ -971,7 +971,7 @@
               </div>
               <p class="text-xs text-slate-500">Suivi individuel des cibles mensuelles fixées par client (calculé automatiquement depuis vos ventes enregistrées)</p>
             </div>
-            <button onclick="openClientTargetsPanel()" class="px-3.5 py-2 text-xs font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-xl transition">
+            <button id="btn-kpi-client-targets-inline" onclick="openClientTargetsPanel()" class="hidden px-3.5 py-2 text-xs font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-xl transition">
               + Ajouter / Modifier un objectif client
             </button>
           </div>
@@ -1579,7 +1579,16 @@
       document.getElementById('header-avatar').textContent = profile.nom.slice(0, 2).toUpperCase();
       document.getElementById('header-role-badge').textContent = profile.role === 'admin' ? 'Administrateur' : 'Représentant';
 
-      if (profile.role !== 'admin') {
+      const isAdminRole = profile.role === 'admin';
+      ['btn-kpi-targets-toggle', 'btn-kpi-edit-toggle', 'btn-kpi-import-open', 'btn-kpi-rep-targets-inline', 'btn-kpi-client-targets-inline'].forEach(btnId => {
+        const el = document.getElementById(btnId);
+        if (el) el.classList.toggle('hidden', !isAdminRole);
+      });
+
+      if (!isAdminRole) {
+        document.getElementById('kpi-editor-panel')?.classList.add('hidden');
+        document.getElementById('kpi-targets-panel')?.classList.add('hidden');
+        document.getElementById('kpi-import-modal')?.classList.add('hidden');
         const repSel = document.getElementById('kpi-select-rep');
         if (repSel && ['Olivier', 'Jean-Sébastien', 'Gabryel', 'Samuel', 'Alexandre'].includes(profile.nom)) {
           repSel.value = profile.nom;
@@ -1667,6 +1676,7 @@
     }
 
     window.openClientTargetsPanel = (presetEnt = '', presetClient = '') => {
+      if (currentProfile?.role !== 'admin') return;
       const panel = document.getElementById('kpi-targets-panel');
       panel.classList.remove('hidden');
       populateTargetFormOptions();
@@ -1786,6 +1796,7 @@
     }
 
     window.openRepTargetsPanel = (presetRep = '') => {
+      if (currentProfile?.role !== 'admin') return;
       const panel = document.getElementById('kpi-targets-panel');
       panel.classList.remove('hidden');
       const activeFilterRep = presetRep || document.getElementById('kpi-select-rep')?.value;
@@ -2508,6 +2519,7 @@
       document.getElementById('kpi-select-rep').addEventListener('change', renderKpiDashboard);
 
       document.getElementById('btn-kpi-edit-toggle').addEventListener('click', () => {
+        if (currentProfile?.role !== 'admin') return;
         const selMonth = document.getElementById('kpi-select-month');
         if (selMonth.value.startsWith('YEAR_')) {
           const months = Object.keys(kpiStore).sort().reverse();
@@ -2538,6 +2550,7 @@
 
       document.getElementById('form-kpi-edit').addEventListener('submit', async (e) => {
         e.preventDefault();
+        if (currentProfile?.role !== 'admin') return toast('Action réservée aux administrateurs.', 'error');
         const ym = document.getElementById('kpi-select-month').value;
         const rep = document.getElementById('kpi-edit-rep').value;
         const wIdx = parseInt(document.getElementById('kpi-edit-week').value, 10);
@@ -3383,6 +3396,7 @@
 
     const kpiImportModal = document.getElementById('kpi-import-modal');
     document.getElementById('btn-kpi-import-open')?.addEventListener('click', () => {
+      if (currentProfile?.role !== 'admin') return;
       kpiImportModal.classList.remove('hidden');
     });
     document.getElementById('btn-close-kpi-import')?.addEventListener('click', () => {
@@ -3741,6 +3755,7 @@
     });
 
     document.getElementById('btn-confirm-kpi-import')?.addEventListener('click', async () => {
+      if (currentProfile?.role !== 'admin') return toast('Action réservée aux administrateurs.', 'error');
       if (!parsedKpiImportRows.length) return;
       const btn = document.getElementById('btn-confirm-kpi-import');
       btn.disabled = true;
@@ -3925,6 +3940,7 @@
     document.getElementById('kpi-grid-month-select')?.addEventListener('change', renderKpiDirectGrid);
 
     document.getElementById('btn-save-kpi-direct-grid')?.addEventListener('click', async () => {
+      if (currentProfile?.role !== 'admin') return toast('Action réservée aux administrateurs.', 'error');
       const ym = document.getElementById('kpi-grid-month-select')?.value;
       if (!ym) return;
       const mObj = ensureKpiMonthStructure(ym);
@@ -4002,6 +4018,7 @@
     });
 
     document.getElementById('btn-full-kpi-reset-recalc')?.addEventListener('click', async () => {
+      if (currentProfile?.role !== 'admin') return toast('Action réservée aux administrateurs.', 'error');
       const btn = document.getElementById('btn-full-kpi-reset-recalc');
       btn.disabled = true;
       btn.textContent = 'Recalcul complet en cours...';
