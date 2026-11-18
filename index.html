@@ -836,33 +836,72 @@
             </div>
             <div id="kpi-rep-ventes-mois" class="text-2xl font-extrabold text-slate-900 mt-3 tabular-nums">0,00 $</div>
             <div id="kpi-rep-count-mois" class="text-[11px] text-slate-400 mt-1">0 dossier</div>
+            <div class="mt-2.5 pt-2 border-t border-slate-100 flex justify-between text-[11px] text-slate-500 tabular-nums">
+              <span>Total confirmé :</span>
+              <strong id="kpi-rep-ventes-mois-confirme" class="text-emerald-700">0,00 $</strong>
+            </div>
           </div>
 
-          <div class="bg-gradient-to-br from-emerald-600 to-teal-700 p-5 rounded-2xl text-white shadow-md shadow-emerald-600/15">
-            <div class="flex items-center justify-between">
-              <span class="text-xs font-semibold text-emerald-100">Ma commission (Période)</span>
-              <span class="w-8 h-8 rounded-lg bg-white/15 text-white flex items-center justify-center text-xs font-bold">★</span>
+          <div class="bg-gradient-to-br from-emerald-600 to-teal-700 p-5 rounded-2xl text-white shadow-md shadow-emerald-600/15 flex flex-col justify-between">
+            <div>
+              <div class="flex items-center justify-between gap-2">
+                <span class="text-xs font-semibold text-emerald-100">Ma commission (Période)</span>
+                <div class="inline-flex rounded-lg bg-black/20 p-0.5 text-[10px] font-bold">
+                  <button type="button" onclick="setCommDisplayMode('vendu')" id="btn-rep-comm-mode-vendu" class="px-2 py-0.5 rounded-md bg-white text-emerald-900 shadow-2xs transition">Vendu</button>
+                  <button type="button" onclick="setCommDisplayMode('confirme')" id="btn-rep-comm-mode-confirme" class="px-2 py-0.5 rounded-md text-emerald-100 hover:text-white transition">Confirmé</button>
+                </div>
+              </div>
+              <div id="kpi-rep-comm-mois" class="text-2xl font-extrabold mt-2.5 tabular-nums">0,00 $</div>
+              <div id="kpi-rep-comm-mois-sublabel" class="text-[11px] font-bold text-emerald-100 mt-0.5">Sur total vendu</div>
             </div>
-            <div id="kpi-rep-comm-mois" class="text-2xl font-extrabold mt-3 tabular-nums">0,00 $</div>
-            <div id="kpi-rep-paid-split" class="text-[11px] text-emerald-100/95 mt-1">Payé : 0,00 $ • À venir : 0,00 $</div>
+            <div class="mt-2.5 pt-2 border-t border-white/15 space-y-0.5 text-[11px] tabular-nums">
+              <div class="flex justify-between text-emerald-50">
+                <span>1. Sur total vendu :</span>
+                <strong id="kpi-rep-comm-mois-vendu">0,00 $</strong>
+              </div>
+              <div class="flex justify-between text-emerald-100">
+                <span>2. Sur total confirmé :</span>
+                <strong id="kpi-rep-comm-mois-confirme">0,00 $</strong>
+              </div>
+              <div id="kpi-rep-paid-split" class="text-[10px] text-emerald-100/85 pt-0.5">Payé : 0,00 $ • À venir : 0,00 $</div>
+            </div>
           </div>
 
-          <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs">
-            <div class="flex items-center justify-between">
-              <span class="text-xs font-semibold text-slate-500">Volume cumulé (Année)</span>
-              <span class="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center text-xs font-bold">∑</span>
+          <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col justify-between">
+            <div>
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-semibold text-slate-500">Volume cumulé (Année)</span>
+                <span class="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center text-xs font-bold">∑</span>
+              </div>
+              <div id="kpi-rep-ventes-annee" class="text-2xl font-extrabold text-slate-900 mt-3 tabular-nums">0,00 $</div>
+              <div class="text-[11px] text-slate-400 mt-1">Total des contrats signés</div>
             </div>
-            <div id="kpi-rep-ventes-annee" class="text-2xl font-extrabold text-slate-900 mt-3 tabular-nums">0,00 $</div>
-            <div class="text-[11px] text-slate-400 mt-1">Total des contrats signés</div>
+            <div class="mt-2.5 pt-2 border-t border-slate-100 flex justify-between text-[11px] text-slate-500 tabular-nums">
+              <span>Volume confirmé :</span>
+              <strong id="kpi-rep-ventes-annee-confirme" class="text-slate-800">0,00 $</strong>
+            </div>
           </div>
 
-          <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs">
-            <div class="flex items-center justify-between">
-              <span class="text-xs font-semibold text-slate-500">Commissions cumulées</span>
-              <span class="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center text-xs font-bold">✓</span>
+          <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col justify-between">
+            <div>
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-semibold text-slate-500">Commissions cumulées</span>
+                <span class="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center text-xs font-bold">✓</span>
+              </div>
+              <div id="kpi-rep-comm-annee" class="text-2xl font-extrabold text-emerald-600 mt-3 tabular-nums">0,00 $</div>
+              <div id="kpi-rep-comm-annee-sublabel" class="text-[11px] font-semibold text-slate-500 mt-0.5">Sur total vendu</div>
             </div>
-            <div id="kpi-rep-comm-annee" class="text-2xl font-extrabold text-emerald-600 mt-3 tabular-nums">0,00 $</div>
-            <div id="kpi-rep-annee-paid-split" class="text-[11px] text-slate-400 mt-1">Payé : 0,00 $ • À venir : 0,00 $</div>
+            <div class="mt-2.5 pt-2 border-t border-slate-100 space-y-0.5 text-[11px] tabular-nums">
+              <div class="flex justify-between text-slate-600">
+                <span>1. Sur total vendu :</span>
+                <strong id="kpi-rep-comm-annee-vendu" class="text-slate-900">0,00 $</strong>
+              </div>
+              <div class="flex justify-between text-emerald-700">
+                <span>2. Sur total confirmé :</span>
+                <strong id="kpi-rep-comm-annee-confirme">0,00 $</strong>
+              </div>
+              <div id="kpi-rep-annee-paid-split" class="text-[10px] text-slate-400 pt-0.5">Payé : 0,00 $ • À venir : 0,00 $</div>
+            </div>
           </div>
         </div>
 
@@ -1267,22 +1306,53 @@
           </div>
         </div>
 
+        <div class="flex flex-wrap items-center justify-between gap-2 bg-white px-4 py-2.5 rounded-2xl border border-slate-200/80 shadow-xs">
+          <span class="text-xs font-bold text-slate-700">Base de calcul des commissions affichées :</span>
+          <div class="inline-flex rounded-xl bg-slate-100 p-1 text-xs font-bold">
+            <button type="button" onclick="setCommDisplayMode('vendu')" id="btn-dash-comm-mode-vendu" class="px-3 py-1 rounded-lg bg-indigo-600 text-white shadow-2xs transition">1. Sur total vendu</button>
+            <button type="button" onclick="setCommDisplayMode('confirme')" id="btn-dash-comm-mode-confirme" class="px-3 py-1 rounded-lg text-slate-600 hover:text-slate-900 transition">2. Sur total confirmé (Dépôt reçu)</button>
+          </div>
+        </div>
+
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs">
-            <div class="text-xs font-semibold text-slate-500">Volume total des ventes</div>
-            <div id="dash-total-ventes" class="text-2xl font-extrabold text-slate-900 mt-2 tabular-nums">0,00 $</div>
+          <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col justify-between">
+            <div>
+              <div class="text-xs font-semibold text-slate-500">Volume total des ventes</div>
+              <div id="dash-total-ventes" class="text-2xl font-extrabold text-slate-900 mt-2 tabular-nums">0,00 $</div>
+            </div>
+            <div class="mt-2.5 pt-2 border-t border-slate-100 flex justify-between text-[11px] text-slate-500 tabular-nums">
+              <span>Volume confirmé :</span>
+              <strong id="dash-total-ventes-confirme" class="text-emerald-700">0,00 $</strong>
+            </div>
           </div>
-          <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs">
-            <div class="text-xs font-semibold text-slate-500">Commissions représentants</div>
-            <div id="dash-total-comm-rep" class="text-2xl font-extrabold text-amber-600 mt-2 tabular-nums">0,00 $</div>
+          <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col justify-between">
+            <div>
+              <div class="text-xs font-semibold text-slate-500">Commissions représentants</div>
+              <div id="dash-total-comm-rep" class="text-2xl font-extrabold text-amber-600 mt-2 tabular-nums">0,00 $</div>
+            </div>
+            <div class="mt-2.5 pt-2 border-t border-slate-100 space-y-0.5 text-[11px] tabular-nums">
+              <div class="flex justify-between text-slate-500"><span>Vendu :</span><strong id="dash-comm-rep-vendu" class="text-slate-800">0,00 $</strong></div>
+              <div class="flex justify-between text-emerald-700"><span>Confirmé :</span><strong id="dash-comm-rep-confirme">0,00 $</strong></div>
+            </div>
           </div>
-          <div class="bg-gradient-to-br from-slate-900 to-indigo-950 p-5 rounded-2xl text-white shadow-md">
-            <div class="text-xs font-semibold text-indigo-200">Total commissions Olivier</div>
-            <div id="dash-total-comm-olivier" class="text-2xl font-extrabold text-emerald-400 mt-2 tabular-nums">0,00 $</div>
+          <div class="bg-gradient-to-br from-slate-900 to-indigo-950 p-5 rounded-2xl text-white shadow-md flex flex-col justify-between">
+            <div>
+              <div class="text-xs font-semibold text-indigo-200">Total commissions Olivier</div>
+              <div id="dash-total-comm-olivier" class="text-2xl font-extrabold text-emerald-400 mt-2 tabular-nums">0,00 $</div>
+            </div>
+            <div class="mt-2.5 pt-2 border-t border-white/10 space-y-0.5 text-[11px] tabular-nums">
+              <div class="flex justify-between text-indigo-200"><span>Vendu :</span><strong id="dash-comm-oli-vendu" class="text-white">0,00 $</strong></div>
+              <div class="flex justify-between text-emerald-300"><span>Confirmé :</span><strong id="dash-comm-oli-confirme">0,00 $</strong></div>
+            </div>
           </div>
-          <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs">
-            <div class="text-xs font-semibold text-slate-500">Dépôts à confirmer</div>
-            <div id="dash-depots-attente" class="text-2xl font-extrabold text-rose-600 mt-2 tabular-nums">0</div>
+          <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col justify-between">
+            <div>
+              <div class="text-xs font-semibold text-slate-500">Dépôts à confirmer</div>
+              <div id="dash-depots-attente" class="text-2xl font-extrabold text-rose-600 mt-2 tabular-nums">0</div>
+            </div>
+            <div class="mt-2.5 pt-2 border-t border-slate-100 text-[11px] text-slate-400">
+              Dossiers en attente de dépôt
+            </div>
           </div>
         </div>
 
@@ -1577,6 +1647,24 @@
       localStorage.setItem('korpo_kpi_manual_sales_v1', JSON.stringify(manualSalesOverrides));
     }
 
+    async function persistSingleManualKpiToCloud(ovKey) {
+      if (!sb || !currentProfile) return;
+      const payload = {
+        rdv: manualRdvOverrides[ovKey] || null,
+        sales: manualSalesOverrides[ovKey] || null
+      };
+      try {
+        await sb.from('kpi_hebdo').upsert({
+          mois_commission: ovKey,
+          semaine_index: -6,
+          representant_nom: JSON.stringify(payload),
+          booke: 0,
+          rdv_realise: 0,
+          updated_at: new Date().toISOString()
+        }, { onConflict: 'mois_commission,semaine_index,representant_nom' });
+      } catch (e) {}
+    }
+
     // =========================================================================
     // JOURNAL D'AUDIT DES VENTES & CORBEILLE DE RESTAURATION (30 JOURS)
     // =========================================================================
@@ -1616,6 +1704,37 @@
               saleAuditStore[sid] = merged;
             }
           } catch (e) {}
+        } else if (sIdx === -4 && r.mois_commission && r.representant_nom) {
+          try {
+            const ovData = JSON.parse(r.representant_nom);
+            if (ovData && typeof ovData === 'object') {
+              saleBonusOverridesStore[String(r.mois_commission)] = ovData;
+            }
+          } catch (e) {}
+        } else if (sIdx === -5 && r.mois_commission && r.representant_nom) {
+          try {
+            const coData = JSON.parse(r.representant_nom);
+            if (coData && coData.origYm) {
+              carriedOverSalesStore[String(r.mois_commission)] = coData;
+            }
+          } catch (e) {}
+        } else if (sIdx === -6 && r.mois_commission && r.representant_nom) {
+          try {
+            const kpiOv = JSON.parse(r.representant_nom);
+            const ovKey = String(r.mois_commission);
+            if (kpiOv && kpiOv.rdv) {
+              const localRdv = manualRdvOverrides[ovKey];
+              if (!localRdv || !localRdv.updatedAt || (kpiOv.rdv.updatedAt && kpiOv.rdv.updatedAt >= localRdv.updatedAt)) {
+                manualRdvOverrides[ovKey] = kpiOv.rdv;
+              }
+            }
+            if (kpiOv && kpiOv.sales) {
+              const localSales = manualSalesOverrides[ovKey];
+              if (!localSales || !localSales.updatedAt || (kpiOv.sales.updatedAt && kpiOv.sales.updatedAt >= localSales.updatedAt)) {
+                manualSalesOverrides[ovKey] = kpiOv.sales;
+              }
+            }
+          } catch (e) {}
         } else if (sIdx === -3 && r.mois_commission && r.representant_nom) {
           try {
             const trashItem = JSON.parse(r.representant_nom);
@@ -1632,7 +1751,170 @@
       pruneExpiredTrash();
       localStorage.setItem('korpo_sale_audit_v1', JSON.stringify(saleAuditStore));
       localStorage.setItem('korpo_sale_trash_v1', JSON.stringify(saleTrashStore));
+      localStorage.setItem('korpo_sale_bonus_overrides_v1', JSON.stringify(saleBonusOverridesStore));
+      localStorage.setItem('korpo_carried_over_sales_v1', JSON.stringify(carriedOverSalesStore));
+      saveManualKpiOverrides();
+      applySaleBonusOverridesToState();
+      applyCarryOverMetadataToState();
       updateTrashBadges();
+    }
+
+    let saleBonusOverridesStore = JSON.parse(localStorage.getItem('korpo_sale_bonus_overrides_v1') || '{}');
+
+    async function saveSaleBonusOverride(saleId, overrideObjOrNull) {
+      if (!saleId) return;
+      const sid = String(saleId);
+      if (overrideObjOrNull) {
+        saleBonusOverridesStore[sid] = overrideObjOrNull;
+      } else {
+        delete saleBonusOverridesStore[sid];
+      }
+      localStorage.setItem('korpo_sale_bonus_overrides_v1', JSON.stringify(saleBonusOverridesStore));
+
+      if (sb && currentProfile) {
+        try {
+          if (overrideObjOrNull) {
+            await sb.from('kpi_hebdo').upsert({
+              mois_commission: sid,
+              semaine_index: -4,
+              representant_nom: JSON.stringify(overrideObjOrNull),
+              booke: 0,
+              rdv_realise: 0,
+              updated_at: new Date().toISOString()
+            }, { onConflict: 'mois_commission,semaine_index,representant_nom' });
+          } else {
+            await sb.from('kpi_hebdo').delete().eq('mois_commission', sid).eq('semaine_index', -4);
+          }
+        } catch (e) {}
+      }
+    }
+
+    function applySaleBonusOverridesToState() {
+      const isAdmin = currentProfile?.role === 'admin';
+      const applyToRow = (row, isMesVentesForAdmin = false) => {
+        const sid = String(row.id);
+        const ov = saleBonusOverridesStore[sid];
+        if (!ov) return row;
+        const updated = {
+          ...row,
+          taux_rep_applique: Number(ov.tRep),
+          taux_olivier_applique: Number(ov.tOli),
+          commission_rep: isMesVentesForAdmin ? Number(ov.cOli) : Number(ov.cRep),
+          commission_olivier: Number(ov.cOli),
+          _bonusApplied: true
+        };
+        return updated;
+      };
+      if (Array.isArray(state.ventes)) {
+        state.ventes = state.ventes.map(v => applyToRow(v, false));
+      }
+      if (Array.isArray(state.mesVentes)) {
+        state.mesVentes = state.mesVentes.map(v => applyToRow(v, isAdmin));
+      }
+    }
+
+    // =========================================================================
+    // REPORT AUTOMATIQUE MENSUEL DES VENTES NON CONFIRMÉES (HORS STATS DU NOUVEAU MOIS)
+    // =========================================================================
+    let carriedOverSalesStore = JSON.parse(localStorage.getItem('korpo_carried_over_sales_v1') || '{}');
+
+    function getSaleStatsMonth(v) {
+      if (!v) return currentMonthStr;
+      if (v._statsMonth) return v._statsMonth;
+      const sid = v.id ? String(v.id) : '';
+      if (sid && carriedOverSalesStore[sid]?.origYm) {
+        return carriedOverSalesStore[sid].origYm;
+      }
+      if (v.date_vente && v.date_vente.length >= 7) {
+        return v.date_vente.slice(0, 7);
+      }
+      return v.mois_commission || currentMonthStr;
+    }
+
+    function applyCarryOverMetadataToState() {
+      const applyMeta = (row) => {
+        const sid = String(row.id);
+        const co = carriedOverSalesStore[sid];
+        const origYm = co?.origYm || (row.date_vente && row.date_vente.length >= 7 ? row.date_vente.slice(0, 7) : row.mois_commission);
+        const isCarried = Boolean(co || (origYm && row.mois_commission && origYm < row.mois_commission));
+        return {
+          ...row,
+          mois_commission: co?.movedToYm && row.mois_commission < co.movedToYm ? co.movedToYm : row.mois_commission,
+          _statsMonth: origYm,
+          _carriedOverFrom: isCarried ? origYm : null
+        };
+      };
+      if (Array.isArray(state.ventes)) {
+        state.ventes = state.ventes.map(applyMeta);
+      }
+      if (Array.isArray(state.mesVentes)) {
+        state.mesVentes = state.mesVentes.map(applyMeta);
+      }
+    }
+
+    async function runMonthlyAutoRolloverAndCarryOver() {
+      // 1. S'assurer que le mois courant existe toujours dans le Tableau KPI dès le 1er du mois
+      ensureKpiMonthStructure(currentMonthStr);
+      localStorage.setItem('korpo_kpi_store_v1', JSON.stringify(kpiStore));
+      populateKpiMonthSelect(true);
+
+      if (!sb || !currentProfile) return;
+
+      // 2. Détecter toutes les ventes non confirmées (`a_confirmer`) des mois précédents (< currentMonthStr)
+      const allKnownSales = [...(state.ventes || [])];
+      const toCarry = allKnownSales.filter(v => {
+        if (v.statut_depot !== 'a_confirmer') return false;
+        const curCommYm = v.mois_commission || '';
+        return curCommYm && curCommYm < currentMonthStr;
+      });
+
+      if (!toCarry.length) {
+        applyCarryOverMetadataToState();
+        return;
+      }
+
+      let movedCount = 0;
+      for (const v of toCarry) {
+        const sid = String(v.id);
+        const origYm = carriedOverSalesStore[sid]?.origYm
+          || (v.date_vente && v.date_vente.length >= 7 ? v.date_vente.slice(0, 7) : v.mois_commission);
+
+        const record = {
+          origYm,
+          movedToYm: currentMonthStr,
+          movedAt: new Date().toISOString()
+        };
+        carriedOverSalesStore[sid] = record;
+
+        // Mettre à jour `mois_commission` vers le mois courant dans Supabase tout en conservant `date_vente` d'origine
+        const { error } = await sb.from('ventes').update({ mois_commission: currentMonthStr }).eq('id', v.id);
+        if (!error) {
+          movedCount++;
+          await recordSaleAudit(
+            sid,
+            `Reportée automatiquement vers ${currentMonthStr}`,
+            `Dossier non confirmé de ${origYm} transféré pour suivi (demeure comptabilisé dans les statistiques de ${origYm})`,
+            '↪️'
+          );
+          try {
+            await sb.from('kpi_hebdo').upsert({
+              mois_commission: sid,
+              semaine_index: -5,
+              representant_nom: JSON.stringify(record),
+              booke: 0,
+              rdv_realise: 0,
+              updated_at: new Date().toISOString()
+            }, { onConflict: 'mois_commission,semaine_index,representant_nom' });
+          } catch (e) {}
+        }
+      }
+
+      localStorage.setItem('korpo_carried_over_sales_v1', JSON.stringify(carriedOverSalesStore));
+      applyCarryOverMetadataToState();
+
+      if (movedCount > 0) {
+        toast(`↪️ ${movedCount} vente(s) non confirmée(s) reportée(s) vers ${currentMonthStr} (hors stats du nouveau mois)`);
+      }
     }
 
     function updateTrashBadges() {
@@ -1974,10 +2256,10 @@
           const ovKey = `${ym}_${rn}_${wIdx}`;
           const manualOv = manualRdvOverrides[ovKey];
 
-          // Ne pas écraser une saisie manuelle non nulle par un 0 automatique d'agenda (ex. représentants hors agendas Toitex/MonSpray)
-          if (manualOv && dbBooke === 0 && dbRea === 0 && (manualOv.booke > 0 || manualOv.rdv > 0)) {
-            mObj.reps[rn]['Booké'].weeks[wIdx] = manualOv.booke;
-            mObj.reps[rn]['RDV Réalisé'].weeks[wIdx] = manualOv.rdv;
+          // Priorité aux saisies manuelles enregistrées par l'administrateur
+          if (manualOv && (manualOv.manual || (dbBooke === 0 && dbRea === 0 && (manualOv.booke > 0 || manualOv.rdv > 0)))) {
+            mObj.reps[rn]['Booké'].weeks[wIdx] = Number(manualOv.booke || 0);
+            mObj.reps[rn]['RDV Réalisé'].weeks[wIdx] = Number(manualOv.rdv || 0);
           } else {
             mObj.reps[rn]['Booké'].weeks[wIdx] = dbBooke;
             mObj.reps[rn]['RDV Réalisé'].weeks[wIdx] = dbRea;
@@ -2296,8 +2578,10 @@
       selMonth.innerHTML = yearOptions + monthOptions;
       if (keepSelection && curSel && (curSel.startsWith('YEAR_') || months.includes(curSel))) {
         selMonth.value = curSel;
-      } else if (months.includes('2026-11')) {
-        selMonth.value = '2026-11';
+      } else if (typeof currentMonthStr !== 'undefined' && months.includes(currentMonthStr)) {
+        selMonth.value = currentMonthStr;
+      } else if (months.length) {
+        selMonth.value = months[0];
       }
     }
 
@@ -2614,7 +2898,7 @@
           if (cli.toLowerCase() !== t.clientNom.toLowerCase()) return false;
           if (t.repNom !== 'ALL' && rep !== t.repNom) return false;
           if (repFilter !== 'ALL' && rep !== repFilter) return false;
-          const ym = v.mois_commission || (v.date_vente ? v.date_vente.slice(0, 7) : '');
+          const ym = getSaleStatsMonth(v);
           if (isYear) return ym.startsWith(yearPrefix);
           return ym === selVal;
         });
@@ -2845,6 +3129,7 @@
             rep_nom: state.representants.find(r => r.id === v.representant_id)?.nom || '—',
             commission_rep: Number(v.commission_olivier || 0)
           }));
+          applySaleBonusOverridesToState();
           syncSalesIntoKpi();
           renderAdminNotifications();
           renderAdminVentes();
@@ -3277,12 +3562,14 @@
           mObj.team[k].cumul = Math.round(mObj.team[k].weeks.reduce((a, b) => a + b, 0) * 100) / 100;
         });
 
-        // Sauvegarder en mémoire locale + dans kpiHebdoRows + dans Supabase
+        // Sauvegarder en mémoire locale + dans kpiHebdoRows + dans Supabase (priorité manuelle)
+        const nowIso = new Date().toISOString();
         const ovKey = `${ym}_${rep}_${wIdx}`;
-        manualRdvOverrides[ovKey] = { booke, rdv };
-        manualSalesOverrides[ovKey] = { ots, suivi, dollars };
+        manualRdvOverrides[ovKey] = { booke, rdv, manual: true, updatedAt: nowIso };
+        manualSalesOverrides[ovKey] = { ots, suivi, dollars, hasManualDollars: true, fromImport: false, updatedAt: nowIso };
         saveManualKpiOverrides();
         localStorage.setItem('korpo_kpi_store_v1', JSON.stringify(kpiStore));
+        await persistSingleManualKpiToCloud(ovKey);
 
         const existingIdx = kpiHebdoRows.findIndex(r => r.mois_commission === ym && Number(r.semaine_index) === wIdx && r.representant_nom === rep);
         if (existingIdx >= 0) {
@@ -3456,10 +3743,10 @@
       });
       window._kpiCountedFirstSaleIds = firstOccurrenceSaleIds;
 
-      // Regrouper les ventes réelles de la base par mois_commission
+      // Regrouper les ventes réelles par leur mois statistique d'origine (hors reports non confirmés)
       const salesByMonth = new Map();
       allVentes.forEach(v => {
-        const ym = v.mois_commission || (v.date_vente ? v.date_vente.slice(0, 7) : null);
+        const ym = getSaleStatsMonth(v);
         if (!ym) return;
         if (!salesByMonth.has(ym)) salesByMonth.set(ym, []);
         salesByMonth.get(ym).push(v);
@@ -3594,10 +3881,10 @@
               const rawWeekCount = taggedCounts[rn].rawWeekSales[wi];
 
               if (mSalesOv && !mSalesOv.fromImport) {
-                // Saisie manuelle explicite via l'éditeur KPI hebdomadaire
+                // Saisie manuelle explicite via l'éditeur KPI hebdomadaire ou la grille directe
                 rData['Ventes OTS'].weeks[wi] = Number(mSalesOv.ots || 0);
                 rData['Ventes SUIVI'].weeks[wi] = Number(mSalesOv.suivi || 0);
-                if (rawWeekCount === 0) {
+                if (mSalesOv.hasManualDollars || rawWeekCount === 0) {
                   rData['Vente $'].weeks[wi] = Number(mSalesOv.dollars || 0);
                 }
               } else if (repHasDbSalesInMonth) {
@@ -4711,23 +4998,30 @@
         rData['Ventes SUIVI'].weeks = [suivi, ...Array(nw - 1).fill(0)];
         rData['Ventes SUIVI'].cumul = suivi;
 
+        const nowIsoGrid = new Date().toISOString();
         for (let wi = 0; wi < nw; wi++) {
           const ovKey = `${ym}_${rn}_${wi}`;
-          manualRdvOverrides[ovKey] = { booke: wi === 0 ? booke : 0, rdv: wi === 0 ? rdv : 0 };
-          manualSalesOverrides[ovKey] = { ots: wi === 0 ? ots : 0, suivi: wi === 0 ? suivi : 0, dollars: rData['Vente $'].weeks[wi] || 0, fromImport: true };
+          manualRdvOverrides[ovKey] = { booke: wi === 0 ? booke : 0, rdv: wi === 0 ? rdv : 0, manual: true, updatedAt: nowIsoGrid };
+          manualSalesOverrides[ovKey] = { ots: wi === 0 ? ots : 0, suivi: wi === 0 ? suivi : 0, dollars: rData['Vente $'].weeks[wi] || 0, hasManualDollars: false, fromImport: false, updatedAt: nowIsoGrid };
           hebdoUpserts.push({
             mois_commission: ym,
             semaine_index: wi,
             representant_nom: rn,
             booke: wi === 0 ? booke : 0,
             rdv_realise: wi === 0 ? rdv : 0,
-            updated_at: new Date().toISOString()
+            updated_at: nowIsoGrid
           });
         }
       });
 
       saveManualKpiOverrides();
       localStorage.setItem('korpo_kpi_store_v1', JSON.stringify(kpiStore));
+      for (const tr of rows) {
+        const rn = tr.getAttribute('data-rep');
+        for (let wi = 0; wi < nw; wi++) {
+          await persistSingleManualKpiToCloud(`${ym}_${rn}_${wi}`);
+        }
+      }
 
       if (sb && currentProfile && hebdoUpserts.length) {
         await sb.from('kpi_hebdo').upsert(hebdoUpserts, { onConflict: 'mois_commission,semaine_index,representant_nom' });
@@ -4893,9 +5187,10 @@
         document.getElementById('th-rep-col').classList.remove('hidden');
         document.getElementById('mes-ventes-subtitle').textContent = 'Vos ventes directes et vos commissions sur l’ensemble de l’équipe';
 
+        mergeCloudAuditAndTrash();
+        await runMonthlyAutoRolloverAndCarryOver();
         syncSalesIntoKpi();
         syncGoogleAgendaIntoKpi();
-        mergeCloudAuditAndTrash();
         populateAdminSelects();
         renderAdminVentes();
         renderAdminDashboard();
@@ -4921,9 +5216,10 @@
           const { data: rpcTaux } = await sb.rpc('get_mes_taux_commission');
           if (rpcTaux && rpcTaux.length) state.taux = rpcTaux;
         }
+        mergeCloudAuditAndTrash();
+        await runMonthlyAutoRolloverAndCarryOver();
         syncSalesIntoKpi();
         syncGoogleAgendaIntoKpi();
-        mergeCloudAuditAndTrash();
         populateDrawerSelects();
       }
 
@@ -5055,7 +5351,7 @@
         if (isAdmin && scopeFilter === 'direct') {
           if (String(v.representant_id) !== String(currentProfile.id)) return false;
         }
-        if (monthFilter) return v.mois_commission === monthFilter;
+        if (monthFilter) return getSaleStatsMonth(v) === monthFilter;
         return true;
       });
 
@@ -5247,7 +5543,44 @@
       toast(`${count} représentant(s) mis à jour 🎯`);
     });
 
+    let commDisplayMode = localStorage.getItem('korpo_comm_display_mode_v1') || 'vendu';
+
+    window.setCommDisplayMode = (mode) => {
+      commDisplayMode = mode === 'confirme' ? 'confirme' : 'vendu';
+      localStorage.setItem('korpo_comm_display_mode_v1', commDisplayMode);
+      syncCommDisplayModeButtons();
+      renderMesVentes();
+      if (currentProfile?.role === 'admin') {
+        renderAdminDashboard();
+      }
+    };
+
+    function syncCommDisplayModeButtons() {
+      const isConf = commDisplayMode === 'confirme';
+      const rV = document.getElementById('btn-rep-comm-mode-vendu');
+      const rC = document.getElementById('btn-rep-comm-mode-confirme');
+      if (rV && rC) {
+        rV.className = !isConf
+          ? 'px-2 py-0.5 rounded-md bg-white text-emerald-900 shadow-2xs transition'
+          : 'px-2 py-0.5 rounded-md text-emerald-100 hover:text-white transition';
+        rC.className = isConf
+          ? 'px-2 py-0.5 rounded-md bg-white text-emerald-900 shadow-2xs transition'
+          : 'px-2 py-0.5 rounded-md text-emerald-100 hover:text-white transition';
+      }
+      const dV = document.getElementById('btn-dash-comm-mode-vendu');
+      const dC = document.getElementById('btn-dash-comm-mode-confirme');
+      if (dV && dC) {
+        dV.className = !isConf
+          ? 'px-3 py-1 rounded-lg bg-indigo-600 text-white shadow-2xs transition'
+          : 'px-3 py-1 rounded-lg text-slate-600 hover:text-slate-900 transition';
+        dC.className = isConf
+          ? 'px-3 py-1 rounded-lg bg-emerald-600 text-white shadow-2xs transition'
+          : 'px-3 py-1 rounded-lg text-slate-600 hover:text-slate-900 transition';
+      }
+    }
+
     function renderMesVentes() {
+      syncCommDisplayModeButtons();
       const isAdmin = currentProfile.role === 'admin';
       const monthFilter = document.getElementById('filter-rep-month').value;
       const statutFilter = document.getElementById('filter-rep-statut')?.value || '';
@@ -5287,22 +5620,61 @@
         return compareSaleValues(a[col], b[col], dir, false);
       });
 
-      const yearSales = scopeFilteredAll.filter(v => (v.mois_commission || '').startsWith(currentYear));
+      const yearSales = scopeFilteredAll.filter(v => getSaleStatsMonth(v).startsWith(currentYear));
+      const isConfirmedOnly = commDisplayMode === 'confirme';
 
-      const commPeriod = filtered.reduce((s, v) => s + Number(v.commission_rep), 0);
-      const paidPeriod = filtered.filter(v => v.statut_paiement === 'paye').reduce((s, v) => s + Number(v.commission_rep), 0);
-      const commYear = yearSales.reduce((s, v) => s + Number(v.commission_rep), 0);
-      const paidYear = yearSales.filter(v => v.statut_paiement === 'paye').reduce((s, v) => s + Number(v.commission_rep), 0);
+      // Exclure les ventes reportées des mois précédents des statistiques du nouveau mois (déjà comptabilisées le mois d'avant)
+      const statsPeriodSales = monthFilter
+        ? filtered.filter(v => getSaleStatsMonth(v) === monthFilter)
+        : filtered;
+      const carriedInPeriodCount = filtered.length - statsPeriodSales.length;
 
-      const periodSalesTotal = filtered.reduce((s, v) => s + Number(v.valeur), 0);
+      const filteredConfirmed = filtered.filter(v => v.statut_depot === 'depot_recu');
+      const statsPeriodConfirmed = statsPeriodSales.filter(v => v.statut_depot === 'depot_recu');
+      const yearConfirmed = yearSales.filter(v => v.statut_depot === 'depot_recu');
+
+      const commPeriodVendu = statsPeriodSales.reduce((s, v) => s + Number(v.commission_rep), 0);
+      const commPeriodConfirme = filteredConfirmed.reduce((s, v) => s + Number(v.commission_rep), 0);
+      const activePeriodSales = isConfirmedOnly ? filteredConfirmed : statsPeriodSales;
+      const commPeriod = isConfirmedOnly ? commPeriodConfirme : commPeriodVendu;
+      const paidPeriod = activePeriodSales.filter(v => v.statut_paiement === 'paye').reduce((s, v) => s + Number(v.commission_rep), 0);
+
+      const commYearVendu = yearSales.reduce((s, v) => s + Number(v.commission_rep), 0);
+      const commYearConfirme = yearConfirmed.reduce((s, v) => s + Number(v.commission_rep), 0);
+      const activeYearSales = isConfirmedOnly ? yearConfirmed : yearSales;
+      const commYear = isConfirmedOnly ? commYearConfirme : commYearVendu;
+      const paidYear = activeYearSales.filter(v => v.statut_paiement === 'paye').reduce((s, v) => s + Number(v.commission_rep), 0);
+
+      const periodSalesTotal = statsPeriodSales.reduce((s, v) => s + Number(v.valeur), 0);
+      const periodConfirmedTotal = statsPeriodConfirmed.reduce((s, v) => s + Number(v.valeur), 0);
       document.getElementById('kpi-rep-ventes-mois').textContent = fmtMoney(periodSalesTotal);
-      document.getElementById('kpi-rep-count-mois').textContent = `${filtered.length} dossier(s)`;
+      document.getElementById('kpi-rep-count-mois').textContent = `${statsPeriodSales.length} dossier(s)${carriedInPeriodCount > 0 ? ` + ${carriedInPeriodCount} reporté(s) hors stats` : ` (${statsPeriodConfirmed.length} confirmé(s))`}`;
+      const elMoisConf = document.getElementById('kpi-rep-ventes-mois-confirme');
+      if (elMoisConf) elMoisConf.textContent = fmtMoney(periodConfirmedTotal);
+
       updatePersonalGoalProgressBar(monthFilter, scopeFilter);
+
       document.getElementById('kpi-rep-comm-mois').textContent = fmtMoney(commPeriod);
-      document.getElementById('kpi-rep-paid-split').textContent = `Payé : ${fmtMoney(paidPeriod)} • À venir : ${fmtMoney(commPeriod - paidPeriod)}`;
+      const elSubMois = document.getElementById('kpi-rep-comm-mois-sublabel');
+      if (elSubMois) elSubMois.textContent = isConfirmedOnly ? 'Sur total confirmé (Dépôt reçu)' : 'Sur total vendu';
+      const elMoisVendu = document.getElementById('kpi-rep-comm-mois-vendu');
+      if (elMoisVendu) elMoisVendu.textContent = fmtMoney(commPeriodVendu);
+      const elMoisConfComm = document.getElementById('kpi-rep-comm-mois-confirme');
+      if (elMoisConfComm) elMoisConfComm.textContent = fmtMoney(commPeriodConfirme);
+      document.getElementById('kpi-rep-paid-split').textContent = `Payé : ${fmtMoney(paidPeriod)} • À venir : ${fmtMoney(Math.max(0, commPeriod - paidPeriod))}`;
+
       document.getElementById('kpi-rep-ventes-annee').textContent = fmtMoney(yearSales.reduce((s, v) => s + Number(v.valeur), 0));
+      const elAnneeConf = document.getElementById('kpi-rep-ventes-annee-confirme');
+      if (elAnneeConf) elAnneeConf.textContent = fmtMoney(yearConfirmed.reduce((s, v) => s + Number(v.valeur), 0));
+
       document.getElementById('kpi-rep-comm-annee').textContent = fmtMoney(commYear);
-      document.getElementById('kpi-rep-annee-paid-split').textContent = `Payé : ${fmtMoney(paidYear)} • À venir : ${fmtMoney(commYear - paidYear)}`;
+      const elSubAnnee = document.getElementById('kpi-rep-comm-annee-sublabel');
+      if (elSubAnnee) elSubAnnee.textContent = isConfirmedOnly ? 'Sur total confirmé (Dépôt reçu)' : 'Sur total vendu';
+      const elAnneeVendu = document.getElementById('kpi-rep-comm-annee-vendu');
+      if (elAnneeVendu) elAnneeVendu.textContent = fmtMoney(commYearVendu);
+      const elAnneeConfComm = document.getElementById('kpi-rep-comm-annee-confirme');
+      if (elAnneeConfComm) elAnneeConfComm.textContent = fmtMoney(commYearConfirme);
+      document.getElementById('kpi-rep-annee-paid-split').textContent = `Payé : ${fmtMoney(paidYear)} • À venir : ${fmtMoney(Math.max(0, commYear - paidYear))}`;
 
       const tbody = document.getElementById('tbody-mes-ventes');
       const mobileCardsBox = document.getElementById('mobile-mes-ventes-cards');
@@ -5328,6 +5700,7 @@
                   <div class="flex items-center flex-wrap gap-1.5">
                     ${entBadge(v.entreprise_nom)}
                     <span class="text-[11px] font-semibold text-slate-400">${v.date_vente}</span>
+                    ${v._carriedOverFrom ? `<span class="px-1.5 py-0.5 text-[10px] font-bold rounded-md bg-amber-50 text-amber-800 border border-amber-200" title="Comptabilisée dans les stats de ${v._carriedOverFrom}">↪ Reportée de ${v._carriedOverFrom}</span>` : ''}
                   </div>
                   <div class="font-extrabold text-sm text-slate-900 mt-1.5 truncate">${v.client_nom}</div>
                   ${isAdmin ? `<div class="text-[11px] font-semibold text-indigo-600">Rep : ${v.rep_nom || '—'}</div>` : ''}
@@ -5374,6 +5747,7 @@
           <td class="py-3.5 px-4">
             <div class="font-semibold text-slate-800">${v.date_vente}</div>
             <div class="text-[11px] text-slate-400">${v.mois_commission}</div>
+            ${v._carriedOverFrom ? `<span class="mt-0.5 inline-block px-1.5 py-0.5 text-[10px] font-bold rounded-md bg-amber-50 text-amber-800 border border-amber-200" title="Comptabilisée dans les stats de ${v._carriedOverFrom}">↪ Reportée de ${v._carriedOverFrom}</span>` : ''}
           </td>
           <td class="py-3.5 px-4">${entBadge(v.entreprise_nom)}</td>
           <td class="py-3.5 px-4">
@@ -5393,7 +5767,10 @@
           </td>
           ${isAdmin ? `<td class="py-3.5 px-4 text-xs font-semibold text-slate-700">${v.rep_nom || '—'}</td>` : ''}
           <td class="py-3.5 px-4 text-right font-semibold text-slate-900 tabular-nums">${fmtMoney(v.valeur)}</td>
-          <td class="py-3.5 px-4 text-right font-extrabold text-emerald-600 tabular-nums">${fmtMoney(v.commission_rep)}</td>
+          <td class="py-3.5 px-4 text-right font-extrabold text-emerald-600 tabular-nums">
+            ${fmtMoney(v.commission_rep)}
+            ${v._bonusApplied ? '<span class="ml-1 px-1.5 py-0.5 text-[10px] font-extrabold rounded bg-emerald-100 text-emerald-800">+1%</span>' : ''}
+          </td>
           <td class="py-3.5 px-4">
             <div class="flex items-center flex-wrap gap-1">
               <span class="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded-full ${v.statut_depot === 'depot_recu' ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'}">
@@ -5427,16 +5804,56 @@
       const monthFilter = document.getElementById('filter-rank-month').value;
       const totalsByRep = new Map();
 
-      state.classement.forEach(row => {
-        if (!totalsByRep.has(row.representant_id)) {
-          totalsByRep.set(row.representant_id, { nom: row.representant_nom, total: 0, monthsCount: new Set() });
-        }
-        const entry = totalsByRep.get(row.representant_id);
-        if (!monthFilter || row.mois_commission === monthFilter) {
-          entry.total += Number(row.total_ventes || 0);
-          if (row.mois_commission) entry.monthsCount.add(row.mois_commission);
-        }
-      });
+      const hasCarriedOverRows = Object.keys(carriedOverSalesStore).length > 0;
+      if (hasCarriedOverRows && state.ventes && state.ventes.length && currentProfile?.role === 'admin') {
+        state.representants.forEach(r => {
+          totalsByRep.set(r.id, { nom: r.nom, total: 0, monthsCount: new Set() });
+        });
+        state.ventes.forEach(v => {
+          const repObj = state.representants.find(r => String(r.id) === String(v.representant_id));
+          if (!repObj) return;
+          if (!totalsByRep.has(repObj.id)) {
+            totalsByRep.set(repObj.id, { nom: repObj.nom, total: 0, monthsCount: new Set() });
+          }
+          const sYm = getSaleStatsMonth(v);
+          const entry = totalsByRep.get(repObj.id);
+          if (!monthFilter || sYm === monthFilter) {
+            entry.total += Number(v.valeur || 0);
+            if (sYm) entry.monthsCount.add(sYm);
+          }
+        });
+      } else {
+        // Soustraire les ventes reportées du mois d'arrivée si elles provenaient d'un mois précédent
+        const carriedByRepAndMovedYm = new Map();
+        const carriedByRepAndOrigYm = new Map();
+        Object.values(carriedOverSalesStore).forEach(co => {
+          // Indexé par vente si présente dans state.ventes
+        });
+        (state.ventes || []).forEach(v => {
+          if (v._carriedOverFrom && v._carriedOverFrom !== v.mois_commission) {
+            const kTo = `${v.representant_id}_${v.mois_commission}`;
+            const kFrom = `${v.representant_id}_${v._carriedOverFrom}`;
+            carriedByRepAndMovedYm.set(kTo, (carriedByRepAndMovedYm.get(kTo) || 0) + Number(v.valeur || 0));
+            carriedByRepAndOrigYm.set(kFrom, (carriedByRepAndOrigYm.get(kFrom) || 0) + Number(v.valeur || 0));
+          }
+        });
+
+        state.classement.forEach(row => {
+          if (!totalsByRep.has(row.representant_id)) {
+            totalsByRep.set(row.representant_id, { nom: row.representant_nom, total: 0, monthsCount: new Set() });
+          }
+          const entry = totalsByRep.get(row.representant_id);
+          if (!monthFilter || row.mois_commission === monthFilter) {
+            let adjTotal = Number(row.total_ventes || 0);
+            if (monthFilter) {
+              const k = `${row.representant_id}_${row.mois_commission}`;
+              adjTotal = adjTotal - (carriedByRepAndMovedYm.get(k) || 0) + (carriedByRepAndOrigYm.get(k) || 0);
+            }
+            entry.total += Math.max(0, adjTotal);
+            if (row.mois_commission) entry.monthsCount.add(row.mois_commission);
+          }
+        });
+      }
 
       const ranked = Array.from(totalsByRep.values()).sort((a, b) => b.total - a.total);
       const medals = ['🥇', '🥈', '🥉'];
@@ -5503,7 +5920,7 @@
       return sourceList.reduce((sum, v) => {
         if (excludeSaleId && String(v.id) === String(excludeSaleId)) return sum;
         if (String(v.representant_id) !== rStr) return sum;
-        const vYm = v.mois_commission || (v.date_vente ? v.date_vente.slice(0, 7) : '');
+        const vYm = getSaleStatsMonth(v);
         if (vYm !== targetYm) return sum;
         return sum + Number(v.valeur || 0);
       }, 0);
@@ -5793,6 +6210,7 @@
                     ${entBadge(ent)}
                     <span class="text-xs font-bold text-indigo-700">${rep}</span>
                     <span class="text-[11px] text-slate-400">• ${v.date_vente}</span>
+                    ${v._carriedOverFrom ? `<span class="px-1.5 py-0.5 text-[10px] font-bold rounded-md bg-amber-50 text-amber-800 border border-amber-200">↪ Reportée de ${v._carriedOverFrom}</span>` : ''}
                   </div>
                   <div class="font-extrabold text-sm text-slate-900 mt-1 truncate">${cli}</div>
                   ${cleanNote ? `<div class="text-[11px] text-slate-400 truncate">${cleanNote}</div>` : ''}
@@ -5842,6 +6260,7 @@
             <td class="py-3 px-3 text-xs">
               <div class="font-semibold text-slate-900">${v.date_vente}</div>
               <div class="text-slate-400">${v.mois_commission}</div>
+              ${v._carriedOverFrom ? `<span class="mt-0.5 inline-block px-1.5 py-0.5 text-[10px] font-bold rounded-md bg-amber-50 text-amber-800 border border-amber-200" title="Comptabilisée dans les stats de ${v._carriedOverFrom}">↪ Reportée de ${v._carriedOverFrom}</span>` : ''}
             </td>
             <td class="py-3 px-3 font-semibold text-slate-800">${rep}</td>
             <td class="py-3 px-3">
@@ -5909,19 +6328,47 @@
     }
 
     function renderAdminDashboard() {
+      syncCommDisplayModeButtons();
       const m = document.getElementById('dash-filter-month').value;
+      // Pour les statistiques de ventes du mois `m`, on utilise `getSaleStatsMonth(v)` afin de ne pas recomptabiliser les ventes reportées du mois d'avant
+      const statsList = m ? state.ventes.filter(v => getSaleStatsMonth(v) === m) : state.ventes;
       const list = m ? state.ventes.filter(v => v.mois_commission === m) : state.ventes;
+      const confirmedList = list.filter(v => v.statut_depot === 'depot_recu');
+      const statsConfirmedList = statsList.filter(v => v.statut_depot === 'depot_recu');
+      const isConfirmedOnly = commDisplayMode === 'confirme';
+      const activeCommList = isConfirmedOnly ? confirmedList : statsList;
 
-      document.getElementById('dash-total-ventes').textContent = fmtMoney(list.reduce((s, v) => s + Number(v.valeur), 0));
-      document.getElementById('dash-total-comm-rep').textContent = fmtMoney(list.reduce((s, v) => s + Number(v.commission_rep), 0));
-      document.getElementById('dash-total-comm-olivier').textContent = fmtMoney(list.reduce((s, v) => s + Number(v.commission_olivier), 0));
+      const totVentes = statsList.reduce((s, v) => s + Number(v.valeur), 0);
+      const totVentesConf = statsConfirmedList.reduce((s, v) => s + Number(v.valeur), 0);
+      const commRepVendu = statsList.reduce((s, v) => s + Number(v.commission_rep), 0);
+      const commRepConf = confirmedList.reduce((s, v) => s + Number(v.commission_rep), 0);
+      const commOliVendu = statsList.reduce((s, v) => s + Number(v.commission_olivier), 0);
+      const commOliConf = confirmedList.reduce((s, v) => s + Number(v.commission_olivier), 0);
+
+      document.getElementById('dash-total-ventes').textContent = fmtMoney(totVentes);
+      const elDashVConf = document.getElementById('dash-total-ventes-confirme');
+      if (elDashVConf) elDashVConf.textContent = fmtMoney(totVentesConf);
+
+      document.getElementById('dash-total-comm-rep').textContent = fmtMoney(isConfirmedOnly ? commRepConf : commRepVendu);
+      const elDashRepV = document.getElementById('dash-comm-rep-vendu');
+      if (elDashRepV) elDashRepV.textContent = fmtMoney(commRepVendu);
+      const elDashRepC = document.getElementById('dash-comm-rep-confirme');
+      if (elDashRepC) elDashRepC.textContent = fmtMoney(commRepConf);
+
+      document.getElementById('dash-total-comm-olivier').textContent = fmtMoney(isConfirmedOnly ? commOliConf : commOliVendu);
+      const elDashOliV = document.getElementById('dash-comm-oli-vendu');
+      if (elDashOliV) elDashOliV.textContent = fmtMoney(commOliVendu);
+      const elDashOliC = document.getElementById('dash-comm-oli-confirme');
+      if (elDashOliC) elDashOliC.textContent = fmtMoney(commOliConf);
+
       document.getElementById('dash-depots-attente').textContent = list.filter(v => v.statut_depot === 'a_confirmer').length;
       renderExecutiveForecast();
 
       const byMonth = new Map();
       state.ventes.forEach(v => {
-        if (!v.mois_commission) return;
-        byMonth.set(v.mois_commission, (byMonth.get(v.mois_commission) || 0) + Number(v.valeur || 0));
+        const sYm = getSaleStatsMonth(v);
+        if (!sYm) return;
+        byMonth.set(sYm, (byMonth.get(sYm) || 0) + Number(v.valeur || 0));
       });
       const monthsSorted = Array.from(byMonth.entries()).sort((a, b) => a[0].localeCompare(b[0]));
       const maxVal = Math.max(...monthsSorted.map(x => x[1]), 1);
@@ -5943,13 +6390,14 @@
         : `<p class="col-span-full text-xs text-slate-400">Aucune donnée mensuelle disponible.</p>`;
 
       document.getElementById('tbody-dash-rep').innerHTML = state.representants.map(r => {
-        const sub = list.filter(v => v.representant_id === r.id);
+        const subAll = statsList.filter(v => v.representant_id === r.id);
+        const subComm = activeCommList.filter(v => v.representant_id === r.id);
         return `
           <tr>
             <td class="py-2.5 font-semibold text-slate-900">${r.nom}</td>
-            <td class="py-2.5 text-right tabular-nums font-medium">${fmtMoney(sub.reduce((s, v) => s + Number(v.valeur), 0))}</td>
-            <td class="py-2.5 text-right tabular-nums text-amber-600 font-semibold">${fmtMoney(sub.reduce((s, v) => s + Number(v.commission_rep), 0))}</td>
-            <td class="py-2.5 text-right tabular-nums text-emerald-600 font-bold">${fmtMoney(sub.reduce((s, v) => s + Number(v.commission_olivier), 0))}</td>
+            <td class="py-2.5 text-right tabular-nums font-medium">${fmtMoney(subAll.reduce((s, v) => s + Number(v.valeur), 0))}</td>
+            <td class="py-2.5 text-right tabular-nums text-amber-600 font-semibold">${fmtMoney(subComm.reduce((s, v) => s + Number(v.commission_rep), 0))}</td>
+            <td class="py-2.5 text-right tabular-nums text-emerald-600 font-bold">${fmtMoney(subComm.reduce((s, v) => s + Number(v.commission_olivier), 0))}</td>
             <td class="py-2.5 text-right">
               <button onclick="openPayslipModal('${r.id}')" class="px-2.5 py-1 text-[11px] font-semibold bg-slate-100 hover:bg-indigo-600 hover:text-white text-slate-700 rounded-lg transition">Relevé</button>
             </td>
@@ -5958,13 +6406,14 @@
       }).join('');
 
       document.getElementById('tbody-dash-ent').innerHTML = state.entreprises.map(e => {
-        const sub = list.filter(v => v.entreprise_id === e.id);
+        const subAll = statsList.filter(v => v.entreprise_id === e.id);
+        const subComm = activeCommList.filter(v => v.entreprise_id === e.id);
         return `
           <tr>
             <td class="py-2.5">${entBadge(e.nom)}</td>
-            <td class="py-2.5 text-right tabular-nums font-medium">${fmtMoney(sub.reduce((s, v) => s + Number(v.valeur), 0))}</td>
-            <td class="py-2.5 text-right tabular-nums text-amber-600 font-semibold">${fmtMoney(sub.reduce((s, v) => s + Number(v.commission_rep), 0))}</td>
-            <td class="py-2.5 text-right tabular-nums text-emerald-600 font-bold">${fmtMoney(sub.reduce((s, v) => s + Number(v.commission_olivier), 0))}</td>
+            <td class="py-2.5 text-right tabular-nums font-medium">${fmtMoney(subAll.reduce((s, v) => s + Number(v.valeur), 0))}</td>
+            <td class="py-2.5 text-right tabular-nums text-amber-600 font-semibold">${fmtMoney(subComm.reduce((s, v) => s + Number(v.commission_rep), 0))}</td>
+            <td class="py-2.5 text-right tabular-nums text-emerald-600 font-bold">${fmtMoney(subComm.reduce((s, v) => s + Number(v.commission_olivier), 0))}</td>
           </tr>
         `;
       }).join('');
@@ -5975,7 +6424,8 @@
       if (!rep) return;
       const m = document.getElementById('dash-filter-month').value;
       const isOlivier = rep.role === 'admin';
-      const sales = state.ventes.filter(v => (isOlivier ? true : v.representant_id === repId) && (!m || v.mois_commission === m));
+      const isConfirmedOnly = commDisplayMode === 'confirme';
+      const sales = state.ventes.filter(v => (isOlivier ? true : v.representant_id === repId) && (!m || v.mois_commission === m) && (!isConfirmedOnly || v.statut_depot === 'depot_recu'));
 
       const totalVentes = sales.reduce((s, v) => s + Number(v.valeur), 0);
       const totalComm = sales.reduce((s, v) => s + Number(isOlivier ? v.commission_olivier : v.commission_rep), 0);
@@ -5985,7 +6435,7 @@
         <div class="flex items-start justify-between border-b border-slate-200 pb-5">
           <div>
             <div class="text-xl font-extrabold text-slate-900">Korpo Solutions</div>
-            <div class="text-xs text-slate-500 mt-0.5">Relevé détaillé des commissions (${sales.length} dossier(s))</div>
+            <div class="text-xs text-slate-500 mt-0.5">Relevé détaillé des commissions — <strong>${isConfirmedOnly ? 'Sur total confirmé (Dépôt reçu)' : 'Sur total vendu'}</strong> (${sales.length} dossier(s))</div>
           </div>
           <div class="text-right">
             <div class="text-sm font-bold text-slate-900">${rep.nom}</div>
@@ -6228,6 +6678,11 @@
         const cRep = Math.round(Number(v.valeur) * tRep * 100) / 100;
         const cOli = Math.round(Number(v.valeur) * tOli * 100) / 100;
 
+        if (eff.bonusActive) {
+          await saveSaleBonusOverride(v.id, { tRep, tOli, cRep, cOli });
+        } else if (saleBonusOverridesStore[String(v.id)]) {
+          await saveSaleBonusOverride(v.id, null);
+        }
         if (Number(v.taux_rep_applique) !== tRep || Number(v.taux_olivier_applique) !== tOli || Number(v.commission_rep) !== cRep || Number(v.commission_olivier) !== cOli) {
           const { error } = await sb.from('ventes').update({
             taux_rep_applique: tRep,
@@ -6750,22 +7205,39 @@
         if (editId) {
           const eff = getEffectiveRatesWithTargetBonus(repId, entId, clientId, payload.mois_commission, editId);
           const { tRep, tOli, bonusActive } = eff;
+          const cRep = Math.round(valeur * tRep * 100) / 100;
+          const cOli = Math.round(valeur * tOli * 100) / 100;
           payload.taux_rep_applique = tRep;
           payload.taux_olivier_applique = tOli;
-          payload.commission_rep = Math.round(valeur * tRep * 100) / 100;
-          payload.commission_olivier = Math.round(valeur * tOli * 100) / 100;
+          payload.commission_rep = cRep;
+          payload.commission_olivier = cOli;
 
           const { error } = await sb.from('ventes').update(payload).eq('id', editId);
           if (error) throw error;
+
+          if (bonusActive) {
+            await sb.from('ventes').update({
+              taux_rep_applique: tRep,
+              taux_olivier_applique: tOli,
+              commission_rep: cRep,
+              commission_olivier: cOli
+            }).eq('id', editId);
+            await saveSaleBonusOverride(editId, { tRep, tOli, cRep, cOli });
+          } else {
+            await saveSaleBonusOverride(editId, null);
+          }
+
           await recordSaleAudit(editId, 'Dossier modifié', `Montant : ${fmtMoney(valeur)}${bonusActive ? ' • Bonus Target +1% Rep / -1% Olivier' : ''} • Dépôt : ${payload.statut_depot === 'depot_recu' ? 'Reçu' : 'À confirmer'} • Paiement : ${payload.statut_paiement === 'paye' ? 'Payé' : 'Non payé'}`, '✏️');
           toast('Vente mise à jour');
         } else {
           const eff = getEffectiveRatesWithTargetBonus(repId, entId, clientId, payload.mois_commission, null);
           const { tRep, tOli, bonusActive } = eff;
+          const cRep = Math.round(valeur * tRep * 100) / 100;
+          const cOli = Math.round(valeur * tOli * 100) / 100;
           payload.taux_rep_applique = tRep;
           payload.taux_olivier_applique = tOli;
-          payload.commission_rep = Math.round(valeur * tRep * 100) / 100;
-          payload.commission_olivier = Math.round(valeur * tOli * 100) / 100;
+          payload.commission_rep = cRep;
+          payload.commission_olivier = cOli;
 
           window._justCreatedSaleClientSide = true;
           if (pendingProofDataUrl) payload.preuve_url = pendingProofDataUrl;
@@ -6777,6 +7249,17 @@
             error = retryRes.error;
           }
           if (error) throw error;
+
+          if (insertedRow?.id && bonusActive) {
+            await sb.from('ventes').update({
+              taux_rep_applique: tRep,
+              taux_olivier_applique: tOli,
+              commission_rep: cRep,
+              commission_olivier: cOli
+            }).eq('id', insertedRow.id);
+            await saveSaleBonusOverride(insertedRow.id, { tRep, tOli, cRep, cOli });
+          }
+
           if (pendingProofDataUrl) {
             if (insertedRow?.id) saleProofsStore[String(insertedRow.id)] = pendingProofDataUrl;
             saleProofsStore[`${payload.date_vente}_${clientNom.trim()}_${valeur}`] = pendingProofDataUrl;
