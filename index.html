@@ -1048,7 +1048,7 @@
               </div>
             </div>
 
-            <form id="form-rep-target" class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-9 gap-3 items-end">
+            <form id="form-rep-target" class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-10 gap-3 items-end">
               <div class="col-span-2 sm:col-span-2">
                 <label class="block text-[11px] font-bold text-slate-700 mb-1">Représentant *</label>
                 <select id="rep-target-select" class="w-full px-3 py-2 text-xs font-bold bg-white border border-slate-200 rounded-xl">
@@ -1066,6 +1066,10 @@
               <div>
                 <label class="block text-[11px] font-bold text-slate-700 mb-1">Objectif Ventes ($) *</label>
                 <input id="rep-obj-dollars" type="number" step="500" min="0" required placeholder="150000" class="w-full px-3 py-2 text-xs font-bold bg-white border border-slate-200 rounded-xl tabular-nums" />
+              </div>
+              <div>
+                <label class="block text-[11px] font-bold text-amber-800 mb-1">Bonus Target (%) *</label>
+                <input id="rep-obj-bonus" type="number" step="0.25" min="0" max="50" required placeholder="1.00" class="w-full px-3 py-2 text-xs font-extrabold text-amber-900 bg-amber-50/70 border border-amber-300 rounded-xl tabular-nums" />
               </div>
               <div>
                 <label class="block text-[11px] font-bold text-slate-700 mb-1">RDV Bookés</label>
@@ -1533,6 +1537,7 @@
                   <th class="py-3 px-4">Représentant</th>
                   <th class="py-3 px-4">Target Commission ($ / mois)</th>
                   <th class="py-3 px-4">Objectif Ventes ($ / mois)</th>
+                  <th class="py-3 px-4">Bonus Target (% ajouté)</th>
                   <th class="py-3 px-4 text-right">Action</th>
                 </tr>
               </thead>
@@ -1710,6 +1715,30 @@
       });
     }
 
+    async function clearManualSalesOverridesForRepMonth(ym, repName) {
+      if (!isValidYearMonth(ym) || !repName) return;
+      let changed = false;
+      for (let wi = 0; wi < 5; wi++) {
+        const ovKey = `${ym}_${repName}_${wi}`;
+        if (manualSalesOverrides[ovKey]) {
+          delete manualSalesOverrides[ovKey];
+          changed = true;
+          if (sb && currentProfile) {
+            if (manualRdvOverrides[ovKey]) {
+              await persistSingleManualKpiToCloud(ovKey);
+            } else {
+              try {
+                await sb.from('kpi_hebdo').delete().eq('mois_commission', ovKey).eq('semaine_index', -6);
+              } catch (e) {}
+            }
+          }
+        }
+      }
+      if (changed) {
+        saveManualKpiOverrides();
+      }
+    }
+
     // =========================================================================
     // JOURNAL D'AUDIT DES VENTES & CORBEILLE DE RESTAURATION (30 JOURS)
     // =========================================================================
@@ -1761,6 +1790,14 @@
             const coData = JSON.parse(r.representant_nom);
             if (coData && coData.origYm) {
               carriedOverSalesStore[String(r.mois_commission)] = coData;
+            }
+          } catch (e) {}
+        } else if (sIdx === -7 && r.mois_commission && r.representant_nom) {
+          try {
+            const bData = JSON.parse(r.representant_nom);
+            if (bData && typeof bData.bonusPct === 'number') {
+              personalBonusPctTargets[String(r.mois_commission)] = bData.bonusPct;
+              localStorage.setItem('korpo_personal_bonus_pct_v1', JSON.stringify(personalBonusPctTargets));
             }
           } catch (e) {}
         } else if (sIdx === -6 && r.mois_commission && r.representant_nom) {
@@ -2755,6 +2792,8 @@
       const rData = mObj.reps[rn] || {};
       const commEl = document.getElementById('rep-obj-comm');
       if (commEl) commEl.value = getCommissionTargetForRep(rn, ym);
+      const bonusEl = document.getElementById('rep-obj-bonus');
+      if (bonusEl) bonusEl.value = Math.round(getBonusPctForRep(rn, ym) * 10000) / 100;
       document.getElementById('rep-obj-dollars').value = rData['Vente $']?.objectif ?? 150000;
       document.getElementById('rep-obj-booke').value = rData['Booké']?.objectif ?? 80;
       document.getElementById('rep-obj-rdv').value = rData['RDV Réalisé']?.objectif ?? 60;
@@ -2808,6 +2847,8 @@
           const rn = document.getElementById('rep-target-select').value;
           const commGoal = parseFloat(document.getElementById('rep-obj-comm')?.value) || 0;
           const dollars = parseFloat(document.getElementById('rep-obj-dollars').value) || 0;
+          const bonusPctInput = parseFloat(document.getElementById('rep-obj-bonus')?.value);
+          const bonusPctDec = isNaN(bonusPctInput) ? getBonusPctForRep(rn, currentMonthStr) : Math.max(0, bonusPctInput / 100);
           const booke = parseFloat(document.getElementById('rep-obj-booke').value) || 0;
           const rdv = parseFloat(document.getElementById('rep-obj-rdv').value) || 0;
           const ots = parseFloat(document.getElementById('rep-obj-ots').value) || 0;
@@ -2820,10 +2861,10 @@
           ensureKpiMonthStructure(activeYm);
 
           const scopeKey = applyAll ? `ALL_${rn}` : `${activeYm}_${rn}`;
-          repTargetsOverrides[scopeKey] = { dollars, booke, rdv, ots, suivi, close, comm: commGoal };
+          repTargetsOverrides[scopeKey] = { dollars, booke, rdv, ots, suivi, close, comm: commGoal, bonusPct: bonusPctDec };
           localStorage.setItem('korpo_rep_targets_v1', JSON.stringify(repTargetsOverrides));
 
-          await saveRepTargetsToStorageAndCloud(rn, activeYm, dollars, commGoal, applyAll);
+          await saveRepTargetsToStorageAndCloud(rn, activeYm, dollars, commGoal, applyAll, bonusPctDec);
 
           const monthsToUpdate = applyAll ? Object.keys(kpiStore) : [activeYm];
           monthsToUpdate.forEach(ym => {
@@ -3984,7 +4025,7 @@
                 // Saisie manuelle explicite via l'éditeur KPI hebdomadaire ou la grille directe
                 rData['Ventes OTS'].weeks[wi] = Number(mSalesOv.ots || 0);
                 rData['Ventes SUIVI'].weeks[wi] = Number(mSalesOv.suivi || 0);
-                if (mSalesOv.hasManualDollars || rawWeekCount === 0) {
+                if (mSalesOv.hasManualDollars && rawWeekCount === 0) {
                   rData['Vente $'].weeks[wi] = Number(mSalesOv.dollars || 0);
                 }
               } else if (repHasDbSalesInMonth) {
@@ -5375,6 +5416,20 @@
 
     let personalMonthlyTargets = JSON.parse(localStorage.getItem('korpo_personal_monthly_targets_v1') || '{}');
     let personalCommTargets = JSON.parse(localStorage.getItem('korpo_personal_comm_targets_v1') || '{}');
+    let personalBonusPctTargets = JSON.parse(localStorage.getItem('korpo_personal_bonus_pct_v1') || '{}');
+
+    function getBonusPctForRep(repName, ym) {
+      if (personalBonusPctTargets[`${repName}_${ym}`] !== undefined) return Number(personalBonusPctTargets[`${repName}_${ym}`]);
+      if (personalBonusPctTargets[`${repName}_ALL`] !== undefined) return Number(personalBonusPctTargets[`${repName}_ALL`]);
+      if (repTargetsOverrides[`${ym}_${repName}`]?.bonusPct !== undefined) return Number(repTargetsOverrides[`${ym}_${repName}`].bonusPct);
+      if (repTargetsOverrides[`ALL_${repName}`]?.bonusPct !== undefined) return Number(repTargetsOverrides[`ALL_${repName}`].bonusPct);
+      return 0.01;
+    }
+
+    function formatBonusPctShort(decimalRate) {
+      const pctVal = Math.round(Number(decimalRate || 0) * 10000) / 100;
+      return Number.isInteger(pctVal) ? `${pctVal}%` : `${pctVal.toFixed(2).replace(/\.?0+$/, '')}%`;
+    }
 
     function getCloudRepTargetRow(repName, ym) {
       if (!Array.isArray(kpiHebdoRows)) return null;
@@ -5406,16 +5461,23 @@
       return Math.max(2500, Math.round((salesT * 0.055) / 500) * 500);
     }
 
-    async function saveRepTargetsToStorageAndCloud(repName, activeYm, salesGoal, commGoal, applyAll = true) {
+    async function saveRepTargetsToStorageAndCloud(repName, activeYm, salesGoal, commGoal, applyAll = true, bonusPct = null) {
       if (currentProfile?.role !== 'admin') return toast('Seul l’administrateur peut modifier les targets.', 'error');
+      const effectiveBonusPct = (bonusPct !== null && !isNaN(bonusPct))
+        ? Math.max(0, Number(bonusPct))
+        : getBonusPctForRep(repName, activeYm);
+
       personalMonthlyTargets[`${repName}_${activeYm}`] = salesGoal;
       personalCommTargets[`${repName}_${activeYm}`] = commGoal;
+      personalBonusPctTargets[`${repName}_${activeYm}`] = effectiveBonusPct;
       if (applyAll) {
         personalMonthlyTargets[`${repName}_ALL`] = salesGoal;
         personalCommTargets[`${repName}_ALL`] = commGoal;
+        personalBonusPctTargets[`${repName}_ALL`] = effectiveBonusPct;
       }
       localStorage.setItem('korpo_personal_monthly_targets_v1', JSON.stringify(personalMonthlyTargets));
       localStorage.setItem('korpo_personal_comm_targets_v1', JSON.stringify(personalCommTargets));
+      localStorage.setItem('korpo_personal_bonus_pct_v1', JSON.stringify(personalBonusPctTargets));
 
       const scopes = applyAll ? [activeYm, 'ALL'] : [activeYm];
       scopes.forEach(sc => {
@@ -5439,6 +5501,17 @@
         }));
         const { error } = await sb.from('kpi_hebdo').upsert(rows, { onConflict: 'mois_commission,semaine_index,representant_nom' });
         if (error) console.warn('Sync targets cloud:', error.message);
+
+        for (const sc of scopes) {
+          await safeUpsertKpiHebdoRow({
+            mois_commission: `${repName}_${sc}`,
+            semaine_index: -7,
+            representant_nom: JSON.stringify({ bonusPct: effectiveBonusPct }),
+            booke: 0,
+            rdv_realise: 0,
+            updated_at: new Date().toISOString()
+          });
+        }
       }
     }
 
@@ -5549,7 +5622,8 @@
         badgeEl.className = 'px-2 py-0.5 text-[11px] font-extrabold rounded-full bg-emerald-100 text-emerald-800 tabular-nums';
         fillEl.className = 'h-full rounded-full bg-gradient-to-r from-emerald-500 to-teal-400 transition-all duration-700 ease-out';
         remEl.textContent = `Objectif dépassé de + ${fmtMoney(achievedSales - salesTarget)} !`;
-        msgEl.textContent = isAdmin ? '🔥 Target atteint (+1% Rep / -1% Oli actif)' : '🔥 Bonus +1 % actif sur vos nouvelles ventes !';
+        const bStr = formatBonusPctShort(getBonusPctForRep(inspectedRepName, activeYm));
+        msgEl.textContent = isAdmin ? `🔥 Target atteint (+${bStr} Rep / -${bStr} Oli actif)` : `🔥 Bonus +${bStr} actif sur vos nouvelles ventes !`;
         msgEl.className = 'font-extrabold text-emerald-600';
       } else if (salesPct >= 65) {
         badgeEl.className = 'px-2 py-0.5 text-[11px] font-extrabold rounded-full bg-amber-100 text-amber-800 tabular-nums';
@@ -5583,6 +5657,7 @@
         const roleLabel = repObj ? (repObj.role === 'admin' ? 'Admin' : 'Rep') : 'Rep';
         const commVal = getCommissionTargetForRep(rn, currentMonthStr);
         const salesVal = getSalesTargetForRep(rn, currentMonthStr);
+        const bonusValPct = Math.round(getBonusPctForRep(rn, currentMonthStr) * 10000) / 100;
         const safeKey = rn.replace(/'/g, "\'");
         return `
           <tr class="hover:bg-slate-50/80 transition" data-target-rep="${rn}">
@@ -5593,15 +5668,21 @@
               </div>
             </td>
             <td class="py-2.5 px-4">
-              <div class="relative max-w-[190px]">
+              <div class="relative max-w-[170px]">
                 <input type="number" step="100" min="0" data-comm-input="${rn}" value="${commVal}" class="w-full pl-3 pr-7 py-2 text-xs font-extrabold text-emerald-900 bg-emerald-50/50 border border-emerald-200 rounded-xl tabular-nums focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-600" />
                 <span class="absolute right-2.5 top-2 text-xs font-bold text-emerald-700">$</span>
               </div>
             </td>
             <td class="py-2.5 px-4">
-              <div class="relative max-w-[190px]">
+              <div class="relative max-w-[170px]">
                 <input type="number" step="500" min="0" data-sales-input="${rn}" value="${salesVal}" class="w-full pl-3 pr-7 py-2 text-xs font-bold text-slate-900 bg-slate-50 border border-slate-200 rounded-xl tabular-nums focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-600" />
                 <span class="absolute right-2.5 top-2 text-xs font-semibold text-slate-400">$</span>
+              </div>
+            </td>
+            <td class="py-2.5 px-4">
+              <div class="relative max-w-[130px]">
+                <input type="number" step="0.25" min="0" max="50" data-bonus-input="${rn}" value="${bonusValPct}" class="w-full pl-3 pr-7 py-2 text-xs font-extrabold text-amber-900 bg-amber-50/60 border border-amber-200 rounded-xl tabular-nums focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-500" />
+                <span class="absolute right-2.5 top-2 text-xs font-bold text-amber-700">%</span>
               </div>
             </td>
             <td class="py-2.5 px-4 text-right">
@@ -5618,11 +5699,14 @@
       if (currentProfile?.role !== 'admin') return toast('Réservé à l’administrateur.', 'error');
       const commIn = document.querySelector(`input[data-comm-input="${repName}"]`);
       const salesIn = document.querySelector(`input[data-sales-input="${repName}"]`);
+      const bonusIn = document.querySelector(`input[data-bonus-input="${repName}"]`);
       const newComm = parseFloat(commIn?.value) || 0;
       const newSales = parseFloat(salesIn?.value) || 0;
+      const rawBonusPct = parseFloat(bonusIn?.value);
+      const newBonusDec = isNaN(rawBonusPct) ? getBonusPctForRep(repName, currentMonthStr) : Math.max(0, rawBonusPct / 100);
       if (newComm <= 0 || newSales <= 0) return toast('Entrez des montants supérieurs à 0 $', 'error');
 
-      await saveRepTargetsToStorageAndCloud(repName, currentMonthStr, newSales, newComm, true);
+      await saveRepTargetsToStorageAndCloud(repName, currentMonthStr, newSales, newComm, true, newBonusDec);
       Object.keys(kpiStore).forEach(ym => {
         if (kpiStore[ym]?.reps?.[repName]?.['Vente $']) {
           kpiStore[ym].reps[repName]['Vente $'].objectif = newSales;
@@ -5633,7 +5717,8 @@
       renderMesVentes();
       renderClassement();
       renderKpiDashboard();
-      toast(`Targets enregistrés pour ${repName} : ${fmtMoney0(newComm)} comm. / ${fmtMoney0(newSales)} ventes 🎯`);
+      renderEquipeTargetsTable();
+      toast(`Targets enregistrés pour ${repName} : ${fmtMoney0(newComm)} comm. / ${fmtMoney0(newSales)} ventes / +${formatBonusPctShort(newBonusDec)} bonus 🎯`);
     };
 
     document.getElementById('btn-save-all-equipe-targets')?.addEventListener('click', async () => {
@@ -5644,8 +5729,10 @@
         const rn = tr.getAttribute('data-target-rep');
         const newComm = parseFloat(tr.querySelector('input[data-comm-input]')?.value) || 0;
         const newSales = parseFloat(tr.querySelector('input[data-sales-input]')?.value) || 0;
+        const rawBonusPct = parseFloat(tr.querySelector('input[data-bonus-input]')?.value);
+        const newBonusDec = isNaN(rawBonusPct) ? getBonusPctForRep(rn, currentMonthStr) : Math.max(0, rawBonusPct / 100);
         if (rn && newComm > 0 && newSales > 0) {
-          await saveRepTargetsToStorageAndCloud(rn, currentMonthStr, newSales, newComm, true);
+          await saveRepTargetsToStorageAndCloud(rn, currentMonthStr, newSales, newComm, true, newBonusDec);
           Object.keys(kpiStore).forEach(ym => {
             if (kpiStore[ym]?.reps?.[rn]?.['Vente $']) {
               kpiStore[ym].reps[rn]['Vente $'].objectif = newSales;
@@ -5659,6 +5746,7 @@
       renderMesVentes();
       renderClassement();
       renderKpiDashboard();
+      renderEquipeTargetsTable();
       toast(`${count} représentant(s) mis à jour 🎯`);
     });
 
@@ -5916,7 +6004,11 @@
           <td class="py-3.5 px-4 text-right font-semibold text-slate-900 tabular-nums">${fmtMoney(v.valeur)}</td>
           <td class="py-3.5 px-4 text-right font-extrabold text-emerald-600 tabular-nums">
             ${fmtMoney(v.commission_rep)}
-            ${v._bonusApplied ? '<span class="ml-1 px-1.5 py-0.5 text-[10px] font-extrabold rounded bg-emerald-100 text-emerald-800">+1%</span>' : ''}
+            ${v._bonusApplied ? (() => {
+              const baseR = getRateForSale(v.representant_id, v.entreprise_id, v.client_id);
+              const diff = baseR ? Math.max(0, Number(v.taux_rep_applique) - Number(baseR.taux)) : 0.01;
+              return `<span class="ml-1 px-1.5 py-0.5 text-[10px] font-extrabold rounded bg-emerald-100 text-emerald-800">+${formatBonusPctShort(diff || 0.01)}</span>`;
+            })() : ''}
           </td>
           <td class="py-3.5 px-4">
             <div class="flex items-center flex-wrap gap-1">
@@ -6094,10 +6186,11 @@
         ? Number(customPriorVolume)
         : getRepMonthPriorSalesVolume(repId, activeYm, excludeSaleId);
 
-      // Le bonus +1% Rep / -1% Olivier s'applique uniquement sur les nouvelles ventes une fois l'objectif mensuel atteint (non rétroactif)
+      // Le bonus configurable (+X% Rep / -X% Olivier) s'applique uniquement sur les nouvelles ventes une fois l'objectif mensuel atteint (non rétroactif)
       const isRepRole = !repObj || repObj.role !== 'admin';
-      const bonusActive = Boolean(rateObj && isRepRole && salesTarget > 0 && priorVolume >= salesTarget);
-      const bonusDelta = bonusActive ? 0.01 : 0;
+      const configuredBonusPct = repName ? getBonusPctForRep(repName, activeYm) : 0.01;
+      const bonusActive = Boolean(rateObj && isRepRole && configuredBonusPct > 0 && salesTarget > 0 && priorVolume >= salesTarget);
+      const bonusDelta = bonusActive ? configuredBonusPct : 0;
 
       const finalRep = Math.round((baseRep + bonusDelta) * 100000) / 100000;
       const finalOli = bonusActive
@@ -6111,6 +6204,7 @@
         tRep: finalRep,
         tOli: finalOli,
         bonusActive,
+        bonusDelta,
         priorVolume,
         salesTarget
       };
@@ -6126,21 +6220,21 @@
 
       const matchedClient = state.clients.find(c => String(c.entreprise_id) === String(entId) && c.nom.toLowerCase() === clientNom);
       const eff = getEffectiveRatesWithTargetBonus(repId, entId, matchedClient?.id || null, ym, editId);
-      const { hasRule, tRep, tOli, bonusActive } = eff;
+      const { hasRule, tRep, tOli, bonusActive, bonusDelta } = eff;
+      const bStr = formatBonusPctShort(bonusDelta);
 
       const isAdmin = currentProfile?.role === 'admin';
       const oliEl = document.getElementById('preview-comm-olivier');
-      const bonusTag = bonusActive ? ' 🔥 (+1% Bonus Target atteint !)' : '';
       if (isAdmin) {
         document.getElementById('preview-taux-label').innerHTML = hasRule
-          ? `Règle : <strong>${fmtPct(tRep)}</strong> Rep / <strong>${fmtPct(tOli)}</strong> Olivier${bonusActive ? ' <span class="inline-block ml-1 px-1.5 py-0.5 text-[10px] font-extrabold rounded-md bg-emerald-100 text-emerald-800">🔥 +1% Rep / -1% Oli</span>' : ''}`
+          ? `Règle : <strong>${fmtPct(tRep)}</strong> Rep / <strong>${fmtPct(tOli)}</strong> Olivier${bonusActive ? ` <span class="inline-block ml-1 px-1.5 py-0.5 text-[10px] font-extrabold rounded-md bg-emerald-100 text-emerald-800">🔥 +${bStr} Rep / -${bStr} Oli</span>` : ''}`
           : 'Aucun taux configuré (0 % par défaut)';
         document.getElementById('preview-comm-rep').textContent = `Rep : ${fmtMoney(val * tRep)}`;
         oliEl.textContent = `Olivier : ${fmtMoney(val * tOli)}`;
         oliEl.classList.remove('hidden');
       } else {
         document.getElementById('preview-taux-label').innerHTML = hasRule
-          ? `Votre taux applicable : <strong>${fmtPct(tRep)}</strong>${bonusActive ? ' <span class="inline-block ml-1 px-1.5 py-0.5 text-[10px] font-extrabold rounded-md bg-emerald-100 text-emerald-800">🔥 Bonus +1% actif</span>' : ''}`
+          ? `Votre taux applicable : <strong>${fmtPct(tRep)}</strong>${bonusActive ? ` <span class="inline-block ml-1 px-1.5 py-0.5 text-[10px] font-extrabold rounded-md bg-emerald-100 text-emerald-800">🔥 Bonus +${bStr} actif</span>` : ''}`
           : 'Taux calculé automatiquement à l’enregistrement';
         document.getElementById('preview-comm-rep').textContent = `Ma commission : ${fmtMoney(val * tRep)}`;
         oliEl.classList.add('hidden');
@@ -6284,7 +6378,14 @@
       const ok = await askConfirm(`Mettre ${ids.length} vente(s) à la corbeille ?`, 'Les ventes sélectionnées pourront être restaurées depuis la corbeille pendant 30 jours.');
       if (!ok) return;
       const toTrash = state.ventes.filter(v => ids.includes(v.id));
-      if (toTrash.length) await moveSalesToTrash(toTrash);
+      if (toTrash.length) {
+        await moveSalesToTrash(toTrash);
+        for (const ts of toTrash) {
+          const delYm = getSaleStatsMonth(ts);
+          const delRep = state.representants.find(r => String(r.id) === String(ts.representant_id));
+          if (delYm && delRep?.nom) await clearManualSalesOverridesForRepMonth(delYm, delRep.nom);
+        }
+      }
       const { error } = await sb.from('ventes').delete().in('id', ids);
       if (error) return toast(error.message, 'error');
       toast(`${ids.length} vente(s) déplacée(s) dans la corbeille 🗑️`);
@@ -6451,8 +6552,9 @@
                 ${fmtPct(v.taux_rep_applique)}
                 ${(() => {
                   const baseR = getRateForSale(v.representant_id, v.entreprise_id, v.client_id);
-                  return (baseR && Number(v.taux_rep_applique) > Number(baseR.taux) + 0.0001)
-                    ? '<span class="ml-1 px-1 py-0.2 text-[9px] font-extrabold rounded bg-emerald-100 text-emerald-800">+1%</span>'
+                  const diff = baseR ? (Number(v.taux_rep_applique) - Number(baseR.taux)) : 0;
+                  return (baseR && diff > 0.0001)
+                    ? `<span class="ml-1 px-1 py-0.2 text-[9px] font-extrabold rounded bg-emerald-100 text-emerald-800">+${formatBonusPctShort(diff)}</span>`
                     : '';
                 })()}
               </div>
@@ -6752,23 +6854,11 @@
       const cleanBody = rawNote.replace(/^\[(OTS|SUIVI)\]\s*/i, '').trim();
       const updatedNote = cleanBody ? `[${nextTag}] ${cleanBody}` : `[${nextTag}]`;
 
-      // Ajuster la répartition hebdomadaire si une surcharge d'import existait sur cette semaine
-      const ym = v.mois_commission || (v.date_vente ? v.date_vente.slice(0, 7) : null);
-      const repObj = state.representants.find(r => r.id === v.representant_id);
-      if (ym && repObj && kpiStore[ym]) {
-        const wIdx = getWeekIndexFromDate(v.date_vente, kpiStore[ym].num_weeks || 4);
-        const ovKey = `${ym}_${repObj.nom}_${wIdx}`;
-        if (manualSalesOverrides[ovKey]) {
-          const cur = manualSalesOverrides[ovKey];
-          if (nextTag === 'SUIVI') {
-            cur.suivi = Number(cur.suivi || 0) + 1;
-            cur.ots = Math.max(0, Number(cur.ots || 0) - 1);
-          } else {
-            cur.ots = Number(cur.ots || 0) + 1;
-            cur.suivi = Math.max(0, Number(cur.suivi || 0) - 1);
-          }
-          saveManualKpiOverrides();
-        }
+      // Libérer toute surcharge manuelle KPI sur ce mois/représentant pour que le basculement OTS/SUIVI se reflète en direct
+      const ym = getSaleStatsMonth(v);
+      const repObj = state.representants.find(r => String(r.id) === String(v.representant_id));
+      if (ym && repObj?.nom) {
+        await clearManualSalesOverridesForRepMonth(ym, repObj.nom);
       }
 
       const { error } = await sb.from('ventes').update({ note: updatedNote }).eq('id', id);
@@ -6782,7 +6872,12 @@
       const ok = await askConfirm('Mettre cette vente à la corbeille ?', 'La vente sera retirée des totaux et conservée dans la corbeille pendant 30 jours pour restauration.');
       if (!ok) return;
       const targetSale = state.ventes.find(v => String(v.id) === String(id)) || state.mesVentes.find(v => String(v.id) === String(id));
-      if (targetSale) await moveSalesToTrash([targetSale]);
+      if (targetSale) {
+        await moveSalesToTrash([targetSale]);
+        const delYm = getSaleStatsMonth(targetSale);
+        const delRep = state.representants.find(r => String(r.id) === String(targetSale.representant_id));
+        if (delYm && delRep?.nom) await clearManualSalesOverridesForRepMonth(delYm, delRep.nom);
+      }
       const { error } = await sb.from('ventes').delete().eq('id', id);
       if (error) return toast(error.message, 'error');
       toast('Vente déplacée dans la corbeille 🗑️');
@@ -7391,7 +7486,7 @@
             await saveSaleBonusOverride(editId, null);
           }
 
-          await recordSaleAudit(editId, 'Dossier modifié', `Montant : ${fmtMoney(valeur)}${bonusActive ? ' • Bonus Target +1% Rep / -1% Olivier' : ''} • Dépôt : ${payload.statut_depot === 'depot_recu' ? 'Reçu' : 'À confirmer'} • Paiement : ${payload.statut_paiement === 'paye' ? 'Payé' : 'Non payé'}`, '✏️');
+          await recordSaleAudit(editId, 'Dossier modifié', `Montant : ${fmtMoney(valeur)}${bonusActive ? ` • Bonus Target +${formatBonusPctShort(eff.bonusDelta)} Rep / -${formatBonusPctShort(eff.bonusDelta)} Olivier` : ''} • Dépôt : ${payload.statut_depot === 'depot_recu' ? 'Reçu' : 'À confirmer'} • Paiement : ${payload.statut_paiement === 'paye' ? 'Payé' : 'Non payé'}`, '✏️');
           toast('Vente mise à jour');
         } else {
           const eff = getEffectiveRatesWithTargetBonus(repId, entId, clientId, payload.mois_commission, null);
@@ -7431,7 +7526,7 @@
           }
           if (insertedRow?.id) {
             const entN = state.entreprises.find(en => String(en.id) === String(entId))?.nom || '';
-            const bonusNote = eff.bonusActive ? ' • 🔥 Bonus Target +1% Rep / -1% Olivier' : '';
+            const bonusNote = eff.bonusActive ? ` • 🔥 Bonus Target +${formatBonusPctShort(eff.bonusDelta)} Rep / -${formatBonusPctShort(eff.bonusDelta)} Olivier` : '';
             await recordSaleAudit(insertedRow.id, 'Vente créée', `${entN} — ${clientNom.trim()} • ${fmtMoney(valeur)}${bonusNote}${pendingProofDataUrl ? ' (avec preuve photo)' : ''}`, '💵');
           }
           toast('Vente enregistrée avec succès');
@@ -7453,6 +7548,27 @@
           saleProofsStore[String(editId)] = pendingProofDataUrl;
           saveSaleProofsStore();
           await sb.from('ventes').update({ preuve_url: pendingProofDataUrl }).eq('id', editId);
+        }
+
+        // Synchroniser immédiatement le Tableau KPI avec les ventes modifiées/ajoutées
+        const targetRepObj = state.representants.find(r => String(r.id) === String(repId));
+        const newStatsYm = (payload.date_vente && payload.date_vente.length >= 7) ? payload.date_vente.slice(0, 7) : payload.mois_commission;
+        if (targetRepObj?.nom && newStatsYm) {
+          await clearManualSalesOverridesForRepMonth(newStatsYm, targetRepObj.nom);
+        }
+        if (editId) {
+          const prevSale = state.ventes.find(v => String(v.id) === String(editId));
+          if (prevSale) {
+            const prevRepObj = state.representants.find(r => String(r.id) === String(prevSale.representant_id));
+            const prevStatsYm = getSaleStatsMonth(prevSale);
+            if (prevRepObj?.nom && prevStatsYm && (prevRepObj.nom !== targetRepObj?.nom || prevStatsYm !== newStatsYm)) {
+              await clearManualSalesOverridesForRepMonth(prevStatsYm, prevRepObj.nom);
+            }
+          }
+          if (carriedOverSalesStore[String(editId)] && newStatsYm) {
+            carriedOverSalesStore[String(editId)].origYm = newStatsYm;
+            localStorage.setItem('korpo_carried_over_sales_v1', JSON.stringify(carriedOverSalesStore));
+          }
         }
 
         drawer.classList.add('hidden');
