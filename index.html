@@ -5466,19 +5466,27 @@
         return true;
       });
 
+      // L'objectif de volume de ventes personnel ne prend en compte QUE les ventes personnelles du représentant ciblé (jamais celles de toute l'équipe)
+      const myOwnDirectSales = myPeriodSales.filter(v => String(v.representant_id) === inspectedRepId);
+
       let salesTarget = getSalesTargetForRep(inspectedRepName, activeYm);
       let commTarget = getCommissionTargetForRep(inspectedRepName, activeYm);
 
       if (isAllTime) {
-        const distinctMonths = new Set(
-          myPeriodSales.map(v => v.mois_commission || (v.date_vente ? v.date_vente.slice(0, 7) : null)).filter(Boolean)
+        const distinctSalesMonths = new Set(
+          myOwnDirectSales.map(v => getSaleStatsMonth(v)).filter(Boolean)
         );
-        const monthsList = distinctMonths.size > 0 ? Array.from(distinctMonths) : [currentMonthStr];
-        salesTarget = monthsList.reduce((sum, ym) => sum + getSalesTargetForRep(inspectedRepName, ym), 0);
-        commTarget = monthsList.reduce((sum, ym) => sum + getCommissionTargetForRep(inspectedRepName, ym), 0);
+        const salesMonthsList = distinctSalesMonths.size > 0 ? Array.from(distinctSalesMonths) : [currentMonthStr];
+        salesTarget = salesMonthsList.reduce((sum, ym) => sum + getSalesTargetForRep(inspectedRepName, ym), 0);
+
+        const distinctCommMonths = new Set(
+          myPeriodSales.map(v => getSaleStatsMonth(v)).filter(Boolean)
+        );
+        const commMonthsList = distinctCommMonths.size > 0 ? Array.from(distinctCommMonths) : [currentMonthStr];
+        commTarget = commMonthsList.reduce((sum, ym) => sum + getCommissionTargetForRep(inspectedRepName, ym), 0);
       }
 
-      const achievedSales = myPeriodSales.reduce((s, v) => s + Number(v.valeur || 0), 0);
+      const achievedSales = myOwnDirectSales.reduce((s, v) => s + Number(v.valeur || 0), 0);
       const achievedComm = myPeriodSales.reduce((s, v) => s + Number(v.commission_rep || 0), 0);
 
       const headerTitleEl = document.getElementById('goal-card-header-title');
