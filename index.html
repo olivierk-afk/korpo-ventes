@@ -77,8 +77,222 @@
       tr { page-break-inside: avoid; page-break-after: auto; }
       thead { display: table-header-group; }
       .no-print { display: none !important; }
+      html.dark #payslip-modal,
+      html.dark #payslip-modal > div,
+      html.dark #payslip-print-area {
+        background: #ffffff !important;
+        color: #0f172a !important;
+      }
+    }
+
+    /* ===================================================================== */
+    /* THÈME SOMBRE (DARK MODE) — KORPO SOLUTIONS                            */
+    /* ===================================================================== */
+    html.dark {
+      color-scheme: dark;
+    }
+    html.dark body {
+      background-color: #090d16 !important;
+      color: #f1f5f9 !important;
+    }
+    html.dark .bg-white,
+    html.dark .bg-white\/95 {
+      background-color: #0f172a !important;
+    }
+    html.dark .bg-slate-50,
+    html.dark .bg-slate-50\/90,
+    html.dark .bg-slate-50\/80,
+    html.dark .bg-slate-50\/60,
+    html.dark .bg-slate-50\/50,
+    html.dark .bg-slate-50\/40 {
+      background-color: #131c31 !important;
+    }
+    html.dark .bg-slate-100 {
+      background-color: #1e293b !important;
+    }
+    html.dark .bg-indigo-50,
+    html.dark .bg-indigo-50\/70,
+    html.dark .bg-indigo-50\/50,
+    html.dark .bg-indigo-50\/40 {
+      background-color: rgba(79, 70, 229, 0.16) !important;
+    }
+    html.dark .bg-emerald-50,
+    html.dark .bg-emerald-50\/80,
+    html.dark .bg-emerald-50\/70,
+    html.dark .bg-emerald-50\/60,
+    html.dark .bg-emerald-50\/50,
+    html.dark .bg-emerald-50\/40 {
+      background-color: rgba(16, 185, 129, 0.14) !important;
+    }
+    html.dark .bg-amber-50,
+    html.dark .bg-amber-50\/80,
+    html.dark .bg-amber-50\/70,
+    html.dark .bg-amber-50\/60,
+    html.dark .bg-amber-100 {
+      background-color: rgba(245, 158, 11, 0.16) !important;
+    }
+    html.dark .bg-rose-50,
+    html.dark .bg-rose-100 {
+      background-color: rgba(244, 63, 94, 0.16) !important;
+    }
+    html.dark .bg-sky-50 {
+      background-color: rgba(14, 165, 233, 0.16) !important;
+    }
+    html.dark .bg-purple-50 {
+      background-color: rgba(168, 85, 247, 0.16) !important;
+    }
+    html.dark .from-emerald-50\/70 {
+      --tw-gradient-from: rgba(16, 185, 129, 0.16) var(--tw-gradient-from-position) !important;
+    }
+    html.dark .to-teal-50\/40 {
+      --tw-gradient-to: rgba(20, 184, 166, 0.08) var(--tw-gradient-to-position) !important;
+    }
+
+    /* Bordures et séparateurs en mode sombre */
+    html.dark .border-slate-100,
+    html.dark .border-slate-200,
+    html.dark .border-slate-200\/90,
+    html.dark .border-slate-200\/80,
+    html.dark .border-slate-300 {
+      border-color: #1e293b !important;
+    }
+    html.dark .border-indigo-100,
+    html.dark .border-indigo-200,
+    html.dark .border-indigo-200\/80,
+    html.dark .border-indigo-200\/70 {
+      border-color: rgba(99, 102, 241, 0.35) !important;
+    }
+    html.dark .border-emerald-200,
+    html.dark .border-emerald-200\/80,
+    html.dark .border-emerald-300 {
+      border-color: rgba(16, 185, 129, 0.35) !important;
+    }
+    html.dark .border-amber-200,
+    html.dark .border-amber-200\/80,
+    html.dark .border-amber-300 {
+      border-color: rgba(245, 158, 11, 0.38) !important;
+    }
+    html.dark .border-rose-200 {
+      border-color: rgba(244, 63, 94, 0.38) !important;
+    }
+    html.dark .divide-slate-100 > :not([hidden]) ~ :not([hidden]),
+    html.dark .divide-slate-200 > :not([hidden]) ~ :not([hidden]) {
+      border-color: #1e293b !important;
+    }
+
+    /* Textes en mode sombre */
+    html.dark .text-slate-900,
+    html.dark .text-slate-800 {
+      color: #f1f5f9 !important;
+    }
+    html.dark .text-slate-700 {
+      color: #cbd5e1 !important;
+    }
+    html.dark .text-slate-600 {
+      color: #94a3b8 !important;
+    }
+    html.dark .text-slate-500 {
+      color: #94a3b8 !important;
+    }
+    html.dark .text-slate-400 {
+      color: #64748b !important;
+    }
+    html.dark .text-indigo-950,
+    html.dark .text-indigo-900,
+    html.dark .text-indigo-700,
+    html.dark .text-indigo-600 {
+      color: #a5b4fc !important;
+    }
+    html.dark .text-emerald-950,
+    html.dark .text-emerald-900,
+    html.dark .text-emerald-800,
+    html.dark .text-emerald-700,
+    html.dark .text-emerald-600 {
+      color: #34d399 !important;
+    }
+    html.dark .text-amber-950,
+    html.dark .text-amber-900,
+    html.dark .text-amber-800,
+    html.dark .text-amber-700 {
+      color: #fbbf24 !important;
+    }
+    html.dark .text-rose-700,
+    html.dark .text-rose-600 {
+      color: #fb7185 !important;
+    }
+    html.dark .text-sky-700 {
+      color: #38bdf8 !important;
+    }
+    html.dark .text-purple-700,
+    html.dark .text-purple-800 {
+      color: #c084fc !important;
+    }
+
+    /* Préserver les textes blancs sur boutons pleins colorés */
+    html.dark .bg-indigo-600,
+    html.dark .bg-emerald-600,
+    html.dark .bg-rose-600,
+    html.dark .bg-amber-600,
+    html.dark .bg-slate-900 {
+      color: #ffffff !important;
+    }
+    html.dark .bg-gradient-to-br.from-emerald-600 .text-emerald-100,
+    html.dark .bg-gradient-to-br.from-emerald-600 .text-emerald-50 {
+      color: #d1fae5 !important;
+    }
+    html.dark .bg-gradient-to-br.from-emerald-600 .bg-white {
+      background-color: #ffffff !important;
+      color: #064e3b !important;
+    }
+
+    /* Champs de formulaire (inputs, selects, textareas) en mode sombre */
+    html.dark input:not([type="checkbox"]):not([type="radio"]):not([type="file"]),
+    html.dark select,
+    html.dark textarea {
+      background-color: #162033 !important;
+      border-color: #334155 !important;
+      color: #f8fafc !important;
+    }
+    html.dark input::placeholder,
+    html.dark textarea::placeholder {
+      color: #64748b !important;
+    }
+    html.dark input:focus,
+    html.dark select:focus,
+    html.dark textarea:focus {
+      background-color: #1e293b !important;
+      border-color: #6366f1 !important;
+    }
+
+    /* Survols de lignes et boutons secondaires en mode sombre */
+    html.dark .hover\:bg-slate-50:hover,
+    html.dark .hover\:bg-slate-50\/90:hover,
+    html.dark .hover\:bg-slate-50\/80:hover,
+    html.dark .hover\:bg-slate-100:hover {
+      background-color: #1e293b !important;
+    }
+    html.dark .hover\:bg-indigo-50:hover,
+    html.dark .hover\:bg-indigo-100:hover {
+      background-color: rgba(99, 102, 241, 0.25) !important;
+    }
+    html.dark .hover\:bg-emerald-50:hover,
+    html.dark .hover\:bg-emerald-100:hover {
+      background-color: rgba(16, 185, 129, 0.24) !important;
+    }
+    html.dark .hover\:bg-rose-50:hover {
+      background-color: rgba(244, 63, 94, 0.22) !important;
     }
   </style>
+  <script>
+    (function() {
+      try {
+        var savedTheme = localStorage.getItem('korpo_theme_v1');
+        if (savedTheme === 'dark' || (!savedTheme && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+          document.documentElement.classList.add('dark');
+        }
+      } catch (e) {}
+    })();
+  </script>
 </head>
 <body class="bg-slate-50/90 text-slate-900 min-h-screen antialiased selection:bg-indigo-600 selection:text-white">
 
@@ -685,7 +899,13 @@
             <p class="text-xs font-medium text-slate-500">Espace Ventes, Commissions & KPI</p>
           </div>
         </div>
-        <button id="btn-reset-cfg" title="Modifier l'URL Supabase" class="text-xs font-medium text-slate-400 hover:text-indigo-600 transition">Config API</button>
+        <div class="flex items-center gap-2">
+          <button type="button" onclick="toggleColorTheme()" title="Basculer thème clair / sombre" class="theme-toggle-btn px-2.5 py-1.5 text-xs font-bold rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 transition flex items-center gap-1">
+            <span class="theme-toggle-icon">🌙</span>
+            <span class="theme-toggle-label hidden sm:inline">Sombre</span>
+          </button>
+          <button id="btn-reset-cfg" title="Modifier l'URL Supabase" class="text-xs font-medium text-slate-400 hover:text-indigo-600 transition">Config API</button>
+        </div>
       </div>
 
       <form id="login-form" method="post" autocomplete="on" class="space-y-4">
@@ -754,6 +974,11 @@
             </div>
           </div>
 
+          <button type="button" onclick="toggleColorTheme()" title="Basculer entre le mode clair et le mode sombre" class="theme-toggle-btn px-2.5 py-1.5 text-xs font-semibold text-slate-200 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-xl flex items-center gap-1.5 transition">
+            <span class="theme-toggle-icon text-sm leading-none">🌙</span>
+            <span class="theme-toggle-label hidden md:inline">Sombre</span>
+          </button>
+
           <button id="btn-refresh" title="Actualiser les données" class="px-3 py-1.5 text-xs font-semibold text-slate-200 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-xl flex items-center gap-1.5 transition">
             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99"/></svg>
             <span class="hidden sm:inline">Actualiser</span>
@@ -775,6 +1000,13 @@
                 <div id="menu-user-email" class="text-[11px] text-slate-400 truncate mt-0.5"></div>
               </div>
               <div class="p-1.5 space-y-1">
+                <button type="button" onclick="toggleColorTheme()" class="w-full px-3 py-2.5 text-left text-xs font-semibold text-slate-700 hover:bg-slate-100 rounded-xl flex items-center justify-between transition">
+                  <span class="flex items-center gap-2.5">
+                    <span class="theme-toggle-icon">🌙</span>
+                    <span class="theme-menu-text">Passer en mode sombre</span>
+                  </span>
+                  <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 theme-toggle-label">Sombre</span>
+                </button>
                 <button id="btn-open-pwd" type="button" class="w-full px-3 py-2.5 text-left text-xs font-semibold text-slate-700 hover:bg-slate-100 rounded-xl flex items-center gap-2.5 transition">
                   <span>🔑</span>
                   <span>Modifier mon mot de passe</span>
@@ -819,14 +1051,14 @@
       <section id="tab-mes-ventes" class="space-y-6">
         <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <h2 class="text-xl font-extrabold text-slate-900 tracking-tight flex items-center gap-2"><span class="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 border border-emerald-200/80 flex items-center justify-center text-base">💵</span><span>Mes ventes et commissions</span></h2>
+            <h2 class="text-xl font-extrabold text-slate-900 tracking-tight flex items-center gap-2"><span id="mes-ventes-main-icon" class="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 border border-emerald-200/80 flex items-center justify-center text-base">💵</span><span id="mes-ventes-main-title">Mes ventes et commissions</span></h2>
             <p id="mes-ventes-subtitle" class="text-xs text-slate-500 mt-0.5">Suivi confidentiel de vos dossiers fermés, paiements reçus et soldes à venir</p>
           </div>
           <div class="grid grid-cols-2 sm:flex sm:flex-wrap items-stretch sm:items-center gap-2 w-full md:w-auto">
-            <button id="btn-rep-open-drawer" class="col-span-2 px-4 py-2.5 sm:py-2 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl shadow-sm shadow-indigo-600/20 flex items-center justify-center gap-1.5 transition">
+            <button id="btn-rep-open-drawer" data-mobile-group="ventes" class="col-span-2 px-4 py-2.5 sm:py-2 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl shadow-sm shadow-indigo-600/20 flex items-center justify-center gap-1.5 transition">
               <span class="text-base leading-none">💵</span> Déclarer une vente
             </button>
-            <select id="filter-admin-scope" class="hidden col-span-2 px-3 py-2 text-xs font-semibold bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-600">
+            <select id="filter-admin-scope" data-mobile-group="commissions" class="hidden col-span-2 px-3 py-2 text-xs font-semibold bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-600">
               <option value="all">Toutes mes commissions (Directes + Équipe)</option>
               <option value="direct">Mes ventes directes uniquement</option>
             </select>
@@ -840,7 +1072,7 @@
             </select>
             <input id="filter-rep-month" type="month" class="w-full sm:w-auto px-3 py-2 text-xs font-medium bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-600" />
             <button id="btn-rep-all-months" class="w-full sm:w-auto px-3 py-2 text-xs font-semibold text-slate-700 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 transition text-center">Tout voir</button>
-            <button type="button" onclick="openTrashModal()" class="col-span-2 sm:col-span-1 w-full sm:w-auto px-3 py-2 text-xs font-semibold text-slate-700 bg-white border border-slate-200 rounded-xl hover:bg-rose-50 hover:text-rose-700 hover:border-rose-200 transition text-center flex items-center justify-center gap-1.5">
+            <button type="button" data-mobile-group="ventes" onclick="openTrashModal()" class="col-span-2 sm:col-span-1 w-full sm:w-auto px-3 py-2 text-xs font-semibold text-slate-700 bg-white border border-slate-200 rounded-xl hover:bg-rose-50 hover:text-rose-700 hover:border-rose-200 transition text-center flex items-center justify-center gap-1.5">
               <span>🗑️ Corbeille</span>
               <span class="trash-badge-count px-1.5 py-0.2 text-[10px] font-extrabold rounded-full bg-slate-100 text-slate-600">0</span>
             </button>
@@ -864,7 +1096,7 @@
 
           <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
             <!-- BARRE 1 : TARGET COMMISSION ($) -->
-            <div class="bg-gradient-to-br from-emerald-50/70 to-teal-50/40 rounded-2xl border border-emerald-200/80 p-3.5 space-y-2">
+            <div data-mobile-group="commissions" class="bg-gradient-to-br from-emerald-50/70 to-teal-50/40 rounded-2xl border border-emerald-200/80 p-3.5 space-y-2">
               <div class="flex items-center justify-between gap-2">
                 <span id="comm-bar-title" class="text-xs font-extrabold text-emerald-950">💵 Target Commission (Mois)</span>
                 <span id="comm-bar-pct-badge" class="px-2 py-0.5 text-[11px] font-extrabold rounded-full bg-emerald-100 text-emerald-800 tabular-nums">0 %</span>
@@ -880,7 +1112,7 @@
             </div>
 
             <!-- BARRE 2 : OBJECTIF VOLUME DE VENTES ($) -->
-            <div class="bg-slate-50/80 rounded-2xl border border-slate-200/80 p-3.5 space-y-2">
+            <div data-mobile-group="ventes" class="bg-slate-50/80 rounded-2xl border border-slate-200/80 p-3.5 space-y-2">
               <div class="flex items-center justify-between gap-2">
                 <span id="goal-bar-title" class="text-xs font-extrabold text-slate-900">🎯 Objectif Ventes (Mois)</span>
                 <span id="goal-bar-pct-badge" class="px-2 py-0.5 text-[11px] font-extrabold rounded-full bg-indigo-50 text-indigo-700 tabular-nums">0 %</span>
@@ -895,13 +1127,11 @@
               </div>
             </div>
           </div>
-
-
         </div>
 
         <!-- KPIs REPRÉSENTANT / OLIVIER -->
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs">
+          <div data-mobile-group="ventes" class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs">
             <div class="flex items-center justify-between">
               <span class="text-xs font-semibold text-slate-500">Ventes (Période)</span>
               <span class="w-8 h-8 rounded-lg bg-slate-100 text-slate-700 flex items-center justify-center text-xs font-bold">$</span>
@@ -914,7 +1144,7 @@
             </div>
           </div>
 
-          <div class="bg-gradient-to-br from-emerald-600 to-teal-700 p-5 rounded-2xl text-white shadow-md shadow-emerald-600/15 flex flex-col justify-between">
+          <div data-mobile-group="commissions" class="bg-gradient-to-br from-emerald-600 to-teal-700 p-5 rounded-2xl text-white shadow-md shadow-emerald-600/15 flex flex-col justify-between">
             <div>
               <div class="flex items-center justify-between gap-2">
                 <span class="text-xs font-semibold text-emerald-100">Ma commission (Période)</span>
@@ -939,7 +1169,7 @@
             </div>
           </div>
 
-          <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col justify-between">
+          <div data-mobile-group="ventes" class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col justify-between">
             <div>
               <div class="flex items-center justify-between">
                 <span class="text-xs font-semibold text-slate-500">Volume cumulé (Année)</span>
@@ -954,7 +1184,7 @@
             </div>
           </div>
 
-          <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col justify-between">
+          <div data-mobile-group="commissions" class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col justify-between">
             <div>
               <div class="flex items-center justify-between">
                 <span class="text-xs font-semibold text-slate-500">Commissions cumulées</span>
@@ -977,8 +1207,15 @@
           </div>
         </div>
 
-        <!-- CARTES MOBILES DES VENTES (< 768px : ZÉRO ZOOM REQUIS) -->
-        <div id="mobile-mes-ventes-cards" class="md:hidden space-y-3"></div>
+        <!-- CARTES MOBILES DES VENTES (< 768px : ONGLET MES VENTES) -->
+        <div data-mobile-group="ventes" class="md:hidden space-y-3">
+          <div id="mobile-mes-ventes-cards" class="space-y-3"></div>
+        </div>
+
+        <!-- CARTES MOBILES DES COMMISSIONS (< 768px : ONGLET MES COMMISSIONS) -->
+        <div data-mobile-group="commissions" class="md:hidden space-y-3">
+          <div id="mobile-mes-commissions-cards" class="space-y-3"></div>
+        </div>
 
         <!-- TABLEAU DES VENTES (DESKTOP >= 768px) -->
         <div class="hidden md:block bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden">
@@ -1212,7 +1449,7 @@
               </div>
               <div>
                 <label id="target-amount-label" class="block text-[11px] font-bold text-slate-600 mb-1">Montant ($ CAD) *</label>
-                <input id="target-amount-input" type="number" step="100" min="0" required placeholder="25000" class="w-full px-3 py-2 text-xs font-bold bg-slate-50 border border-slate-200 rounded-xl tabular-nums" />
+                <input id="target-amount-input" type="text" inputmode="decimal" required placeholder="25 000" class="w-full px-3 py-2 text-xs font-bold bg-slate-50 border border-slate-200 rounded-xl tabular-nums" />
               </div>
               <div class="flex items-center gap-2">
                 <label id="target-all-months-wrapper" class="flex items-center gap-1.5 text-[11px] font-semibold text-slate-600 cursor-pointer">
@@ -1939,6 +2176,7 @@
             if (cMeta && typeof cMeta === 'object') {
               companyTargetsMetaStore[String(r.mois_commission)] = cMeta;
               lsSet('korpo_company_targets_meta_v1', JSON.stringify(companyTargetsMetaStore));
+              applyCompanyTargetsMetaToStore();
             }
           } catch (e) {}
         } else if (sIdx === -7 && r.mois_commission && r.representant_nom) {
@@ -2800,7 +3038,29 @@
       return { url, key };
     }
 
+    function syncThemeToggleButtons() {
+      const isDark = document.documentElement.classList.contains('dark');
+      document.querySelectorAll('.theme-toggle-icon').forEach(el => {
+        el.textContent = isDark ? '☀️' : '🌙';
+      });
+      document.querySelectorAll('.theme-toggle-label').forEach(el => {
+        el.textContent = isDark ? 'Clair' : 'Sombre';
+      });
+      document.querySelectorAll('.theme-menu-text').forEach(el => {
+        el.textContent = isDark ? 'Passer en mode clair' : 'Passer en mode sombre';
+      });
+      const metaTheme = document.querySelector('meta[name="theme-color"]');
+      if (metaTheme) metaTheme.setAttribute('content', isDark ? '#090d16' : '#0f172a');
+    }
+
+    window.toggleColorTheme = () => {
+      const isDark = document.documentElement.classList.toggle('dark');
+      lsSet('korpo_theme_v1', isDark ? 'dark' : 'light');
+      syncThemeToggleButtons();
+    };
+
     async function initApp() {
+      syncThemeToggleButtons();
       initKpiControls();
       const { url, key } = getCredentials();
       if (!url || !key) {
@@ -2895,11 +3155,15 @@
       showScreen('screen-app');
     }
 
+    let activeMobilePersonalView = 'ventes'; // 'ventes' | 'commissions'
+
     function buildNavigation() {
       const nav = document.getElementById('nav-tabs');
       const isAdmin = currentProfile.role === 'admin';
       const tabs = [
-        { id: 'tab-mes-ventes', icon: '💵', label: 'Mes ventes & commissions' },
+        { id: 'tab-mes-ventes', icon: '💵', label: 'Mes ventes & commissions', desktopOnly: true },
+        { id: 'tab-mes-ventes', icon: '💵', label: 'Mes ventes', mobileOnly: true },
+        { id: 'tab-mes-commissions', icon: '💰', label: 'Mes commissions', mobileOnly: true },
         { id: 'tab-kpi', icon: '📊', label: 'Tableau KPI' },
         { id: 'tab-classement', icon: '🏆', label: 'Classement équipe' }
       ];
@@ -2912,12 +3176,15 @@
         );
       }
 
-      nav.innerHTML = tabs.map((t, idx) => `
-        <button data-tab="${t.id}" class="nav-btn px-3.5 py-2 text-xs font-semibold rounded-xl transition whitespace-nowrap inline-flex items-center gap-1.5 ${idx === 0 ? 'bg-indigo-600 text-white shadow-xs' : 'text-slate-300 hover:text-white hover:bg-slate-800'}">
-          <span class="text-sm leading-none">${t.icon}</span>
-          <span>${t.label}</span>
-        </button>
-      `).join('');
+      nav.innerHTML = tabs.map((t, idx) => {
+        const dispCls = t.desktopOnly ? 'hidden md:inline-flex' : (t.mobileOnly ? 'inline-flex md:hidden' : 'inline-flex');
+        return `
+          <button data-tab="${t.id}" class="nav-btn px-3.5 py-2 text-xs font-semibold rounded-xl transition whitespace-nowrap ${dispCls} items-center gap-1.5 ${idx === 0 ? 'bg-indigo-600 text-white shadow-xs' : 'text-slate-300 hover:text-white hover:bg-slate-800'}">
+            <span class="text-sm leading-none">${t.icon}</span>
+            <span>${t.label}</span>
+          </button>
+        `;
+      }).join('');
 
       document.querySelectorAll('.nav-btn').forEach(btn => {
         btn.addEventListener('click', () => switchTab(btn.dataset.tab));
@@ -2925,12 +3192,49 @@
       switchTab('tab-mes-ventes');
     }
 
+    function applyMobilePersonalSplitLayout() {
+      const sec = document.getElementById('tab-mes-ventes');
+      if (!sec) return;
+      const isCommMobile = activeMobilePersonalView === 'commissions';
+      const isMobile = window.innerWidth < 768;
+
+      const titleTextEl = document.getElementById('mes-ventes-main-title');
+      const titleIconEl = document.getElementById('mes-ventes-main-icon');
+      if (titleTextEl && titleIconEl) {
+        if (isMobile && isCommMobile) {
+          titleIconEl.textContent = '💰';
+          titleTextEl.textContent = 'Mes commissions';
+        } else if (isMobile) {
+          titleIconEl.textContent = '💵';
+          titleTextEl.textContent = 'Mes ventes';
+        } else {
+          titleIconEl.textContent = '💵';
+          titleTextEl.textContent = 'Mes ventes et commissions';
+        }
+      }
+
+      // Sur mobile, séparer proprement les éléments Ventes vs Commissions
+      sec.querySelectorAll('[data-mobile-group="ventes"]').forEach(el => {
+        el.classList.toggle('hidden', isMobile && isCommMobile);
+      });
+      sec.querySelectorAll('[data-mobile-group="commissions"]').forEach(el => {
+        el.classList.toggle('hidden', isMobile && !isCommMobile);
+      });
+    }
+
+    window.addEventListener('resize', applyMobilePersonalSplitLayout);
+
     function switchTab(tabId) {
+      const isMobileCommTab = tabId === 'tab-mes-commissions';
+      const targetSectionId = isMobileCommTab ? 'tab-mes-ventes' : tabId;
+      if (tabId === 'tab-mes-ventes') activeMobilePersonalView = 'ventes';
+      if (isMobileCommTab) activeMobilePersonalView = 'commissions';
+
       document.querySelectorAll('main > section').forEach(sec => {
-        sec.classList.toggle('hidden', sec.id !== tabId);
+        sec.classList.toggle('hidden', sec.id !== targetSectionId);
       });
       document.querySelectorAll('.nav-btn').forEach(btn => {
-        const active = btn.dataset.tab === tabId;
+        const active = btn.dataset.tab === tabId || (btn.classList.contains('md:inline-flex') && tabId === 'tab-mes-commissions' && btn.dataset.tab === 'tab-mes-ventes');
         btn.classList.toggle('bg-indigo-600', active);
         btn.classList.toggle('text-white', active);
         btn.classList.toggle('shadow-xs', active);
@@ -2938,6 +3242,7 @@
         btn.classList.toggle('hover:text-white', !active);
         btn.classList.toggle('hover:bg-slate-800', !active);
       });
+      if (targetSectionId === 'tab-mes-ventes') applyMobilePersonalSplitLayout();
       if (tabId === 'tab-kpi') renderKpiDashboard();
     }
 
@@ -2974,20 +3279,87 @@
       lsSet('korpo_client_targets_v1', JSON.stringify(clientTargetsStore));
     }
 
-    async function saveCompanyTargetMeta(entNom, repNom, metaObj) {
-      const key = `${entNom}__${repNom || 'ALL'}`;
-      companyTargetsMetaStore[key] = metaObj;
+    async function saveCompanyTargetMeta(entNom, repNom, metaObj, scopeYm = 'ALL') {
+      const key = scopeYm && scopeYm !== 'ALL'
+        ? `${entNom}__${repNom || 'ALL'}__${scopeYm}`
+        : `${entNom}__${repNom || 'ALL'}`;
+      companyTargetsMetaStore[key] = { ...metaObj, entNom, repNom: repNom || 'ALL', monthScope: scopeYm || 'ALL' };
       lsSet('korpo_company_targets_meta_v1', JSON.stringify(companyTargetsMetaStore));
+      applyCompanyTargetsMetaToStore();
       if (sb && currentProfile) {
         await safeUpsertKpiHebdoRow({
           mois_commission: key,
           semaine_index: -8,
-          representant_nom: JSON.stringify(metaObj),
+          representant_nom: JSON.stringify(companyTargetsMetaStore[key]),
           booke: 0,
           rdv_realise: 0,
           updated_at: new Date().toISOString()
         });
       }
+    }
+
+    async function removeCompanyTargetMeta(key) {
+      delete companyTargetsMetaStore[key];
+      lsSet('korpo_company_targets_meta_v1', JSON.stringify(companyTargetsMetaStore));
+      if (sb && currentProfile) {
+        try {
+          await sb.from('kpi_hebdo').delete().eq('mois_commission', key).eq('semaine_index', -8);
+        } catch (e) {}
+      }
+    }
+
+    function applyCompanyTargetsMetaToStore() {
+      if (!companyTargetsMetaStore || typeof companyTargetsMetaStore !== 'object') return;
+      const entries = Object.entries(companyTargetsMetaStore);
+      if (!entries.length) return;
+
+      // D'abord appliquer les règles globales ('ALL'), puis les règles spécifiques à un mois ('YYYY-MM')
+      const sortedEntries = entries.sort((a, b) => {
+        const scA = a[1]?.monthScope || (a[0].split('__')[2] || 'ALL');
+        const scB = b[1]?.monthScope || (b[0].split('__')[2] || 'ALL');
+        if (scA === scB) return 0;
+        return scA === 'ALL' ? -1 : 1;
+      });
+
+      sortedEntries.forEach(([key, meta]) => {
+        if (!meta || typeof meta !== 'object') return;
+        const parts = key.split('__');
+        const entNom = meta.entNom || parts[0];
+        const repNom = meta.repNom || parts[1] || 'ALL';
+        const monthScope = meta.monthScope || parts[2] || 'ALL';
+        const monthlyAmt = Number(meta.monthlyAmount || (meta.annualAmount ? Math.round((Number(meta.annualAmount) / 12) * 100) / 100 : 0));
+        if (!entNom || monthlyAmt <= 0) return;
+
+        const targetMonths = monthScope === 'ALL' ? Object.keys(kpiStore) : (kpiStore[monthScope] ? [monthScope] : []);
+        targetMonths.forEach(ym => {
+          const mObj = kpiStore[ym];
+          if (!mObj || !mObj.entreprises) return;
+          if (!mObj.entreprises[entNom]) {
+            const nw = mObj.num_weeks || 4;
+            mObj.entreprises[entNom] = {
+              reps: {
+                'Olivier': { weeks: Array(nw).fill(0), cumul: 0, objectif: 0 },
+                'Jean-Sébastien': { weeks: Array(nw).fill(0), cumul: 0, objectif: 0 },
+                'Gabryel': { weeks: Array(nw).fill(0), cumul: 0, objectif: 0 },
+                'Samuel': { weeks: Array(nw).fill(0), cumul: 0, objectif: 0 },
+                'Alexandre': { weeks: Array(nw).fill(0), cumul: 0, objectif: 0 }
+              },
+              total: { weeks: Array(nw).fill(0), cumul: 0, objectif: 0 }
+            };
+          }
+          if (repNom === 'ALL') {
+            mObj.entreprises[entNom].total.objectif = monthlyAmt;
+          } else if (mObj.entreprises[entNom].reps[repNom]) {
+            mObj.entreprises[entNom].reps[repNom].objectif = monthlyAmt;
+            // Recalculer le total compagnie uniquement si aucune règle globale 'ALL' explicite n'a été posée sur cette compagnie
+            const hasExplicitAll = Boolean(companyTargetsMetaStore[`${entNom}__ALL`] || companyTargetsMetaStore[`${entNom}__ALL__${ym}`]);
+            if (!hasExplicitAll) {
+              mObj.entreprises[entNom].total.objectif = Object.values(mObj.entreprises[entNom].reps)
+                .reduce((s, r) => s + Number(r.objectif || 0), 0);
+            }
+          }
+        });
+      });
     }
 
     window.openClientTargetsPanel = (presetEnt = '', presetClient = '') => {
@@ -3026,15 +3398,36 @@
     function renderActiveClientTargetsList() {
       const box = document.getElementById('active-client-targets-list');
       if (!box) return;
-      if (!clientTargetsStore.length) {
-        box.innerHTML = `<div class="col-span-full text-xs text-slate-400 italic py-2">Aucun objectif par client activé pour le moment. Utilisez le formulaire ci-dessus pour en activer un.</div>`;
+      const companyEntries = Object.entries(companyTargetsMetaStore || {}).filter(([, m]) => m && Number(m.monthlyAmount || m.annualAmount) > 0);
+      if (!clientTargetsStore.length && !companyEntries.length) {
+        box.innerHTML = `<div class="col-span-full text-xs text-slate-400 italic py-2">Aucun objectif personnalisé par compagnie ou client pour le moment. Utilisez le formulaire ci-dessus pour en activer un.</div>`;
         return;
       }
-      box.innerHTML = clientTargetsStore.map((t, idx) => `
+
+      const companyCardsHtml = companyEntries.map(([key, m]) => {
+        const entN = m.entNom || key.split('__')[0];
+        const repN = m.repNom || key.split('__')[1] || 'ALL';
+        const isAnn = m.periodicity === 'annual';
+        const labelVal = isAnn
+          ? `${fmtMoney0(m.annualAmount)}/an (${fmtMoney0(m.monthlyAmount)}/mois)`
+          : `${fmtMoney0(m.monthlyAmount)}/mois (${fmtMoney0(m.annualAmount || (m.monthlyAmount * 12))}/an)`;
+        const safeKey = key.replace(/'/g, "\'");
+        return `
+          <div class="flex items-center justify-between p-3 rounded-xl border bg-indigo-50/50 border-indigo-200">
+            <div class="min-w-0 pr-2">
+              <div class="text-xs font-extrabold text-indigo-950 truncate">🏢 ${esc(entN)} <span class="text-[10px] font-bold px-1.5 py-0.2 rounded bg-indigo-100 text-indigo-700">${isAnn ? 'Annuel' : 'Mensuel'}</span></div>
+              <div class="text-[11px] text-slate-700 tabular-nums mt-0.5">Cible : <strong>${labelVal}</strong> • ${esc(repN === 'ALL' ? 'Équipe' : repN)}</div>
+            </div>
+            <button type="button" onclick="deleteCompanyTargetEntry('${safeKey}')" title="Supprimer cet objectif compagnie" class="px-2 py-1 text-[10px] font-bold text-rose-600 hover:bg-rose-50 rounded-lg shrink-0">✕</button>
+          </div>
+        `;
+      }).join('');
+
+      const clientCardsHtml = clientTargetsStore.map((t, idx) => `
         <div class="flex items-center justify-between p-3 rounded-xl border ${t.active !== false ? 'bg-emerald-50/50 border-emerald-200' : 'bg-slate-50 border-slate-200 opacity-60'}">
           <div class="min-w-0 pr-2">
-            <div class="text-xs font-extrabold text-slate-900 truncate">${esc(t.clientNom || 'Toute la compagnie')} <span class="text-[10px] font-semibold text-slate-500">(${esc(t.entNom)})</span></div>
-            <div class="text-[11px] text-slate-600 tabular-nums">Cible : <strong>${fmtMoney0(t.objectif)}/mois</strong> • ${esc(t.repNom === 'ALL' ? 'Équipe' : t.repNom)}</div>
+            <div class="text-xs font-extrabold text-slate-900 truncate">👤 ${esc(t.clientNom || 'Toute la compagnie')} <span class="text-[10px] font-semibold text-slate-500">(${esc(t.entNom)})</span></div>
+            <div class="text-[11px] text-slate-600 tabular-nums">Cible : <strong>${t.periodicity === 'annual' ? `${fmtMoney0(t.annualObjectif || (t.objectif * 12))}/an` : `${fmtMoney0(t.objectif)}/mois`}</strong> • ${esc(t.repNom === 'ALL' ? 'Équipe' : t.repNom)}</div>
           </div>
           <div class="flex items-center gap-1.5 shrink-0">
             <button type="button" onclick="toggleClientTargetActive(${idx})" title="Activer / Désactiver" class="px-2 py-1 text-[10px] font-bold rounded-lg ${t.active !== false ? 'bg-emerald-600 text-white' : 'bg-slate-200 text-slate-700'}">
@@ -3044,7 +3437,16 @@
           </div>
         </div>
       `).join('');
+
+      box.innerHTML = companyCardsHtml + clientCardsHtml;
     }
+
+    window.deleteCompanyTargetEntry = async (key) => {
+      await removeCompanyTargetMeta(key);
+      renderActiveClientTargetsList();
+      renderKpiDashboard();
+      toast('Objectif compagnie supprimé');
+    };
 
     window.toggleClientTargetActive = (idx) => {
       if (!clientTargetsStore[idx]) return;
@@ -3224,12 +3626,12 @@
           const repNom = document.getElementById('target-rep-select').value;
           const periodicity = document.getElementById('target-periodicity-select')?.value || 'monthly';
           const isAnnualInput = periodicity === 'annual';
-          const rawAmount = parseFloat(document.getElementById('target-amount-input').value) || 0;
+          const rawAmount = parseAmount(document.getElementById('target-amount-input').value);
           const allMonths = isAnnualInput ? true : document.getElementById('target-apply-all-months').checked;
           const curSelMonth = document.getElementById('kpi-select-month').value;
           const targetMonth = allMonths ? 'ALL' : (curSelMonth.startsWith('YEAR_') ? currentMonthStr : curSelMonth);
 
-          if (rawAmount <= 0) return toast('Entrez un objectif supérieur à 0 $', 'error');
+          if (!rawAmount || isNaN(rawAmount) || rawAmount <= 0) return toast('Entrez un objectif supérieur à 0 $', 'error');
 
           const monthlyEquivalent = isAnnualInput ? Math.round((rawAmount / 12) * 100) / 100 : rawAmount;
           const annualEquivalent = isAnnualInput ? rawAmount : (rawAmount * 12);
@@ -3237,21 +3639,12 @@
           // Si aucun client précis n'est saisi, mettre à jour l'objectif de la compagnie dans kpiStore
           if (!clientNom) {
             const monthsToUpdate = allMonths ? Object.keys(kpiStore) : [targetMonth];
-            monthsToUpdate.forEach(ym => {
-              const mObj = ensureKpiMonthStructure(ym);
-              if (!mObj.entreprises[entNom]) return;
-              if (repNom === 'ALL') {
-                mObj.entreprises[entNom].total.objectif = monthlyEquivalent;
-              } else if (mObj.entreprises[entNom].reps[repNom]) {
-                mObj.entreprises[entNom].reps[repNom].objectif = monthlyEquivalent;
-                mObj.entreprises[entNom].total.objectif = Object.values(mObj.entreprises[entNom].reps).reduce((s, r) => s + Number(r.objectif || 0), 0);
-              }
-            });
+            monthsToUpdate.forEach(ym => ensureKpiMonthStructure(ym));
             await saveCompanyTargetMeta(entNom, repNom, {
               periodicity,
               monthlyAmount: monthlyEquivalent,
               annualAmount: annualEquivalent
-            });
+            }, targetMonth);
             lsSet('korpo_kpi_store_v1', JSON.stringify(kpiStore));
             toast(isAnnualInput
               ? `Objectif annuel mis à jour pour ${entNom} : ${fmtMoney0(annualEquivalent)}/an (${fmtMoney0(monthlyEquivalent)}/mois)`
@@ -4574,9 +4967,31 @@
       return { isYear: true, data: agg, monthsIncluded: matchingMonths };
     }
 
+    function getCompanyAnnualObjective(entName, repFilter, fallbackSumObj) {
+      if (repFilter && repFilter !== 'ALL') {
+        const repMeta = companyTargetsMetaStore[`${entName}__${repFilter}`];
+        if (repMeta && Number(repMeta.annualAmount) > 0) return Number(repMeta.annualAmount);
+        if (repMeta && Number(repMeta.monthlyAmount) > 0) return Number(repMeta.monthlyAmount) * 12;
+        return fallbackSumObj;
+      }
+      const allMeta = companyTargetsMetaStore[`${entName}__ALL`];
+      if (allMeta && Number(allMeta.annualAmount) > 0) return Number(allMeta.annualAmount);
+      if (allMeta && Number(allMeta.monthlyAmount) > 0) return Number(allMeta.monthlyAmount) * 12;
+
+      // Vérifier si des objectifs individuels par représentant existent pour cette compagnie
+      const repMetas = ALL_KPI_REPS
+        .map(rn => companyTargetsMetaStore[`${entName}__${rn}`])
+        .filter(Boolean);
+      if (repMetas.length > 0) {
+        return repMetas.reduce((sum, m) => sum + Number(m.annualAmount || (Number(m.monthlyAmount || 0) * 12)), 0);
+      }
+      return fallbackSumObj;
+    }
+
     function renderKpiDashboard() {
       normalizeKpiStoreReps();
       applyRepTargetsOverridesToStore();
+      applyCompanyTargetsMetaToStore();
       const selMonthEl = document.getElementById('kpi-select-month');
       if (!selMonthEl.value) populateKpiMonthSelect(false);
       const selVal = selMonthEl.value || currentMonthStr;
@@ -4866,25 +5281,25 @@
           : "Progression du volume de ventes ($) par rapport aux objectifs mensuels de chaque entreprise";
       }
 
+      const isAdminRole = currentProfile?.role === 'admin';
       const entList = Object.keys(mObj.entreprises);
       document.getElementById('kpi-entreprises-cards').innerHTML = entList.map(entName => {
         const eObj = mObj.entreprises[entName];
-        const metaKey = `${entName}__${repFilter}`;
-        const meta = companyTargetsMetaStore[metaKey];
         const totVal = repFilter === 'ALL' ? (eObj.total?.cumul || 0) : (eObj.reps[repFilter]?.cumul || 0);
-        let totObj = repFilter === 'ALL' ? (eObj.total?.objectif || 0) : (eObj.reps[repFilter]?.objectif || 0);
-        if (isYear && meta?.periodicity === 'annual' && meta.annualAmount > 0) {
-          totObj = Number(meta.annualAmount);
-        }
+        const rawSumObj = repFilter === 'ALL' ? (eObj.total?.objectif || 0) : (eObj.reps[repFilter]?.objectif || 0);
+        const totObj = isYear
+          ? getCompanyAnnualObjective(entName, repFilter, rawSumObj)
+          : rawSumObj;
+        const annualRef = isYear ? totObj : getCompanyAnnualObjective(entName, repFilter, rawSumObj * 12);
+        const monthlyRef = isYear ? Math.round(totObj / 12) : totObj;
         const pct = totObj > 0 ? Math.round((totVal / totObj) * 100) : 0;
         const objScopeTag = isYear ? 'Obj. annuel' : 'Obj. mensuel';
 
         const activeReps = Object.entries(eObj.reps)
           .filter(([rn, rv]) => (repFilter === 'ALL' || rn === repFilter) && (rv.cumul > 0 || rv.objectif > 0))
           .map(([rn, rv]) => {
-            const repMeta = companyTargetsMetaStore[`${entName}__${rn}`];
-            const repObjVal = (isYear && repMeta?.periodicity === 'annual' && repMeta.annualAmount > 0)
-              ? Number(repMeta.annualAmount)
+            const repObjVal = isYear
+              ? getCompanyAnnualObjective(entName, rn, rv.objectif)
               : rv.objectif;
             return `
               <div class="flex items-center justify-between text-xs py-1 border-t border-slate-100">
@@ -4902,12 +5317,19 @@
                 <div class="flex items-center gap-1.5">
                   <span class="px-2 py-0.5 text-[10px] font-bold rounded-full ${isYear ? 'bg-indigo-50 text-indigo-700 border border-indigo-200' : 'bg-slate-100 text-slate-600'}">${objScopeTag}</span>
                   <span class="text-xs font-extrabold ${pct >= 100 ? 'text-emerald-600' : 'text-slate-600'} tabular-nums">${totObj > 0 ? pct + ' %' : '—'}</span>
+                  ${isAdminRole ? `<button type="button" onclick="openClientTargetsPanel('${esc(entName)}')" title="Configurer l'objectif mensuel ou annuel de ${esc(entName)}" class="px-1.5 py-0.5 text-[11px] font-bold text-slate-500 hover:text-indigo-700 hover:bg-indigo-50 rounded-md transition">✎</button>` : ''}
                 </div>
               </div>
               <div class="flex items-baseline justify-between pt-1">
                 <span class="text-xl font-extrabold text-slate-900 tabular-nums">${fmtMoney0(totVal)}</span>
-                <span class="text-[11px] text-slate-500 font-semibold">${objScopeTag} : ${totObj > 0 ? fmtMoney0(totObj) : 'Aucun'}</span>
+                <span class="text-[11px] text-slate-600 font-bold tabular-nums">${objScopeTag} : ${totObj > 0 ? fmtMoney0(totObj) : 'Aucun'}</span>
               </div>
+              ${totObj > 0 ? `
+                <div class="text-[10px] text-slate-400 flex justify-between tabular-nums">
+                  <span>Mensuel : ${fmtMoney0(monthlyRef)}</span>
+                  <span>Annuel (12 mois) : ${fmtMoney0(annualRef)}</span>
+                </div>
+              ` : ''}
               <div class="w-full h-2 bg-slate-200/70 rounded-full overflow-hidden">
                 <div class="h-full ${progressColor(pct)} rounded-full" style="width: ${Math.min(100, pct)}%"></div>
               </div>
@@ -6316,11 +6738,16 @@
 
       const tbody = document.getElementById('tbody-mes-ventes');
       const mobileCardsBox = document.getElementById('mobile-mes-ventes-cards');
+      const mobileCommCardsBox = document.getElementById('mobile-mes-commissions-cards');
       if (!filtered.length) {
         tbody.innerHTML = `<tr><td colspan="${isAdmin ? 9 : 8}" class="py-12 text-center text-sm text-slate-400">Aucune vente enregistrée pour cette période.</td></tr>`;
         if (mobileCardsBox) {
           mobileCardsBox.innerHTML = `<div class="bg-white rounded-2xl border border-slate-200/80 p-8 text-center text-xs text-slate-400">Aucune vente enregistrée pour cette période.</div>`;
         }
+        if (mobileCommCardsBox) {
+          mobileCommCardsBox.innerHTML = `<div class="bg-white rounded-2xl border border-slate-200/80 p-8 text-center text-xs text-slate-400">Aucune commission enregistrée pour cette période.</div>`;
+        }
+        applyMobilePersonalSplitLayout();
         return;
       }
 
@@ -6345,8 +6772,8 @@
                   ${cleanNote ? `<div class="text-[11px] text-slate-400 truncate mt-0.5">${esc(cleanNote)}</div>` : ''}
                 </div>
                 <div class="text-right shrink-0 tabular-nums">
-                  <div class="text-xs font-bold text-slate-500">${fmtMoney(v.valeur)}</div>
-                  <div class="text-base font-extrabold text-emerald-600">+ ${fmtMoney(v.commission_rep)}</div>
+                  <div class="text-base font-extrabold text-slate-900">${fmtMoney(v.valeur)}</div>
+                  <button type="button" onclick="switchTab('tab-mes-commissions')" class="text-[11px] font-bold text-emerald-600 hover:underline mt-0.5">Voir comm. →</button>
                 </div>
               </div>
 
@@ -6359,9 +6786,6 @@
                   ${v.statut_depot === 'depot_recu' ? '✓ Dépôt reçu' : '⏳ À confirmer'}
                 </span>
                 ${agingBadgeForDeposit(v)}
-                <span class="px-2.5 py-1 text-[11px] font-semibold rounded-full ${v.statut_paiement === 'paye' ? 'bg-indigo-50 text-indigo-700' : 'bg-slate-100 text-slate-600'}">
-                  ${v.statut_paiement === 'paye' ? 'Payé' : 'Non payé'}
-                </span>
               </div>
 
               <div class="grid grid-cols-2 gap-2 pt-1">
@@ -6379,6 +6803,47 @@
           `;
         }).join('');
       }
+
+      if (mobileCommCardsBox) {
+        mobileCommCardsBox.innerHTML = filtered.map(v => {
+          const baseR = getRateForSale(v.representant_id, v.entreprise_id, v.client_id);
+          const diff = baseR ? Math.max(0, Number(v.taux_rep_applique) - Number(baseR.taux)) : 0.01;
+          const appliedRate = isAdmin && !isInspectingRep ? Number(v.taux_olivier_applique || 0) : Number(v.taux_rep_applique || 0);
+          return `
+            <div class="bg-white rounded-2xl border border-slate-200/80 p-4 shadow-xs space-y-2.5">
+              <div class="flex items-start justify-between gap-2">
+                <div class="min-w-0">
+                  <div class="flex items-center flex-wrap gap-1.5">
+                    ${entBadge(v.entreprise_nom)}
+                    <span class="text-[11px] font-semibold text-slate-400">${v.date_vente}</span>
+                    ${v._carriedOverFrom ? `<span class="px-1.5 py-0.5 text-[10px] font-bold rounded-md bg-amber-50 text-amber-800 border border-amber-200">↪ ${v._carriedOverFrom}</span>` : ''}
+                  </div>
+                  <div class="font-extrabold text-sm text-slate-900 mt-1.5 truncate">${esc(v.client_nom)}</div>
+                  ${isAdmin ? `<div class="text-[11px] font-semibold text-indigo-600">Rep : ${esc(v.rep_nom || '—')}</div>` : ''}
+                  <div class="text-[11px] text-slate-500 mt-0.5 tabular-nums">Vente : <strong>${fmtMoney(v.valeur)}</strong> • Taux : <strong>${fmtPct(appliedRate)}</strong></div>
+                </div>
+                <div class="text-right shrink-0 tabular-nums">
+                  <div class="text-lg font-extrabold text-emerald-600">+ ${fmtMoney(v.commission_rep)}</div>
+                  ${v._bonusApplied ? `<span class="inline-block mt-0.5 px-1.5 py-0.5 text-[10px] font-extrabold rounded bg-emerald-100 text-emerald-800">+${formatBonusPctShort(diff || 0.01)} bonus</span>` : ''}
+                </div>
+              </div>
+
+              <div class="flex items-center justify-between pt-2 border-t border-slate-100">
+                <div class="flex items-center gap-1.5">
+                  <span class="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-semibold rounded-full ${v.statut_depot === 'depot_recu' ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'}">
+                    ${v.statut_depot === 'depot_recu' ? '✓ Dépôt reçu' : '⏳ À confirmer'}
+                  </span>
+                  <span class="px-2.5 py-1 text-[11px] font-bold rounded-full ${v.statut_paiement === 'paye' ? 'bg-indigo-100 text-indigo-800' : 'bg-slate-100 text-slate-600'}">
+                    ${v.statut_paiement === 'paye' ? '✓ Payé' : 'À recevoir'}
+                  </span>
+                </div>
+                <button type="button" onclick="openSaleAuditModal('${v.id}')" class="text-[11px] font-semibold text-slate-500 hover:text-indigo-700">🕒 Détails</button>
+              </div>
+            </div>
+          `;
+        }).join('');
+      }
+      applyMobilePersonalSplitLayout();
 
       tbody.innerHTML = filtered.map(v => `
         <tr class="hover:bg-slate-50/90 transition">
