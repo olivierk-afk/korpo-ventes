@@ -165,6 +165,41 @@
     </div>
   </div>
 
+  <!-- MODALE JOURNAL D'AUDIT D'UNE VENTE -->
+  <div id="audit-modal" class="hidden fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-xs flex items-center justify-center p-4 no-print">
+    <div class="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-lg w-full max-h-[88vh] flex flex-col overflow-hidden">
+      <div class="px-5 py-4 bg-slate-900 text-white flex items-center justify-between">
+        <div>
+          <h3 id="audit-modal-title" class="text-sm font-extrabold">Journal d'audit du dossier</h3>
+          <p id="audit-modal-subtitle" class="text-[11px] text-slate-400 mt-0.5"></p>
+        </div>
+        <button id="btn-close-audit" type="button" class="w-8 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 flex items-center justify-center">✕</button>
+      </div>
+      <div id="audit-modal-body" class="p-5 overflow-y-auto space-y-3 bg-slate-50/60 flex-1"></div>
+    </div>
+  </div>
+
+  <!-- MODALE CORBEILLE DES VENTES (RESTAURATION 30 JOURS) -->
+  <div id="trash-modal" class="hidden fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-xs flex items-center justify-center p-4 no-print">
+    <div class="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-4xl w-full max-h-[90vh] flex flex-col overflow-hidden">
+      <div class="px-6 py-4 bg-slate-900 text-white flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <span class="w-9 h-9 rounded-xl bg-rose-500/20 text-rose-300 border border-rose-400/30 flex items-center justify-center text-base">🗑️</span>
+          <div>
+            <h3 class="text-base font-extrabold">Corbeille des ventes (Conservation 30 jours)</h3>
+            <p class="text-xs text-slate-400">Restaurez en un clic une vente supprimée par erreur avec ses commissions et son historique intact</p>
+          </div>
+        </div>
+        <button id="btn-close-trash" type="button" class="w-8 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 flex items-center justify-center">✕</button>
+      </div>
+      <div class="px-6 py-3 bg-amber-50/80 border-b border-amber-200/80 flex flex-wrap items-center justify-between gap-2 text-xs">
+        <span id="trash-count-summary" class="font-bold text-amber-950">0 vente dans la corbeille</span>
+        <button id="btn-empty-trash" type="button" class="hidden px-3 py-1 text-[11px] font-bold text-rose-700 bg-rose-100 hover:bg-rose-200 rounded-lg transition">Vider définitivement la corbeille</button>
+      </div>
+      <div id="trash-modal-body" class="p-5 overflow-y-auto space-y-3 flex-1 bg-slate-50/50"></div>
+    </div>
+  </div>
+
   <!-- MODALE RELEVÉ DE PAIE IMPRIMABLE / PDF / CSV -->
   <div id="payslip-modal" class="hidden fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-4">
     <div class="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-3xl w-full max-h-[90vh] flex flex-col overflow-hidden">
@@ -712,7 +747,7 @@
       <section id="tab-mes-ventes" class="space-y-6">
         <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <h2 class="text-xl font-extrabold text-slate-900 tracking-tight">Mes ventes et commissions</h2>
+            <h2 class="text-xl font-extrabold text-slate-900 tracking-tight flex items-center gap-2"><span class="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 border border-emerald-200/80 flex items-center justify-center text-base">💵</span><span>Mes ventes et commissions</span></h2>
             <p id="mes-ventes-subtitle" class="text-xs text-slate-500 mt-0.5">Suivi confidentiel de vos dossiers fermés, paiements reçus et soldes à venir</p>
           </div>
           <div class="grid grid-cols-2 sm:flex sm:flex-wrap items-stretch sm:items-center gap-2 w-full md:w-auto">
@@ -733,6 +768,10 @@
             </select>
             <input id="filter-rep-month" type="month" class="w-full sm:w-auto px-3 py-2 text-xs font-medium bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-600" />
             <button id="btn-rep-all-months" class="w-full sm:w-auto px-3 py-2 text-xs font-semibold text-slate-700 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 transition text-center">Tout voir</button>
+            <button type="button" onclick="openTrashModal()" class="col-span-2 sm:col-span-1 w-full sm:w-auto px-3 py-2 text-xs font-semibold text-slate-700 bg-white border border-slate-200 rounded-xl hover:bg-rose-50 hover:text-rose-700 hover:border-rose-200 transition text-center flex items-center justify-center gap-1.5">
+              <span>🗑️ Corbeille</span>
+              <span class="trash-badge-count px-1.5 py-0.2 text-[10px] font-extrabold rounded-full bg-slate-100 text-slate-600">0</span>
+            </button>
           </div>
         </div>
 
@@ -836,14 +875,14 @@
             <table class="w-full text-left border-collapse">
               <thead>
                 <tr class="bg-slate-50/80 border-b border-slate-200 text-[11px] font-bold text-slate-500 uppercase tracking-wider select-none">
-                  <th onclick="toggleSortMesVentes('date_vente')" class="py-3.5 px-4 cursor-pointer hover:text-indigo-600 transition group">Date & Mois <span id="sort-ind-mes-date_vente" class="ml-1 text-indigo-600">↓</span></th>
-                  <th onclick="toggleSortMesVentes('entreprise_nom')" class="py-3.5 px-4 cursor-pointer hover:text-indigo-600 transition group">Entreprise <span id="sort-ind-mes-entreprise_nom" class="ml-1 text-slate-300 group-hover:text-indigo-400">⇅</span></th>
-                  <th onclick="toggleSortMesVentes('client_nom')" class="py-3.5 px-4 cursor-pointer hover:text-indigo-600 transition group">Client <span id="sort-ind-mes-client_nom" class="ml-1 text-slate-300 group-hover:text-indigo-400">⇅</span></th>
-                  <th id="th-rep-col" onclick="toggleSortMesVentes('rep_nom')" class="hidden py-3.5 px-4 cursor-pointer hover:text-indigo-600 transition group">Représentant <span id="sort-ind-mes-rep_nom" class="ml-1 text-slate-300 group-hover:text-indigo-400">⇅</span></th>
-                  <th onclick="toggleSortMesVentes('valeur')" class="py-3.5 px-4 text-right cursor-pointer hover:text-indigo-600 transition group">Valeur vente <span id="sort-ind-mes-valeur" class="ml-1 text-slate-300 group-hover:text-indigo-400">⇅</span></th>
-                  <th onclick="toggleSortMesVentes('commission_rep')" class="py-3.5 px-4 text-right cursor-pointer hover:text-indigo-600 transition group">Ma commission <span id="sort-ind-mes-commission_rep" class="ml-1 text-slate-300 group-hover:text-indigo-400">⇅</span></th>
-                  <th onclick="toggleSortMesVentes('statut_depot')" class="py-3.5 px-4 cursor-pointer hover:text-indigo-600 transition group">Dépôt <span id="sort-ind-mes-statut_depot" class="ml-1 text-slate-300 group-hover:text-indigo-400">⇅</span></th>
-                  <th onclick="toggleSortMesVentes('statut_paiement')" class="py-3.5 px-4 cursor-pointer hover:text-indigo-600 transition group">Paiement <span id="sort-ind-mes-statut_paiement" class="ml-1 text-slate-300 group-hover:text-indigo-400">⇅</span></th>
+                  <th onclick="toggleSortMesVentes('date_vente')" class="py-3.5 px-4 cursor-pointer hover:text-indigo-600 transition group">📅 Date & Mois <span id="sort-ind-mes-date_vente" class="ml-1 text-indigo-600">↓</span></th>
+                  <th onclick="toggleSortMesVentes('entreprise_nom')" class="py-3.5 px-4 cursor-pointer hover:text-indigo-600 transition group">🏢 Entreprise <span id="sort-ind-mes-entreprise_nom" class="ml-1 text-slate-300 group-hover:text-indigo-400">⇅</span></th>
+                  <th onclick="toggleSortMesVentes('client_nom')" class="py-3.5 px-4 cursor-pointer hover:text-indigo-600 transition group">👤 Client <span id="sort-ind-mes-client_nom" class="ml-1 text-slate-300 group-hover:text-indigo-400">⇅</span></th>
+                  <th id="th-rep-col" onclick="toggleSortMesVentes('rep_nom')" class="hidden py-3.5 px-4 cursor-pointer hover:text-indigo-600 transition group">🧑‍💼 Représentant <span id="sort-ind-mes-rep_nom" class="ml-1 text-slate-300 group-hover:text-indigo-400">⇅</span></th>
+                  <th onclick="toggleSortMesVentes('valeur')" class="py-3.5 px-4 text-right cursor-pointer hover:text-indigo-600 transition group">💵 Valeur vente <span id="sort-ind-mes-valeur" class="ml-1 text-slate-300 group-hover:text-indigo-400">⇅</span></th>
+                  <th onclick="toggleSortMesVentes('commission_rep')" class="py-3.5 px-4 text-right cursor-pointer hover:text-indigo-600 transition group">★ Ma commission <span id="sort-ind-mes-commission_rep" class="ml-1 text-slate-300 group-hover:text-indigo-400">⇅</span></th>
+                  <th onclick="toggleSortMesVentes('statut_depot')" class="py-3.5 px-4 cursor-pointer hover:text-indigo-600 transition group">🏦 Dépôt <span id="sort-ind-mes-statut_depot" class="ml-1 text-slate-300 group-hover:text-indigo-400">⇅</span></th>
+                  <th onclick="toggleSortMesVentes('statut_paiement')" class="py-3.5 px-4 cursor-pointer hover:text-indigo-600 transition group">💳 Paiement <span id="sort-ind-mes-statut_paiement" class="ml-1 text-slate-300 group-hover:text-indigo-400">⇅</span></th>
                   <th class="py-3.5 px-4 text-right">Action</th>
                 </tr>
               </thead>
@@ -861,7 +900,7 @@
         <div class="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-xs flex flex-col lg:flex-row lg:items-center justify-between gap-4">
           <div>
             <div class="flex flex-wrap items-center gap-2.5">
-              <h2 class="text-xl font-extrabold text-slate-900 tracking-tight">Performance & Objectifs (KPI)</h2>
+              <h2 class="text-xl font-extrabold text-slate-900 tracking-tight flex items-center gap-2"><span class="w-8 h-8 rounded-xl bg-indigo-50 text-indigo-600 border border-indigo-200/80 flex items-center justify-center text-base">📊</span><span>Performance & Objectifs (KPI)</span></h2>
               <span class="px-2.5 py-0.5 text-[11px] font-bold rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">⚡ Mis à jour automatiquement avec vos ventes</span>
             </div>
             <p class="text-xs text-slate-500 mt-1">Comparez en un coup d'œil les rendez-vous, les ventes fermées et l'atteinte des objectifs par représentant et par compagnie.</p>
@@ -1120,7 +1159,7 @@
       <section id="tab-classement" class="hidden space-y-6">
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <h2 class="text-xl font-extrabold text-slate-900 tracking-tight">Classement de l'équipe</h2>
+            <h2 class="text-xl font-extrabold text-slate-900 tracking-tight flex items-center gap-2"><span class="w-8 h-8 rounded-xl bg-amber-50 text-amber-600 border border-amber-200/80 flex items-center justify-center text-base">🏆</span><span>Classement de l'équipe</span></h2>
             <p class="text-xs text-slate-500 mt-0.5">Comparatif des volumes de ventes (les commissions demeurent strictement privées)</p>
           </div>
           <div class="flex items-center gap-2">
@@ -1138,7 +1177,7 @@
       <section id="tab-admin-ventes" class="hidden space-y-5">
         <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
           <div>
-            <h2 class="text-xl font-extrabold text-slate-900 tracking-tight">Registre global des ventes</h2>
+            <h2 class="text-xl font-extrabold text-slate-900 tracking-tight flex items-center gap-2"><span class="w-8 h-8 rounded-xl bg-slate-100 text-slate-700 border border-slate-200 flex items-center justify-center text-base">📋</span><span>Registre global des ventes</span></h2>
             <p class="text-xs text-slate-500 mt-0.5">Modifiez, dupliquez, validez en lot, importez ou exportez vos dossiers</p>
           </div>
           <div class="grid grid-cols-2 sm:flex sm:flex-wrap items-stretch sm:items-center gap-2 w-full lg:w-auto">
@@ -1153,6 +1192,10 @@
               <input id="csv-import-input" type="file" accept=".csv" class="hidden" />
             </label>
             <button id="btn-csv-export" class="px-3 py-2.5 text-xs font-semibold text-slate-700 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 transition text-center">Exporter CSV</button>
+            <button type="button" onclick="openTrashModal()" class="px-3 py-2.5 text-xs font-bold text-slate-700 bg-white hover:bg-rose-50 hover:text-rose-700 border border-slate-200 hover:border-rose-200 rounded-xl transition text-center flex items-center justify-center gap-1.5">
+              <span>🗑️ Corbeille</span>
+              <span class="trash-badge-count px-1.5 py-0.2 text-[10px] font-extrabold rounded-full bg-slate-100 text-slate-700">0</span>
+            </button>
             <button id="btn-delete-all-ventes" class="px-3 py-2.5 text-xs font-semibold text-rose-600 bg-rose-50 hover:bg-rose-100 border border-rose-200 rounded-xl transition text-center">Tout supprimer</button>
           </div>
         </div>
@@ -1212,7 +1255,7 @@
       <section id="tab-admin-dashboard" class="hidden space-y-6">
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <h2 class="text-xl font-extrabold text-slate-900 tracking-tight">Tableau de bord exécutif</h2>
+            <h2 class="text-xl font-extrabold text-slate-900 tracking-tight flex items-center gap-2"><span class="w-8 h-8 rounded-xl bg-indigo-50 text-indigo-600 border border-indigo-200/80 flex items-center justify-center text-base">📈</span><span>Tableau de bord exécutif</span></h2>
             <p class="text-xs text-slate-500 mt-0.5">Vue consolidée, graphique mensuel et relevés de paie imprimables</p>
           </div>
           <div class="flex flex-wrap items-center gap-2">
@@ -1534,6 +1577,373 @@
       localStorage.setItem('korpo_kpi_manual_sales_v1', JSON.stringify(manualSalesOverrides));
     }
 
+    // =========================================================================
+    // JOURNAL D'AUDIT DES VENTES & CORBEILLE DE RESTAURATION (30 JOURS)
+    // =========================================================================
+    let saleAuditStore = JSON.parse(localStorage.getItem('korpo_sale_audit_v1') || '{}');
+    let saleTrashStore = JSON.parse(localStorage.getItem('korpo_sale_trash_v1') || '[]');
+    const TRASH_RETENTION_MS = 30 * 24 * 60 * 60 * 1000;
+
+    function pruneExpiredTrash() {
+      const now = Date.now();
+      const before = saleTrashStore.length;
+      saleTrashStore = saleTrashStore.filter(item => {
+        const delTime = item.deletedAt ? new Date(item.deletedAt).getTime() : now;
+        return (now - delTime) <= TRASH_RETENTION_MS;
+      });
+      if (saleTrashStore.length !== before) {
+        localStorage.setItem('korpo_sale_trash_v1', JSON.stringify(saleTrashStore));
+      }
+    }
+
+    function mergeCloudAuditAndTrash() {
+      if (!Array.isArray(kpiHebdoRows)) return;
+      kpiHebdoRows.forEach(r => {
+        const sIdx = Number(r.semaine_index);
+        if (sIdx === -2 && r.mois_commission && r.representant_nom) {
+          try {
+            const parsedEvents = JSON.parse(r.representant_nom);
+            if (Array.isArray(parsedEvents)) {
+              const sid = String(r.mois_commission);
+              const existing = saleAuditStore[sid] || [];
+              const merged = [...existing];
+              parsedEvents.forEach(ev => {
+                if (!merged.some(m => m.at === ev.at && m.action === ev.action && m.by === ev.by)) {
+                  merged.push(ev);
+                }
+              });
+              merged.sort((a, b) => (a.at || '').localeCompare(b.at || ''));
+              saleAuditStore[sid] = merged;
+            }
+          } catch (e) {}
+        } else if (sIdx === -3 && r.mois_commission && r.representant_nom) {
+          try {
+            const trashItem = JSON.parse(r.representant_nom);
+            if (trashItem && trashItem.sale && trashItem.sale.id) {
+              const tid = String(trashItem.sale.id);
+              const stillActive = (state.ventes || []).some(v => String(v.id) === tid);
+              if (!stillActive && !saleTrashStore.some(x => String(x.sale?.id) === tid)) {
+                saleTrashStore.push(trashItem);
+              }
+            }
+          } catch (e) {}
+        }
+      });
+      pruneExpiredTrash();
+      localStorage.setItem('korpo_sale_audit_v1', JSON.stringify(saleAuditStore));
+      localStorage.setItem('korpo_sale_trash_v1', JSON.stringify(saleTrashStore));
+      updateTrashBadges();
+    }
+
+    function updateTrashBadges() {
+      pruneExpiredTrash();
+      const isAdmin = currentProfile?.role === 'admin';
+      const visibleTrash = isAdmin
+        ? saleTrashStore
+        : saleTrashStore.filter(t => String(t.sale?.representant_id) === String(currentProfile?.id));
+      document.querySelectorAll('.trash-badge-count').forEach(el => {
+        el.textContent = String(visibleTrash.length);
+        el.className = visibleTrash.length > 0
+          ? 'trash-badge-count px-1.5 py-0.2 text-[10px] font-extrabold rounded-full bg-rose-100 text-rose-700'
+          : 'trash-badge-count px-1.5 py-0.2 text-[10px] font-extrabold rounded-full bg-slate-100 text-slate-600';
+      });
+    }
+
+    async function recordSaleAudit(saleId, action, detail = '', icon = '📝') {
+      if (!saleId) return;
+      const sid = String(saleId);
+      const actor = currentProfile?.nom || 'Système';
+      const entry = {
+        at: new Date().toISOString(),
+        by: actor,
+        action,
+        detail,
+        icon
+      };
+      if (!Array.isArray(saleAuditStore[sid])) saleAuditStore[sid] = [];
+      saleAuditStore[sid].push(entry);
+      localStorage.setItem('korpo_sale_audit_v1', JSON.stringify(saleAuditStore));
+
+      if (sb && currentProfile) {
+        try {
+          await sb.from('kpi_hebdo').upsert({
+            mois_commission: sid,
+            semaine_index: -2,
+            representant_nom: JSON.stringify(saleAuditStore[sid].slice(-25)),
+            booke: 0,
+            rdv_realise: 0,
+            updated_at: new Date().toISOString()
+          }, { onConflict: 'mois_commission,semaine_index,representant_nom' });
+        } catch (e) {}
+      }
+    }
+
+    async function moveSalesToTrash(salesArray) {
+      if (!Array.isArray(salesArray) || !salesArray.length) return;
+      const actor = currentProfile?.nom || 'Utilisateur';
+      const nowIso = new Date().toISOString();
+
+      for (const v of salesArray) {
+        const sid = String(v.id);
+        await recordSaleAudit(sid, 'Déplacée dans la corbeille', `Supprimée par ${actor} (restaurable pendant 30 jours)`, '🗑️');
+        const repNom = v.rep_nom || state.representants.find(r => String(r.id) === String(v.representant_id))?.nom || '—';
+        const entNom = v.entreprise_nom || state.entreprises.find(e => String(e.id) === String(v.entreprise_id))?.nom || '—';
+        const cliNom = v.client_nom || state.clients.find(c => String(c.id) === String(v.client_id))?.nom || '—';
+        const trashObj = {
+          deletedAt: nowIso,
+          deletedBy: actor,
+          repNom,
+          entNom,
+          cliNom,
+          proof: getProofForSale(v) || '',
+          audit: saleAuditStore[sid] || [],
+          sale: {
+            id: v.id,
+            representant_id: v.representant_id,
+            entreprise_id: v.entreprise_id,
+            client_id: v.client_id,
+            valeur: Number(v.valeur || 0),
+            date_vente: v.date_vente,
+            mois_commission: v.mois_commission,
+            taux_rep_applique: Number(v.taux_rep_applique || 0),
+            taux_olivier_applique: Number(v.taux_olivier_applique || 0),
+            commission_rep: Number(v.commission_rep || 0),
+            commission_olivier: Number(v.commission_olivier || 0),
+            statut_depot: v.statut_depot || 'a_confirmer',
+            statut_paiement: v.statut_paiement || 'non_paye',
+            note: v.note || ''
+          }
+        };
+        saleTrashStore = [trashObj, ...saleTrashStore.filter(x => String(x.sale?.id) !== sid)];
+
+        if (sb && currentProfile) {
+          try {
+            await sb.from('kpi_hebdo').upsert({
+              mois_commission: sid,
+              semaine_index: -3,
+              representant_nom: JSON.stringify(trashObj),
+              booke: 0,
+              rdv_realise: 0,
+              updated_at: nowIso
+            }, { onConflict: 'mois_commission,semaine_index,representant_nom' });
+          } catch (e) {}
+        }
+      }
+      localStorage.setItem('korpo_sale_trash_v1', JSON.stringify(saleTrashStore));
+      updateTrashBadges();
+    }
+
+    function fmtAuditDateTime(isoStr) {
+      if (!isoStr) return '';
+      try {
+        const d = new Date(isoStr);
+        return d.toLocaleDateString('fr-CA', { year: 'numeric', month: 'short', day: 'numeric' }) +
+          ' à ' + d.toLocaleTimeString('fr-CA', { hour: '2-digit', minute: '2-digit' });
+      } catch (e) {
+        return isoStr;
+      }
+    }
+
+    window.openSaleAuditModal = (saleId) => {
+      const sid = String(saleId);
+      const v = state.ventes.find(x => String(x.id) === sid) || state.mesVentes.find(x => String(x.id) === sid);
+      if (!v) return;
+
+      const repNom = v.rep_nom || state.representants.find(r => String(r.id) === String(v.representant_id))?.nom || '—';
+      const entNom = v.entreprise_nom || state.entreprises.find(e => String(e.id) === String(v.entreprise_id))?.nom || '—';
+      const cliNom = v.client_nom || state.clients.find(c => String(c.id) === String(v.client_id))?.nom || '—';
+
+      document.getElementById('audit-modal-title').textContent = `Journal d'audit — ${cliNom}`;
+      document.getElementById('audit-modal-subtitle').textContent = `${entNom} • Rep : ${repNom} • ${fmtMoney(v.valeur)} (${v.date_vente})`;
+
+      const recorded = [...(saleAuditStore[sid] || [])];
+      // Si la vente n'a pas encore d'entrée de création enregistrée (dossier importé ou antérieur), synthétiser sa trace initiale
+      if (!recorded.some(e => e.action === 'Vente créée')) {
+        recorded.unshift({
+          at: v.created_at || (v.date_vente ? `${v.date_vente}T12:00:00` : new Date().toISOString()),
+          by: repNom,
+          action: 'Vente enregistrée',
+          detail: `Dossier ${entNom} — ${cliNom} (${fmtMoney(v.valeur)})`,
+          icon: '💵'
+        });
+      }
+
+      const body = document.getElementById('audit-modal-body');
+      body.innerHTML = `
+        <div class="bg-white rounded-xl border border-slate-200/90 p-3.5 flex flex-wrap items-center justify-between gap-2 text-xs">
+          <div>
+            <span class="text-slate-400">Statut actuel :</span>
+            <strong class="${v.statut_depot === 'depot_recu' ? 'text-emerald-700' : 'text-amber-700'}">${v.statut_depot === 'depot_recu' ? 'Dépôt reçu' : 'À confirmer'}</strong>
+            <span class="mx-1 text-slate-300">•</span>
+            <strong class="${v.statut_paiement === 'paye' ? 'text-indigo-700' : 'text-slate-700'}">${v.statut_paiement === 'paye' ? 'Payé' : 'Non payé'}</strong>
+          </div>
+          <span class="text-[11px] font-semibold text-slate-500">${recorded.length} événement(s)</span>
+        </div>
+
+        <div class="relative pl-6 space-y-3 before:content-[''] before:absolute before:left-2.5 before:top-2 before:bottom-2 before:w-0.5 before:bg-slate-200">
+          ${recorded.slice().reverse().map(ev => `
+            <div class="relative bg-white rounded-xl border border-slate-200/80 p-3 shadow-2xs">
+              <span class="absolute -left-6 top-3 w-5 h-5 rounded-full bg-indigo-50 border border-indigo-200 flex items-center justify-center text-[11px]">${ev.icon || '📝'}</span>
+              <div class="flex items-center justify-between gap-2">
+                <span class="text-xs font-extrabold text-slate-900">${ev.action}</span>
+                <span class="text-[10px] font-semibold text-slate-400 tabular-nums">${fmtAuditDateTime(ev.at)}</span>
+              </div>
+              ${ev.detail ? `<div class="text-xs text-slate-600 mt-0.5">${ev.detail}</div>` : ''}
+              <div class="text-[11px] font-semibold text-indigo-600 mt-1">Par : ${ev.by}</div>
+            </div>
+          `).join('')}
+        </div>
+      `;
+      document.getElementById('audit-modal').classList.remove('hidden');
+    };
+
+    window.openTrashModal = () => {
+      pruneExpiredTrash();
+      const isAdmin = currentProfile?.role === 'admin';
+      const visibleTrash = isAdmin
+        ? saleTrashStore
+        : saleTrashStore.filter(t => String(t.sale?.representant_id) === String(currentProfile?.id));
+
+      document.getElementById('trash-count-summary').textContent = `${visibleTrash.length} vente(s) dans la corbeille`;
+      const emptyBtn = document.getElementById('btn-empty-trash');
+      if (emptyBtn) emptyBtn.classList.toggle('hidden', !(isAdmin && visibleTrash.length > 0));
+
+      const body = document.getElementById('trash-modal-body');
+      if (!visibleTrash.length) {
+        body.innerHTML = `<div class="py-12 text-center text-xs text-slate-400">La corbeille est vide. Les ventes supprimées apparaîtront ici pendant 30 jours.</div>`;
+      } else {
+        body.innerHTML = visibleTrash.map(item => {
+          const s = item.sale || {};
+          const sid = String(s.id);
+          const daysLeft = Math.max(1, 30 - Math.floor((Date.now() - new Date(item.deletedAt).getTime()) / (1000 * 60 * 60 * 24)));
+          return `
+            <div class="bg-white rounded-2xl border border-slate-200/90 p-4 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div class="space-y-1 min-w-0">
+                <div class="flex items-center flex-wrap gap-2">
+                  ${entBadge(item.entNom || '—')}
+                  <span class="font-extrabold text-sm text-slate-900 truncate">${item.cliNom || 'Client'}</span>
+                  <span class="text-xs font-bold text-indigo-600">(${item.repNom || '—'})</span>
+                </div>
+                <div class="text-xs text-slate-600 tabular-nums">
+                  Date vente : <strong>${s.date_vente || '—'}</strong> • Montant : <strong>${fmtMoney(s.valeur)}</strong> • Comm. Rep : <strong class="text-emerald-700">${fmtMoney(s.commission_rep)}</strong>
+                </div>
+                <div class="text-[11px] text-slate-400">
+                  Supprimée par <strong>${item.deletedBy}</strong> le ${fmtAuditDateTime(item.deletedAt)} • <span class="text-amber-700 font-semibold">${daysLeft}j restant(s)</span>
+                </div>
+              </div>
+              <div class="flex items-center gap-2 shrink-0">
+                <button type="button" onclick="restoreSaleFromTrash('${sid}')" class="px-3.5 py-2 text-xs font-extrabold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl shadow-xs transition">
+                  ♻️ Restaurer
+                </button>
+                ${isAdmin ? `<button type="button" onclick="permanentlyDeleteFromTrash('${sid}')" class="px-2.5 py-2 text-xs font-semibold text-rose-600 hover:bg-rose-50 rounded-xl transition">Supprimer</button>` : ''}
+              </div>
+            </div>
+          `;
+        }).join('');
+      }
+      document.getElementById('trash-modal').classList.remove('hidden');
+    };
+
+    window.restoreSaleFromTrash = async (saleId) => {
+      const sid = String(saleId);
+      const item = saleTrashStore.find(x => String(x.sale?.id) === sid);
+      if (!item || !item.sale) return;
+
+      const s = item.sale;
+      const clientId = await getOrCreateClient(item.cliNom || 'Client restauré', s.entreprise_id);
+      const insertPayload = {
+        representant_id: s.representant_id,
+        entreprise_id: s.entreprise_id,
+        client_id: clientId,
+        valeur: s.valeur,
+        date_vente: s.date_vente,
+        mois_commission: s.mois_commission,
+        taux_rep_applique: s.taux_rep_applique,
+        taux_olivier_applique: s.taux_olivier_applique,
+        commission_rep: s.commission_rep,
+        commission_olivier: s.commission_olivier,
+        statut_depot: s.statut_depot || 'a_confirmer',
+        statut_paiement: s.statut_paiement || 'non_paye',
+        note: s.note || '[OTS]'
+      };
+      if (item.proof) insertPayload.preuve_url = item.proof;
+
+      let { data: restoredRow, error } = await sb.from('ventes').insert(insertPayload).select().single();
+      if (error && item.proof && (error.message || '').includes('preuve_url')) {
+        delete insertPayload.preuve_url;
+        const retry = await sb.from('ventes').insert(insertPayload).select().single();
+        restoredRow = retry.data;
+        error = retry.error;
+      }
+      if (error) return toast('Erreur de restauration : ' + error.message, 'error');
+
+      const newId = String(restoredRow.id);
+      if (item.proof) {
+        saleProofsStore[newId] = item.proof;
+        saveSaleProofsStore();
+      }
+      saleAuditStore[newId] = [...(item.audit || [])];
+      await recordSaleAudit(newId, 'Restaurée depuis la corbeille', `Restaurée par ${currentProfile?.nom || 'Utilisateur'}`, '♻️');
+
+      saleTrashStore = saleTrashStore.filter(x => String(x.sale?.id) !== sid);
+      localStorage.setItem('korpo_sale_trash_v1', JSON.stringify(saleTrashStore));
+      if (sb && currentProfile) {
+        try {
+          await sb.from('kpi_hebdo').delete().eq('mois_commission', sid).eq('semaine_index', -3);
+        } catch (e) {}
+      }
+
+      updateTrashBadges();
+      document.getElementById('trash-modal').classList.add('hidden');
+      toast('Vente restaurée avec succès ♻️');
+      await loadAllData();
+    };
+
+    window.permanentlyDeleteFromTrash = async (saleId) => {
+      const sid = String(saleId);
+      const ok = await askConfirm('Supprimer définitivement ?', 'Cette vente ne pourra plus être restaurée.');
+      if (!ok) return;
+      saleTrashStore = saleTrashStore.filter(x => String(x.sale?.id) !== sid);
+      localStorage.setItem('korpo_sale_trash_v1', JSON.stringify(saleTrashStore));
+      if (sb && currentProfile) {
+        try {
+          await sb.from('kpi_hebdo').delete().eq('mois_commission', sid).eq('semaine_index', -3);
+        } catch (e) {}
+      }
+      updateTrashBadges();
+      openTrashModal();
+      toast('Supprimée définitivement');
+    };
+
+    document.getElementById('btn-close-audit')?.addEventListener('click', () => {
+      document.getElementById('audit-modal').classList.add('hidden');
+    });
+    document.getElementById('audit-modal')?.addEventListener('click', (e) => {
+      if (e.target.id === 'audit-modal') document.getElementById('audit-modal').classList.add('hidden');
+    });
+    document.getElementById('btn-close-trash')?.addEventListener('click', () => {
+      document.getElementById('trash-modal').classList.add('hidden');
+    });
+    document.getElementById('trash-modal')?.addEventListener('click', (e) => {
+      if (e.target.id === 'trash-modal') document.getElementById('trash-modal').classList.add('hidden');
+    });
+    document.getElementById('btn-empty-trash')?.addEventListener('click', async () => {
+      if (currentProfile?.role !== 'admin') return;
+      const ok = await askConfirm('Vider la corbeille ?', 'Toutes les ventes dans la corbeille seront définitivement supprimées.');
+      if (!ok) return;
+      const ids = saleTrashStore.map(x => String(x.sale?.id)).filter(Boolean);
+      saleTrashStore = [];
+      localStorage.setItem('korpo_sale_trash_v1', '[]');
+      if (sb && ids.length) {
+        try {
+          await sb.from('kpi_hebdo').delete().in('mois_commission', ids).eq('semaine_index', -3);
+        } catch (e) {}
+      }
+      updateTrashBadges();
+      openTrashModal();
+      toast('Corbeille vidée');
+    });
+
     function syncGoogleAgendaIntoKpi() {
       const allMonths = new Set([
         ...(kpiHebdoRows || []).map(r => r.mois_commission).filter(Boolean),
@@ -1830,22 +2240,23 @@
       const nav = document.getElementById('nav-tabs');
       const isAdmin = currentProfile.role === 'admin';
       const tabs = [
-        { id: 'tab-mes-ventes', label: 'Mes ventes & commissions' },
-        { id: 'tab-kpi', label: 'Tableau KPI' },
-        { id: 'tab-classement', label: 'Classement équipe' }
+        { id: 'tab-mes-ventes', icon: '💵', label: 'Mes ventes & commissions' },
+        { id: 'tab-kpi', icon: '📊', label: 'Tableau KPI' },
+        { id: 'tab-classement', icon: '🏆', label: 'Classement équipe' }
       ];
       if (isAdmin) {
         tabs.push(
-          { id: 'tab-admin-ventes', label: 'Toutes les ventes & CSV' },
-          { id: 'tab-admin-dashboard', label: 'Tableau de bord' },
-          { id: 'tab-admin-taux', label: 'Grille des taux' },
-          { id: 'tab-admin-equipe', label: 'Entreprises & Équipe' }
+          { id: 'tab-admin-ventes', icon: '📋', label: 'Toutes les ventes & CSV' },
+          { id: 'tab-admin-dashboard', icon: '📈', label: 'Tableau de bord' },
+          { id: 'tab-admin-taux', icon: '⚙️', label: 'Grille des taux' },
+          { id: 'tab-admin-equipe', icon: '🏢', label: 'Entreprises & Équipe' }
         );
       }
 
       nav.innerHTML = tabs.map((t, idx) => `
-        <button data-tab="${t.id}" class="nav-btn px-3.5 py-2 text-xs font-semibold rounded-xl transition whitespace-nowrap ${idx === 0 ? 'bg-indigo-600 text-white shadow-xs' : 'text-slate-300 hover:text-white hover:bg-slate-800'}">
-          ${t.label}
+        <button data-tab="${t.id}" class="nav-btn px-3.5 py-2 text-xs font-semibold rounded-xl transition whitespace-nowrap inline-flex items-center gap-1.5 ${idx === 0 ? 'bg-indigo-600 text-white shadow-xs' : 'text-slate-300 hover:text-white hover:bg-slate-800'}">
+          <span class="text-sm leading-none">${t.icon}</span>
+          <span>${t.label}</span>
         </button>
       `).join('');
 
@@ -2362,6 +2773,7 @@
     window.quickConfirmSale = async (saleId) => {
       const { error } = await sb.from('ventes').update({ statut_depot: 'depot_recu' }).eq('id', saleId);
       if (error) return toast(error.message, 'error');
+      await recordSaleAudit(saleId, 'Dépôt confirmé (Reçu)', 'Validation rapide depuis les notifications', '✅');
       toast('Vente confirmée (Dépôt reçu) ✓');
       await loadAllData();
     };
@@ -2607,6 +3019,7 @@
         saleProofsStore[String(saleId)] = dataUrl;
         saveSaleProofsStore();
         const { error } = await sb.from('ventes').update({ preuve_url: dataUrl }).eq('id', saleId);
+        await recordSaleAudit(saleId, 'Preuve photo ajoutée', 'Capture / reçu téléversé sur le dossier', '📷');
         if (error) {
           toast('Photo enregistrée localement (vérifiez la colonne preuve_url dans Supabase)', 'error');
         } else {
@@ -3530,12 +3943,12 @@
       document.getElementById('table-kpi-team-compare').innerHTML = `
         <thead>
           <tr class="bg-slate-50 border-b border-slate-200 text-[11px] font-bold uppercase text-slate-500">
-            <th class="py-3 px-5">Représentant</th>
-            <th class="py-3 px-4 text-center">RDV Réa / Bookés</th>
-            <th class="py-3 px-4 text-center">Ventes fermées</th>
-            <th class="py-3 px-4 text-center">% Close</th>
-            <th class="py-3 px-4 text-right">Volume généré</th>
-            <th class="py-3 px-5">Progression objectif</th>
+            <th class="py-3 px-5">🧑‍💼 Représentant</th>
+            <th class="py-3 px-4 text-center">📅 RDV Réa / Bookés</th>
+            <th class="py-3 px-4 text-center">✍️ Ventes fermées</th>
+            <th class="py-3 px-4 text-center">📈 % Close</th>
+            <th class="py-3 px-4 text-right">💵 Volume généré</th>
+            <th class="py-3 px-5">🎯 Progression objectif</th>
           </tr>
         </thead>
         <tbody class="divide-y divide-slate-100">${compareRows}</tbody>
@@ -4482,6 +4895,7 @@
 
         syncSalesIntoKpi();
         syncGoogleAgendaIntoKpi();
+        mergeCloudAuditAndTrash();
         populateAdminSelects();
         renderAdminVentes();
         renderAdminDashboard();
@@ -4509,6 +4923,7 @@
         }
         syncSalesIntoKpi();
         syncGoogleAgendaIntoKpi();
+        mergeCloudAuditAndTrash();
         populateDrawerSelects();
       }
 
@@ -4719,7 +5134,7 @@
         badgeEl.className = 'px-2 py-0.5 text-[11px] font-extrabold rounded-full bg-emerald-100 text-emerald-800 tabular-nums';
         fillEl.className = 'h-full rounded-full bg-gradient-to-r from-emerald-500 to-teal-400 transition-all duration-700 ease-out';
         remEl.textContent = `Objectif dépassé de + ${fmtMoney(achievedSales - salesTarget)} !`;
-        msgEl.textContent = '🔥 Target ventes atteint !';
+        msgEl.textContent = isAdmin ? '🔥 Target atteint (+1% Rep / -1% Oli actif)' : '🔥 Bonus +1 % actif sur vos nouvelles ventes !';
         msgEl.className = 'font-extrabold text-emerald-600';
       } else if (salesPct >= 65) {
         badgeEl.className = 'px-2 py-0.5 text-[11px] font-extrabold rounded-full bg-amber-100 text-amber-800 tabular-nums';
@@ -4945,9 +5360,10 @@
                 }
                 ${canDelete
                   ? `<button type="button" onclick="deleteVente('${v.id}')" class="w-full py-2 px-3 text-xs font-bold rounded-xl bg-rose-50 text-rose-600 border border-rose-200 text-center">Supprimer</button>`
-                  : `<div class="w-full py-2 px-3 text-[11px] font-semibold text-slate-400 bg-slate-50 rounded-xl text-center">Verrouillé</div>`
+                  : `<button type="button" onclick="openSaleAuditModal('${v.id}')" class="w-full py-2 px-3 text-xs font-bold rounded-xl bg-slate-100 text-slate-700 text-center">🕒 Historique</button>`
                 }
               </div>
+              ${canDelete ? `<button type="button" onclick="openSaleAuditModal('${v.id}')" class="w-full py-1.5 px-3 text-[11px] font-semibold text-slate-500 hover:text-indigo-700 bg-slate-50 rounded-xl text-center">🕒 Voir le journal d'audit</button>` : ''}
             </div>
           `;
         }).join('');
@@ -4996,7 +5412,8 @@
               ${v.statut_paiement === 'paye' ? 'Payé' : 'Non payé'}
             </span>
           </td>
-          <td class="py-3.5 px-4 text-right whitespace-nowrap">
+          <td class="py-3.5 px-4 text-right whitespace-nowrap space-x-1.5">
+            <button type="button" onclick="openSaleAuditModal('${v.id}')" title="Journal d'audit du dossier" class="px-2 py-1 text-xs font-semibold text-slate-600 hover:text-indigo-700 hover:bg-indigo-50 rounded-lg transition">🕒 Audit</button>
             ${(v.statut_depot === 'a_confirmer' && v.statut_paiement !== 'paye')
               ? `<button type="button" onclick="deleteVente('${v.id}')" class="px-2.5 py-1 text-xs font-semibold text-rose-600 hover:bg-rose-50 rounded-lg transition">Supprimer</button>`
               : `<span class="text-[11px] text-slate-400" title="Dossier verrouillé après confirmation du dépôt">Verrouillé</span>`
@@ -5044,12 +5461,12 @@
                     <span>${r.nom}</span>
                     ${isMe ? '<span class="text-[10px] font-bold uppercase px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-600">Vous</span>' : ''}
                   </div>
-                  <div class="text-xs text-slate-400">Position #${idx + 1}</div>
+                  <div class="text-xs text-slate-400 flex items-center gap-1"><span>${idx === 0 ? '👑 Leader • ' : ''}Position #${idx + 1}</span></div>
                 </div>
               </div>
               <div class="text-right shrink-0 tabular-nums">
-                <div class="text-lg font-extrabold text-slate-900">${fmtMoney(r.total)}</div>
-                <div class="text-[11px] font-semibold text-slate-400">Target : ${fmtMoney0(repTarget)}</div>
+                <div class="text-lg font-extrabold text-slate-900">💰 ${fmtMoney(r.total)}</div>
+                <div class="text-[11px] font-semibold text-slate-400">🎯 Target : ${fmtMoney0(repTarget)}</div>
               </div>
             </div>
 
@@ -5079,15 +5496,21 @@
         || state.taux.find(t => String(t.representant_id) === rStr && String(t.entreprise_id) === eStr && !t.client_id);
     }
 
-    function updateDrawerCommissionPreview() {
-      const repId = document.getElementById('vente-rep').value;
-      const entId = document.getElementById('vente-entreprise').value;
-      const clientNom = document.getElementById('vente-client-nom').value.trim().toLowerCase();
-      const val = parseFloat(document.getElementById('vente-valeur').value) || 0;
+    function getRepMonthPriorSalesVolume(repId, ym, excludeSaleId = null) {
+      const rStr = String(repId || '');
+      const targetYm = ym || currentMonthStr;
+      const sourceList = (state.ventes && state.ventes.length) ? state.ventes : (state.mesVentes || []);
+      return sourceList.reduce((sum, v) => {
+        if (excludeSaleId && String(v.id) === String(excludeSaleId)) return sum;
+        if (String(v.representant_id) !== rStr) return sum;
+        const vYm = v.mois_commission || (v.date_vente ? v.date_vente.slice(0, 7) : '');
+        if (vYm !== targetYm) return sum;
+        return sum + Number(v.valeur || 0);
+      }, 0);
+    }
 
-      const matchedClient = state.clients.find(c => String(c.entreprise_id) === String(entId) && c.nom.toLowerCase() === clientNom);
-      let rateObj = getRateForSale(repId, entId, matchedClient?.id || null);
-
+    function getEffectiveRatesWithTargetBonus(repId, entId, clientId, ym, excludeSaleId = null, customPriorVolume = null) {
+      let rateObj = getRateForSale(repId, entId, clientId);
       if (!rateObj && state.mesVentes && state.mesVentes.length) {
         const pastSale = state.mesVentes.find(v => String(v.entreprise_id) === String(entId) && Number(v.taux_rep_applique) > 0);
         if (pastSale) {
@@ -5095,21 +5518,65 @@
         }
       }
 
-      const tRep = rateObj ? Number(rateObj.taux) : 0;
-      const tOli = rateObj ? Number(rateObj.taux_olivier) : 0;
+      const baseRep = rateObj ? Number(rateObj.taux) : 0;
+      const baseOli = rateObj ? Number(rateObj.taux_olivier) : 0;
+
+      const repObj = state.representants.find(r => String(r.id) === String(repId))
+        || (currentProfile && String(currentProfile.id) === String(repId) ? currentProfile : null);
+      const repName = repObj?.nom || '';
+      const activeYm = ym || currentMonthStr;
+      const salesTarget = repName ? getSalesTargetForRep(repName, activeYm) : 0;
+      const priorVolume = customPriorVolume !== null
+        ? Number(customPriorVolume)
+        : getRepMonthPriorSalesVolume(repId, activeYm, excludeSaleId);
+
+      // Le bonus +1% Rep / -1% Olivier s'applique uniquement sur les nouvelles ventes une fois l'objectif mensuel atteint (non rétroactif)
+      const isRepRole = !repObj || repObj.role !== 'admin';
+      const bonusActive = Boolean(rateObj && isRepRole && salesTarget > 0 && priorVolume >= salesTarget);
+      const bonusDelta = bonusActive ? 0.01 : 0;
+
+      const finalRep = Math.round((baseRep + bonusDelta) * 100000) / 100000;
+      const finalOli = bonusActive
+        ? Math.max(0, Math.round((baseOli - bonusDelta) * 100000) / 100000)
+        : baseOli;
+
+      return {
+        hasRule: Boolean(rateObj),
+        baseRep,
+        baseOli,
+        tRep: finalRep,
+        tOli: finalOli,
+        bonusActive,
+        priorVolume,
+        salesTarget
+      };
+    }
+
+    function updateDrawerCommissionPreview() {
+      const editId = document.getElementById('vente-edit-id')?.value || null;
+      const repId = document.getElementById('vente-rep').value;
+      const entId = document.getElementById('vente-entreprise').value;
+      const ym = document.getElementById('vente-mois-comm')?.value || currentMonthStr;
+      const clientNom = document.getElementById('vente-client-nom').value.trim().toLowerCase();
+      const val = parseFloat(document.getElementById('vente-valeur').value) || 0;
+
+      const matchedClient = state.clients.find(c => String(c.entreprise_id) === String(entId) && c.nom.toLowerCase() === clientNom);
+      const eff = getEffectiveRatesWithTargetBonus(repId, entId, matchedClient?.id || null, ym, editId);
+      const { hasRule, tRep, tOli, bonusActive } = eff;
 
       const isAdmin = currentProfile?.role === 'admin';
       const oliEl = document.getElementById('preview-comm-olivier');
+      const bonusTag = bonusActive ? ' 🔥 (+1% Bonus Target atteint !)' : '';
       if (isAdmin) {
-        document.getElementById('preview-taux-label').textContent = rateObj
-          ? `Règle : ${fmtPct(tRep)} Rep / ${fmtPct(tOli)} Olivier`
+        document.getElementById('preview-taux-label').innerHTML = hasRule
+          ? `Règle : <strong>${fmtPct(tRep)}</strong> Rep / <strong>${fmtPct(tOli)}</strong> Olivier${bonusActive ? ' <span class="inline-block ml-1 px-1.5 py-0.5 text-[10px] font-extrabold rounded-md bg-emerald-100 text-emerald-800">🔥 +1% Rep / -1% Oli</span>' : ''}`
           : 'Aucun taux configuré (0 % par défaut)';
         document.getElementById('preview-comm-rep').textContent = `Rep : ${fmtMoney(val * tRep)}`;
         oliEl.textContent = `Olivier : ${fmtMoney(val * tOli)}`;
         oliEl.classList.remove('hidden');
       } else {
-        document.getElementById('preview-taux-label').textContent = rateObj
-          ? `Votre taux applicable : ${fmtPct(tRep)}`
+        document.getElementById('preview-taux-label').innerHTML = hasRule
+          ? `Votre taux applicable : <strong>${fmtPct(tRep)}</strong>${bonusActive ? ' <span class="inline-block ml-1 px-1.5 py-0.5 text-[10px] font-extrabold rounded-md bg-emerald-100 text-emerald-800">🔥 Bonus +1% actif</span>' : ''}`
           : 'Taux calculé automatiquement à l’enregistrement';
         document.getElementById('preview-comm-rep').textContent = `Ma commission : ${fmtMoney(val * tRep)}`;
         oliEl.classList.add('hidden');
@@ -5220,6 +5687,12 @@
       if (!ids.length) return;
       const { error } = await sb.from('ventes').update({ [field]: newVal }).in('id', ids);
       if (error) return toast(error.message, 'error');
+      const label = field === 'statut_depot'
+        ? (newVal === 'depot_recu' ? 'Dépôt confirmé (Lot)' : 'Dépôt remis À confirmer (Lot)')
+        : (newVal === 'paye' ? 'Commission marquée Payée (Lot)' : 'Commission remise Non payée (Lot)');
+      for (const sid of ids) {
+        await recordSaleAudit(sid, label, '', '📦');
+      }
       toast(`${ids.length} vente(s) mise(s) à jour`);
       await loadAllData();
     };
@@ -5227,11 +5700,13 @@
     window.bulkDeleteVentes = async () => {
       const ids = Array.from(selectedSaleIds);
       if (!ids.length) return;
-      const ok = await askConfirm(`Supprimer ${ids.length} vente(s) ?`, 'Les lignes sélectionnées seront définitivement supprimées.');
+      const ok = await askConfirm(`Mettre ${ids.length} vente(s) à la corbeille ?`, 'Les ventes sélectionnées pourront être restaurées depuis la corbeille pendant 30 jours.');
       if (!ok) return;
+      const toTrash = state.ventes.filter(v => ids.includes(v.id));
+      if (toTrash.length) await moveSalesToTrash(toTrash);
       const { error } = await sb.from('ventes').delete().in('id', ids);
       if (error) return toast(error.message, 'error');
-      toast(`${ids.length} vente(s) supprimée(s)`);
+      toast(`${ids.length} vente(s) déplacée(s) dans la corbeille 🗑️`);
       await loadAllData();
     };
 
@@ -5340,13 +5815,14 @@
                 </button>
               </div>
 
-              <div class="grid grid-cols-3 gap-2 pt-1">
+              <div class="grid grid-cols-4 gap-1.5 pt-1">
                 ${proofSrc
-                  ? `<button type="button" onclick="openProofModal('${v.id}')" class="py-2 px-2 text-xs font-bold rounded-xl bg-indigo-50 text-indigo-700 border border-indigo-200 text-center">📷 Preuve</button>`
-                  : `<label class="cursor-pointer py-2 px-2 text-xs font-bold rounded-xl bg-slate-100 text-slate-700 text-center">+ 📷<input type="file" accept="image/*" class="sr-only" onchange="attachProofToExistingSale('${v.id}', this.files[0])" /></label>`
+                  ? `<button type="button" onclick="openProofModal('${v.id}')" class="py-2 px-1.5 text-[11px] font-bold rounded-xl bg-indigo-50 text-indigo-700 border border-indigo-200 text-center">📷 Preuve</button>`
+                  : `<label class="cursor-pointer py-2 px-1.5 text-[11px] font-bold rounded-xl bg-slate-100 text-slate-700 text-center">+ 📷<input type="file" accept="image/*" class="sr-only" onchange="attachProofToExistingSale('${v.id}', this.files[0])" /></label>`
                 }
-                <button type="button" onclick="openEditVenteDrawer('${v.id}', false)" class="py-2 px-2 text-xs font-bold rounded-xl bg-slate-100 text-slate-800 text-center">Modifier</button>
-                <button type="button" onclick="deleteVente('${v.id}')" class="py-2 px-2 text-xs font-bold rounded-xl bg-rose-50 text-rose-600 text-center">Supprimer</button>
+                <button type="button" onclick="openSaleAuditModal('${v.id}')" class="py-2 px-1.5 text-[11px] font-bold rounded-xl bg-slate-100 text-slate-700 text-center">🕒 Audit</button>
+                <button type="button" onclick="openEditVenteDrawer('${v.id}', false)" class="py-2 px-1.5 text-[11px] font-bold rounded-xl bg-slate-100 text-slate-800 text-center">Modifier</button>
+                <button type="button" onclick="deleteVente('${v.id}')" class="py-2 px-1.5 text-[11px] font-bold rounded-xl bg-rose-50 text-rose-600 text-center">Supprimer</button>
               </div>
             </div>
           `;
@@ -5388,7 +5864,15 @@
             <td class="py-3 px-3 text-right font-bold text-slate-900 tabular-nums">${fmtMoney(v.valeur)}</td>
             <td class="py-3 px-3 text-right tabular-nums">
               <div class="font-semibold text-slate-900">${fmtMoney(v.commission_rep)}</div>
-              <div class="text-[11px] text-slate-400">${fmtPct(v.taux_rep_applique)}</div>
+              <div class="text-[11px] text-slate-400">
+                ${fmtPct(v.taux_rep_applique)}
+                ${(() => {
+                  const baseR = getRateForSale(v.representant_id, v.entreprise_id, v.client_id);
+                  return (baseR && Number(v.taux_rep_applique) > Number(baseR.taux) + 0.0001)
+                    ? '<span class="ml-1 px-1 py-0.2 text-[9px] font-extrabold rounded bg-emerald-100 text-emerald-800">+1%</span>'
+                    : '';
+                })()}
+              </div>
             </td>
             <td class="py-3 px-3 text-right tabular-nums">
               <div class="font-bold text-emerald-600">${fmtMoney(v.commission_olivier)}</div>
@@ -5414,6 +5898,7 @@
               </button>
             </td>
             <td class="py-3 px-3 text-right whitespace-nowrap space-x-2">
+              <button onclick="openSaleAuditModal('${v.id}')" title="Voir l'historique complet" class="text-xs font-semibold text-slate-600 hover:text-indigo-700 hover:underline">🕒 Audit</button>
               <button onclick="openEditVenteDrawer('${v.id}', false)" class="text-xs font-semibold text-indigo-600 hover:underline">Modifier</button>
               <button onclick="openEditVenteDrawer('${v.id}', true)" class="text-xs font-semibold text-slate-500 hover:text-slate-800 hover:underline">Copier</button>
               <button onclick="deleteVente('${v.id}')" class="text-xs font-semibold text-rose-600 hover:underline">Supprimer</button>
@@ -5636,6 +6121,10 @@
     window.toggleVenteStatut = async (id, field, newVal) => {
       const { error } = await sb.from('ventes').update({ [field]: newVal }).eq('id', id);
       if (error) return toast(error.message, 'error');
+      const label = field === 'statut_depot'
+        ? (newVal === 'depot_recu' ? 'Dépôt confirmé (Reçu)' : 'Dépôt remis À confirmer')
+        : (newVal === 'paye' ? 'Commission marquée Payée' : 'Commission remise Non payée');
+      await recordSaleAudit(id, label, '', field === 'statut_depot' ? '✅' : '💳');
       toast('Statut mis à jour');
       await loadAllData();
     };
@@ -5670,16 +6159,19 @@
 
       const { error } = await sb.from('ventes').update({ note: updatedNote }).eq('id', id);
       if (error) return toast(error.message, 'error');
+      await recordSaleAudit(id, `Type KPI basculé en ${nextTag}`, '', '🏷️');
       toast(`Dossier classé en ${nextTag} ✓`);
       await loadAllData();
     };
 
     window.deleteVente = async (id) => {
-      const ok = await askConfirm('Supprimer cette vente ?', 'Cette action retirera définitivement la ligne de vente.');
+      const ok = await askConfirm('Mettre cette vente à la corbeille ?', 'La vente sera retirée des totaux et conservée dans la corbeille pendant 30 jours pour restauration.');
       if (!ok) return;
+      const targetSale = state.ventes.find(v => String(v.id) === String(id)) || state.mesVentes.find(v => String(v.id) === String(id));
+      if (targetSale) await moveSalesToTrash([targetSale]);
       const { error } = await sb.from('ventes').delete().eq('id', id);
       if (error) return toast(error.message, 'error');
-      toast('Vente supprimée');
+      toast('Vente déplacée dans la corbeille 🗑️');
       await loadAllData();
     };
 
@@ -5718,11 +6210,21 @@
       );
       if (!ok) return;
 
+      const chronoVentes = [...state.ventes].sort((a, b) => {
+        const cmpD = String(a.date_vente || '').localeCompare(String(b.date_vente || ''));
+        if (cmpD !== 0) return cmpD;
+        return String(a.created_at || a.id || '').localeCompare(String(b.created_at || b.id || ''));
+      });
+      const runningRepMonthVol = new Map();
       let updated = 0;
-      for (const v of state.ventes) {
-        const rateObj = getRateForSale(v.representant_id, v.entreprise_id, v.client_id);
-        const tRep = rateObj ? Number(rateObj.taux) : 0;
-        const tOli = rateObj ? Number(rateObj.taux_olivier) : 0;
+      for (const v of chronoVentes) {
+        const ym = v.mois_commission || (v.date_vente ? v.date_vente.slice(0, 7) : currentMonthStr);
+        const key = `${v.representant_id}_${ym}`;
+        const priorVol = runningRepMonthVol.get(key) || 0;
+        const eff = getEffectiveRatesWithTargetBonus(v.representant_id, v.entreprise_id, v.client_id, ym, v.id, priorVol);
+        runningRepMonthVol.set(key, priorVol + Number(v.valeur || 0));
+
+        const { tRep, tOli } = eff;
         const cRep = Math.round(Number(v.valeur) * tRep * 100) / 100;
         const cOli = Math.round(Number(v.valeur) * tOli * 100) / 100;
 
@@ -5818,7 +6320,7 @@
       toast('Mot de passe mis à jour avec succès');
     });
 
-    ['vente-rep', 'vente-entreprise', 'vente-client-nom', 'vente-valeur'].forEach(id => {
+    ['vente-rep', 'vente-entreprise', 'vente-client-nom', 'vente-valeur', 'vente-mois-comm', 'vente-date'].forEach(id => {
       const el = document.getElementById(id);
       el.addEventListener('input', updateDrawerCommissionPreview);
       el.addEventListener('keyup', updateDrawerCommissionPreview);
@@ -6246,9 +6748,8 @@
         };
 
         if (editId) {
-          const rateObj = getRateForSale(repId, entId, clientId);
-          const tRep = rateObj ? Number(rateObj.taux) : 0;
-          const tOli = rateObj ? Number(rateObj.taux_olivier) : 0;
+          const eff = getEffectiveRatesWithTargetBonus(repId, entId, clientId, payload.mois_commission, editId);
+          const { tRep, tOli, bonusActive } = eff;
           payload.taux_rep_applique = tRep;
           payload.taux_olivier_applique = tOli;
           payload.commission_rep = Math.round(valeur * tRep * 100) / 100;
@@ -6256,11 +6757,11 @@
 
           const { error } = await sb.from('ventes').update(payload).eq('id', editId);
           if (error) throw error;
+          await recordSaleAudit(editId, 'Dossier modifié', `Montant : ${fmtMoney(valeur)}${bonusActive ? ' • Bonus Target +1% Rep / -1% Olivier' : ''} • Dépôt : ${payload.statut_depot === 'depot_recu' ? 'Reçu' : 'À confirmer'} • Paiement : ${payload.statut_paiement === 'paye' ? 'Payé' : 'Non payé'}`, '✏️');
           toast('Vente mise à jour');
         } else {
-          const rateObj = getRateForSale(repId, entId, clientId);
-          const tRep = rateObj ? Number(rateObj.taux) : 0;
-          const tOli = rateObj ? Number(rateObj.taux_olivier) : 0;
+          const eff = getEffectiveRatesWithTargetBonus(repId, entId, clientId, payload.mois_commission, null);
+          const { tRep, tOli, bonusActive } = eff;
           payload.taux_rep_applique = tRep;
           payload.taux_olivier_applique = tOli;
           payload.commission_rep = Math.round(valeur * tRep * 100) / 100;
@@ -6280,6 +6781,11 @@
             if (insertedRow?.id) saleProofsStore[String(insertedRow.id)] = pendingProofDataUrl;
             saleProofsStore[`${payload.date_vente}_${clientNom.trim()}_${valeur}`] = pendingProofDataUrl;
             saveSaleProofsStore();
+          }
+          if (insertedRow?.id) {
+            const entN = state.entreprises.find(en => String(en.id) === String(entId))?.nom || '';
+            const bonusNote = eff.bonusActive ? ' • 🔥 Bonus Target +1% Rep / -1% Olivier' : '';
+            await recordSaleAudit(insertedRow.id, 'Vente créée', `${entN} — ${clientNom.trim()} • ${fmtMoney(valeur)}${bonusNote}${pendingProofDataUrl ? ' (avec preuve photo)' : ''}`, '💵');
           }
           toast('Vente enregistrée avec succès');
           const repObjCel = state.representants.find(r => String(r.id) === String(repId));
@@ -6350,15 +6856,16 @@
     document.getElementById('btn-delete-all-ventes').addEventListener('click', async () => {
       if (!state.ventes.length) return toast('Aucune vente à supprimer.', 'error');
       const ok = await askConfirm(
-        `Supprimer les ${state.ventes.length} ventes ?`,
-        'Cette action videra complètement l’historique des ventes dans la base de données. Vous pourrez ensuite réimporter un fichier CSV.'
+        `Mettre les ${state.ventes.length} ventes à la corbeille ?`,
+        'Toutes les ventes seront archivées dans la corbeille pendant 30 jours afin que vous puissiez les restaurer si nécessaire.'
       );
       if (!ok) return;
 
+      await moveSalesToTrash([...state.ventes]);
       const { error } = await sb.from('ventes').delete().not('id', 'is', null);
       if (error) return toast(error.message, 'error');
 
-      toast('Toutes les ventes ont été supprimées');
+      toast('Toutes les ventes ont été déplacées dans la corbeille 🗑️');
       await loadAllData();
     });
 
