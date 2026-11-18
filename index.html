@@ -31,6 +31,24 @@
       to { transform: translateX(0); opacity: 1; }
     }
     .animate-drawer { animation: slideInRight 0.22s ease-out forwards; }
+    @keyframes popCelebration {
+      0% { transform: scale(0.65) translateY(18px); opacity: 0; }
+      65% { transform: scale(1.04) translateY(-4px); opacity: 1; }
+      100% { transform: scale(1) translateY(0); opacity: 1; }
+    }
+    @keyframes floatDrop {
+      0% { transform: translateY(-10vh) rotate(0deg) scale(0.9); opacity: 1; }
+      80% { opacity: 1; }
+      100% { transform: translateY(105vh) rotate(540deg) scale(1.1); opacity: 0; }
+    }
+    .animate-celebration-card { animation: popCelebration 0.42s cubic-bezier(0.22, 1, 0.36, 1) forwards; }
+    .celebration-particle {
+      position: fixed;
+      top: -40px;
+      pointer-events: none;
+      z-index: 70;
+      animation: floatDrop linear forwards;
+    }
     @media print {
       body > *:not(#payslip-modal) { display: none !important; }
       #payslip-modal {
@@ -66,9 +84,31 @@
   <!-- TOASTS -->
   <div id="toast-container" class="fixed bottom-20 sm:bottom-5 inset-x-3 sm:inset-x-auto sm:right-5 z-50 flex flex-col gap-2 max-w-md no-print pointer-events-none"></div>
 
+  <!-- OVERLAY DE FÉLICITATIONS LORS D'UNE NOUVELLE VENTE -->
+  <div id="sale-celebration-overlay" class="hidden fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-4 no-print">
+    <div class="animate-celebration-card bg-white rounded-3xl border border-emerald-200 shadow-2xl max-w-sm w-full p-6 text-center space-y-4 relative overflow-hidden">
+      <div class="w-16 h-16 mx-auto rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white flex items-center justify-center text-3xl shadow-lg shadow-emerald-600/25">
+        🎉
+      </div>
+      <div class="space-y-1">
+        <span class="inline-block px-3 py-0.5 text-[11px] font-extrabold uppercase tracking-wider rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">Vente enregistrée !</span>
+        <h3 id="celebration-title" class="text-xl font-extrabold text-slate-900 pt-1">Félicitations !</h3>
+        <p id="celebration-subtitle" class="text-xs text-slate-500 leading-relaxed"></p>
+      </div>
+      <div class="bg-slate-50 rounded-2xl border border-slate-200/80 p-3.5 space-y-1 tabular-nums">
+        <div class="text-[11px] font-semibold text-slate-400 uppercase">Montant de la vente</div>
+        <div id="celebration-amount" class="text-2xl font-extrabold text-slate-900">0,00 $</div>
+        <div id="celebration-comm" class="text-xs font-extrabold text-emerald-600">Commission : + 0,00 $</div>
+      </div>
+      <button type="button" id="btn-close-celebration" class="w-full py-2.5 px-4 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-extrabold rounded-xl shadow-sm transition">
+        Continuer 💪
+      </button>
+    </div>
+  </div>
+
   <!-- BOUTON FLOTTANT MOBILE (+ DÉCLARER UNE VENTE) -->
-  <button id="btn-mobile-fab-sale" title="Déclarer une vente" class="sm:hidden fixed bottom-5 right-5 z-30 w-14 h-14 rounded-full bg-indigo-600 hover:bg-indigo-700 text-white shadow-xl shadow-indigo-600/30 flex items-center justify-center text-2xl font-bold no-print">
-    +
+  <button id="btn-mobile-fab-sale" title="Déclarer une vente" class="sm:hidden fixed bottom-5 right-5 z-30 w-14 h-14 rounded-full bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white shadow-xl shadow-emerald-600/35 flex items-center justify-center text-2xl font-bold transition no-print">
+    💵
   </button>
 
   <!-- MODALE DE CONFIRMATION -->
@@ -612,19 +652,33 @@
             <span class="hidden sm:inline">Actualiser</span>
           </button>
 
-          <button id="btn-open-pwd" title="Changer mon mot de passe" class="p-2 text-slate-300 hover:text-white bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-xl transition">
-            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 5.25a3 3 0 013 3m3 0a6 6 0 01-7.029 5.912c-.563-.097-1.159.026-1.563.43L10.5 17.25H8.25v2.25H6v2.25H2.25v-2.818c0-.597.237-1.17.659-1.591l6.499-6.499c.404-.404.527-1 .43-1.563A6 6 0 1121.75 8.25z"/></svg>
-          </button>
+          <!-- MENU PROFIL SUR LA BULLE BLEUE (AVATAR) -->
+          <div class="relative pl-1.5 sm:pl-2 border-l border-slate-800">
+            <button id="btn-user-menu" type="button" title="Mon compte & Déconnexion" class="flex items-center gap-2.5 rounded-full focus:outline-none focus:ring-2 focus:ring-indigo-400 group">
+              <div id="header-avatar" class="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-indigo-600 group-hover:bg-indigo-500 text-white text-xs font-extrabold flex items-center justify-center shadow-sm ring-2 ring-indigo-400/30 transition"></div>
+              <div class="text-left hidden md:block">
+                <div id="header-user-name" class="text-xs font-bold text-white leading-tight"></div>
+                <div id="header-user-email" class="text-[11px] text-slate-400 leading-tight"></div>
+              </div>
+            </button>
 
-          <div class="flex items-center gap-2.5 pl-2 border-l border-slate-800">
-            <div id="header-avatar" class="w-8 h-8 rounded-full bg-indigo-600 text-white text-xs font-bold flex items-center justify-center"></div>
-            <div class="text-left hidden md:block">
-              <div id="header-user-name" class="text-xs font-bold text-white leading-tight"></div>
-              <div id="header-user-email" class="text-[11px] text-slate-400 leading-tight"></div>
+            <div id="user-menu-dropdown" class="hidden fixed right-3 top-14 sm:absolute sm:right-0 sm:top-auto sm:mt-2 w-64 bg-white text-slate-900 rounded-2xl border border-slate-200 shadow-2xl z-50 overflow-hidden">
+              <div class="px-4 py-3 bg-slate-900 text-white">
+                <div id="menu-user-name" class="text-xs font-extrabold truncate"></div>
+                <div id="menu-user-email" class="text-[11px] text-slate-400 truncate mt-0.5"></div>
+              </div>
+              <div class="p-1.5 space-y-1">
+                <button id="btn-open-pwd" type="button" class="w-full px-3 py-2.5 text-left text-xs font-semibold text-slate-700 hover:bg-slate-100 rounded-xl flex items-center gap-2.5 transition">
+                  <span>🔑</span>
+                  <span>Modifier mon mot de passe</span>
+                </button>
+                <button id="btn-logout" type="button" class="w-full px-3 py-2.5 text-left text-xs font-bold text-rose-600 hover:bg-rose-50 rounded-xl flex items-center gap-2.5 transition">
+                  <span>🚪</span>
+                  <span>Déconnexion</span>
+                </button>
+              </div>
             </div>
           </div>
-
-          <button id="btn-logout" class="px-3 py-1.5 text-xs font-semibold text-slate-300 hover:text-white bg-slate-800/70 hover:bg-rose-600/90 border border-slate-700 hover:border-rose-500 rounded-xl transition">Déconnexion</button>
         </div>
       </div>
 
@@ -663,7 +717,7 @@
           </div>
           <div class="grid grid-cols-2 sm:flex sm:flex-wrap items-stretch sm:items-center gap-2 w-full md:w-auto">
             <button id="btn-rep-open-drawer" class="col-span-2 px-4 py-2.5 sm:py-2 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl shadow-sm shadow-indigo-600/20 flex items-center justify-center gap-1.5 transition">
-              <span class="text-base leading-none">+</span> Déclarer une vente
+              <span class="text-base leading-none">💵</span> Déclarer une vente
             </button>
             <select id="filter-admin-scope" class="hidden col-span-2 px-3 py-2 text-xs font-semibold bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-600">
               <option value="all">Toutes mes commissions (Directes + Équipe)</option>
@@ -680,6 +734,43 @@
             <input id="filter-rep-month" type="month" class="w-full sm:w-auto px-3 py-2 text-xs font-medium bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-600" />
             <button id="btn-rep-all-months" class="w-full sm:w-auto px-3 py-2 text-xs font-semibold text-slate-700 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 transition text-center">Tout voir</button>
           </div>
+        </div>
+
+        <!-- BARRE DE PROGRESSION OBJECTIF MENSUEL PERSONNALISABLE -->
+        <div id="monthly-goal-card" class="bg-white rounded-2xl border border-slate-200/80 p-4 sm:p-5 shadow-xs space-y-3">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <div class="flex items-center gap-2.5">
+              <span class="w-9 h-9 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center text-base font-extrabold shrink-0">🎯</span>
+              <div>
+                <div class="flex items-center gap-2">
+                  <span id="goal-bar-title" class="text-xs sm:text-sm font-extrabold text-slate-900">Objectif mensuel de ventes</span>
+                  <span id="goal-bar-pct-badge" class="px-2 py-0.5 text-[11px] font-extrabold rounded-full bg-indigo-50 text-indigo-700 tabular-nums">0 %</span>
+                </div>
+                <div id="goal-bar-subtitle" class="text-[11px] text-slate-500 tabular-nums">0,00 $ / 150 000,00 $</div>
+              </div>
+            </div>
+            <button type="button" id="btn-toggle-personal-goal" class="self-start sm:self-auto px-3 py-1.5 text-xs font-bold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 rounded-xl transition">
+              ✎ Ajuster mon target ($)
+            </button>
+          </div>
+
+          <div class="w-full h-3.5 bg-slate-100 rounded-full overflow-hidden p-0.5 border border-slate-200/60">
+            <div id="goal-bar-fill" class="h-full rounded-full bg-gradient-to-r from-indigo-600 to-emerald-500 transition-all duration-700 ease-out" style="width: 0%"></div>
+          </div>
+
+          <div class="flex items-center justify-between text-[11px] text-slate-500 tabular-nums">
+            <span id="goal-bar-remaining">Reste à atteindre : 0,00 $</span>
+            <span id="goal-bar-status-msg" class="font-bold text-slate-700"></span>
+          </div>
+
+          <form id="form-personal-goal" class="hidden pt-2 border-t border-slate-100 flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+            <label for="input-personal-goal" class="text-xs font-bold text-slate-700 shrink-0">Nouveau target mensuel ($ CAD) :</label>
+            <input id="input-personal-goal" type="number" step="500" min="100" required placeholder="150000" class="flex-1 px-3 py-2 text-xs font-bold bg-slate-50 border border-slate-200 rounded-xl tabular-nums focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-600" />
+            <div class="flex gap-2">
+              <button type="submit" class="flex-1 sm:flex-none px-4 py-2 text-xs font-extrabold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl transition">Enregistrer</button>
+              <button type="button" id="btn-cancel-personal-goal" class="px-3 py-2 text-xs font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-xl transition">Annuler</button>
+            </div>
+          </form>
         </div>
 
         <!-- KPIs REPRÉSENTANT / OLIVIER -->
@@ -1033,7 +1124,7 @@
           </div>
           <div class="grid grid-cols-2 sm:flex sm:flex-wrap items-stretch sm:items-center gap-2 w-full lg:w-auto">
             <button id="btn-open-drawer" class="col-span-2 px-4 py-2.5 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl shadow-sm shadow-indigo-600/20 flex items-center justify-center gap-1.5 transition">
-              <span class="text-base leading-none">+</span> Nouvelle vente
+              <span class="text-base leading-none">💵</span> Nouvelle vente
             </button>
             <button id="btn-open-wa" class="px-3 py-2.5 text-xs font-bold text-emerald-800 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-xl flex items-center justify-center gap-1.5 transition">
               <span>💬</span> WhatsApp
@@ -1504,6 +1595,57 @@
       return `<span class="inline-flex items-center px-2.5 py-0.5 text-xs font-semibold rounded-lg border ${cls}">${nom}</span>`;
     }
 
+    function playSaleCelebrationFanfare() {
+      try {
+        const ctx = sharedAudioCtx || new (window.AudioContext || window.webkitAudioContext)();
+        if (ctx.state === 'suspended') ctx.resume();
+        const notes = [523.25, 659.25, 783.99, 1046.5];
+        notes.forEach((freq, idx) => {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = 'triangle';
+          const startAt = ctx.currentTime + idx * 0.08;
+          osc.frequency.setValueAtTime(freq, startAt);
+          gain.gain.setValueAtTime(0.14, startAt);
+          gain.gain.exponentialRampToValueAtTime(0.001, startAt + 0.35);
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start(startAt);
+          osc.stop(startAt + 0.35);
+        });
+      } catch (e) {}
+    }
+
+    function triggerSaleCelebration(repName, clientNom, entNom, valeur, commAmount) {
+      const overlay = document.getElementById('sale-celebration-overlay');
+      if (!overlay) return;
+      document.getElementById('celebration-title').textContent = `Bravo ${repName || ''} ! 💵`;
+      document.getElementById('celebration-subtitle').textContent = `${entNom} — ${clientNom}`;
+      document.getElementById('celebration-amount').textContent = fmtMoney(valeur);
+      document.getElementById('celebration-comm').textContent = `Commission : + ${fmtMoney(commAmount)}`;
+
+      overlay.classList.remove('hidden');
+      playSaleCelebrationFanfare();
+
+      const emojis = ['💵', '💰', '🎉', '✨', '⭐', '🔥'];
+      for (let i = 0; i < 28; i++) {
+        const p = document.createElement('div');
+        p.className = 'celebration-particle text-2xl select-none';
+        p.textContent = emojis[i % emojis.length];
+        p.style.left = `${Math.random() * 96 + 2}vw`;
+        p.style.animationDuration = `${1.8 + Math.random() * 1.4}s`;
+        p.style.animationDelay = `${Math.random() * 0.35}s`;
+        document.body.appendChild(p);
+        setTimeout(() => p.remove(), 3600);
+      }
+
+      const closeOverlay = () => overlay.classList.add('hidden');
+      document.getElementById('btn-close-celebration').onclick = closeOverlay;
+      overlay.onclick = (e) => { if (e.target === overlay) closeOverlay(); };
+      clearTimeout(window._celebrationTimer);
+      window._celebrationTimer = setTimeout(closeOverlay, 4500);
+    }
+
     function toast(msg, type = 'success') {
       const container = document.getElementById('toast-container');
       const el = document.createElement('div');
@@ -1604,6 +1746,10 @@
       currentProfile = profile;
       document.getElementById('header-user-name').textContent = profile.nom;
       document.getElementById('header-user-email').textContent = profile.courriel;
+      const menuNameEl = document.getElementById('menu-user-name');
+      const menuEmailEl = document.getElementById('menu-user-email');
+      if (menuNameEl) menuNameEl.textContent = profile.nom;
+      if (menuEmailEl) menuEmailEl.textContent = profile.courriel;
       document.getElementById('header-avatar').textContent = profile.nom.slice(0, 2).toUpperCase();
       document.getElementById('header-role-badge').textContent = profile.role === 'admin' ? 'Administrateur' : 'Représentant';
 
@@ -4357,6 +4503,110 @@
       renderAdminVentes();
     };
 
+    let personalMonthlyTargets = JSON.parse(localStorage.getItem('korpo_personal_monthly_targets_v1') || '{}');
+
+    function getPersonalTargetAmount(ym) {
+      const repName = currentProfile?.nom || 'Rep';
+      const specificKey = `${repName}_${ym}`;
+      const globalKey = `${repName}_ALL`;
+      if (personalMonthlyTargets[specificKey] > 0) return Number(personalMonthlyTargets[specificKey]);
+      if (personalMonthlyTargets[globalKey] > 0) return Number(personalMonthlyTargets[globalKey]);
+      if (repTargetsOverrides[`${ym}_${repName}`]?.dollars > 0) return Number(repTargetsOverrides[`${ym}_${repName}`].dollars);
+      if (repTargetsOverrides[`ALL_${repName}`]?.dollars > 0) return Number(repTargetsOverrides[`ALL_${repName}`].dollars);
+      const mObj = kpiStore[ym];
+      if (mObj?.reps?.[repName]?.['Vente $']?.objectif > 0) return Number(mObj.reps[repName]['Vente $'].objectif);
+      return 150000;
+    }
+
+    function updatePersonalGoalProgressBar(monthFilter, scopeFilter) {
+      if (!currentProfile) return;
+      const isAdmin = currentProfile.role === 'admin';
+      const activeYm = monthFilter || currentMonthStr;
+      const targetAmount = getPersonalTargetAmount(activeYm);
+
+      // Volume personnel du représentant (ou ses ventes directes si admin en mode direct, ou total période)
+      const myMonthSales = state.mesVentes.filter(v => {
+        if (isAdmin && scopeFilter === 'direct' && v.representant_id !== currentProfile.id) return false;
+        if (monthFilter) return v.mois_commission === monthFilter;
+        return v.mois_commission === currentMonthStr;
+      });
+      const achieved = myMonthSales.reduce((s, v) => s + Number(v.valeur || 0), 0);
+      const pct = targetAmount > 0 ? Math.round((achieved / targetAmount) * 100) : 0;
+      const remaining = Math.max(0, targetAmount - achieved);
+
+      const titleEl = document.getElementById('goal-bar-title');
+      const subEl = document.getElementById('goal-bar-subtitle');
+      const badgeEl = document.getElementById('goal-bar-pct-badge');
+      const fillEl = document.getElementById('goal-bar-fill');
+      const remEl = document.getElementById('goal-bar-remaining');
+      const msgEl = document.getElementById('goal-bar-status-msg');
+
+      if (!titleEl || !fillEl) return;
+      titleEl.textContent = `Objectif mensuel (${activeYm})`;
+      subEl.textContent = `${fmtMoney(achieved)} / ${fmtMoney(targetAmount)}`;
+      badgeEl.textContent = `${pct} %`;
+      fillEl.style.width = `${Math.min(100, pct)}%`;
+
+      if (pct >= 100) {
+        badgeEl.className = 'px-2 py-0.5 text-[11px] font-extrabold rounded-full bg-emerald-100 text-emerald-800 tabular-nums';
+        fillEl.className = 'h-full rounded-full bg-gradient-to-r from-emerald-500 to-teal-400 transition-all duration-700 ease-out';
+        remEl.textContent = `Objectif dépassé de + ${fmtMoney(achieved - targetAmount)} !`;
+        msgEl.textContent = '🔥 Target atteint !';
+        msgEl.className = 'font-extrabold text-emerald-600';
+      } else if (pct >= 65) {
+        badgeEl.className = 'px-2 py-0.5 text-[11px] font-extrabold rounded-full bg-amber-100 text-amber-800 tabular-nums';
+        fillEl.className = 'h-full rounded-full bg-gradient-to-r from-indigo-600 via-amber-400 to-emerald-500 transition-all duration-700 ease-out';
+        remEl.textContent = `Reste à atteindre : ${fmtMoney(remaining)}`;
+        msgEl.textContent = '💪 Dernière ligne droite !';
+        msgEl.className = 'font-bold text-amber-700';
+      } else {
+        badgeEl.className = 'px-2 py-0.5 text-[11px] font-extrabold rounded-full bg-indigo-50 text-indigo-700 tabular-nums';
+        fillEl.className = 'h-full rounded-full bg-gradient-to-r from-indigo-600 to-sky-500 transition-all duration-700 ease-out';
+        remEl.textContent = `Reste à atteindre : ${fmtMoney(remaining)}`;
+        msgEl.textContent = 'En progression';
+        msgEl.className = 'font-semibold text-slate-500';
+      }
+    }
+
+    document.getElementById('btn-toggle-personal-goal')?.addEventListener('click', () => {
+      const form = document.getElementById('form-personal-goal');
+      const input = document.getElementById('input-personal-goal');
+      const activeYm = document.getElementById('filter-rep-month').value || currentMonthStr;
+      form.classList.toggle('hidden');
+      if (!form.classList.contains('hidden')) {
+        input.value = getPersonalTargetAmount(activeYm);
+        input.focus();
+      }
+    });
+
+    document.getElementById('btn-cancel-personal-goal')?.addEventListener('click', () => {
+      document.getElementById('form-personal-goal').classList.add('hidden');
+    });
+
+    document.getElementById('form-personal-goal')?.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const newVal = parseFloat(document.getElementById('input-personal-goal').value) || 0;
+      if (newVal <= 0) return toast('Entrez un montant supérieur à 0 $', 'error');
+      const repName = currentProfile?.nom || 'Rep';
+      const activeYm = document.getElementById('filter-rep-month').value || currentMonthStr;
+
+      personalMonthlyTargets[`${repName}_${activeYm}`] = newVal;
+      personalMonthlyTargets[`${repName}_ALL`] = newVal;
+      localStorage.setItem('korpo_personal_monthly_targets_v1', JSON.stringify(personalMonthlyTargets));
+
+      // Synchroniser aussi dans l'objectif KPI du représentant si présent
+      if (kpiStore[activeYm]?.reps?.[repName]?.['Vente $']) {
+        kpiStore[activeYm].reps[repName]['Vente $'].objectif = newVal;
+        recalcTeamObjectivesForMonth(kpiStore[activeYm]);
+        localStorage.setItem('korpo_kpi_store_v1', JSON.stringify(kpiStore));
+      }
+
+      document.getElementById('form-personal-goal').classList.add('hidden');
+      renderMesVentes();
+      renderKpiDashboard();
+      toast(`Nouveau target mensuel enregistré : ${fmtMoney0(newVal)} 🎯`);
+    });
+
     function renderMesVentes() {
       const isAdmin = currentProfile.role === 'admin';
       const monthFilter = document.getElementById('filter-rep-month').value;
@@ -4401,8 +4651,10 @@
       const commYear = yearSales.reduce((s, v) => s + Number(v.commission_rep), 0);
       const paidYear = yearSales.filter(v => v.statut_paiement === 'paye').reduce((s, v) => s + Number(v.commission_rep), 0);
 
-      document.getElementById('kpi-rep-ventes-mois').textContent = fmtMoney(filtered.reduce((s, v) => s + Number(v.valeur), 0));
+      const periodSalesTotal = filtered.reduce((s, v) => s + Number(v.valeur), 0);
+      document.getElementById('kpi-rep-ventes-mois').textContent = fmtMoney(periodSalesTotal);
       document.getElementById('kpi-rep-count-mois').textContent = `${filtered.length} dossier(s)`;
+      updatePersonalGoalProgressBar(monthFilter, scopeFilter);
       document.getElementById('kpi-rep-comm-mois').textContent = fmtMoney(commPeriod);
       document.getElementById('kpi-rep-paid-split').textContent = `Payé : ${fmtMoney(paidPeriod)} • À venir : ${fmtMoney(commPeriod - paidPeriod)}`;
       document.getElementById('kpi-rep-ventes-annee').textContent = fmtMoney(yearSales.reduce((s, v) => s + Number(v.valeur), 0));
@@ -5268,8 +5520,25 @@
 
     document.getElementById('btn-close-payslip').addEventListener('click', () => document.getElementById('payslip-modal').classList.add('hidden'));
 
+    const userMenuBtn = document.getElementById('btn-user-menu');
+    const userMenuDropdown = document.getElementById('user-menu-dropdown');
+    if (userMenuBtn && userMenuDropdown) {
+      userMenuBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        userMenuDropdown.classList.toggle('hidden');
+      });
+      document.addEventListener('click', (e) => {
+        if (!userMenuDropdown.contains(e.target) && !userMenuBtn.contains(e.target)) {
+          userMenuDropdown.classList.add('hidden');
+        }
+      });
+    }
+
     const pwdModal = document.getElementById('pwd-modal');
-    document.getElementById('btn-open-pwd').addEventListener('click', () => pwdModal.classList.remove('hidden'));
+    document.getElementById('btn-open-pwd').addEventListener('click', () => {
+      userMenuDropdown?.classList.add('hidden');
+      pwdModal.classList.remove('hidden');
+    });
     document.getElementById('btn-close-pwd').addEventListener('click', () => pwdModal.classList.add('hidden'));
     document.getElementById('btn-cancel-pwd').addEventListener('click', () => pwdModal.classList.add('hidden'));
     document.getElementById('form-change-pwd').addEventListener('submit', async (e) => {
@@ -5648,6 +5917,7 @@
     });
 
     document.getElementById('btn-logout').addEventListener('click', async () => {
+      document.getElementById('user-menu-dropdown')?.classList.add('hidden');
       await sb.auth.signOut();
       restoreRememberedCredentials();
     });
@@ -5755,6 +6025,18 @@
             saveSaleProofsStore();
           }
           toast('Vente enregistrée avec succès');
+          const repObjCel = state.representants.find(r => String(r.id) === String(repId));
+          const entObjCel = state.entreprises.find(en => String(en.id) === String(entId));
+          const shownComm = (currentProfile?.role === 'admin' && String(repId) !== String(currentProfile?.id))
+            ? payload.commission_olivier
+            : payload.commission_rep;
+          triggerSaleCelebration(
+            repObjCel?.nom || currentProfile?.nom || '',
+            clientNom.trim(),
+            entObjCel?.nom || '',
+            valeur,
+            shownComm
+          );
         }
 
         if (editId && pendingProofDataUrl) {
