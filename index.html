@@ -8,9 +8,9 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="Korpo Ventes" />
   <meta name="theme-color" content="#0f172a" />
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4"></script>
+  <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -58,8 +58,9 @@
         padding: 0 !important;
         max-height: none !important;
         overflow: visible !important;
-        display: block !important;
       }
+      #payslip-modal:not(.hidden) { display: block !important; }
+      #payslip-modal.hidden { display: none !important; }
       #payslip-modal > div {
         box-shadow: none !important;
         border: none !important;
@@ -85,7 +86,7 @@
   <div id="toast-container" class="fixed bottom-20 sm:bottom-5 inset-x-3 sm:inset-x-auto sm:right-5 z-50 flex flex-col gap-2 max-w-md no-print pointer-events-none"></div>
 
   <!-- OVERLAY DE FÉLICITATIONS LORS D'UNE NOUVELLE VENTE -->
-  <div id="sale-celebration-overlay" class="hidden fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-4 no-print">
+  <div id="sale-celebration-overlay" class="hidden fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-sm flex items-center justify-center p-4 no-print">
     <div class="animate-celebration-card bg-white rounded-3xl border border-emerald-200 shadow-2xl max-w-sm w-full p-6 text-center space-y-4 relative overflow-hidden">
       <div class="w-16 h-16 mx-auto rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white flex items-center justify-center text-3xl shadow-lg shadow-emerald-600/25">
         🎉
@@ -112,7 +113,7 @@
   </button>
 
   <!-- MODALE DE CONFIRMATION -->
-  <div id="confirm-modal" class="hidden fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-4 no-print">
+  <div id="confirm-modal" class="hidden fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-sm flex items-center justify-center p-4 no-print">
     <div class="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-md w-full p-6">
       <div class="w-11 h-11 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center mb-4">
         <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"/></svg>
@@ -127,7 +128,7 @@
   </div>
 
   <!-- MODALE CHANGEMENT DE MOT DE PASSE -->
-  <div id="pwd-modal" class="hidden fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-4 no-print">
+  <div id="pwd-modal" class="hidden fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-sm flex items-center justify-center p-4 no-print">
     <div class="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-md w-full p-6">
       <div class="flex items-center justify-between mb-4">
         <h3 class="text-lg font-bold text-slate-900">Modifier mon mot de passe</h3>
@@ -152,7 +153,7 @@
 
 
   <!-- MODALE APERÇU PREUVE DE DÉPÔT / CONTRAT -->
-  <div id="proof-modal" class="hidden fixed inset-0 z-50 bg-slate-950/75 backdrop-blur-xs flex items-center justify-center p-4 no-print">
+  <div id="proof-modal" class="hidden fixed inset-0 z-50 bg-slate-950/75 backdrop-blur-sm flex items-center justify-center p-4 no-print">
     <div class="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-2xl w-full max-h-[90vh] flex flex-col overflow-hidden">
       <div class="px-5 py-3.5 bg-slate-900 text-white flex items-center justify-between">
         <div>
@@ -166,7 +167,7 @@
   </div>
 
   <!-- MODALE AJUSTEMENT RAPIDE DU TAUX DE COMMISSION D'UNE VENTE (ADMIN) -->
-  <div id="rate-adjust-modal" class="hidden fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-xs flex items-center justify-center p-4 no-print">
+  <div id="rate-adjust-modal" class="hidden fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm flex items-center justify-center p-4 no-print">
     <div class="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-md w-full overflow-hidden">
       <div class="px-5 py-4 bg-slate-900 text-white flex items-center justify-between">
         <div>
@@ -213,7 +214,7 @@
   </div>
 
   <!-- MODALE JOURNAL D'AUDIT D'UNE VENTE -->
-  <div id="audit-modal" class="hidden fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-xs flex items-center justify-center p-4 no-print">
+  <div id="audit-modal" class="hidden fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm flex items-center justify-center p-4 no-print">
     <div class="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-lg w-full max-h-[88vh] flex flex-col overflow-hidden">
       <div class="px-5 py-4 bg-slate-900 text-white flex items-center justify-between">
         <div>
@@ -227,7 +228,7 @@
   </div>
 
   <!-- MODALE CORBEILLE DES VENTES (RESTAURATION 30 JOURS) -->
-  <div id="trash-modal" class="hidden fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-xs flex items-center justify-center p-4 no-print">
+  <div id="trash-modal" class="hidden fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm flex items-center justify-center p-4 no-print">
     <div class="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-4xl w-full max-h-[90vh] flex flex-col overflow-hidden">
       <div class="px-6 py-4 bg-slate-900 text-white flex items-center justify-between">
         <div class="flex items-center gap-3">
@@ -248,7 +249,7 @@
   </div>
 
   <!-- MODALE RELEVÉ DE PAIE IMPRIMABLE / PDF / CSV -->
-  <div id="payslip-modal" class="hidden fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-4">
+  <div id="payslip-modal" class="hidden fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-sm flex items-center justify-center p-4">
     <div class="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-3xl w-full max-h-[90vh] flex flex-col overflow-hidden">
       <div class="px-6 py-4 bg-slate-900 text-white flex items-center justify-between no-print">
         <span class="text-sm font-bold">Aperçu du relevé de commissions</span>
@@ -263,7 +264,7 @@
   </div>
 
     <!-- MODALE SCANNER WHATSAPP (IMPORT CONVERSATION / EXPORT .TXT / .ZIP) -->
-  <div id="wa-modal" class="hidden fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-4 no-print">
+  <div id="wa-modal" class="hidden fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-sm flex items-center justify-center p-4 no-print">
     <div class="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-4xl w-full max-h-[92vh] flex flex-col overflow-hidden">
       <div class="px-6 py-4 bg-emerald-950 text-white flex items-center justify-between">
         <div class="flex items-center gap-3">
@@ -340,7 +341,7 @@
   </div>
 
     <!-- MODALE RÉIMPORTER & RECALCULER LES KPI (EXCEL / CSV / ÉDITEUR DIRECT / RESET) -->
-  <div id="kpi-import-modal" class="hidden fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-4 no-print">
+  <div id="kpi-import-modal" class="hidden fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-sm flex items-center justify-center p-4 no-print">
     <div class="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-5xl w-full max-h-[92vh] flex flex-col overflow-hidden">
       <div class="px-6 py-4 bg-slate-900 text-white flex items-center justify-between">
         <div>
@@ -490,7 +491,7 @@
   </div>
 
   <!-- TIROIR LATÉRAL (DRAWER) : AJOUTER / MODIFIER / DUPLIQUER UNE VENTE -->
-  <div id="sale-drawer-backdrop" class="hidden fixed inset-0 z-40 bg-slate-950/50 backdrop-blur-xs flex justify-end no-print">
+  <div id="sale-drawer-backdrop" class="hidden fixed inset-0 z-40 bg-slate-950/50 backdrop-blur-sm flex justify-end no-print">
     <div class="bg-white w-full max-w-lg h-full shadow-2xl border-l border-slate-200 flex flex-col animate-drawer">
       <div class="px-4 sm:px-6 py-4 sm:py-5 border-b border-slate-100 flex items-center justify-between bg-slate-900 text-white">
         <div>
@@ -704,7 +705,7 @@
         <div class="flex items-center justify-between pt-0.5">
           <label class="inline-flex items-center gap-2 text-xs font-semibold text-slate-700 cursor-pointer select-none">
             <input id="login-remember" type="checkbox" checked class="w-4 h-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-600" />
-            <span>Se souvenir de mes identifiants</span>
+            <span>Se souvenir de mon courriel</span>
           </label>
           <button type="button" id="btn-forget-saved-login" class="hidden text-[11px] font-semibold text-slate-400 hover:text-rose-600 transition">Oublier</button>
         </div>
@@ -1663,17 +1664,76 @@
 
   <script>
     // =========================================================================
-    // CONFIGURATION SUPABASE — REMPLACEZ CES DEUX VALEURS AVANT DÉPLOIEMENT
+    // CONFIGURATION SUPABASE (la clé « anon » est publique par conception :
+    // la sécurité repose sur les politiques RLS de la base, voir les notes de livraison)
     // =========================================================================
     const SUPABASE_URL = "https://fdxqmmudhhofvtuxntqu.supabase.co";
     const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZkeHFtbXVkaGhvZnZ0dXhudHF1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTQ5NDc0NTQsImV4cCI6MjExMDUyMzQ1NH0.2ogPrW1B4Zc3KECTtOO_Rj3UYF5_2TZX2oeL3CnJWBE";
+
+    // =========================================================================
+    // UTILITAIRES : échappement HTML, stockage local sûr, dates locales, CSV, pagination
+    // =========================================================================
+    function esc(s) {
+      return String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    }
+    function lsSet(key, value) {
+      try { localStorage.setItem(key, value); }
+      catch (e) { console.warn('localStorage indisponible ou plein :', key, e && e.message); }
+    }
+    function lsGetJson(key, fallbackJson) {
+      try { return JSON.parse(localStorage.getItem(key) || fallbackJson); }
+      catch (e) { return JSON.parse(fallbackJson); }
+    }
+    // Date locale AAAA-MM-JJ (toISOString() donne la date UTC : le soir, au Québec, c'est déjà « demain »)
+    function localYmd(d = new Date()) {
+      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    }
+    // Cellule CSV : guillemets/virgules/retours à la ligne + neutralisation des formules Excel (=, +, -, @)
+    function csvCell(v, isText = true) {
+      let s = String(v ?? '');
+      if (isText && /^[=+\-@\t\r]/.test(s)) s = "'" + s;
+      return /[",;\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+    }
+    // Montant saisi en format FR ou EN : "1 234,56", "1,234.56", "12,345", "$1.234.567"
+    function parseAmount(raw) {
+      let s = String(raw ?? '').replace(/[\s\u00A0$€]/g, '').replace(/CAD/i, '');
+      if (!s) return NaN;
+      const neg = /^\(.*\)$/.test(s) || s.startsWith('-');
+      s = s.replace(/[()\-]/g, '');
+      const lastDot = s.lastIndexOf('.'), lastComma = s.lastIndexOf(',');
+      if (lastDot >= 0 && lastComma >= 0) {
+        const dec = lastDot > lastComma ? '.' : ',';
+        const thou = dec === '.' ? ',' : '.';
+        s = s.split(thou).join('').replace(dec, '.');
+      } else if (lastComma >= 0) {
+        s = /^\d{1,3}(,\d{3})+$/.test(s) ? s.replace(/,/g, '') : s.replace(',', '.');
+      } else if ((s.match(/\./g) || []).length > 1) {
+        s = s.replace(/\./g, '');
+      }
+      const n = parseFloat(s);
+      return isNaN(n) ? NaN : (neg ? -n : n);
+    }
+    // Lecture paginée (Supabase limite chaque requête à 1 000 lignes par défaut)
+    async function fetchAllRows(buildQuery) {
+      const PAGE = 1000;
+      const out = [];
+      let from = 0;
+      for (;;) {
+        const { data, error } = await buildQuery().range(from, from + PAGE - 1);
+        if (error) throw error;
+        if (!data || !data.length) break;
+        out.push(...data);
+        from += data.length;
+      }
+      return out;
+    }
 
     // =========================================================================
     // DONNÉES KPI HISTORIQUES INTÉGRÉES (MARS À NOVEMBRE 2026)
     // =========================================================================
     const DEFAULT_KPI_DATA = {"2026-08":{"label":"Août 2026","num_weeks":4,"reps":{"Olivier":{"Booké":{"weeks":[0.0,0.0,2.0,4.0],"cumul":6.0,"objectif":40.0},"RDV Réalisé":{"weeks":[0.0,0.0,2.0,3.0],"cumul":5.0,"objectif":30.0},"Ventes OTS":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":7.0},"Ventes SUIVI":{"weeks":[0.0,0.0,0.0,1.0],"cumul":1.0,"objectif":9.0},"Vente $":{"weeks":[0.0,0.0,0.0,17298.0],"cumul":17298.0,"objectif":118000.0},"% Close":{"weeks":[0.0,0.0,0.0,25.0],"cumul":20.0,"objectif":40.0}},"Jean-Sébastien":{"Booké":{"weeks":[5.0,14.0,16.0,0.0],"cumul":35.0,"objectif":80.0},"RDV Réalisé":{"weeks":[5.0,13.0,14.0,0.0],"cumul":32.0,"objectif":60.0},"Ventes OTS":{"weeks":[2.0,2.0,3.0,0.0],"cumul":7.0,"objectif":10.0},"Ventes SUIVI":{"weeks":[1.0,0.0,2.0,0.0],"cumul":3.0,"objectif":20.0},"Vente $":{"weeks":[11991.0,14801.0,61558.0,0.0],"cumul":88350.0,"objectif":250000.0},"% Close":{"weeks":[60.0,14.29,31.25,0.0],"cumul":28.57,"objectif":32.0}},"Gabryel":{"Booké":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0},"RDV Réalisé":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0},"Ventes OTS":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0},"Ventes SUIVI":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0},"Vente $":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0},"% Close":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":35.0}},"Samuel":{"Booké":{"weeks":[30.0,32.0,26.0,23.0],"cumul":111.0,"objectif":80.0},"RDV Réalisé":{"weeks":[24.0,23.0,23.0,22.0],"cumul":92.0,"objectif":60.0},"Ventes OTS":{"weeks":[6.0,5.0,7.0,5.0],"cumul":23.0,"objectif":10.0},"Ventes SUIVI":{"weeks":[7.0,0.0,5.0,0.0],"cumul":12.0,"objectif":20.0},"Vente $":{"weeks":[104710.0,36315.0,93929.0,32630.0],"cumul":267584.0,"objectif":200000.0},"% Close":{"weeks":[43.33,15.63,46.15,21.74],"cumul":31.53,"objectif":33.0}}},"team":{"Booké":{"weeks":[35.0,46.0,44.0,27.0],"cumul":152.0,"objectif":200.0},"RDV RÉA":{"weeks":[29.0,36.0,39.0,25.0],"cumul":129.0,"objectif":150.0},"VENTE OTS":{"weeks":[8.0,7.0,10.0,5.0],"cumul":30.0,"objectif":27.0},"VENTE SUIVI":{"weeks":[8.0,0.0,7.0,1.0],"cumul":16.0,"objectif":49.0},"VENTE TOTAL":{"weeks":[16.0,7.0,17.0,6.0],"cumul":46.0,"objectif":76.0},"VENTE $":{"weeks":[116701.0,51116.0,155487.0,49928.0],"cumul":373232.0,"objectif":568000.0}},"entreprises":{"Toitex":{"reps":{"Olivier":{"weeks":[0.0,0.0,0.0,17298.0],"cumul":17298.0,"objectif":100000.0},"Jean-Sébastien":{"weeks":[1695.0,11301.0,39348.0,0.0],"cumul":52344.0,"objectif":178000.0},"Gabryel":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0},"Samuel":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0}},"total":{"weeks":[1695.0,11301.0,39348.0,17298.0],"cumul":69642.0,"objectif":278000.0}},"MonSpray":{"reps":{"Olivier":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":18000.0},"Jean-Sébastien":{"weeks":[10296.0,3500.0,22210.0,0.0],"cumul":36006.0,"objectif":72000.0},"Gabryel":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0},"Samuel":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0}},"total":{"weeks":[10296.0,3500.0,22210.0,0.0],"cumul":36006.0,"objectif":90000.0}},"VerreVDM":{"reps":{"Olivier":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0},"Jean-Sébastien":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0},"Gabryel":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":100000.0},"Samuel":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0}},"total":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":100000.0}},"Groupe Diamant Pro":{"reps":{"Olivier":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0},"Jean-Sébastien":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0},"Gabryel":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":80000.0},"Samuel":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0}},"total":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":80000.0}},"MaClim":{"reps":{"Olivier":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0},"Jean-Sébastien":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0},"Gabryel":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0},"Samuel":{"weeks":[104710.0,36315.0,93929.0,32630.0],"cumul":267584.0,"objectif":0.0}},"total":{"weeks":[104710.0,36315.0,93929.0,32630.0],"cumul":267584.0,"objectif":140000.0}}}},"2026-04":{"label":"Avril 2026","num_weeks":5,"reps":{"Olivier":{"Booké":{"weeks":[5.0,3.0,7.0,11.0,5.0],"cumul":31.0,"objectif":40.0},"RDV Réalisé":{"weeks":[5.0,1.0,5.0,9.0,4.0],"cumul":24.0,"objectif":30.0},"Ventes OTS":{"weeks":[2.0,0.0,1.0,2.0,2.0],"cumul":7.0,"objectif":7.0},"Ventes SUIVI":{"weeks":[0.0,0.0,1.0,2.0,1.0],"cumul":4.0,"objectif":9.0},"Vente $":{"weeks":[53240.0,0.0,29285.0,35900.0,46445.0],"cumul":164870.0,"objectif":100000.0},"% Close":{"weeks":[40.0,0.0,28.57,36.36,60.0],"cumul":45.83,"objectif":40.0}},"Jean-Sébastien":{"Booké":{"weeks":[3.0,21.0,17.0,9.0,16.0],"cumul":66.0,"objectif":80.0},"RDV Réalisé":{"weeks":[3.0,21.0,16.0,9.0,13.0],"cumul":62.0,"objectif":60.0},"Ventes OTS":{"weeks":[0.0,1.0,4.0,3.0,1.0],"cumul":9.0,"objectif":10.0},"Ventes SUIVI":{"weeks":[0.0,2.0,7.0,4.0,2.0],"cumul":15.0,"objectif":20.0},"Vente $":{"weeks":[0.0,31177.0,105920.0,55540.0,39515.0],"cumul":232152.0,"objectif":312500.0},"% Close":{"weeks":[0.0,14.29,64.71,77.78,18.75],"cumul":38.71,"objectif":32.0}},"Gabryel":{"Booké":{"weeks":[11.0,16.0,15.0,19.0,13.0],"cumul":74.0,"objectif":80.0},"RDV Réalisé":{"weeks":[11.0,14.0,12.0,18.0,13.0],"cumul":68.0,"objectif":60.0},"Ventes OTS":{"weeks":[2.0,2.0,4.0,3.0,2.0],"cumul":13.0,"objectif":10.0},"Ventes SUIVI":{"weeks":[4.0,3.0,2.0,5.0,5.0],"cumul":19.0,"objectif":20.0},"Vente $":{"weeks":[37387.0,31030.0,25890.0,48329.0,47052.0],"cumul":189688.0,"objectif":230000.0},"% Close":{"weeks":[54.55,31.25,40.0,42.11,0.0],"cumul":47.06,"objectif":35.0}},"Samuel":{"Booké":{"weeks":[0.0,0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0},"RDV Réalisé":{"weeks":[0.0,0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0},"Ventes OTS":{"weeks":[0.0,0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0},"Ventes SUIVI":{"weeks":[0.0,0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0},"Vente $":{"weeks":[0.0,0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0},"% Close":{"weeks":[0.0,0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0}}},"team":{"Booké":{"weeks":[19.0,40.0,39.0,39.0,34.0],"cumul":171.0,"objectif":200.0},"RDV RÉA":{"weeks":[19.0,36.0,33.0,36.0,30.0],"cumul":154.0,"objectif":150.0},"VENTE OTS":{"weeks":[4.0,3.0,9.0,8.0,5.0],"cumul":29.0,"objectif":27.0},"VENTE SUIVI":{"weeks":[4.0,5.0,10.0,11.0,8.0],"cumul":38.0,"objectif":49.0},"VENTE TOTAL":{"weeks":[8.0,8.0,19.0,19.0,13.0],"cumul":67.0,"objectif":76.0},"VENTE $":{"weeks":[90627.0,62207.0,161095.0,139769.0,133012.0],"cumul":586710.0,"objectif":642500.0}},"entreprises":{"Toitex":{"reps":{"Olivier":{"weeks":[53240.0,0.0,29285.0,25900.0],"cumul":108425.0,"objectif":100000.0},"Jean-Sébastien":{"weeks":[0.0,27690.0,89215.0,25365.0],"cumul":142270.0,"objectif":240000.0},"Gabryel":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0},"Samuel":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0}},"total":{"weeks":[53240.0,27690.0,118500.0,51265.0],"cumul":250695.0,"objectif":340000.0}},"MonSpray":{"reps":{"Olivier":{"weeks":[0.0,0.0,0.0,10000.0],"cumul":10000.0,"objectif":0.0},"Jean-Sébastien":{"weeks":[0.0,3487.0,16705.0,30175.0],"cumul":50367.0,"objectif":72000.0},"Gabryel":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0},"Samuel":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0}},"total":{"weeks":[0.0,3487.0,16705.0,40175.0],"cumul":60367.0,"objectif":72000.0}},"VerreVDM":{"reps":{"Olivier":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":25000.0},"Jean-Sébastien":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0},"Gabryel":{"weeks":[25435.0,20280.0,15190.0,32276.0],"cumul":93181.0,"objectif":75000.0},"Samuel":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0}},"total":{"weeks":[25435.0,20280.0,15190.0,32276.0],"cumul":93181.0,"objectif":100000.0}},"Groupe Diamant Pro":{"reps":{"Olivier":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0},"Jean-Sébastien":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0},"Gabryel":{"weeks":[11952.0,10750.0,10700.0,16053.0],"cumul":49455.0,"objectif":0.0},"Samuel":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":80000.0}},"total":{"weeks":[11952.0,10750.0,10700.0,16053.0],"cumul":49455.0,"objectif":80000.0}}}},"2026-07":{"label":"Juillet 2026","num_weeks":4,"reps":{"Olivier":{"Booké":{"weeks":[2.0,1.0,3.0,0.0],"cumul":6.0,"objectif":40.0},"RDV Réalisé":{"weeks":[2.0,1.0,1.0,0.0],"cumul":4.0,"objectif":30.0},"Ventes OTS":{"weeks":[2.0,1.0,1.0,0.0],"cumul":4.0,"objectif":7.0},"Ventes SUIVI":{"weeks":[0.0,0.0,2.0,0.0],"cumul":2.0,"objectif":9.0},"Vente $":{"weeks":[8250.0,3500.0,54680.0,0.0],"cumul":66430.0,"objectif":118000.0},"% Close":{"weeks":[100.0,100.0,100.0,0.0],"cumul":100.0,"objectif":40.0}},"Jean-Sébastien":{"Booké":{"weeks":[15.0,11.0,13.0,0.0],"cumul":39.0,"objectif":80.0},"RDV Réalisé":{"weeks":[15.0,11.0,13.0,0.0],"cumul":39.0,"objectif":60.0},"Ventes OTS":{"weeks":[1.0,0.0,0.0,0.0],"cumul":1.0,"objectif":10.0},"Ventes SUIVI":{"weeks":[5.0,2.0,6.0,0.0],"cumul":13.0,"objectif":20.0},"Vente $":{"weeks":[85479.0,29174.0,110328.0,0.0],"cumul":224981.0,"objectif":250000.0},"% Close":{"weeks":[40.0,18.18,46.15,0.0],"cumul":35.9,"objectif":32.0}},"Gabryel":{"Booké":{"weeks":[16.0,17.0,19.0,13.0],"cumul":65.0,"objectif":80.0},"RDV Réalisé":{"weeks":[14.0,15.0,19.0,13.0],"cumul":61.0,"objectif":60.0},"Ventes OTS":{"weeks":[4.0,3.0,7.0,3.0],"cumul":17.0,"objectif":10.0},"Ventes SUIVI":{"weeks":[0.0,4.0,5.0,1.0],"cumul":10.0,"objectif":20.0},"Vente $":{"weeks":[20378.0,26262.0,76701.0,19500.0],"cumul":142841.0,"objectif":180000.0},"% Close":{"weeks":[25.0,41.18,63.16,30.77],"cumul":41.54,"objectif":35.0}},"Samuel":{"Booké":{"weeks":[15.0,26.0,28.0,0.0],"cumul":69.0,"objectif":80.0},"RDV Réalisé":{"weeks":[14.0,25.0,26.0,0.0],"cumul":65.0,"objectif":60.0},"Ventes OTS":{"weeks":[2.0,6.0,7.0,0.0],"cumul":15.0,"objectif":10.0},"Ventes SUIVI":{"weeks":[3.0,6.0,4.0,0.0],"cumul":13.0,"objectif":20.0},"Vente $":{"weeks":[37275.0,80200.0,110800.0,0.0],"cumul":228275.0,"objectif":140000.0},"% Close":{"weeks":[33.33,46.15,39.29,0.0],"cumul":40.58,"objectif":35.0}}},"team":{"Booké":{"weeks":[48.0,55.0,63.0,13.0],"cumul":179.0,"objectif":280.0},"RDV RÉA":{"weeks":[45.0,52.0,59.0,13.0],"cumul":169.0,"objectif":210.0},"VENTE OTS":{"weeks":[9.0,10.0,15.0,3.0],"cumul":37.0,"objectif":37.0},"VENTE SUIVI":{"weeks":[8.0,12.0,17.0,1.0],"cumul":38.0,"objectif":69.0},"VENTE TOTAL":{"weeks":[17.0,22.0,32.0,4.0],"cumul":75.0,"objectif":106.0},"VENTE $":{"weeks":[151382.0,135636.0,352509.0,19500.0],"cumul":659027.0,"objectif":688000.0}},"entreprises":{"Ornithorynque":{"reps":{"Olivier":{"weeks":[0.0,0.0,41379.0,0.0],"cumul":41379.0,"objectif":100000.0},"Jean-Sébastien":{"weeks":[78609.0,17869.0,110328.0,0.0],"cumul":206806.0,"objectif":178000.0},"Gabryel":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0},"Samuel":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0}},"total":{"weeks":[78609.0,17869.0,151707.0,0.0],"cumul":248185.0,"objectif":278000.0}},"MonSpray":{"reps":{"Olivier":{"weeks":[0.0,3500.0,0.0,0.0],"cumul":3500.0,"objectif":18000.0},"Jean-Sébastien":{"weeks":[6870.0,11305.0,0.0,0.0],"cumul":18175.0,"objectif":72000.0},"Gabryel":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0},"Samuel":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0}},"total":{"weeks":[6870.0,14805.0,0.0,0.0],"cumul":21675.0,"objectif":90000.0}},"VerreVDM":{"reps":{"Olivier":{"weeks":[0.0,0.0,13310.0,0.0],"cumul":13310.0,"objectif":0.0},"Jean-Sébastien":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0},"Gabryel":{"weeks":[14478.0,6722.0,34381.0,0.0],"cumul":55581.0,"objectif":100000.0},"Samuel":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0}},"total":{"weeks":[14478.0,6722.0,47691.0,0.0],"cumul":68891.0,"objectif":100000.0}},"Groupe Diamant Pro":{"reps":{"Olivier":{"weeks":[8250.0,0.0,0.0,0.0],"cumul":8250.0,"objectif":0.0},"Jean-Sébastien":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0},"Gabryel":{"weeks":[5900.0,19540.0,42360.0,19500.0],"cumul":87300.0,"objectif":80000.0},"Samuel":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0}},"total":{"weeks":[14150.0,19540.0,42360.0,19500.0],"cumul":95550.0,"objectif":80000.0}},"MaClim":{"reps":{"Olivier":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0},"Jean-Sébastien":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0},"Gabryel":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0},"Samuel":{"weeks":[37275.0,80200.0,110800.0,0.0],"cumul":228275.0,"objectif":140000.0}},"total":{"weeks":[37275.0,80200.0,110800.0,0.0],"cumul":228275.0,"objectif":140000.0}}}},"2026-06":{"label":"Juin 2026","num_weeks":4,"reps":{"Olivier":{"Booké":{"weeks":[1.0,7.0,3.0,0.0],"cumul":11.0,"objectif":40.0},"RDV Réalisé":{"weeks":[1.0,6.0,3.0,0.0],"cumul":10.0,"objectif":30.0},"Ventes OTS":{"weeks":[0.0,1.0,1.0,0.0],"cumul":2.0,"objectif":7.0},"Ventes SUIVI":{"weeks":[1.0,0.0,1.0,0.0],"cumul":2.0,"objectif":9.0},"Vente $":{"weeks":[7200.0,23455.0,29581.0,0.0],"cumul":60236.0,"objectif":118000.0},"% Close":{"weeks":[100.0,14.29,66.67,0.0],"cumul":36.36,"objectif":40.0}},"Jean-Sébastien":{"Booké":{"weeks":[10.0,18.0,18.0,12.0],"cumul":58.0,"objectif":80.0},"RDV Réalisé":{"weeks":[10.0,17.0,16.0,11.0],"cumul":54.0,"objectif":60.0},"Ventes OTS":{"weeks":[3.0,1.0,3.0,0.0],"cumul":7.0,"objectif":10.0},"Ventes SUIVI":{"weeks":[2.0,6.0,2.0,3.0],"cumul":13.0,"objectif":20.0},"Vente $":{"weeks":[21490.0,78460.0,61455.0,8247.0],"cumul":169652.0,"objectif":250000.0},"% Close":{"weeks":[50.0,38.89,27.78,25.0],"cumul":34.48,"objectif":32.0}},"Gabryel":{"Booké":{"weeks":[19.0,21.0,18.0,7.0],"cumul":65.0,"objectif":80.0},"RDV Réalisé":{"weeks":[18.0,20.0,16.0,6.0],"cumul":60.0,"objectif":60.0},"Ventes OTS":{"weeks":[1.0,4.0,6.0,1.0],"cumul":12.0,"objectif":10.0},"Ventes SUIVI":{"weeks":[5.0,4.0,2.0,2.0],"cumul":13.0,"objectif":20.0},"Vente $":{"weeks":[38065.0,46182.0,30760.0,39398.0],"cumul":154405.0,"objectif":180000.0},"% Close":{"weeks":[31.58,38.1,44.44,42.86],"cumul":38.46,"objectif":35.0}},"Samuel":{"Booké":{"weeks":[0.0,0.0,12.0,18.0],"cumul":30.0,"objectif":80.0},"RDV Réalisé":{"weeks":[0.0,0.0,11.0,14.0],"cumul":25.0,"objectif":60.0},"Ventes OTS":{"weeks":[0.0,0.0,2.0,3.0],"cumul":5.0,"objectif":10.0},"Ventes SUIVI":{"weeks":[0.0,0.0,2.0,2.0],"cumul":4.0,"objectif":20.0},"Vente $":{"weeks":[0.0,0.0,21386.0,35900.0],"cumul":57286.0,"objectif":140000.0},"% Close":{"weeks":[0.0,0.0,33.33,27.78],"cumul":30.0,"objectif":0.0}}},"team":{"Booké":{"weeks":[30.0,46.0,51.0,37.0],"cumul":164.0,"objectif":280.0},"RDV RÉA":{"weeks":[29.0,43.0,46.0,31.0],"cumul":149.0,"objectif":210.0},"VENTE OTS":{"weeks":[4.0,6.0,12.0,4.0],"cumul":26.0,"objectif":37.0},"VENTE SUIVI":{"weeks":[8.0,10.0,7.0,7.0],"cumul":32.0,"objectif":69.0},"VENTE TOTAL":{"weeks":[12.0,16.0,19.0,11.0],"cumul":58.0,"objectif":106.0},"VENTE $":{"weeks":[66755.0,148097.0,143182.0,83545.0],"cumul":441579.0,"objectif":688000.0}},"entreprises":{"Ornithorynque":{"reps":{"Olivier":{"weeks":[0.0,23455.0,29581.0,0.0],"cumul":53036.0,"objectif":100000.0},"Jean-Sébastien":{"weeks":[0.0,68285.0,48460.0,0.0],"cumul":116745.0,"objectif":178000.0},"Gabryel":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0},"Samuel":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0}},"total":{"weeks":[0.0,91740.0,78041.0,0.0],"cumul":169781.0,"objectif":278000.0}},"MonSpray":{"reps":{"Olivier":{"weeks":[7200.0,0.0,0.0,0.0],"cumul":7200.0,"objectif":18000.0},"Jean-Sébastien":{"weeks":[21490.0,10175.0,12995.0,3847.0],"cumul":48507.0,"objectif":72000.0},"Gabryel":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0},"Samuel":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0}},"total":{"weeks":[28690.0,10175.0,12995.0,3847.0],"cumul":55707.0,"objectif":90000.0}},"VerreVDM":{"reps":{"Olivier":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0},"Jean-Sébastien":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0},"Gabryel":{"weeks":[35365.0,43682.0,20240.0,31598.0],"cumul":130885.0,"objectif":100000.0},"Samuel":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0}},"total":{"weeks":[35365.0,43682.0,20240.0,31598.0],"cumul":130885.0,"objectif":100000.0}},"Groupe Diamant Pro":{"reps":{"Olivier":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0},"Jean-Sébastien":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0},"Gabryel":{"weeks":[2700.0,2500.0,10560.0,7800.0],"cumul":23560.0,"objectif":80000.0},"Samuel":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0}},"total":{"weeks":[2700.0,2500.0,10560.0,7800.0],"cumul":23560.0,"objectif":80000.0}},"MaClim":{"reps":{"Olivier":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0},"Jean-Sébastien":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0},"Gabryel":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0},"Samuel":{"weeks":[0.0,0.0,21836.0,35900.0],"cumul":57736.0,"objectif":0.0}},"total":{"weeks":[0.0,0.0,21836.0,35900.0],"cumul":57736.0,"objectif":140000.0}}}},"2026-05":{"label":"Mai 2026","num_weeks":4,"reps":{"Olivier":{"Booké":{"weeks":[8.0,8.0,7.0,2.0],"cumul":25.0,"objectif":40.0},"RDV Réalisé":{"weeks":[7.0,8.0,7.0,1.0],"cumul":23.0,"objectif":30.0},"Ventes OTS":{"weeks":[1.0,2.0,1.0,0.0],"cumul":4.0,"objectif":7.0},"Ventes SUIVI":{"weeks":[2.0,2.0,2.0,1.0],"cumul":7.0,"objectif":9.0},"Vente $":{"weeks":[64390.0,54874.0,29735.0,26785.0],"cumul":175784.0,"objectif":100000.0},"% Close":{"weeks":[37.5,50.0,42.86,50.0],"cumul":44.0,"objectif":40.0}},"Jean-Sébastien":{"Booké":{"weeks":[19.0,14.0,21.0,17.0],"cumul":71.0,"objectif":80.0},"RDV Réalisé":{"weeks":[17.0,14.0,18.0,16.0],"cumul":65.0,"objectif":60.0},"Ventes OTS":{"weeks":[1.0,2.0,1.0,3.0],"cumul":7.0,"objectif":10.0},"Ventes SUIVI":{"weeks":[4.0,4.0,4.0,1.0],"cumul":13.0,"objectif":20.0},"Vente $":{"weeks":[28182.0,71093.0,81959.0,11535.0],"cumul":192769.0,"objectif":312500.0},"% Close":{"weeks":[26.32,42.86,23.81,23.53],"cumul":28.17,"objectif":32.0}},"Gabryel":{"Booké":{"weeks":[21.0,19.0,20.0,24.0],"cumul":84.0,"objectif":80.0},"RDV Réalisé":{"weeks":[17.0,17.0,20.0,21.0],"cumul":75.0,"objectif":60.0},"Ventes OTS":{"weeks":[3.0,2.0,3.0,6.0],"cumul":14.0,"objectif":10.0},"Ventes SUIVI":{"weeks":[3.0,3.0,3.0,2.0],"cumul":11.0,"objectif":20.0},"Vente $":{"weeks":[30547.0,60852.0,28935.0,38875.0],"cumul":159209.0,"objectif":230000.0},"% Close":{"weeks":[28.57,26.32,30.0,33.33],"cumul":29.76,"objectif":35.0}},"Samuel":{"Booké":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0},"RDV Réalisé":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0},"Ventes OTS":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0},"Ventes SUIVI":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0},"Vente $":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0},"% Close":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0}}},"team":{"Booké":{"weeks":[48.0,41.0,48.0,43.0],"cumul":180.0,"objectif":200.0},"RDV RÉA":{"weeks":[41.0,39.0,45.0,38.0],"cumul":163.0,"objectif":150.0},"VENTE OTS":{"weeks":[5.0,6.0,5.0,9.0],"cumul":25.0,"objectif":27.0},"VENTE SUIVI":{"weeks":[9.0,9.0,9.0,4.0],"cumul":31.0,"objectif":49.0},"VENTE TOTAL":{"weeks":[14.0,15.0,14.0,13.0],"cumul":56.0,"objectif":76.0},"VENTE $":{"weeks":[123119.0,186819.0,140629.0,77195.0],"cumul":527762.0,"objectif":642500.0}},"entreprises":{"Toitex":{"reps":{"Olivier":{"weeks":[55390.0,21450.0,17345.0,26785.0],"cumul":120970.0,"objectif":150000.0},"Jean-Sébastien":{"weeks":[18570.0,59493.0,72887.0,0.0],"cumul":150950.0,"objectif":150000.0},"Gabryel":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0},"Samuel":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0}},"total":{"weeks":[73960.0,80943.0,90232.0,26785.0],"cumul":271920.0,"objectif":300000.0}},"MonSpray":{"reps":{"Olivier":{"weeks":[9000.0,19000.0,12390.0,0.0],"cumul":40390.0,"objectif":36000.0},"Jean-Sébastien":{"weeks":[9612.0,11150.0,9072.0,11535.0],"cumul":41369.0,"objectif":36000.0},"Gabryel":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0},"Samuel":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0}},"total":{"weeks":[18612.0,30150.0,21462.0,11535.0],"cumul":81759.0,"objectif":72000.0}},"VerreVDM":{"reps":{"Olivier":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":25000.0},"Jean-Sébastien":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0},"Gabryel":{"weeks":[22572.0,57052.0,10235.0,23375.0],"cumul":113234.0,"objectif":75000.0},"Samuel":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0}},"total":{"weeks":[22572.0,57052.0,10235.0,23375.0],"cumul":113234.0,"objectif":100000.0}},"Groupe Diamant Pro":{"reps":{"Olivier":{"weeks":[0.0,15884.0,0.0,0.0],"cumul":15884.0,"objectif":0.0},"Jean-Sébastien":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0},"Gabryel":{"weeks":[7975.0,3800.0,18700.0,15500.0],"cumul":45975.0,"objectif":0.0},"Samuel":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":80000.0}},"total":{"weeks":[7975.0,19684.0,18700.0,15500.0],"cumul":61859.0,"objectif":80000.0}}}},"2026-03":{"label":"Mars 2026","num_weeks":4,"reps":{"Olivier":{"Booké":{"weeks":[0.0,0.0,4.0,9.0],"cumul":13.0,"objectif":40.0},"RDV Réalisé":{"weeks":[0.0,0.0,4.0,9.0],"cumul":13.0,"objectif":30.0},"Ventes OTS":{"weeks":[0.0,0.0,2.0,0.0],"cumul":2.0,"objectif":7.0},"Ventes SUIVI":{"weeks":[0.0,0.0,0.0,3.0],"cumul":3.0,"objectif":9.0},"Vente $":{"weeks":[0.0,0.0,19270.0,30895.0],"cumul":50165.0,"objectif":100000.0},"% Close":{"weeks":[0.0,0.0,50.0,33.33],"cumul":38.46,"objectif":40.0}},"Jean-Sébastien":{"Booké":{"weeks":[0.0,7.0,9.0,16.0],"cumul":32.0,"objectif":80.0},"RDV Réalisé":{"weeks":[0.0,7.0,8.0,13.0],"cumul":28.0,"objectif":60.0},"Ventes OTS":{"weeks":[0.0,0.0,0.0,5.0],"cumul":5.0,"objectif":10.0},"Ventes SUIVI":{"weeks":[0.0,1.0,3.0,0.0],"cumul":4.0,"objectif":20.0},"Vente $":{"weeks":[0.0,6540.0,52925.0,23094.0],"cumul":82559.0,"objectif":312500.0},"% Close":{"weeks":[0.0,14.29,33.33,31.25],"cumul":32.14,"objectif":32.0}},"Gabryel":{"Booké":{"weeks":[0.0,0.0,12.0,19.0],"cumul":31.0,"objectif":80.0},"RDV Réalisé":{"weeks":[0.0,0.0,12.0,19.0],"cumul":31.0,"objectif":60.0},"Ventes OTS":{"weeks":[0.0,0.0,1.0,5.0],"cumul":6.0,"objectif":10.0},"Ventes SUIVI":{"weeks":[0.0,0.0,2.0,2.0],"cumul":4.0,"objectif":20.0},"Vente $":{"weeks":[0.0,0.0,19768.0,26712.0],"cumul":46480.0,"objectif":230000.0},"% Close":{"weeks":[0.0,0.0,25.0,36.84],"cumul":32.26,"objectif":35.0}},"Samuel":{"Booké":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0},"RDV Réalisé":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0},"Ventes OTS":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0},"Ventes SUIVI":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0},"Vente $":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0},"% Close":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0}}},"team":{"Booké":{"weeks":[0.0,7.0,25.0,44.0],"cumul":76.0,"objectif":200.0},"RDV RÉA":{"weeks":[0.0,7.0,24.0,41.0],"cumul":72.0,"objectif":150.0},"VENTE OTS":{"weeks":[0.0,0.0,3.0,10.0],"cumul":13.0,"objectif":27.0},"VENTE SUIVI":{"weeks":[0.0,1.0,5.0,5.0],"cumul":11.0,"objectif":49.0},"VENTE TOTAL":{"weeks":[0.0,1.0,8.0,15.0],"cumul":24.0,"objectif":76.0},"VENTE $":{"weeks":[0.0,6540.0,91963.0,80701.0],"cumul":179204.0,"objectif":642500.0}},"entreprises":{"Toitex":{"reps":{"Olivier":{"weeks":[0.0,0.0,16770.0,28895.0],"cumul":45665.0,"objectif":150000.0},"Jean-Sébastien":{"weeks":[0.0,0.0,52925.0,0.0],"cumul":52925.0,"objectif":150000.0},"Gabryel":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0},"Samuel":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0}},"total":{"weeks":[0.0,0.0,69695.0,28895.0],"cumul":98590.0,"objectif":300000.0}},"MonSpray":{"reps":{"Olivier":{"weeks":[0.0,0.0,0.0,2250.0],"cumul":2250.0,"objectif":36000.0},"Jean-Sébastien":{"weeks":[0.0,6540.0,0.0,23094.0],"cumul":29634.0,"objectif":36000.0},"Gabryel":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0},"Samuel":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0}},"total":{"weeks":[0.0,6540.0,0.0,25344.0],"cumul":31884.0,"objectif":72000.0}},"VerreVDM":{"reps":{"Olivier":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":25000.0},"Jean-Sébastien":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0},"Gabryel":{"weeks":[0.0,0.0,11790.0,13020.0],"cumul":24810.0,"objectif":75000.0},"Samuel":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0}},"total":{"weeks":[0.0,0.0,11790.0,13020.0],"cumul":24810.0,"objectif":100000.0}},"Groupe Diamant Pro":{"reps":{"Olivier":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0},"Jean-Sébastien":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0},"Gabryel":{"weeks":[0.0,0.0,7978.0,13692.0],"cumul":21670.0,"objectif":80000.0},"Samuel":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0}},"total":{"weeks":[0.0,0.0,7978.0,13692.0],"cumul":21670.0,"objectif":80000.0}}}},"2026-11":{"label":"Novembre 2026","num_weeks":4,"reps":{"Olivier":{"Booké":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":40.0},"RDV Réalisé":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":30.0},"Ventes OTS":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":7.0},"Ventes SUIVI":{"weeks":[0.0,1.0,0.0,0.0],"cumul":1.0,"objectif":9.0},"Vente $":{"weeks":[0.0,41095.0,0.0,0.0],"cumul":41095.0,"objectif":118000.0},"% Close":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":40.0}},"Jean-Sébastien":{"Booké":{"weeks":[12.0,6.0,0.0,0.0],"cumul":18.0,"objectif":80.0},"RDV Réalisé":{"weeks":[9.0,6.0,0.0,0.0],"cumul":15.0,"objectif":60.0},"Ventes OTS":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":10.0},"Ventes SUIVI":{"weeks":[6.0,1.0,0.0,0.0],"cumul":7.0,"objectif":20.0},"Vente $":{"weeks":[70054.0,23808.0,0.0,0.0],"cumul":93862.0,"objectif":250000.0},"% Close":{"weeks":[50.0,16.67,0.0,0.0],"cumul":38.89,"objectif":32.0}},"Gabryel":{"Booké":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":80.0},"RDV Réalisé":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":60.0},"Ventes OTS":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":10.0},"Ventes SUIVI":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":20.0},"Vente $":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":180000.0},"% Close":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":35.0}},"Samuel":{"Booké":{"weeks":[12.0,14.0,0.0,0.0],"cumul":26.0,"objectif":80.0},"RDV Réalisé":{"weeks":[10.0,12.0,0.0,0.0],"cumul":22.0,"objectif":60.0},"Ventes OTS":{"weeks":[0.0,4.0,0.0,0.0],"cumul":4.0,"objectif":10.0},"Ventes SUIVI":{"weeks":[5.0,7.0,0.0,0.0],"cumul":12.0,"objectif":20.0},"Vente $":{"weeks":[31950.0,78680.0,0.0,0.0],"cumul":110630.0,"objectif":140000.0},"% Close":{"weeks":[41.67,78.57,0.0,0.0],"cumul":61.54,"objectif":0.0}}},"team":{"Booké":{"weeks":[24.0,20.0,0.0,0.0],"cumul":44.0,"objectif":200.0},"RDV RÉA":{"weeks":[19.0,18.0,0.0,0.0],"cumul":37.0,"objectif":180.0},"VENTE OTS":{"weeks":[0.0,4.0,0.0,0.0],"cumul":4.0,"objectif":27.0},"VENTE SUIVI":{"weeks":[11.0,9.0,0.0,0.0],"cumul":20.0,"objectif":49.0},"VENTE TOTAL":{"weeks":[11.0,13.0,0.0,0.0],"cumul":24.0,"objectif":76.0},"VENTE $":{"weeks":[102004.0,143583.0,0.0,0.0],"cumul":245587.0,"objectif":508000.0}},"entreprises":{"Toitex":{"reps":{"Olivier":{"weeks":[0.0,41095.0,0.0,0.0],"cumul":41095.0,"objectif":80000.0},"Jean-Sébastien":{"weeks":[58395.0,23808.0,0.0,0.0],"cumul":82203.0,"objectif":178000.0},"Gabryel":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0},"Samuel":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0}},"total":{"weeks":[58395.0,64903.0,0.0,0.0],"cumul":123298.0,"objectif":258000.0}},"MonSpray":{"reps":{"Olivier":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0},"Jean-Sébastien":{"weeks":[11659.0,0.0,0.0,0.0],"cumul":11659.0,"objectif":50000.0},"Gabryel":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0},"Samuel":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0}},"total":{"weeks":[11659.0,0.0,0.0,0.0],"cumul":11659.0,"objectif":50000.0}},"VerreVDM":{"reps":{"Olivier":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0},"Jean-Sébastien":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0},"Gabryel":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0},"Samuel":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0}},"total":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0}},"Groupe Diamant Pro":{"reps":{"Olivier":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0},"Jean-Sébastien":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0},"Gabryel":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0},"Samuel":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0}},"total":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0}},"MaClim":{"reps":{"Olivier":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0},"Jean-Sébastien":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0},"Gabryel":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0},"Samuel":{"weeks":[31950.0,0.0,0.0,0.0],"cumul":31950.0,"objectif":0.0}},"total":{"weeks":[31950.0,0.0,0.0,0.0],"cumul":31950.0,"objectif":200000.0}}}},"2026-09":{"label":"Septembre 2026","num_weeks":4,"reps":{"Olivier":{"Booké":{"weeks":[2.0,3.0,2.0,3.0],"cumul":10.0,"objectif":40.0},"RDV Réalisé":{"weeks":[0.0,3.0,2.0,3.0],"cumul":8.0,"objectif":30.0},"Ventes OTS":{"weeks":[0.0,1.0,0.0,1.0],"cumul":2.0,"objectif":7.0},"Ventes SUIVI":{"weeks":[0.0,0.0,1.0,1.0],"cumul":2.0,"objectif":9.0},"Vente $":{"weeks":[0.0,10500.0,4450.0,21715.0],"cumul":36665.0,"objectif":118000.0},"% Close":{"weeks":[0.0,33.33,50.0,66.67],"cumul":50.0,"objectif":40.0}},"Jean-Sébastien":{"Booké":{"weeks":[12.0,15.0,0.0,0.0],"cumul":27.0,"objectif":80.0},"RDV Réalisé":{"weeks":[12.0,14.0,0.0,0.0],"cumul":26.0,"objectif":60.0},"Ventes OTS":{"weeks":[5.0,0.0,0.0,0.0],"cumul":5.0,"objectif":10.0},"Ventes SUIVI":{"weeks":[6.0,2.0,0.0,0.0],"cumul":8.0,"objectif":20.0},"Vente $":{"weeks":[123021.0,22672.0,0.0,0.0],"cumul":145693.0,"objectif":200000.0},"% Close":{"weeks":[91.67,13.33,0.0,0.0],"cumul":48.15,"objectif":32.0}},"Gabryel":{"Booké":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0},"RDV Réalisé":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0},"Ventes OTS":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0},"Ventes SUIVI":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0},"Vente $":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0},"% Close":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":35.0}},"Samuel":{"Booké":{"weeks":[22.0,27.0,26.0,0.0],"cumul":75.0,"objectif":80.0},"RDV Réalisé":{"weeks":[22.0,27.0,24.0,0.0],"cumul":73.0,"objectif":60.0},"Ventes OTS":{"weeks":[6.0,9.0,6.0,0.0],"cumul":21.0,"objectif":10.0},"Ventes SUIVI":{"weeks":[3.0,2.0,7.0,0.0],"cumul":12.0,"objectif":20.0},"Vente $":{"weeks":[78810.0,68665.0,100110.0,0.0],"cumul":247585.0,"objectif":200000.0},"% Close":{"weeks":[40.91,40.74,50.0,0.0],"cumul":44.0,"objectif":33.0}}},"team":{"Booké":{"weeks":[36.0,45.0,28.0,3.0],"cumul":112.0,"objectif":200.0},"RDV RÉA":{"weeks":[34.0,44.0,26.0,3.0],"cumul":107.0,"objectif":150.0},"VENTE OTS":{"weeks":[11.0,10.0,6.0,1.0],"cumul":28.0,"objectif":27.0},"VENTE SUIVI":{"weeks":[9.0,4.0,8.0,1.0],"cumul":22.0,"objectif":49.0},"VENTE TOTAL":{"weeks":[20.0,14.0,14.0,2.0],"cumul":50.0,"objectif":76.0},"VENTE $":{"weeks":[201831.0,101837.0,104560.0,21715.0],"cumul":429943.0,"objectif":518000.0}},"entreprises":{"Toitex":{"reps":{"Olivier":{"weeks":[0.0,10500.0,0.0,17595.0],"cumul":28095.0,"objectif":80000.0},"Jean-Sébastien":{"weeks":[121614.0,23998.0,0.0,0.0],"cumul":145612.0,"objectif":178000.0},"Gabryel":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0},"Samuel":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0}},"total":{"weeks":[121614.0,34498.0,0.0,17595.0],"cumul":173707.0,"objectif":278000.0}},"MonSpray":{"reps":{"Olivier":{"weeks":[4250.0,0.0,0.0,4150.0],"cumul":8400.0,"objectif":18000.0},"Jean-Sébastien":{"weeks":[19451.0,0.0,0.0,0.0],"cumul":19451.0,"objectif":72000.0},"Gabryel":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0},"Samuel":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0}},"total":{"weeks":[23701.0,0.0,0.0,4150.0],"cumul":27851.0,"objectif":90000.0}},"VerreVDM":{"reps":{"Olivier":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0},"Jean-Sébastien":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0},"Gabryel":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0},"Samuel":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0}},"total":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0}},"Groupe Diamant Pro":{"reps":{"Olivier":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0},"Jean-Sébastien":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0},"Gabryel":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0},"Samuel":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0}},"total":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0}},"MaClim":{"reps":{"Olivier":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0},"Jean-Sébastien":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0},"Gabryel":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0},"Samuel":{"weeks":[78810.0,68665.0,100110.0,0.0],"cumul":247585.0,"objectif":0.0}},"total":{"weeks":[78810.0,68665.0,100110.0,0.0],"cumul":247585.0,"objectif":200000.0}}}}};
 
-    let kpiStore = JSON.parse(localStorage.getItem('korpo_kpi_store_v1') || 'null') || DEFAULT_KPI_DATA;
+    let kpiStore = lsGetJson('korpo_kpi_store_v1', 'null') || DEFAULT_KPI_DATA;
     const ALL_KPI_REPS = ['Olivier', 'Jean-Sébastien', 'Gabryel', 'Samuel', 'Alexandre'];
 
     const isValidYearMonth = (ym) => typeof ym === 'string' && /^\d{4}-(0[1-9]|1[0-2])$/.test(ym.trim());
@@ -1737,23 +1797,26 @@
     normalizeKpiStoreReps();
 
     let kpiHebdoRows = [];
-    let manualRdvOverrides = JSON.parse(localStorage.getItem('korpo_kpi_manual_rdv_v1') || '{}');
-    let manualSalesOverrides = JSON.parse(localStorage.getItem('korpo_kpi_manual_sales_v1') || '{}');
+    let manualRdvOverrides = lsGetJson('korpo_kpi_manual_rdv_v1', '{}');
+    let manualSalesOverrides = lsGetJson('korpo_kpi_manual_sales_v1', '{}');
 
     function saveManualKpiOverrides() {
-      localStorage.setItem('korpo_kpi_manual_rdv_v1', JSON.stringify(manualRdvOverrides));
-      localStorage.setItem('korpo_kpi_manual_sales_v1', JSON.stringify(manualSalesOverrides));
+      lsSet('korpo_kpi_manual_rdv_v1', JSON.stringify(manualRdvOverrides));
+      lsSet('korpo_kpi_manual_sales_v1', JSON.stringify(manualSalesOverrides));
     }
 
     async function safeUpsertKpiHebdoRow(rowObj) {
       if (!sb || !currentProfile) return { error: null };
-      try {
-        // Essayer d'abord upsert standard
-        const upRes = await sb.from('kpi_hebdo').upsert(rowObj, {
-          onConflict: 'mois_commission,semaine_index,representant_nom'
-        });
-        if (!upRes.error) return upRes;
-      } catch (e) {}
+      // Lignes « techniques » (index < -1) : le JSON est stocké dans representant_nom, donc un upsert
+      // sur cette colonne créerait une nouvelle ligne à chaque modification. On met à jour la ligne existante.
+      if (Number(rowObj.semaine_index) >= -1) {
+        try {
+          const upRes = await sb.from('kpi_hebdo').upsert(rowObj, {
+            onConflict: 'mois_commission,semaine_index,representant_nom'
+          });
+          if (!upRes.error) return upRes;
+        } catch (e) {}
+      }
 
       // Secours universel : select -> update ou insert (fonctionne même sans contrainte UNIQUE composite)
       try {
@@ -1820,8 +1883,8 @@
     // =========================================================================
     // JOURNAL D'AUDIT DES VENTES & CORBEILLE DE RESTAURATION (30 JOURS)
     // =========================================================================
-    let saleAuditStore = JSON.parse(localStorage.getItem('korpo_sale_audit_v1') || '{}');
-    let saleTrashStore = JSON.parse(localStorage.getItem('korpo_sale_trash_v1') || '[]');
+    let saleAuditStore = lsGetJson('korpo_sale_audit_v1', '{}');
+    let saleTrashStore = lsGetJson('korpo_sale_trash_v1', '[]');
     const TRASH_RETENTION_MS = 30 * 24 * 60 * 60 * 1000;
 
     function pruneExpiredTrash() {
@@ -1832,13 +1895,13 @@
         return (now - delTime) <= TRASH_RETENTION_MS;
       });
       if (saleTrashStore.length !== before) {
-        localStorage.setItem('korpo_sale_trash_v1', JSON.stringify(saleTrashStore));
+        lsSet('korpo_sale_trash_v1', JSON.stringify(saleTrashStore));
       }
     }
 
     function mergeCloudAuditAndTrash() {
       if (!Array.isArray(kpiHebdoRows)) return;
-      kpiHebdoRows.forEach(r => {
+      [...kpiHebdoRows].sort((a, b) => String(a.updated_at || '').localeCompare(String(b.updated_at || ''))).forEach(r => {
         const sIdx = Number(r.semaine_index);
         if (sIdx === -2 && r.mois_commission && r.representant_nom) {
           try {
@@ -1860,13 +1923,7 @@
           try {
             const ovData = JSON.parse(r.representant_nom);
             if (ovData && typeof ovData === 'object') {
-              const sid = String(r.mois_commission);
-              const existingOv = saleBonusOverridesStore[sid];
-              const incomingTs = ovData.updatedAt || r.updated_at || '';
-              const existingTs = existingOv?.updatedAt || '';
-              if (!existingOv || incomingTs >= existingTs) {
-                saleBonusOverridesStore[sid] = ovData;
-              }
+              saleBonusOverridesStore[String(r.mois_commission)] = ovData;
             }
           } catch (e) {}
         } else if (sIdx === -5 && r.mois_commission && r.representant_nom) {
@@ -1881,7 +1938,7 @@
             const cMeta = JSON.parse(r.representant_nom);
             if (cMeta && typeof cMeta === 'object') {
               companyTargetsMetaStore[String(r.mois_commission)] = cMeta;
-              localStorage.setItem('korpo_company_targets_meta_v1', JSON.stringify(companyTargetsMetaStore));
+              lsSet('korpo_company_targets_meta_v1', JSON.stringify(companyTargetsMetaStore));
             }
           } catch (e) {}
         } else if (sIdx === -7 && r.mois_commission && r.representant_nom) {
@@ -1889,7 +1946,7 @@
             const bData = JSON.parse(r.representant_nom);
             if (bData && typeof bData.bonusPct === 'number') {
               personalBonusPctTargets[String(r.mois_commission)] = bData.bonusPct;
-              localStorage.setItem('korpo_personal_bonus_pct_v1', JSON.stringify(personalBonusPctTargets));
+              lsSet('korpo_personal_bonus_pct_v1', JSON.stringify(personalBonusPctTargets));
             }
           } catch (e) {}
         } else if (sIdx === -6 && r.mois_commission && r.representant_nom) {
@@ -1923,44 +1980,41 @@
         }
       });
       pruneExpiredTrash();
-      localStorage.setItem('korpo_sale_audit_v1', JSON.stringify(saleAuditStore));
-      localStorage.setItem('korpo_sale_trash_v1', JSON.stringify(saleTrashStore));
-      localStorage.setItem('korpo_sale_bonus_overrides_v1', JSON.stringify(saleBonusOverridesStore));
-      localStorage.setItem('korpo_carried_over_sales_v1', JSON.stringify(carriedOverSalesStore));
+      lsSet('korpo_sale_audit_v1', JSON.stringify(saleAuditStore));
+      lsSet('korpo_sale_trash_v1', JSON.stringify(saleTrashStore));
+      lsSet('korpo_sale_bonus_overrides_v1', JSON.stringify(saleBonusOverridesStore));
+      lsSet('korpo_carried_over_sales_v1', JSON.stringify(carriedOverSalesStore));
       saveManualKpiOverrides();
       applySaleBonusOverridesToState();
       applyCarryOverMetadataToState();
       updateTrashBadges();
     }
 
-    let saleBonusOverridesStore = JSON.parse(localStorage.getItem('korpo_sale_bonus_overrides_v1') || '{}');
+    let saleBonusOverridesStore = lsGetJson('korpo_sale_bonus_overrides_v1', '{}');
 
     async function saveSaleBonusOverride(saleId, overrideObjOrNull) {
       if (!saleId) return;
       const sid = String(saleId);
       if (overrideObjOrNull) {
-        saleBonusOverridesStore[sid] = {
-          ...overrideObjOrNull,
-          updatedAt: new Date().toISOString()
-        };
+        saleBonusOverridesStore[sid] = overrideObjOrNull;
       } else {
         delete saleBonusOverridesStore[sid];
       }
-      localStorage.setItem('korpo_sale_bonus_overrides_v1', JSON.stringify(saleBonusOverridesStore));
+      lsSet('korpo_sale_bonus_overrides_v1', JSON.stringify(saleBonusOverridesStore));
 
       if (sb && currentProfile) {
         try {
-          // Toujours supprimer toute ancienne surcharge (-4) pour cette vente afin d'éviter les doublons de JSON dans representant_nom
-          await sb.from('kpi_hebdo').delete().eq('mois_commission', sid).eq('semaine_index', -4);
           if (overrideObjOrNull) {
-            await sb.from('kpi_hebdo').insert({
+            await safeUpsertKpiHebdoRow({
               mois_commission: sid,
               semaine_index: -4,
-              representant_nom: JSON.stringify(saleBonusOverridesStore[sid]),
+              representant_nom: JSON.stringify(overrideObjOrNull),
               booke: 0,
               rdv_realise: 0,
-              updated_at: saleBonusOverridesStore[sid].updatedAt
+              updated_at: new Date().toISOString()
             });
+          } else {
+            await sb.from('kpi_hebdo').delete().eq('mois_commission', sid).eq('semaine_index', -4);
           }
         } catch (e) {}
       }
@@ -1996,7 +2050,7 @@
     // =========================================================================
     // REPORT AUTOMATIQUE MENSUEL DES VENTES NON CONFIRMÉES (HORS STATS DU NOUVEAU MOIS)
     // =========================================================================
-    let carriedOverSalesStore = JSON.parse(localStorage.getItem('korpo_carried_over_sales_v1') || '{}');
+    let carriedOverSalesStore = lsGetJson('korpo_carried_over_sales_v1', '{}');
 
     function getSaleStatsMonth(v) {
       if (!v) return currentMonthStr;
@@ -2035,7 +2089,7 @@
     async function runMonthlyAutoRolloverAndCarryOver() {
       // 1. S'assurer que le mois courant existe toujours dans le Tableau KPI dès le 1er du mois
       ensureKpiMonthStructure(currentMonthStr);
-      localStorage.setItem('korpo_kpi_store_v1', JSON.stringify(kpiStore));
+      lsSet('korpo_kpi_store_v1', JSON.stringify(kpiStore));
       populateKpiMonthSelect(true);
 
       if (!sb || !currentProfile) return;
@@ -2077,19 +2131,19 @@
             '↪️'
           );
           try {
-            await sb.from('kpi_hebdo').upsert({
+            await safeUpsertKpiHebdoRow({
               mois_commission: sid,
               semaine_index: -5,
               representant_nom: JSON.stringify(record),
               booke: 0,
               rdv_realise: 0,
               updated_at: new Date().toISOString()
-            }, { onConflict: 'mois_commission,semaine_index,representant_nom' });
+            });
           } catch (e) {}
         }
       }
 
-      localStorage.setItem('korpo_carried_over_sales_v1', JSON.stringify(carriedOverSalesStore));
+      lsSet('korpo_carried_over_sales_v1', JSON.stringify(carriedOverSalesStore));
       applyCarryOverMetadataToState();
 
       if (movedCount > 0) {
@@ -2124,26 +2178,27 @@
       };
       if (!Array.isArray(saleAuditStore[sid])) saleAuditStore[sid] = [];
       saleAuditStore[sid].push(entry);
-      localStorage.setItem('korpo_sale_audit_v1', JSON.stringify(saleAuditStore));
+      lsSet('korpo_sale_audit_v1', JSON.stringify(saleAuditStore));
 
       if (sb && currentProfile) {
         try {
-          await sb.from('kpi_hebdo').upsert({
+          await safeUpsertKpiHebdoRow({
             mois_commission: sid,
             semaine_index: -2,
             representant_nom: JSON.stringify(saleAuditStore[sid].slice(-25)),
             booke: 0,
             rdv_realise: 0,
             updated_at: new Date().toISOString()
-          }, { onConflict: 'mois_commission,semaine_index,representant_nom' });
+          });
         } catch (e) {}
       }
     }
 
     async function moveSalesToTrash(salesArray) {
-      if (!Array.isArray(salesArray) || !salesArray.length) return;
+      if (!Array.isArray(salesArray) || !salesArray.length) return true;
       const actor = currentProfile?.nom || 'Utilisateur';
       const nowIso = new Date().toISOString();
+      let cloudFailed = 0;
 
       for (const v of salesArray) {
         const sid = String(v.id);
@@ -2180,19 +2235,25 @@
 
         if (sb && currentProfile) {
           try {
-            await sb.from('kpi_hebdo').upsert({
+            // Copie cloud allégée : une grosse image base64 ferait échouer l'écriture (limite d'index)
+            const cloudObj = { ...trashObj, proof: (trashObj.proof && trashObj.proof.length > 1500) ? '' : trashObj.proof };
+            const cr = await safeUpsertKpiHebdoRow({
               mois_commission: sid,
               semaine_index: -3,
-              representant_nom: JSON.stringify(trashObj),
+              representant_nom: JSON.stringify(cloudObj),
               booke: 0,
               rdv_realise: 0,
               updated_at: nowIso
-            }, { onConflict: 'mois_commission,semaine_index,representant_nom' });
-          } catch (e) {}
+            });
+            if (cr && cr.error) cloudFailed++;
+          } catch (e) { cloudFailed++; }
+        } else {
+          cloudFailed++;
         }
       }
-      localStorage.setItem('korpo_sale_trash_v1', JSON.stringify(saleTrashStore));
+      lsSet('korpo_sale_trash_v1', JSON.stringify(saleTrashStore));
       updateTrashBadges();
+      return cloudFailed === 0;
     }
 
     function fmtAuditDateTime(isoStr) {
@@ -2247,11 +2308,11 @@
             <div class="relative bg-white rounded-xl border border-slate-200/80 p-3 shadow-2xs">
               <span class="absolute -left-6 top-3 w-5 h-5 rounded-full bg-indigo-50 border border-indigo-200 flex items-center justify-center text-[11px]">${ev.icon || '📝'}</span>
               <div class="flex items-center justify-between gap-2">
-                <span class="text-xs font-extrabold text-slate-900">${ev.action}</span>
+                <span class="text-xs font-extrabold text-slate-900">${esc(ev.action)}</span>
                 <span class="text-[10px] font-semibold text-slate-400 tabular-nums">${fmtAuditDateTime(ev.at)}</span>
               </div>
-              ${ev.detail ? `<div class="text-xs text-slate-600 mt-0.5">${ev.detail}</div>` : ''}
-              <div class="text-[11px] font-semibold text-indigo-600 mt-1">Par : ${ev.by}</div>
+              ${ev.detail ? `<div class="text-xs text-slate-600 mt-0.5">${esc(ev.detail)}</div>` : ''}
+              <div class="text-[11px] font-semibold text-indigo-600 mt-1">Par : ${esc(ev.by)}</div>
             </div>
           `).join('')}
         </div>
@@ -2283,14 +2344,14 @@
               <div class="space-y-1 min-w-0">
                 <div class="flex items-center flex-wrap gap-2">
                   ${entBadge(item.entNom || '—')}
-                  <span class="font-extrabold text-sm text-slate-900 truncate">${item.cliNom || 'Client'}</span>
-                  <span class="text-xs font-bold text-indigo-600">(${item.repNom || '—'})</span>
+                  <span class="font-extrabold text-sm text-slate-900 truncate">${esc(item.cliNom || 'Client')}</span>
+                  <span class="text-xs font-bold text-indigo-600">(${esc(item.repNom || '—')})</span>
                 </div>
                 <div class="text-xs text-slate-600 tabular-nums">
                   Date vente : <strong>${s.date_vente || '—'}</strong> • Montant : <strong>${fmtMoney(s.valeur)}</strong> • Comm. Rep : <strong class="text-emerald-700">${fmtMoney(s.commission_rep)}</strong>
                 </div>
                 <div class="text-[11px] text-slate-400">
-                  Supprimée par <strong>${item.deletedBy}</strong> le ${fmtAuditDateTime(item.deletedAt)} • <span class="text-amber-700 font-semibold">${daysLeft}j restant(s)</span>
+                  Supprimée par <strong>${esc(item.deletedBy)}</strong> le ${fmtAuditDateTime(item.deletedAt)} • <span class="text-amber-700 font-semibold">${daysLeft}j restant(s)</span>
                 </div>
               </div>
               <div class="flex items-center gap-2 shrink-0">
@@ -2348,7 +2409,7 @@
       await recordSaleAudit(newId, 'Restaurée depuis la corbeille', `Restaurée par ${currentProfile?.nom || 'Utilisateur'}`, '♻️');
 
       saleTrashStore = saleTrashStore.filter(x => String(x.sale?.id) !== sid);
-      localStorage.setItem('korpo_sale_trash_v1', JSON.stringify(saleTrashStore));
+      lsSet('korpo_sale_trash_v1', JSON.stringify(saleTrashStore));
       if (sb && currentProfile) {
         try {
           await sb.from('kpi_hebdo').delete().eq('mois_commission', sid).eq('semaine_index', -3);
@@ -2366,7 +2427,7 @@
       const ok = await askConfirm('Supprimer définitivement ?', 'Cette vente ne pourra plus être restaurée.');
       if (!ok) return;
       saleTrashStore = saleTrashStore.filter(x => String(x.sale?.id) !== sid);
-      localStorage.setItem('korpo_sale_trash_v1', JSON.stringify(saleTrashStore));
+      lsSet('korpo_sale_trash_v1', JSON.stringify(saleTrashStore));
       if (sb && currentProfile) {
         try {
           await sb.from('kpi_hebdo').delete().eq('mois_commission', sid).eq('semaine_index', -3);
@@ -2520,7 +2581,7 @@
       if (!ok) return;
       const ids = saleTrashStore.map(x => String(x.sale?.id)).filter(Boolean);
       saleTrashStore = [];
-      localStorage.setItem('korpo_sale_trash_v1', '[]');
+      lsSet('korpo_sale_trash_v1', '[]');
       if (sb && ids.length) {
         try {
           await sb.from('kpi_hebdo').delete().in('mois_commission', ids).eq('semaine_index', -3);
@@ -2607,7 +2668,7 @@
       });
 
       populateKpiMonthSelect(true);
-      localStorage.setItem('korpo_kpi_store_v1', JSON.stringify(kpiStore));
+      lsSet('korpo_kpi_store_v1', JSON.stringify(kpiStore));
     }
 
     let sb = null;
@@ -2640,7 +2701,7 @@
 
     function entBadge(nom) {
       const cls = entBadgeColors[nom] || 'bg-slate-100 text-slate-700 border-slate-200';
-      return `<span class="inline-flex items-center px-2.5 py-0.5 text-xs font-semibold rounded-lg border ${cls}">${nom}</span>`;
+      return `<span class="inline-flex items-center px-2.5 py-0.5 text-xs font-semibold rounded-lg border ${cls}">${esc(nom)}</span>`;
     }
 
     function playSaleCelebrationFanfare() {
@@ -2701,7 +2762,7 @@
         ? 'bg-rose-600 text-white shadow-rose-600/20'
         : 'bg-slate-900 text-white shadow-slate-900/20';
       el.className = `${colors} text-xs font-semibold px-4 py-3 rounded-xl shadow-xl transition-opacity flex items-center gap-2`;
-      el.innerHTML = `<span>${type === 'error' ? '⚠' : '✓'}</span><span>${msg}</span>`;
+      el.innerHTML = `<span>${type === 'error' ? '⚠' : '✓'}</span><span>${esc(msg)}</span>`;
       container.appendChild(el);
       setTimeout(() => { el.style.opacity = '0'; setTimeout(() => el.remove(), 300); }, 3500);
     }
@@ -2763,10 +2824,13 @@
         showScreen('screen-login');
       }
 
-      sb.auth.onAuthStateChange(async (event, session) => {
+      // Pas d'appels Supabase « await » directement dans ce callback (risque de blocage connu de supabase-js v2)
+      sb.auth.onAuthStateChange((event, session) => {
         if (event === 'SIGNED_IN' && session?.user) {
-          await handleAuthenticatedUser(session.user);
+          if (currentProfile && currentUser && currentUser.id === session.user.id) return; // déjà chargé (retour sur l'onglet)
+          setTimeout(() => handleAuthenticatedUser(session.user), 0);
         } else if (event === 'SIGNED_OUT') {
+          stopAdminBackgroundSync();
           currentUser = null;
           currentProfile = null;
           showScreen('screen-login');
@@ -2774,12 +2838,20 @@
       });
     }
 
+    let authLoadingUserId = null;
     async function handleAuthenticatedUser(user) {
+      if (authLoadingUserId === user.id) return; // évite le double chargement (getSession + SIGNED_IN)
+      authLoadingUserId = user.id;
+      try { await handleAuthenticatedUserInner(user); }
+      finally { authLoadingUserId = null; }
+    }
+
+    async function handleAuthenticatedUserInner(user) {
       currentUser = user;
       const { data: profile, error } = await sb
         .from('representants')
         .select('*')
-        .ilike('courriel', user.email)
+        .ilike('courriel', String(user.email || '').replace(/[\\%_]/g, '\\$&'))
         .single();
 
       if (error || !profile) {
@@ -2880,7 +2952,7 @@
       const months = Object.keys(kpiStore).filter(isValidYearMonth).sort().reverse();
       const years = Array.from(new Set(months.map(m => m.slice(0, 4)))).sort().reverse();
       const yearOptions = years.map(y => `<option value="YEAR_${y}">📅 Toute l'année ${y} (Vue d'ensemble)</option>`).join('');
-      const monthOptions = months.map(ym => `<option value="${ym}">${kpiStore[ym].label}</option>`).join('');
+      const monthOptions = months.map(ym => `<option value="${ym}">${esc(kpiStore[ym].label)}</option>`).join('');
       selMonth.innerHTML = yearOptions + monthOptions;
       if (keepSelection && curSel && (curSel.startsWith('YEAR_') || months.includes(curSel))) {
         selMonth.value = curSel;
@@ -2895,17 +2967,17 @@
     // =========================================================================
     // GESTION DES OBJECTIFS PAR CLIENT & COMPAGNIE (ACTIVABLES)
     // =========================================================================
-    let clientTargetsStore = JSON.parse(localStorage.getItem('korpo_client_targets_v1') || '[]');
-    let companyTargetsMetaStore = JSON.parse(localStorage.getItem('korpo_company_targets_meta_v1') || '{}');
+    let clientTargetsStore = lsGetJson('korpo_client_targets_v1', '[]');
+    let companyTargetsMetaStore = lsGetJson('korpo_company_targets_meta_v1', '{}');
 
     function saveClientTargetsStore() {
-      localStorage.setItem('korpo_client_targets_v1', JSON.stringify(clientTargetsStore));
+      lsSet('korpo_client_targets_v1', JSON.stringify(clientTargetsStore));
     }
 
     async function saveCompanyTargetMeta(entNom, repNom, metaObj) {
       const key = `${entNom}__${repNom || 'ALL'}`;
       companyTargetsMetaStore[key] = metaObj;
-      localStorage.setItem('korpo_company_targets_meta_v1', JSON.stringify(companyTargetsMetaStore));
+      lsSet('korpo_company_targets_meta_v1', JSON.stringify(companyTargetsMetaStore));
       if (sb && currentProfile) {
         await safeUpsertKpiHebdoRow({
           mois_commission: key,
@@ -2935,7 +3007,7 @@
       if (!entSel) return;
       const entNames = new Set(['Toitex', 'MonSpray', 'VerreVDM', 'Groupe Diamant Pro', 'MaClim', ...state.entreprises.map(e => e.nom)]);
       const cur = entSel.value;
-      entSel.innerHTML = Array.from(entNames).map(n => `<option value="${n}">${n}</option>`).join('');
+      entSel.innerHTML = Array.from(entNames).map(n => `<option value="${esc(n)}">${esc(n)}</option>`).join('');
       if (cur && entNames.has(cur)) entSel.value = cur;
       updateTargetClientDatalist();
     }
@@ -2948,7 +3020,7 @@
       const matchingClients = entObj
         ? state.clients.filter(c => c.entreprise_id === entObj.id)
         : state.clients;
-      dl.innerHTML = matchingClients.map(c => `<option value="${c.nom}">`).join('');
+      dl.innerHTML = matchingClients.map(c => `<option value="${esc(c.nom)}">`).join('');
     }
 
     function renderActiveClientTargetsList() {
@@ -2961,8 +3033,8 @@
       box.innerHTML = clientTargetsStore.map((t, idx) => `
         <div class="flex items-center justify-between p-3 rounded-xl border ${t.active !== false ? 'bg-emerald-50/50 border-emerald-200' : 'bg-slate-50 border-slate-200 opacity-60'}">
           <div class="min-w-0 pr-2">
-            <div class="text-xs font-extrabold text-slate-900 truncate">${t.clientNom || 'Toute la compagnie'} <span class="text-[10px] font-semibold text-slate-500">(${t.entNom})</span></div>
-            <div class="text-[11px] text-slate-600 tabular-nums">Cible : <strong>${fmtMoney0(t.objectif)}/mois</strong> • ${t.repNom === 'ALL' ? 'Équipe' : t.repNom}</div>
+            <div class="text-xs font-extrabold text-slate-900 truncate">${esc(t.clientNom || 'Toute la compagnie')} <span class="text-[10px] font-semibold text-slate-500">(${esc(t.entNom)})</span></div>
+            <div class="text-[11px] text-slate-600 tabular-nums">Cible : <strong>${fmtMoney0(t.objectif)}/mois</strong> • ${esc(t.repNom === 'ALL' ? 'Équipe' : t.repNom)}</div>
           </div>
           <div class="flex items-center gap-1.5 shrink-0">
             <button type="button" onclick="toggleClientTargetActive(${idx})" title="Activer / Désactiver" class="px-2 py-1 text-[10px] font-bold rounded-lg ${t.active !== false ? 'bg-emerald-600 text-white' : 'bg-slate-200 text-slate-700'}">
@@ -2991,7 +3063,7 @@
       toast('Objectif client supprimé');
     };
 
-    let repTargetsOverrides = JSON.parse(localStorage.getItem('korpo_rep_targets_v1') || '{}');
+    let repTargetsOverrides = lsGetJson('korpo_rep_targets_v1', '{}');
 
     function applyRepTargetsOverridesToStore() {
       Object.entries(repTargetsOverrides).forEach(([key, vals]) => {
@@ -3102,7 +3174,7 @@
 
           const scopeKey = applyAll ? `ALL_${rn}` : `${activeYm}_${rn}`;
           repTargetsOverrides[scopeKey] = { dollars, booke, rdv, ots, suivi, close, comm: commGoal, bonusPct: bonusPctDec };
-          localStorage.setItem('korpo_rep_targets_v1', JSON.stringify(repTargetsOverrides));
+          lsSet('korpo_rep_targets_v1', JSON.stringify(repTargetsOverrides));
 
           await saveRepTargetsToStorageAndCloud(rn, activeYm, dollars, commGoal, applyAll, bonusPctDec);
 
@@ -3119,7 +3191,7 @@
             recalcTeamObjectivesForMonth(mObj);
           });
 
-          localStorage.setItem('korpo_kpi_store_v1', JSON.stringify(kpiStore));
+          lsSet('korpo_kpi_store_v1', JSON.stringify(kpiStore));
           renderKpiDashboard();
           renderMesVentes();
           toast(`Targets mis à jour pour ${rn} : ${fmtMoney0(commGoal)} comm. / ${fmtMoney0(dollars)} ventes ✓`);
@@ -3180,7 +3252,7 @@
               monthlyAmount: monthlyEquivalent,
               annualAmount: annualEquivalent
             });
-            localStorage.setItem('korpo_kpi_store_v1', JSON.stringify(kpiStore));
+            lsSet('korpo_kpi_store_v1', JSON.stringify(kpiStore));
             toast(isAnnualInput
               ? `Objectif annuel mis à jour pour ${entNom} : ${fmtMoney0(annualEquivalent)}/an (${fmtMoney0(monthlyEquivalent)}/mois)`
               : `Objectif mensuel mis à jour pour ${entNom} : ${fmtMoney0(monthlyEquivalent)}/mois`);
@@ -3269,11 +3341,11 @@
           <div class="rounded-2xl border border-slate-200/90 p-4 bg-slate-50/40 flex flex-col justify-between space-y-3">
             <div class="space-y-2">
               <div class="flex items-center justify-between gap-2">
-                <div class="font-extrabold text-sm text-slate-900 truncate">${t.clientNom}</div>
+                <div class="font-extrabold text-sm text-slate-900 truncate">${esc(t.clientNom)}</div>
                 ${entBadge(t.entNom)}
               </div>
               <div class="flex items-center justify-between text-[11px] text-slate-500">
-                <span>Rep : <strong>${t.repNom === 'ALL' ? 'Tous' : t.repNom}</strong></span>
+                <span>Rep : <strong>${esc(t.repNom === 'ALL' ? 'Tous' : t.repNom)}</strong></span>
                 <span class="font-extrabold ${pct >= 100 ? 'text-emerald-600' : 'text-slate-700'} tabular-nums">${pct} %</span>
               </div>
               <div class="flex items-baseline justify-between pt-0.5">
@@ -3394,10 +3466,10 @@
           <div class="p-3.5 hover:bg-slate-50 transition flex items-start justify-between gap-3">
             <div class="min-w-0">
               <div class="flex items-center gap-1.5">
-                <span class="text-xs font-extrabold text-slate-900">${repN}</span>
+                <span class="text-xs font-extrabold text-slate-900">${esc(repN)}</span>
                 <span class="text-[10px] text-slate-400">• ${v.date_vente}</span>
               </div>
-              <div class="text-xs font-semibold text-slate-700 truncate mt-0.5">${entN} — ${cliN}</div>
+              <div class="text-xs font-semibold text-slate-700 truncate mt-0.5">${esc(entN)} — ${esc(cliN)}</div>
               <div class="text-xs font-extrabold text-indigo-600 tabular-nums mt-0.5">${fmtMoney(v.valeur)}</div>
             </div>
             <div class="flex flex-col gap-1.5 shrink-0">
@@ -3468,15 +3540,24 @@
       });
     }
 
+    let checkingPendingNow = false;
+    let adminVisibilityBound = false;
+
     async function checkNewPendingSalesNow() {
       if (!sb || !currentProfile || currentProfile.role !== 'admin') return;
+      if (checkingPendingNow) return;
+      checkingPendingNow = true;
       try {
-        const [{ data: latestVentes }, { data: latestClients }] = await Promise.all([
-          sb.from('ventes').select('*').order('date_vente', { ascending: false }).order('created_at', { ascending: false }),
-          sb.from('clients').select('*').order('nom')
+        // 1) Requête légère (id + statut) ; la requête complète n'a lieu que s'il y a du nouveau
+        const light = await fetchAllRows(() => sb.from('ventes').select('id,statut_depot').order('id'));
+        const hasNew = light.some(v => v.statut_depot === 'a_confirmer' && !knownPendingSaleIds.has(String(v.id)));
+        if (!hasNew) return;
+
+        const [latestVentes, latestClients] = await Promise.all([
+          fetchAllRows(() => sb.from('ventes').select('*').order('date_vente', { ascending: false }).order('created_at', { ascending: false }).order('id', { ascending: false })),
+          fetchAllRows(() => sb.from('clients').select('*').order('nom').order('id'))
         ]);
-        if (latestClients) state.clients = latestClients;
-        if (!latestVentes) return;
+        state.clients = latestClients;
 
         const newPending = latestVentes.filter(v => v.statut_depot === 'a_confirmer' && !knownPendingSaleIds.has(String(v.id)));
         if (newPending.length > 0) {
@@ -3499,7 +3580,17 @@
         }
       } catch (e) {
         console.warn('Vérification nouvelles ventes:', e.message);
+      } finally {
+        checkingPendingNow = false;
       }
+    }
+
+    function stopAdminBackgroundSync() {
+      if (adminPollingTimer) { clearInterval(adminPollingTimer); adminPollingTimer = null; }
+      if (realtimeVentesChannel && sb) { try { sb.removeChannel(realtimeVentesChannel); } catch (e) {} }
+      realtimeVentesChannel = null;
+      knownPendingSaleIds = new Set();
+      hasInitializedPendingBaseline = false;
     }
 
     function subscribeToNewSalesRealtime() {
@@ -3519,9 +3610,12 @@
           });
       }
 
-      // Vérification automatique toutes les 8 secondes (actif ou en arrière-plan) + dès le retour sur l'onglet
+      // Filet de sécurité toutes les 15 s (le temps réel fait l'essentiel) + dès le retour sur l'onglet
       if (!adminPollingTimer) {
-        adminPollingTimer = setInterval(checkNewPendingSalesNow, 8000);
+        adminPollingTimer = setInterval(checkNewPendingSalesNow, 15000);
+      }
+      if (!adminVisibilityBound) {
+        adminVisibilityBound = true;
         document.addEventListener('visibilitychange', () => {
           if (!document.hidden) checkNewPendingSalesNow();
         });
@@ -3572,12 +3666,12 @@
     // =========================================================================
     // PREUVES PHOTO DE DÉPÔT / CONTRAT & ANCIENNETÉ DES DOSSIERS (CHANTIER 2)
     // =========================================================================
-    let saleProofsStore = JSON.parse(localStorage.getItem('korpo_sale_proofs_v1') || '{}');
+    let saleProofsStore = lsGetJson('korpo_sale_proofs_v1', '{}');
     let pendingProofDataUrl = '';
 
     function saveSaleProofsStore() {
       try {
-        localStorage.setItem('korpo_sale_proofs_v1', JSON.stringify(saleProofsStore));
+        lsSet('korpo_sale_proofs_v1', JSON.stringify(saleProofsStore));
       } catch (e) {
         console.warn('Stockage local saturé pour les aperçus photo');
       }
@@ -3648,7 +3742,7 @@
       document.getElementById('proof-modal-subtitle').textContent = `${ent} • ${v.date_vente} • ${fmtMoney(v.valeur)}`;
       const body = document.getElementById('proof-modal-body');
       if (proofSrc) {
-        body.innerHTML = `<img src="${proofSrc}" alt="Preuve de dépôt" class="max-h-[70vh] rounded-xl shadow-md object-contain" />`;
+        body.innerHTML = `<img src="${esc(proofSrc)}" alt="Preuve de dépôt" class="max-h-[70vh] rounded-xl shadow-md object-contain" />`;
       } else {
         body.innerHTML = `<div class="text-xs text-slate-500">Aucune photo jointe à ce dossier.</div>`;
       }
@@ -3785,7 +3879,7 @@
 
         return `
           <tr class="hover:bg-white/5 transition">
-            <td class="py-2.5 px-4 font-bold text-white">${rn}</td>
+            <td class="py-2.5 px-4 font-bold text-white">${esc(rn)}</td>
             <td class="py-2.5 px-3 text-right tabular-nums text-slate-200">${fmtMoney0(signed)}</td>
             <td class="py-2.5 px-3 text-center tabular-nums">
               <span class="px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-200 font-bold">${remainingRdv}</span>
@@ -3960,7 +4054,7 @@
         });
 
         saveManualKpiOverrides();
-        localStorage.setItem('korpo_kpi_store_v1', JSON.stringify(kpiStore));
+        lsSet('korpo_kpi_store_v1', JSON.stringify(kpiStore));
         renderKpiDashboard();
         toast(replaceWholeMonth
           ? `Tout le mois de ${rep} (${ym}) a été remplacé par ces chiffres ✓`
@@ -4001,7 +4095,7 @@
           if (rObj[k]) rObj[k].cumul = 0;
         });
         saveManualKpiOverrides();
-        localStorage.setItem('korpo_kpi_store_v1', JSON.stringify(kpiStore));
+        lsSet('korpo_kpi_store_v1', JSON.stringify(kpiStore));
         syncSalesIntoKpi();
         syncGoogleAgendaIntoKpi();
         syncKpiEditorInputs();
@@ -4372,7 +4466,7 @@
       });
 
       populateKpiMonthSelect(true);
-      localStorage.setItem('korpo_kpi_store_v1', JSON.stringify(kpiStore));
+      lsSet('korpo_kpi_store_v1', JSON.stringify(kpiStore));
     }
 
     function progressColor(pct) {
@@ -4601,12 +4695,12 @@
         const isSelected = repFilter === rn;
 
         return `
-          <tr onclick="selectKpiRep('${rn}')" class="cursor-pointer transition ${isSelected ? 'bg-indigo-50/70' : 'hover:bg-slate-50'}">
+          <tr onclick="selectKpiRep('${esc(rn)}')" class="cursor-pointer transition ${isSelected ? 'bg-indigo-50/70' : 'hover:bg-slate-50'}">
             <td class="py-3.5 px-5">
               <div class="flex items-center gap-3">
-                <span class="w-8 h-8 rounded-xl ${isSelected ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-700'} text-xs font-extrabold flex items-center justify-center">${rn.slice(0, 2).toUpperCase()}</span>
+                <span class="w-8 h-8 rounded-xl ${isSelected ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-700'} text-xs font-extrabold flex items-center justify-center">${esc(rn.slice(0, 2).toUpperCase())}</span>
                 <div>
-                  <div class="font-bold text-slate-900">${rn}</div>
+                  <div class="font-bold text-slate-900">${esc(rn)}</div>
                   <div class="text-[11px] text-slate-400">${isYear ? 'Voir le détail mois par mois →' : 'Voir le détail par semaine →'}</div>
                 </div>
               </div>
@@ -4671,12 +4765,12 @@
           const pctObj = dolObj > 0 ? Math.round((dol / dolObj) * 100) : 0;
           const isSelected = repFilter === rn;
           return `
-            <div onclick="selectKpiRep('${rn}')" class="p-4 space-y-2.5 cursor-pointer transition ${isSelected ? 'bg-indigo-50/70' : 'bg-white active:bg-slate-50'}">
+            <div onclick="selectKpiRep('${esc(rn)}')" class="p-4 space-y-2.5 cursor-pointer transition ${isSelected ? 'bg-indigo-50/70' : 'bg-white active:bg-slate-50'}">
               <div class="flex items-center justify-between gap-2">
                 <div class="flex items-center gap-2.5">
-                  <span class="w-8 h-8 rounded-xl ${isSelected ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-700'} text-xs font-extrabold flex items-center justify-center">${rn.slice(0, 2).toUpperCase()}</span>
+                  <span class="w-8 h-8 rounded-xl ${isSelected ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-700'} text-xs font-extrabold flex items-center justify-center">${esc(rn.slice(0, 2).toUpperCase())}</span>
                   <div>
-                    <div class="font-extrabold text-sm text-slate-900">${rn}</div>
+                    <div class="font-extrabold text-sm text-slate-900">${esc(rn)}</div>
                     <div class="text-[11px] text-indigo-600 font-semibold">${isSelected ? 'Fermer le détail ↑' : 'Toucher pour le détail ↓'}</div>
                   </div>
                 </div>
@@ -4743,7 +4837,7 @@
           <div class="bg-white rounded-2xl border-2 border-indigo-200 shadow-xs overflow-hidden">
             <div class="px-5 py-3.5 bg-indigo-950 text-white flex items-center justify-between">
               <div class="flex items-center gap-2.5">
-                <span class="text-sm font-extrabold">${isYear ? 'Évolution mois par mois' : 'Détail semaine par semaine'} — ${repFilter}</span>
+                <span class="text-sm font-extrabold">${isYear ? 'Évolution mois par mois' : 'Détail semaine par semaine'} — ${esc(repFilter)}</span>
               </div>
               <button onclick="selectKpiRep('ALL')" class="px-3 py-1 text-xs font-bold bg-white/10 hover:bg-white/20 rounded-lg transition">← Revenir à toute l'équipe</button>
             </div>
@@ -4794,7 +4888,7 @@
               : rv.objectif;
             return `
               <div class="flex items-center justify-between text-xs py-1 border-t border-slate-100">
-                <span class="font-medium text-slate-600">${rn}</span>
+                <span class="font-medium text-slate-600">${esc(rn)}</span>
                 <span class="font-bold text-slate-900 tabular-nums">${fmtMoney0(rv.cumul)}${repObjVal > 0 ? ` <span class="text-slate-400 font-normal">/ ${fmtMoney0(repObjVal)}</span>` : ''}</span>
               </div>
             `;
@@ -4969,9 +5063,9 @@
 
       tbody.innerHTML = parsedKpiImportRows.slice(0, 120).map((r, idx) => `
         <tr class="hover:bg-slate-50">
-          <td class="py-2 px-3 font-bold text-slate-800">${r.ym}</td>
-          <td class="py-2 px-3 font-semibold text-indigo-700">${r.rep}</td>
-          <td class="py-2 px-3 font-medium text-slate-700">${r.metric}</td>
+          <td class="py-2 px-3 font-bold text-slate-800">${esc(r.ym)}</td>
+          <td class="py-2 px-3 font-semibold text-indigo-700">${esc(r.rep)}</td>
+          <td class="py-2 px-3 font-medium text-slate-700">${esc(r.metric)}</td>
           <td class="py-2 px-3 text-right tabular-nums text-slate-500">${r.weeks.join(' / ')}</td>
           <td class="py-2 px-3 text-right">
             <input type="number" step="0.01" value="${r.cumul}" onchange="parsedKpiImportRows[${idx}].cumul = parseFloat(this.value) || 0; parsedKpiImportRows[${idx}].weeks = [parsedKpiImportRows[${idx}].cumul, 0, 0, 0];" class="w-24 px-2 py-0.5 text-right font-extrabold text-slate-900 bg-slate-50 border border-slate-200 rounded-md tabular-nums" />
@@ -5305,7 +5399,7 @@
         });
 
         saveManualKpiOverrides();
-        localStorage.setItem('korpo_kpi_store_v1', JSON.stringify(kpiStore));
+        lsSet('korpo_kpi_store_v1', JSON.stringify(kpiStore));
         populateKpiMonthSelect(true);
 
         if (syncToSb && sb && currentProfile && hebdoUpserts.size > 0) {
@@ -5361,7 +5455,7 @@
       if (!sel) return;
       const curMain = document.getElementById('kpi-select-month')?.value;
       const months = Object.keys(kpiStore).sort().reverse();
-      sel.innerHTML = months.map(ym => `<option value="${ym}">${kpiStore[ym].label}</option>`).join('');
+      sel.innerHTML = months.map(ym => `<option value="${ym}">${esc(kpiStore[ym].label)}</option>`).join('');
       if (curMain && !curMain.startsWith('YEAR_') && months.includes(curMain)) {
         sel.value = curMain;
       }
@@ -5382,8 +5476,8 @@
         const dol = Number(r?.['Vente $']?.cumul || 0);
         const close = rdv > 0 ? (((ots + suivi) / rdv) * 100).toFixed(1) : '0.0';
         return `
-          <tr class="hover:bg-slate-50" data-rep="${rn}">
-            <td class="py-2.5 px-4 font-bold text-slate-900">${rn}</td>
+          <tr class="hover:bg-slate-50" data-rep="${esc(rn)}">
+            <td class="py-2.5 px-4 font-bold text-slate-900">${esc(rn)}</td>
             <td class="py-2 px-3 text-center">
               <input type="number" min="0" data-field="booke" value="${booke}" class="w-20 px-2 py-1 text-center font-bold bg-slate-50 border border-slate-200 rounded-lg tabular-nums" />
             </td>
@@ -5450,7 +5544,7 @@
       });
 
       saveManualKpiOverrides();
-      localStorage.setItem('korpo_kpi_store_v1', JSON.stringify(kpiStore));
+      lsSet('korpo_kpi_store_v1', JSON.stringify(kpiStore));
       for (const tr of rows) {
         const rn = tr.getAttribute('data-rep');
         for (let wi = 0; wi < nw; wi++) {
@@ -5586,31 +5680,36 @@
 
     // CHARGEMENT SUPABASE (VENTES & COMMISSIONS)
     // =========================================================================
-    async function loadAllData() {
+    async function loadAllDataInner() {
       const isAdmin = currentProfile.role === 'admin';
       clearBulkSelection();
 
-      const [resClassement, resEnt, resClients, resKpiHebdo] = await Promise.all([
-        sb.from('vue_classement_ventes').select('*'),
-        sb.from('entreprises').select('*').order('nom'),
-        sb.from('clients').select('*').order('nom'),
-        sb.from('kpi_hebdo').select('*')
+      const [classementRows, entRows, clientRows, kpiRows] = await Promise.all([
+        fetchAllRows(() => sb.from('vue_classement_ventes').select('*')),
+        fetchAllRows(() => sb.from('entreprises').select('*').order('nom').order('id')),
+        fetchAllRows(() => sb.from('clients').select('*').order('nom').order('id')),
+        // Les représentants ne téléchargent pas la corbeille (index -3) des autres
+        fetchAllRows(() => {
+          let q = sb.from('kpi_hebdo').select('*').order('id');
+          if (!isAdmin) q = q.neq('semaine_index', -3);
+          return q;
+        })
       ]);
 
-      state.classement = resClassement.data || [];
-      state.entreprises = resEnt.data || [];
-      state.clients = resClients.data || [];
-      kpiHebdoRows = resKpiHebdo.data || [];
+      state.classement = classementRows;
+      state.entreprises = entRows;
+      state.clients = clientRows;
+      kpiHebdoRows = kpiRows;
 
       if (isAdmin) {
-        const [resReps, resTaux, resVentes] = await Promise.all([
-          sb.from('representants').select('*').order('nom'),
-          sb.from('taux_commission').select('*'),
-          sb.from('ventes').select('*').order('date_vente', { ascending: false }).order('created_at', { ascending: false })
+        const [repRows, tauxRows, venteRows] = await Promise.all([
+          fetchAllRows(() => sb.from('representants').select('*').order('nom').order('id')),
+          fetchAllRows(() => sb.from('taux_commission').select('*').order('id')),
+          fetchAllRows(() => sb.from('ventes').select('*').order('date_vente', { ascending: false }).order('created_at', { ascending: false }).order('id', { ascending: false }))
         ]);
-        state.representants = resReps.data || [];
-        state.taux = resTaux.data || [];
-        state.ventes = resVentes.data || [];
+        state.representants = repRows;
+        state.taux = tauxRows;
+        state.ventes = venteRows;
 
         state.mesVentes = state.ventes.map(v => ({
           ...v,
@@ -5636,19 +5735,19 @@
         renderAdminNotifications();
         subscribeToNewSalesRealtime();
       } else {
-        const [resMesVentes, resMyTaux] = await Promise.all([
-          sb.from('vue_ventes_representant').select('*').eq('representant_id', currentProfile.id).order('date_vente', { ascending: false }).order('created_at', { ascending: false }),
-          sb.from('taux_commission').select('*').eq('representant_id', currentProfile.id)
+        const [mesVentesRows, myTauxRows] = await Promise.all([
+          fetchAllRows(() => sb.from('vue_ventes_representant').select('*').eq('representant_id', currentProfile.id).order('date_vente', { ascending: false }).order('created_at', { ascending: false })),
+          fetchAllRows(() => sb.from('taux_commission').select('*').eq('representant_id', currentProfile.id))
         ]);
         state.representants = [currentProfile];
-        state.mesVentes = resMesVentes.data || [];
+        state.mesVentes = mesVentesRows;
         state.ventes = state.mesVentes.map(v => ({
           ...v,
           representant_id: v.representant_id || currentProfile.id,
           entreprise_id: v.entreprise_id || state.entreprises.find(e => e.nom === v.entreprise_nom)?.id,
           client_id: v.client_id || state.clients.find(c => c.nom === v.client_nom)?.id
         }));
-        state.taux = resMyTaux.data || [];
+        state.taux = myTauxRows;
         if (!state.taux.length) {
           const { data: rpcTaux } = await sb.rpc('get_mes_taux_commission');
           if (rpcTaux && rpcTaux.length) state.taux = rpcTaux;
@@ -5663,6 +5762,16 @@
       renderMesVentes();
       renderClassement();
       renderKpiDashboard();
+    }
+
+    async function loadAllData() {
+      try {
+        await loadAllDataInner();
+      } catch (err) {
+        console.error('Erreur de chargement des données :', err);
+        toast(`Erreur de chargement des données : ${err?.message || err}`, 'error');
+        return false;
+      }
     }
 
     let mesVentesSort = { col: 'date_vente', dir: 'desc' };
@@ -5708,9 +5817,9 @@
       renderAdminVentes();
     };
 
-    let personalMonthlyTargets = JSON.parse(localStorage.getItem('korpo_personal_monthly_targets_v1') || '{}');
-    let personalCommTargets = JSON.parse(localStorage.getItem('korpo_personal_comm_targets_v1') || '{}');
-    let personalBonusPctTargets = JSON.parse(localStorage.getItem('korpo_personal_bonus_pct_v1') || '{}');
+    let personalMonthlyTargets = lsGetJson('korpo_personal_monthly_targets_v1', '{}');
+    let personalCommTargets = lsGetJson('korpo_personal_comm_targets_v1', '{}');
+    let personalBonusPctTargets = lsGetJson('korpo_personal_bonus_pct_v1', '{}');
 
     function getBonusPctForRep(repName, ym) {
       if (personalBonusPctTargets[`${repName}_${ym}`] !== undefined) return Number(personalBonusPctTargets[`${repName}_${ym}`]);
@@ -5769,9 +5878,9 @@
         personalCommTargets[`${repName}_ALL`] = commGoal;
         personalBonusPctTargets[`${repName}_ALL`] = effectiveBonusPct;
       }
-      localStorage.setItem('korpo_personal_monthly_targets_v1', JSON.stringify(personalMonthlyTargets));
-      localStorage.setItem('korpo_personal_comm_targets_v1', JSON.stringify(personalCommTargets));
-      localStorage.setItem('korpo_personal_bonus_pct_v1', JSON.stringify(personalBonusPctTargets));
+      lsSet('korpo_personal_monthly_targets_v1', JSON.stringify(personalMonthlyTargets));
+      lsSet('korpo_personal_comm_targets_v1', JSON.stringify(personalCommTargets));
+      lsSet('korpo_personal_bonus_pct_v1', JSON.stringify(personalBonusPctTargets));
 
       const scopes = applyAll ? [activeYm, 'ALL'] : [activeYm];
       scopes.forEach(sc => {
@@ -5954,28 +6063,28 @@
         const bonusValPct = Math.round(getBonusPctForRep(rn, currentMonthStr) * 10000) / 100;
         const safeKey = rn.replace(/'/g, "\'");
         return `
-          <tr class="hover:bg-slate-50/80 transition" data-target-rep="${rn}">
+          <tr class="hover:bg-slate-50/80 transition" data-target-rep="${esc(rn)}">
             <td class="py-3 px-4">
               <div class="font-bold text-slate-900 flex items-center gap-2">
-                <span>${rn}</span>
+                <span>${esc(rn)}</span>
                 <span class="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">${roleLabel}</span>
               </div>
             </td>
             <td class="py-2.5 px-4">
               <div class="relative max-w-[170px]">
-                <input type="number" step="100" min="0" data-comm-input="${rn}" value="${commVal}" class="w-full pl-3 pr-7 py-2 text-xs font-extrabold text-emerald-900 bg-emerald-50/50 border border-emerald-200 rounded-xl tabular-nums focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-600" />
+                <input type="number" step="100" min="0" data-comm-input="${esc(rn)}" value="${commVal}" class="w-full pl-3 pr-7 py-2 text-xs font-extrabold text-emerald-900 bg-emerald-50/50 border border-emerald-200 rounded-xl tabular-nums focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-600" />
                 <span class="absolute right-2.5 top-2 text-xs font-bold text-emerald-700">$</span>
               </div>
             </td>
             <td class="py-2.5 px-4">
               <div class="relative max-w-[170px]">
-                <input type="number" step="500" min="0" data-sales-input="${rn}" value="${salesVal}" class="w-full pl-3 pr-7 py-2 text-xs font-bold text-slate-900 bg-slate-50 border border-slate-200 rounded-xl tabular-nums focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-600" />
+                <input type="number" step="500" min="0" data-sales-input="${esc(rn)}" value="${salesVal}" class="w-full pl-3 pr-7 py-2 text-xs font-bold text-slate-900 bg-slate-50 border border-slate-200 rounded-xl tabular-nums focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-600" />
                 <span class="absolute right-2.5 top-2 text-xs font-semibold text-slate-400">$</span>
               </div>
             </td>
             <td class="py-2.5 px-4">
               <div class="relative max-w-[130px]">
-                <input type="number" step="0.25" min="0" max="50" data-bonus-input="${rn}" value="${bonusValPct}" class="w-full pl-3 pr-7 py-2 text-xs font-extrabold text-amber-900 bg-amber-50/60 border border-amber-200 rounded-xl tabular-nums focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-500" />
+                <input type="number" step="0.25" min="0" max="50" data-bonus-input="${esc(rn)}" value="${bonusValPct}" class="w-full pl-3 pr-7 py-2 text-xs font-extrabold text-amber-900 bg-amber-50/60 border border-amber-200 rounded-xl tabular-nums focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-500" />
                 <span class="absolute right-2.5 top-2 text-xs font-bold text-amber-700">%</span>
               </div>
             </td>
@@ -6007,7 +6116,7 @@
           recalcTeamObjectivesForMonth(kpiStore[ym]);
         }
       });
-      localStorage.setItem('korpo_kpi_store_v1', JSON.stringify(kpiStore));
+      lsSet('korpo_kpi_store_v1', JSON.stringify(kpiStore));
       renderMesVentes();
       renderClassement();
       renderKpiDashboard();
@@ -6036,7 +6145,7 @@
           count++;
         }
       }
-      localStorage.setItem('korpo_kpi_store_v1', JSON.stringify(kpiStore));
+      lsSet('korpo_kpi_store_v1', JSON.stringify(kpiStore));
       renderMesVentes();
       renderClassement();
       renderKpiDashboard();
@@ -6048,7 +6157,7 @@
 
     window.setCommDisplayMode = (mode) => {
       commDisplayMode = mode === 'confirme' ? 'confirme' : 'vendu';
-      localStorage.setItem('korpo_comm_display_mode_v1', commDisplayMode);
+      lsSet('korpo_comm_display_mode_v1', commDisplayMode);
       syncCommDisplayModeButtons();
       renderMesVentes();
       if (currentProfile?.role === 'admin') {
@@ -6231,9 +6340,9 @@
                     <span class="text-[11px] font-semibold text-slate-400">${v.date_vente}</span>
                     ${v._carriedOverFrom ? `<span class="px-1.5 py-0.5 text-[10px] font-bold rounded-md bg-amber-50 text-amber-800 border border-amber-200" title="Comptabilisée dans les stats de ${v._carriedOverFrom}">↪ Reportée de ${v._carriedOverFrom}</span>` : ''}
                   </div>
-                  <div class="font-extrabold text-sm text-slate-900 mt-1.5 truncate">${v.client_nom}</div>
-                  ${isAdmin ? `<div class="text-[11px] font-semibold text-indigo-600">Rep : ${v.rep_nom || '—'}</div>` : ''}
-                  ${cleanNote ? `<div class="text-[11px] text-slate-400 truncate mt-0.5">${cleanNote}</div>` : ''}
+                  <div class="font-extrabold text-sm text-slate-900 mt-1.5 truncate">${esc(v.client_nom)}</div>
+                  ${isAdmin ? `<div class="text-[11px] font-semibold text-indigo-600">Rep : ${esc(v.rep_nom || '—')}</div>` : ''}
+                  ${cleanNote ? `<div class="text-[11px] text-slate-400 truncate mt-0.5">${esc(cleanNote)}</div>` : ''}
                 </div>
                 <div class="text-right shrink-0 tabular-nums">
                   <div class="text-xs font-bold text-slate-500">${fmtMoney(v.valeur)}</div>
@@ -6280,7 +6389,7 @@
           </td>
           <td class="py-3.5 px-4">${entBadge(v.entreprise_nom)}</td>
           <td class="py-3.5 px-4">
-            <div class="font-semibold text-slate-900">${v.client_nom}</div>
+            <div class="font-semibold text-slate-900">${esc(v.client_nom)}</div>
             <div class="flex items-center gap-1.5 mt-0.5">
               ${(isAdmin || (v.statut_depot === 'a_confirmer' && v.statut_paiement !== 'paye'))
                 ? `<button type="button" onclick="toggleVenteKpiType('${v.id}')" title="Cliquer pour basculer entre OTS et SUIVI"
@@ -6291,10 +6400,10 @@
                     ${(v.note || '').toUpperCase().includes('[SUIVI]') ? 'SUIVI' : 'OTS'}
                   </span>`
               }
-              ${v.note ? `<span class="text-[11px] text-slate-400">${v.note.replace(/^\[(OTS|SUIVI)\]\s*/i, '')}</span>` : ''}
+              ${v.note ? `<span class="text-[11px] text-slate-400">${esc(v.note.replace(/^\[(OTS|SUIVI)\]\s*/i, ''))}</span>` : ''}
             </div>
           </td>
-          ${isAdmin ? `<td class="py-3.5 px-4 text-xs font-semibold text-slate-700">${v.rep_nom || '—'}</td>` : ''}
+          ${isAdmin ? `<td class="py-3.5 px-4 text-xs font-semibold text-slate-700">${esc(v.rep_nom || '—')}</td>` : ''}
           <td class="py-3.5 px-4 text-right font-semibold text-slate-900 tabular-nums">${fmtMoney(v.valeur)}</td>
           <td class="py-3.5 px-4 text-right font-extrabold text-emerald-600 tabular-nums">
             ${fmtMoney(v.commission_rep)}
@@ -6408,7 +6517,7 @@
                 <span class="w-9 h-9 shrink-0 rounded-xl ${reached ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-800'} flex items-center justify-center text-base font-bold">${medals[idx] || `#${idx + 1}`}</span>
                 <div class="min-w-0">
                   <div class="font-bold text-slate-900 flex items-center gap-2 truncate">
-                    <span>${r.nom}</span>
+                    <span>${esc(r.nom)}</span>
                     ${isMe ? '<span class="text-[10px] font-bold uppercase px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-600">Vous</span>' : ''}
                   </div>
                   <div class="text-xs text-slate-400 flex items-center gap-1"><span>${idx === 0 ? '👑 Leader • ' : ''}Position #${idx + 1}</span></div>
@@ -6462,7 +6571,7 @@
     function getEffectiveRatesWithTargetBonus(repId, entId, clientId, ym, excludeSaleId = null, customPriorVolume = null) {
       let rateObj = getRateForSale(repId, entId, clientId);
       if (!rateObj && state.mesVentes && state.mesVentes.length) {
-        const pastSale = state.mesVentes.find(v => String(v.entreprise_id) === String(entId) && Number(v.taux_rep_applique) > 0);
+        const pastSale = state.mesVentes.find(v => String(v.representant_id) === String(repId) && String(v.entreprise_id) === String(entId) && Number(v.taux_rep_applique) > 0);
         if (pastSale) {
           rateObj = { taux: Number(pastSale.taux_rep_applique), taux_olivier: Number(pastSale.taux_olivier_applique || 0) };
         }
@@ -6596,7 +6705,7 @@
       updateClientDatalist();
       document.getElementById('vente-client-nom').value = cli;
       document.getElementById('vente-valeur').value = v.valeur;
-      document.getElementById('vente-date').value = duplicate ? new Date().toISOString().slice(0, 10) : v.date_vente;
+      document.getElementById('vente-date').value = duplicate ? localYmd() : v.date_vente;
       document.getElementById('vente-mois-comm').value = v.mois_commission;
       document.getElementById('vente-statut-depot').value = duplicate ? 'a_confirmer' : v.statut_depot;
       document.getElementById('vente-statut-paiement').value = duplicate ? 'non_paye' : v.statut_paiement;
@@ -6628,15 +6737,15 @@
 
     function populateDrawerSelects() {
       const isAdmin = currentProfile.role === 'admin';
-      const entOptions = state.entreprises.map(e => `<option value="${e.id}">${e.nom}</option>`).join('');
+      const entOptions = state.entreprises.map(e => `<option value="${e.id}">${esc(e.nom)}</option>`).join('');
       document.getElementById('vente-entreprise').innerHTML = entOptions;
 
       const repSel = document.getElementById('vente-rep');
       if (isAdmin && state.representants.length) {
-        repSel.innerHTML = state.representants.map(r => `<option value="${r.id}">${r.nom}</option>`).join('');
+        repSel.innerHTML = state.representants.map(r => `<option value="${r.id}">${esc(r.nom)}</option>`).join('');
         repSel.disabled = false;
       } else {
-        repSel.innerHTML = `<option value="${currentProfile.id}">${currentProfile.nom}</option>`;
+        repSel.innerHTML = `<option value="${currentProfile.id}">${esc(currentProfile.nom)}</option>`;
         repSel.value = currentProfile.id;
         repSel.disabled = true;
       }
@@ -6648,8 +6757,8 @@
       const prevFilterRep = document.getElementById('admin-filter-rep').value;
       const prevFilterEnt = document.getElementById('admin-filter-ent').value;
 
-      const repOptions = state.representants.map(r => `<option value="${r.id}">${r.nom}</option>`).join('');
-      const entOptions = state.entreprises.map(e => `<option value="${e.id}">${e.nom}</option>`).join('');
+      const repOptions = state.representants.map(r => `<option value="${r.id}">${esc(r.nom)}</option>`).join('');
+      const entOptions = state.entreprises.map(e => `<option value="${e.id}">${esc(e.nom)}</option>`).join('');
 
       populateDrawerSelects();
       document.getElementById('taux-rep').innerHTML = repOptions;
@@ -6663,7 +6772,7 @@
         const prevScope = scopeSel.value || 'all';
         const otherRepsOpts = state.representants
           .filter(r => String(r.id) !== String(currentProfile?.id))
-          .map(r => `<option value="rep:${r.id}">👤 Vue de ${r.nom} (ses ventes & commissions)</option>`)
+          .map(r => `<option value="rep:${r.id}">👤 Vue de ${esc(r.nom)} (ses ventes & commissions)</option>`)
           .join('');
         scopeSel.innerHTML = `
           <option value="all">Toutes mes commissions (Directes + Équipe)</option>
@@ -6684,7 +6793,7 @@
     function updateClientDatalist() {
       const entId = document.getElementById('vente-entreprise').value;
       const list = state.clients.filter(c => c.entreprise_id === entId);
-      document.getElementById('clients-datalist').innerHTML = list.map(c => `<option value="${c.nom}">`).join('');
+      document.getElementById('clients-datalist').innerHTML = list.map(c => `<option value="${esc(c.nom)}">`).join('');
       updateDrawerCommissionPreview();
     }
 
@@ -6692,7 +6801,7 @@
       const entId = document.getElementById('taux-ent').value;
       const list = state.clients.filter(c => c.entreprise_id === entId);
       document.getElementById('taux-client').innerHTML = `<option value="">— Toute l'entreprise —</option>` +
-        list.map(c => `<option value="${c.id}">${c.nom}</option>`).join('');
+        list.map(c => `<option value="${c.id}">${esc(c.nom)}</option>`).join('');
     }
 
     function updateBulkBar() {
@@ -6738,7 +6847,8 @@
       if (!ok) return;
       const toTrash = state.ventes.filter(v => ids.includes(v.id));
       if (toTrash.length) {
-        await moveSalesToTrash(toTrash);
+        const trashOk = await moveSalesToTrash(toTrash);
+        if (!trashOk) return toast('La sauvegarde cloud de la corbeille a échoué : suppression annulée.', 'error');
         for (const ts of toTrash) {
           const delYm = getSaleStatsMonth(ts);
           const delRep = state.representants.find(r => String(r.id) === String(ts.representant_id));
@@ -6832,12 +6942,12 @@
                 <div class="min-w-0">
                   <div class="flex items-center flex-wrap gap-1.5">
                     ${entBadge(ent)}
-                    <span class="text-xs font-bold text-indigo-700">${rep}</span>
+                    <span class="text-xs font-bold text-indigo-700">${esc(rep)}</span>
                     <span class="text-[11px] text-slate-400">• ${v.date_vente}</span>
                     ${v._carriedOverFrom ? `<span class="px-1.5 py-0.5 text-[10px] font-bold rounded-md bg-amber-50 text-amber-800 border border-amber-200">↪ Reportée de ${v._carriedOverFrom}</span>` : ''}
                   </div>
-                  <div class="font-extrabold text-sm text-slate-900 mt-1 truncate">${cli}</div>
-                  ${cleanNote ? `<div class="text-[11px] text-slate-400 truncate">${cleanNote}</div>` : ''}
+                  <div class="font-extrabold text-sm text-slate-900 mt-1 truncate">${esc(cli)}</div>
+                  ${cleanNote ? `<div class="text-[11px] text-slate-400 truncate">${esc(cleanNote)}</div>` : ''}
                 </div>
                 <div class="text-right shrink-0 tabular-nums">
                   <div class="text-sm font-extrabold text-slate-900">${fmtMoney(v.valeur)}</div>
@@ -6888,11 +6998,11 @@
               <div class="text-slate-400">${v.mois_commission}</div>
               ${v._carriedOverFrom ? `<span class="mt-0.5 inline-block px-1.5 py-0.5 text-[10px] font-bold rounded-md bg-amber-50 text-amber-800 border border-amber-200" title="Comptabilisée dans les stats de ${v._carriedOverFrom}">↪ Reportée de ${v._carriedOverFrom}</span>` : ''}
             </td>
-            <td class="py-3 px-3 font-semibold text-slate-800">${rep}</td>
+            <td class="py-3 px-3 font-semibold text-slate-800">${esc(rep)}</td>
             <td class="py-3 px-3">
               <div class="flex items-center gap-2">
                 ${entBadge(ent)}
-                <span class="font-semibold text-slate-900">${cli}</span>
+                <span class="font-semibold text-slate-900">${esc(cli)}</span>
               </div>
               <div class="flex items-center gap-1.5 mt-0.5">
                 <button type="button" onclick="toggleVenteKpiType('${v.id}')" title="Cliquer pour basculer entre OTS et SUIVI"
@@ -6903,7 +7013,7 @@
                   ? `<span title="Doublon client ce mois-ci (seul le montant $ s'ajoute)" class="px-1.5 py-0.5 text-[10px] font-semibold rounded-md bg-slate-100 text-slate-500">2e ligne</span>`
                   : ''
                 }
-                ${v.note ? `<span class="text-[11px] text-slate-400">${v.note.replace(/^\[(OTS|SUIVI)\]\s*/i, '')}</span>` : ''}
+                ${v.note ? `<span class="text-[11px] text-slate-400">${esc(v.note.replace(/^\[(OTS|SUIVI)\]\s*/i, ''))}</span>` : ''}
               </div>
             </td>
             <td class="py-3 px-3 text-right font-bold text-slate-900 tabular-nums">${fmtMoney(v.valeur)}</td>
@@ -7036,7 +7146,7 @@
         const subComm = activeCommList.filter(v => v.representant_id === r.id);
         return `
           <tr>
-            <td class="py-2.5 font-semibold text-slate-900">${r.nom}</td>
+            <td class="py-2.5 font-semibold text-slate-900">${esc(r.nom)}</td>
             <td class="py-2.5 text-right tabular-nums font-medium">${fmtMoney(subAll.reduce((s, v) => s + Number(v.valeur), 0))}</td>
             <td class="py-2.5 text-right tabular-nums text-amber-600 font-semibold">${fmtMoney(subComm.reduce((s, v) => s + Number(v.commission_rep), 0))}</td>
             <td class="py-2.5 text-right tabular-nums text-emerald-600 font-bold">${fmtMoney(subComm.reduce((s, v) => s + Number(v.commission_olivier), 0))}</td>
@@ -7080,8 +7190,8 @@
             <div class="text-xs text-slate-500 mt-0.5">Relevé détaillé des commissions — <strong>${isConfirmedOnly ? 'Sur total confirmé (Dépôt reçu)' : 'Sur total vendu'}</strong> (${sales.length} dossier(s))</div>
           </div>
           <div class="text-right">
-            <div class="text-sm font-bold text-slate-900">${rep.nom}</div>
-            <div class="text-xs text-slate-500">${rep.courriel}</div>
+            <div class="text-sm font-bold text-slate-900">${esc(rep.nom)}</div>
+            <div class="text-xs text-slate-500">${esc(rep.courriel)}</div>
             <div class="text-xs font-semibold text-indigo-600 mt-1">Période : ${m || 'Cumul complet'}</div>
           </div>
         </div>
@@ -7120,8 +7230,8 @@
               return `
                 <tr>
                   <td class="py-2">${v.date_vente}</td>
-                  <td class="py-2 font-semibold">${ent}</td>
-                  <td class="py-2">${cli}</td>
+                  <td class="py-2 font-semibold">${esc(ent)}</td>
+                  <td class="py-2">${esc(cli)}</td>
                   <td class="py-2 text-right tabular-nums">${fmtMoney(v.valeur)}</td>
                   <td class="py-2 text-right font-bold text-emerald-700 tabular-nums">${fmtMoney(comm)}</td>
                   <td class="py-2 text-right">${v.statut_paiement === 'paye' ? 'Payé' : 'À payer'}</td>
@@ -7138,9 +7248,9 @@
           const ent = state.entreprises.find(e => e.id === v.entreprise_id)?.nom || '';
           const cli = state.clients.find(c => c.id === v.client_id)?.nom || '';
           const comm = isOlivier ? v.commission_olivier : v.commission_rep;
-          return [v.date_vente, v.mois_commission, `"${ent}"`, `"${cli.replace(/"/g, '""')}"`, v.valeur, comm, v.statut_paiement].join(',');
+          return [v.date_vente, v.mois_commission, csvCell(ent), csvCell(cli), v.valeur, comm, v.statut_paiement].join(',');
         });
-        const blob = new Blob([[headers.join(','), ...rows].join('\n')], { type: 'text/csv;charset=utf-8;' });
+        const blob = new Blob(['\ufeff' + [headers.join(','), ...rows].join('\n')], { type: 'text/csv;charset=utf-8;' });
         const a = document.createElement('a');
         a.href = URL.createObjectURL(blob);
         a.download = `releve-${rep.nom.toLowerCase().replace(/\s+/g, '-')}-${m || 'complet'}.csv`;
@@ -7168,9 +7278,9 @@
         const cli = t.client_id ? (state.clients.find(c => c.id === t.client_id)?.nom || 'Client') : 'Toute l\'entreprise';
         return `
           <tr class="hover:bg-slate-50">
-            <td class="py-3.5 px-4 font-semibold text-slate-900">${rep}</td>
+            <td class="py-3.5 px-4 font-semibold text-slate-900">${esc(rep)}</td>
             <td class="py-3.5 px-4">${entBadge(ent)}</td>
-            <td class="py-3.5 px-4"><span class="px-2.5 py-0.5 text-xs font-semibold rounded-full ${t.client_id ? 'bg-indigo-50 text-indigo-700' : 'bg-slate-100 text-slate-600'}">${cli}</span></td>
+            <td class="py-3.5 px-4"><span class="px-2.5 py-0.5 text-xs font-semibold rounded-full ${t.client_id ? 'bg-indigo-50 text-indigo-700' : 'bg-slate-100 text-slate-600'}">${esc(cli)}</span></td>
             <td class="py-3.5 px-4 text-right tabular-nums font-bold">${fmtPct(t.taux)}</td>
             <td class="py-3.5 px-4 text-right tabular-nums font-bold text-emerald-600">${fmtPct(t.taux_olivier)}</td>
             <td class="py-3.5 px-4 text-right"><button onclick="deleteTaux('${t.id}')" class="text-xs font-semibold text-rose-600 hover:underline">Supprimer</button></td>
@@ -7184,30 +7294,38 @@
       document.getElementById('list-entreprises').innerHTML = state.entreprises.map(e => `
         <li class="px-4 py-3 flex items-center justify-between text-sm bg-white">
           ${entBadge(e.nom)}
-          <button onclick="deleteEntreprise('${e.id}', '${e.nom.replace(/'/g, "\\'")}')" class="text-xs font-semibold text-rose-600 hover:underline">Supprimer</button>
+          <button onclick="deleteEntreprise('${e.id}')" class="text-xs font-semibold text-rose-600 hover:underline">Supprimer</button>
         </li>
       `).join('');
 
       document.getElementById('list-representants').innerHTML = state.representants.map(r => `
         <li class="px-4 py-3 flex items-center justify-between text-sm bg-white">
           <div>
-            <div class="font-bold text-slate-900">${r.nom} <span class="ml-1.5 text-[11px] font-semibold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">${r.role}</span></div>
-            <div class="text-xs text-slate-500">${r.courriel}</div>
+            <div class="font-bold text-slate-900">${esc(r.nom)} <span class="ml-1.5 text-[11px] font-semibold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">${esc(r.role)}</span></div>
+            <div class="text-xs text-slate-500">${esc(r.courriel)}</div>
           </div>
-          ${r.id !== currentProfile.id ? `<button onclick="deleteRepresentant('${r.id}', '${r.nom.replace(/'/g, "\\'")}')" class="text-xs font-semibold text-rose-600 hover:underline">Supprimer</button>` : '<span class="text-xs font-medium text-emerald-600">Session active</span>'}
+          ${r.id !== currentProfile.id ? `<button onclick="deleteRepresentant('${r.id}')" class="text-xs font-semibold text-rose-600 hover:underline">Supprimer</button>` : '<span class="text-xs font-medium text-emerald-600">Session active</span>'}
         </li>
       `).join('');
     }
 
+    const pendingClientCreations = new Map();
     async function getOrCreateClient(nom, entrepriseId) {
       const clean = nom.trim();
-      const existing = state.clients.find(c => c.entreprise_id === entrepriseId && c.nom.toLowerCase() === clean.toLowerCase());
+      const lower = clean.toLowerCase();
+      const existing = state.clients.find(c => String(c.entreprise_id) === String(entrepriseId) && c.nom.toLowerCase() === lower);
       if (existing) return existing.id;
 
-      const { data, error } = await sb.from('clients').insert({ nom: clean, entreprise_id: entrepriseId }).select().single();
-      if (error) throw error;
-      state.clients.push(data);
-      return data.id;
+      const key = `${entrepriseId}::${lower}`;
+      if (pendingClientCreations.has(key)) return pendingClientCreations.get(key);
+      const p = (async () => {
+        const { data, error } = await sb.from('clients').insert({ nom: clean, entreprise_id: entrepriseId }).select().single();
+        if (error) throw error;
+        state.clients.push(data);
+        return data.id;
+      })();
+      pendingClientCreations.set(key, p);
+      try { return await p; } finally { pendingClientCreations.delete(key); }
     }
 
     window.toggleVenteStatut = async (id, field, newVal) => {
@@ -7249,7 +7367,8 @@
       if (!ok) return;
       const targetSale = state.ventes.find(v => String(v.id) === String(id)) || state.mesVentes.find(v => String(v.id) === String(id));
       if (targetSale) {
-        await moveSalesToTrash([targetSale]);
+        const trashOk = await moveSalesToTrash([targetSale]);
+        if (!trashOk) toast('Attention : la corbeille n’a pu être sauvegardée que sur cet appareil.', 'error');
         const delYm = getSaleStatsMonth(targetSale);
         const delRep = state.representants.find(r => String(r.id) === String(targetSale.representant_id));
         if (delYm && delRep?.nom) await clearManualSalesOverridesForRepMonth(delYm, delRep.nom);
@@ -7267,8 +7386,9 @@
       await loadAllData();
     };
 
-    window.deleteEntreprise = async (id, nom) => {
-      if (state.ventes.some(v => v.entreprise_id === id)) return toast(`Impossible de supprimer ${nom} : des ventes y sont rattachées.`, 'error');
+    window.deleteEntreprise = async (id) => {
+      const nom = state.entreprises.find(x => String(x.id) === String(id))?.nom || 'cette entreprise';
+      if (state.ventes.some(v => String(v.entreprise_id) === String(id))) return toast(`Impossible de supprimer ${nom} : des ventes y sont rattachées.`, 'error');
       const ok = await askConfirm(`Supprimer ${nom} ?`, 'Les taux associés à cette entreprise seront également retirés.');
       if (!ok) return;
       const { error } = await sb.from('entreprises').delete().eq('id', id);
@@ -7277,8 +7397,9 @@
       await loadAllData();
     };
 
-    window.deleteRepresentant = async (id, nom) => {
-      if (state.ventes.some(v => v.representant_id === id)) return toast(`Impossible de supprimer ${nom} : des ventes y sont rattachées.`, 'error');
+    window.deleteRepresentant = async (id) => {
+      const nom = state.representants.find(x => String(x.id) === String(id))?.nom || 'ce membre';
+      if (state.ventes.some(v => String(v.representant_id) === String(id))) return toast(`Impossible de supprimer ${nom} : des ventes y sont rattachées.`, 'error');
       const ok = await askConfirm(`Supprimer ${nom} ?`, 'Ce membre sera retiré de l\'équipe.');
       if (!ok) return;
       const { error } = await sb.from('representants').delete().eq('id', id);
@@ -7401,14 +7522,7 @@
       if (p1 !== p2) return toast('Les deux mots de passe ne correspondent pas.', 'error');
       const { error } = await sb.auth.updateUser({ password: p1 });
       if (error) return toast(error.message, 'error');
-      try {
-        const savedRaw = localStorage.getItem('korpo_saved_creds_v1');
-        if (savedRaw) {
-          const parsed = JSON.parse(savedRaw);
-          parsed.pwd = btoa(unescape(encodeURIComponent(p1)));
-          localStorage.setItem('korpo_saved_creds_v1', JSON.stringify(parsed));
-        }
-      } catch (err) {}
+      // Le nouveau mot de passe n'est jamais mémorisé dans le navigateur
       document.getElementById('new-pwd-1').value = '';
       document.getElementById('new-pwd-2').value = '';
       pwdModal.classList.add('hidden');
@@ -7434,8 +7548,8 @@
 
     document.getElementById('config-form').addEventListener('submit', (e) => {
       e.preventDefault();
-      localStorage.setItem('korpo_sb_url', document.getElementById('cfg-url').value.trim());
-      localStorage.setItem('korpo_sb_key', document.getElementById('cfg-key').value.trim());
+      lsSet('korpo_sb_url', document.getElementById('cfg-url').value.trim());
+      lsSet('korpo_sb_key', document.getElementById('cfg-key').value.trim());
       initApp();
     });
 
@@ -7487,7 +7601,7 @@
     }
 
     function parseWaDate(datePart) {
-      if (!datePart) return new Date().toISOString().slice(0, 10);
+      if (!datePart) return localYmd();
       const clean = datePart.trim();
       // YYYY-MM-DD or YYYY/MM/DD
       let m = clean.match(/^(\d{4})[-/](\d{1,2})[-/](\d{1,2})/);
@@ -7501,7 +7615,7 @@
         if (p1 > 12) { day = p1; month = p2; }
         return `${y}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
       }
-      return new Date().toISOString().slice(0, 10);
+      return localYmd();
     }
 
     function extractMoneyAmount(msg) {
@@ -7577,12 +7691,12 @@
           const colonIdx = trimmed.indexOf(':');
           if (colonIdx > 0 && colonIdx < 25) {
             messages.push({
-              date: new Date().toISOString().slice(0, 10),
+              date: localYmd(),
               sender: trimmed.slice(0, colonIdx).trim(),
               text: trimmed.slice(colonIdx + 1).trim()
             });
           } else {
-            messages.push({ date: new Date().toISOString().slice(0, 10), sender: currentProfile?.nom || 'Olivier', text: trimmed });
+            messages.push({ date: localYmd(), sender: currentProfile?.nom || 'Olivier', text: trimmed });
           }
         }
       });
@@ -7635,16 +7749,16 @@
           </td>
           <td class="py-2 px-3">
             <select onchange="parsedWaSales[${i}].repNom = this.value" class="px-2 py-1 text-xs font-semibold border border-slate-200 rounded-lg">
-              ${repNamesList.map(rn => `<option value="${rn}" ${rn === item.repNom ? 'selected' : ''}>${rn}</option>`).join('')}
+              ${repNamesList.map(rn => `<option value="${esc(rn)}" ${rn === item.repNom ? 'selected' : ''}>${esc(rn)}</option>`).join('')}
             </select>
           </td>
           <td class="py-2 px-3">
             <select onchange="parsedWaSales[${i}].entNom = this.value" class="px-2 py-1 text-xs font-semibold border border-slate-200 rounded-lg">
-              ${entNamesList.map(en => `<option value="${en}" ${en === item.entNom ? 'selected' : ''}>${en}</option>`).join('')}
+              ${entNamesList.map(en => `<option value="${esc(en)}" ${en === item.entNom ? 'selected' : ''}>${esc(en)}</option>`).join('')}
             </select>
           </td>
           <td class="py-2 px-3">
-            <input type="text" value="${item.clientNom.replace(/"/g, '&quot;')}" onchange="parsedWaSales[${i}].clientNom = this.value" class="px-2 py-1 text-xs border border-slate-200 rounded-lg w-36" />
+            <input type="text" value="${esc(item.clientNom)}" onchange="parsedWaSales[${i}].clientNom = this.value" class="px-2 py-1 text-xs border border-slate-200 rounded-lg w-36" />
           </td>
           <td class="py-2 px-3 text-right">
             <input type="number" step="0.01" value="${item.valeur}" onchange="parsedWaSales[${i}].valeur = parseFloat(this.value) || 0" class="px-2 py-1 text-xs font-bold text-right border border-slate-200 rounded-lg w-24 tabular-nums" />
@@ -7719,9 +7833,9 @@
         if (!raw || !emailEl || !pwdEl) return;
         const parsed = JSON.parse(raw);
         if (parsed.email) emailEl.value = parsed.email;
-        if (parsed.pwd) pwdEl.value = decodeURIComponent(escape(atob(parsed.pwd)));
+        if (parsed.pwd) { lsSet('korpo_saved_creds_v1', JSON.stringify({ email: parsed.email || '' })); } // purge d'un ancien mot de passe mémorisé
         if (remEl) remEl.checked = true;
-        if (forgetBtn && (parsed.email || parsed.pwd)) forgetBtn.classList.remove('hidden');
+        if (forgetBtn && parsed.email) forgetBtn.classList.remove('hidden');
       } catch (e) {}
     }
 
@@ -7757,10 +7871,7 @@
 
       if (remember) {
         try {
-          localStorage.setItem('korpo_saved_creds_v1', JSON.stringify({
-            email,
-            pwd: btoa(unescape(encodeURIComponent(password)))
-          }));
+          lsSet('korpo_saved_creds_v1', JSON.stringify({ email })); // jamais le mot de passe
           document.getElementById('btn-forget-saved-login')?.classList.remove('hidden');
         } catch (err) {}
       } else {
@@ -7779,8 +7890,8 @@
       const btn = document.getElementById('btn-refresh');
       btn.disabled = true;
       try {
-        await loadAllData();
-        toast('Données actualisées');
+        const loaded = await loadAllData();
+        if (loaded !== false) toast('Données actualisées');
       } catch (err) {
         toast(err.message, 'error');
       } finally {
@@ -7791,7 +7902,7 @@
     const today = new Date();
     const currentMonthStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
     document.getElementById('filter-rep-month').value = currentMonthStr;
-    document.getElementById('vente-date').value = today.toISOString().slice(0, 10);
+    document.getElementById('vente-date').value = localYmd(today);
     document.getElementById('vente-mois-comm').value = currentMonthStr;
 
     document.getElementById('filter-rep-month').addEventListener('change', renderMesVentes);
@@ -7967,7 +8078,7 @@
           }
           if (carriedOverSalesStore[String(editId)] && newStatsYm) {
             carriedOverSalesStore[String(editId)].origYm = newStatsYm;
-            localStorage.setItem('korpo_carried_over_sales_v1', JSON.stringify(carriedOverSalesStore));
+            lsSet('korpo_carried_over_sales_v1', JSON.stringify(carriedOverSalesStore));
           }
         }
 
@@ -8006,9 +8117,9 @@
         const totC = sub.reduce((s, v) => s + Number(isOli ? v.commission_olivier : v.commission_rep), 0);
         const paidC = sub.filter(v => v.statut_paiement === 'paye').reduce((s, v) => s + Number(isOli ? v.commission_olivier : v.commission_rep), 0);
         const depotOk = sub.filter(v => v.statut_depot === 'depot_recu').length;
-        return [`"${r.nom}"`, r.courriel, sub.length, depotOk, totV.toFixed(2), totC.toFixed(2), paidC.toFixed(2), (totC - paidC).toFixed(2)].join(',');
+        return [csvCell(r.nom), csvCell(r.courriel), sub.length, depotOk, totV.toFixed(2), totC.toFixed(2), paidC.toFixed(2), (totC - paidC).toFixed(2)].join(',');
       });
-      const blob = new Blob([[headers.join(','), ...rows].join('\n')], { type: 'text/csv;charset=utf-8;' });
+      const blob = new Blob(['\ufeff' + [headers.join(','), ...rows].join('\n')], { type: 'text/csv;charset=utf-8;' });
       const a = document.createElement('a');
       a.href = URL.createObjectURL(blob);
       a.download = `korpo-paie-equipe-${m || 'cumul'}.csv`;
@@ -8024,9 +8135,27 @@
       );
       if (!ok) return;
 
-      await moveSalesToTrash([...state.ventes]);
-      const { error } = await sb.from('ventes').delete().not('id', 'is', null);
-      if (error) return toast(error.message, 'error');
+      // On relit TOUTES les ventes de la base (pas seulement celles affichées) avant de supprimer
+      let allVentes;
+      try {
+        allVentes = await fetchAllRows(() => sb.from('ventes').select('*').order('id'));
+      } catch (err) {
+        return toast(`Lecture des ventes impossible : ${err.message}`, 'error');
+      }
+      if (!allVentes.length) return toast('Aucune vente à supprimer.', 'error');
+
+      const trashOk = await moveSalesToTrash(allVentes);
+      if (!trashOk) return toast('La sauvegarde cloud de la corbeille a échoué : suppression annulée, aucune vente supprimée.', 'error');
+
+      const ids = allVentes.map(v => v.id);
+      for (let i = 0; i < ids.length; i += 200) {
+        const { error } = await sb.from('ventes').delete().in('id', ids.slice(i, i + 200));
+        if (error) {
+          toast(error.message, 'error');
+          await loadAllData();
+          return;
+        }
+      }
 
       toast('Toutes les ventes ont été déplacées dans la corbeille 🗑️');
       await loadAllData();
@@ -8040,9 +8169,19 @@
       const tauxRep = parseFloat(document.getElementById('taux-val-rep').value) / 100;
       const tauxOlivier = parseFloat(document.getElementById('taux-val-olivier').value) / 100;
 
+      if (!isFinite(tauxRep) || !isFinite(tauxOlivier) || tauxRep < 0 || tauxOlivier < 0 || tauxRep > 1 || tauxOlivier > 1) {
+        return toast('Taux invalide : entrez des pourcentages entre 0 et 100.', 'error');
+      }
+
+      // Sauvegarde de l'ancien taux : restauré si l'insertion échoue (avant : le taux était perdu)
+      let selQuery = sb.from('taux_commission').select('*').eq('representant_id', repId).eq('entreprise_id', entId);
+      selQuery = clientId ? selQuery.eq('client_id', clientId) : selQuery.is('client_id', null);
+      const { data: backupRows } = await selQuery;
+
       let delQuery = sb.from('taux_commission').delete().eq('representant_id', repId).eq('entreprise_id', entId);
       delQuery = clientId ? delQuery.eq('client_id', clientId) : delQuery.is('client_id', null);
-      await delQuery;
+      const delRes = await delQuery;
+      if (delRes.error) return toast(delRes.error.message, 'error');
 
       const { error } = await sb.from('taux_commission').insert({
         representant_id: repId,
@@ -8052,7 +8191,10 @@
         taux_olivier: tauxOlivier
       });
 
-      if (error) return toast(error.message, 'error');
+      if (error) {
+        if (backupRows && backupRows.length) await sb.from('taux_commission').insert(backupRows);
+        return toast(`${error.message} (ancien taux conservé)`, 'error');
+      }
       toast('Taux enregistré');
       await loadAllData();
     });
@@ -8085,82 +8227,142 @@
     document.getElementById('btn-csv-export').addEventListener('click', () => {
       const headers = ['date_vente', 'mois_commission', 'representant', 'entreprise', 'client', 'valeur', 'taux_rep', 'commission_rep', 'taux_olivier', 'commission_olivier', 'statut_depot', 'statut_paiement', 'note'];
       const rows = state.ventes.map(v => [
-        v.date_vente,
-        v.mois_commission,
-        state.representants.find(r => r.id === v.representant_id)?.nom || '',
-        state.entreprises.find(e => e.id === v.entreprise_id)?.nom || '',
-        state.clients.find(c => c.id === v.client_id)?.nom || '',
-        v.valeur,
-        v.taux_rep_applique,
-        v.commission_rep,
-        v.taux_olivier_applique,
-        v.commission_olivier,
-        v.statut_depot,
-        v.statut_paiement,
-        `"${(v.note || '').replace(/"/g, '""')}"`
+        csvCell(v.date_vente),
+        csvCell(v.mois_commission),
+        csvCell(state.representants.find(r => r.id === v.representant_id)?.nom || ''),
+        csvCell(state.entreprises.find(e => e.id === v.entreprise_id)?.nom || ''),
+        csvCell(state.clients.find(c => c.id === v.client_id)?.nom || ''),
+        csvCell(v.valeur, false),
+        csvCell(v.taux_rep_applique, false),
+        csvCell(v.commission_rep, false),
+        csvCell(v.taux_olivier_applique, false),
+        csvCell(v.commission_olivier, false),
+        csvCell(v.statut_depot),
+        csvCell(v.statut_paiement),
+        csvCell(v.note)
       ].join(','));
 
-      const blob = new Blob([[headers.join(','), ...rows].join('\n')], { type: 'text/csv;charset=utf-8;' });
+      const blob = new Blob(['\ufeff' + [headers.join(','), ...rows].join('\r\n')], { type: 'text/csv;charset=utf-8;' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `korpo-ventes-${new Date().toISOString().slice(0, 10)}.csv`;
+      a.download = `korpo-ventes-${localYmd()}.csv`;
       a.click();
+      setTimeout(() => URL.revokeObjectURL(url), 2000);
     });
 
-    function parseCsvLine(line, sep) {
-      const res = [];
-      let cur = '', inQuotes = false;
-      for (let i = 0; i < line.length; i++) {
-        const ch = line[i];
-        if (ch === '"') { inQuotes = !inQuotes; }
-        else if (ch === sep && !inQuotes) { res.push(cur.trim()); cur = ''; }
-        else { cur += ch; }
+    // Lecteur CSV complet : guillemets, "" échappés, séparateurs et retours à la ligne dans les champs
+    function parseCsvText(text, sep) {
+      const rows = [];
+      let row = [], cur = '', inQ = false;
+      for (let i = 0; i < text.length; i++) {
+        const ch = text[i];
+        if (inQ) {
+          if (ch === '"') {
+            if (text[i + 1] === '"') { cur += '"'; i++; } else { inQ = false; }
+          } else { cur += ch; }
+        } else if (ch === '"') {
+          inQ = true;
+        } else if (ch === sep) {
+          row.push(cur); cur = '';
+        } else if (ch === '\n') {
+          row.push(cur); rows.push(row); row = []; cur = '';
+        } else if (ch !== '\r') {
+          cur += ch;
+        }
       }
-      res.push(cur.trim());
-      return res;
+      if (cur !== '' || row.length) { row.push(cur); rows.push(row); }
+      return rows;
+    }
+
+    function parseCsvLine(line, sep) {
+      return (parseCsvText(line, sep)[0] || ['']).map(c => c.trim());
+    }
+
+    // Repère les colonnes par leur en-tête (compatible avec le fichier produit par « Exporter CSV »)
+    function csvHeaderIndex(headerCols) {
+      const norm = s => String(s || '').trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '');
+      const idx = {};
+      headerCols.forEach((h, i) => { if (idx[norm(h)] === undefined) idx[norm(h)] = i; });
+      const pick = (...names) => { for (const n of names) if (idx[n] !== undefined) return idx[n]; return -1; };
+      return {
+        date: pick('date_vente', 'date'),
+        mois: pick('mois_commission', 'mois'),
+        rep: pick('representant', 'rep'),
+        ent: pick('entreprise'),
+        cli: pick('client'),
+        val: pick('valeur', 'montant', 'valeur_vente'),
+        note: pick('note', 'notes'),
+        type: pick('type', 'kpi', 'type_kpi')
+      };
     }
 
     document.getElementById('csv-import-input').addEventListener('change', async (e) => {
-      const file = e.target.files[0];
+      const input = e.target;
+      const file = input.files[0];
       if (!file) return;
-      const text = await file.text();
-      const lines = text.split(/\r?\n/).filter(l => l.trim());
-      if (lines.length < 2) return toast('Fichier CSV vide', 'error');
-
-      const sep = lines[0].includes(';') ? ';' : ',';
       let imported = 0, skipped = 0;
+      try {
+        const text = (await file.text()).replace(/^\uFEFF/, '');
+        const firstLine = text.split(/\r?\n/, 1)[0] || '';
+        const sep = (firstLine.match(/;/g) || []).length > (firstLine.match(/,/g) || []).length ? ';' : ',';
+        const table = parseCsvText(text, sep).filter(r => r.some(c => String(c).trim()));
+        if (table.length < 2) return toast('Fichier CSV vide', 'error');
 
-      for (let i = 1; i < lines.length; i++) {
-        const cols = parseCsvLine(lines[i], sep);
-        if (cols.length < 6) { skipped++; continue; }
-        const [dateVente, moisComm, repNom, entNom, cliNom, valStr, note = '', extraType = ''] = cols;
-        const rep = state.representants.find(r => r.nom.toLowerCase() === repNom.toLowerCase());
-        const ent = state.entreprises.find(en => en.nom.toLowerCase().replace(/\s+/g, '') === entNom.toLowerCase().replace(/\s+/g, ''));
-        if (!rep || !ent || !cliNom) { skipped++; continue; }
+        const H = csvHeaderIndex(table[0]);
+        const headerMode = H.rep >= 0 && H.ent >= 0 && H.cli >= 0 && H.val >= 0;
+        // Ancien format sans en-têtes reconnus : date, mois, représentant, entreprise, client, valeur, note, type
+        const col = headerMode ? H : { date: 0, mois: 1, rep: 2, ent: 3, cli: 4, val: 5, note: 6, type: 7 };
 
-        const rowJoined = cols.slice(6).join(' ').toUpperCase();
-        const kpiTag = rowJoined.includes('SUIVI') ? 'SUIVI' : 'OTS';
-        const cleanNoteBody = note.replace(/^\[(OTS|SUIVI)\]\s*/i, '').trim();
-        const finalNote = cleanNoteBody ? `[${kpiTag}] ${cleanNoteBody}` : `[${kpiTag}]`;
+        for (let i = 1; i < table.length; i++) {
+          const cols = table[i].map(c => String(c).trim());
+          if (!headerMode && cols.length < 6) { skipped++; continue; }
+          const get = k => (col[k] >= 0 ? (cols[col[k]] || '') : '');
 
-        const cleanVal = parseFloat(valStr.replace(/[$\s,]/g, (m) => m === ',' && !valStr.includes('.') ? '.' : '')) || 0;
-        const clientId = await getOrCreateClient(cliNom, ent.id);
-        const { error } = await sb.from('ventes').insert({
-          representant_id: rep.id,
-          entreprise_id: ent.id,
-          client_id: clientId,
-          valeur: cleanVal,
-          date_vente: dateVente,
-          mois_commission: moisComm,
-          note: finalNote
-        });
-        if (!error) imported++;
-        else skipped++;
+          const rep = state.representants.find(r => r.nom.toLowerCase() === get('rep').toLowerCase());
+          const ent = state.entreprises.find(en => en.nom.toLowerCase().replace(/\s+/g, '') === get('ent').toLowerCase().replace(/\s+/g, ''));
+          const cliNom = get('cli');
+          if (!rep || !ent || !cliNom) { skipped++; continue; }
+
+          let dateVente = get('date');
+          const fr = dateVente.match(/^(\d{1,2})[\/.-](\d{1,2})[\/.-](\d{4})$/);
+          if (fr) dateVente = `${fr[3]}-${fr[2].padStart(2, '0')}-${fr[1].padStart(2, '0')}`;
+          if (!/^\d{4}-\d{2}-\d{2}$/.test(dateVente)) { skipped++; continue; }
+          let moisComm = get('mois');
+          if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(moisComm)) moisComm = dateVente.slice(0, 7);
+
+          const cleanVal = parseAmount(get('val'));
+          if (!isFinite(cleanVal)) { skipped++; continue; }
+
+          const note = get('note');
+          const rowJoined = (headerMode ? `${note} ${get('type')}` : cols.slice(6).join(' ')).toUpperCase();
+          const kpiTag = rowJoined.includes('SUIVI') ? 'SUIVI' : 'OTS';
+          const cleanNoteBody = note.replace(/^\[(OTS|SUIVI)\]\s*/i, '').trim();
+          const finalNote = cleanNoteBody ? `[${kpiTag}] ${cleanNoteBody}` : `[${kpiTag}]`;
+
+          try {
+            const clientId = await getOrCreateClient(cliNom, ent.id);
+            const { error } = await sb.from('ventes').insert({
+              representant_id: rep.id,
+              entreprise_id: ent.id,
+              client_id: clientId,
+              valeur: cleanVal,
+              date_vente: dateVente,
+              mois_commission: moisComm,
+              note: finalNote
+            });
+            if (error) skipped++; else imported++;
+          } catch (rowErr) {
+            skipped++;
+          }
+        }
+        toast(skipped > 0 ? `${imported} vente(s) importée(s), ${skipped} ignorée(s)` : `${imported} vente(s) importée(s)`);
+      } catch (err) {
+        toast(`Import impossible : ${err.message}`, 'error');
+      } finally {
+        input.value = '';
+        await loadAllData();
       }
-      e.target.value = '';
-      toast(skipped > 0 ? `${imported} vente(s) importée(s), ${skipped} ignorée(s)` : `${imported} vente(s) importée(s)`);
-      await loadAllData();
     });
 
     initApp();
