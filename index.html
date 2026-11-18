@@ -1593,11 +1593,17 @@
     let kpiStore = JSON.parse(localStorage.getItem('korpo_kpi_store_v1') || 'null') || DEFAULT_KPI_DATA;
     const ALL_KPI_REPS = ['Olivier', 'Jean-Sébastien', 'Gabryel', 'Samuel', 'Alexandre'];
 
+    const isValidYearMonth = (ym) => typeof ym === 'string' && /^\d{4}-(0[1-9]|1[0-2])$/.test(ym.trim());
+
     function normalizeKpiStoreReps() {
-      if (!kpiStore || typeof kpiStore !== 'object' || !Object.keys(kpiStore).length) {
+      if (!kpiStore || typeof kpiStore !== 'object') {
         kpiStore = JSON.parse(JSON.stringify(DEFAULT_KPI_DATA));
       }
       Object.keys(kpiStore).forEach(ym => {
+        if (!isValidYearMonth(ym)) {
+          delete kpiStore[ym];
+          return;
+        }
         const mObj = kpiStore[ym];
         if (!mObj || typeof mObj !== 'object') {
           delete kpiStore[ym];
@@ -2266,16 +2272,16 @@
     });
 
     function syncGoogleAgendaIntoKpi() {
+      const validHebdoRows = (kpiHebdoRows || []).filter(r => Number(r.semaine_index) >= 0 && isValidYearMonth(r.mois_commission));
       const allMonths = new Set([
-        ...(kpiHebdoRows || []).map(r => r.mois_commission).filter(Boolean),
-        ...Object.keys(manualRdvOverrides).map(k => k.split('_')[0]).filter(Boolean)
+        ...validHebdoRows.map(r => r.mois_commission),
+        ...Object.keys(manualRdvOverrides).map(k => k.split('_')[0]).filter(isValidYearMonth)
       ]);
       if (!allMonths.size) return;
 
       const byMonth = new Map();
-      (kpiHebdoRows || []).forEach(row => {
+      validHebdoRows.forEach(row => {
         const ym = row.mois_commission;
-        if (!ym) return;
         if (!byMonth.has(ym)) byMonth.set(ym, []);
         byMonth.get(ym).push(row);
       });
@@ -2610,7 +2616,8 @@
       const selMonth = document.getElementById('kpi-select-month');
       if (!selMonth) return;
       const curSel = selMonth.value;
-      const months = Object.keys(kpiStore).sort().reverse();
+      normalizeKpiStoreReps();
+      const months = Object.keys(kpiStore).filter(isValidYearMonth).sort().reverse();
       const years = Array.from(new Set(months.map(m => m.slice(0, 4)))).sort().reverse();
       const yearOptions = years.map(y => `<option value="YEAR_${y}">📅 Toute l'année ${y} (Vue d'ensemble)</option>`).join('');
       const monthOptions = months.map(ym => `<option value="${ym}">${kpiStore[ym].label}</option>`).join('');
@@ -3752,6 +3759,9 @@
     }
 
     function ensureKpiMonthStructure(ym) {
+      if (!isValidYearMonth(ym)) {
+        ym = (typeof currentMonthStr !== 'undefined' && isValidYearMonth(currentMonthStr)) ? currentMonthStr : '2026-11';
+      }
       if (kpiStore[ym]) return kpiStore[ym];
       const [y, m] = ym.split('-');
       const label = `${MONTH_NAMES_FR[m] || m} ${y}`;
@@ -3844,7 +3854,7 @@
 
       // Parcourir TOUS les mois présents dans kpiStore ET dans la base de données
       // Ainsi, même si toutes les ventes d'un mois ou d'un représentant ont été supprimées, leurs compteurs retombent bien à 0 !
-      const allMonthsToSync = new Set([...Object.keys(kpiStore), ...salesByMonth.keys()]);
+      const allMonthsToSync = new Set([...Object.keys(kpiStore), ...salesByMonth.keys()].filter(isValidYearMonth));
 
       allMonthsToSync.forEach(ym => {
         const monthSales = salesByMonth.get(ym) || [];
