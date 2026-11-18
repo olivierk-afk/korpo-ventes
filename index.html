@@ -1860,7 +1860,13 @@
           try {
             const ovData = JSON.parse(r.representant_nom);
             if (ovData && typeof ovData === 'object') {
-              saleBonusOverridesStore[String(r.mois_commission)] = ovData;
+              const sid = String(r.mois_commission);
+              const existingOv = saleBonusOverridesStore[sid];
+              const incomingTs = ovData.updatedAt || r.updated_at || '';
+              const existingTs = existingOv?.updatedAt || '';
+              if (!existingOv || incomingTs >= existingTs) {
+                saleBonusOverridesStore[sid] = ovData;
+              }
             }
           } catch (e) {}
         } else if (sIdx === -5 && r.mois_commission && r.representant_nom) {
@@ -1933,7 +1939,10 @@
       if (!saleId) return;
       const sid = String(saleId);
       if (overrideObjOrNull) {
-        saleBonusOverridesStore[sid] = overrideObjOrNull;
+        saleBonusOverridesStore[sid] = {
+          ...overrideObjOrNull,
+          updatedAt: new Date().toISOString()
+        };
       } else {
         delete saleBonusOverridesStore[sid];
       }
@@ -1941,17 +1950,17 @@
 
       if (sb && currentProfile) {
         try {
+          // Toujours supprimer toute ancienne surcharge (-4) pour cette vente afin d'éviter les doublons de JSON dans representant_nom
+          await sb.from('kpi_hebdo').delete().eq('mois_commission', sid).eq('semaine_index', -4);
           if (overrideObjOrNull) {
-            await sb.from('kpi_hebdo').upsert({
+            await sb.from('kpi_hebdo').insert({
               mois_commission: sid,
               semaine_index: -4,
-              representant_nom: JSON.stringify(overrideObjOrNull),
+              representant_nom: JSON.stringify(saleBonusOverridesStore[sid]),
               booke: 0,
               rdv_realise: 0,
-              updated_at: new Date().toISOString()
-            }, { onConflict: 'mois_commission,semaine_index,representant_nom' });
-          } else {
-            await sb.from('kpi_hebdo').delete().eq('mois_commission', sid).eq('semaine_index', -4);
+              updated_at: saleBonusOverridesStore[sid].updatedAt
+            });
           }
         } catch (e) {}
       }
