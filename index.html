@@ -677,6 +677,9 @@
             <button id="btn-kpi-import-open" class="px-3.5 py-2.5 text-xs font-bold text-slate-800 bg-amber-50 hover:bg-amber-100 border border-amber-200 rounded-xl transition">
               📥 Importer KPI (Excel / CSV)
             </button>
+            <button id="btn-kpi-push-tags" title="Applique automatiquement les étiquettes [OTS] et [SUIVI] sur vos ventes dans Supabase selon le Tableau KPI" class="px-3.5 py-2.5 text-xs font-bold text-purple-800 bg-purple-50 hover:bg-purple-100 border border-purple-200 rounded-xl transition">
+              🏷 Appliquer OTS / Suivi aux ventes
+            </button>
             <button id="btn-kpi-export-csv" class="px-3.5 py-2.5 text-xs font-semibold text-slate-700 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 transition">
               Exporter CSV
             </button>
@@ -3756,15 +3759,91 @@
           if (error) console.warn('Sync import kpi_hebdo:', error.message);
         }
 
+        await applyKpiOtsSuiviTagsToSupabase(impactedMonths, true);
+
         kpiImportModal.classList.add('hidden');
         document.getElementById('kpi-import-preview-box').classList.add('hidden');
-        renderKpiDashboard();
-        toast(`Historique KPI importé avec succès sur ${impactedMonths.size} mois ✓`);
+        await loadAllData();
+        toast(`Historique KPI importé et étiquettes OTS / Suivi appliquées sur ${impactedMonths.size} mois ✓`);
       } catch (err) {
         toast('Erreur lors de l’importation : ' + err.message, 'error');
       } finally {
         btn.disabled = false;
         btn.textContent = '✓ Importer et mettre à jour le Tableau KPI';
+      }
+    });
+
+    async function applyKpiOtsSuiviTagsToSupabase(monthsFilterSet = null, silent = false) {
+      if (!sb || !currentProfile || currentProfile.role !== 'admin') return 0;
+      const allVentesSorted = [...(state.ventes || [])].sort((a, b) => {
+        const dA = a.date_vente || `${a.mois_commission || '9999-99'}-01`;
+        const dB = b.date_vente || `${b.mois_commission || '9999-99'}-01`;
+        if (dA !== dB) return dA.localeCompare(dB);
+        return String(a.created_at || a.id || '').localeCompare(String(b.created_at || b.id || ''));
+      });
+
+      const seenClients = new Set();
+      const firstSalesByRepMonth = new Map();
+      allVentesSorted.forEach(v => {
+        const uKey = getUniqueClientKpiKey(v);
+        if (seenClients.has(uKey)) return;
+        seenClients.add(uKey);
+        const ym = v.mois_commission || (v.date_vente ? v.date_vente.slice(0, 7) : null);
+        const repObj = state.representants.find(r => r.id === v.representant_id);
+        if (!ym || !repObj) return;
+        if (monthsFilterSet && !monthsFilterSet.has(ym)) return;
+        const mapKey = `${ym}__${repObj.nom}`;
+        if (!firstSalesByRepMonth.has(mapKey)) firstSalesByRepMonth.set(mapKey, []);
+        firstSalesByRepMonth.get(mapKey).push(v);
+      });
+
+      let updatedCount = 0;
+      for (const [mapKey, salesList] of firstSalesByRepMonth.entries()) {
+        const [ym, rn] = mapKey.split('__');
+        const mObj = kpiStore[ym];
+        const rData = mObj?.reps?.[rn];
+        if (!rData) continue;
+
+        const targetSuivi = Math.min(salesList.length, Math.round(Number(rData['Ventes SUIVI']?.cumul || 0)));
+        // Trier du plus ancien au plus récent (ou garder ceux déjà tagués [SUIVI] en priorité)
+        const alreadySuivi = salesList.filter(v => (v.note || '').toUpperCase().includes('[SUIVI]'));
+        const untaggedOrOts = salesList.filter(v => !(v.note || '').toUpperCase().includes('[SUIVI]'));
+        const ordered = [...alreadySuivi, ...untaggedOrOts];
+
+        for (let i = 0; i < ordered.length; i++) {
+          const v = ordered[i];
+          const desiredTag = i < targetSuivi ? 'SUIVI' : 'OTS';
+          const rawNote = v.note || '';
+          const curTag = rawNote.toUpperCase().includes('[SUIVI]') ? 'SUIVI' : (rawNote.toUpperCase().includes('[OTS]') ? 'OTS' : '');
+          if (curTag !== desiredTag) {
+            const cleanBody = rawNote.replace(/^\[(OTS|SUIVI)\]\s*/i, '').trim();
+            const nextNote = cleanBody ? `[${desiredTag}] ${cleanBody}` : `[${desiredTag}]`;
+            const { error } = await sb.from('ventes').update({ note: nextNote }).eq('id', v.id);
+            if (!error) updatedCount++;
+          }
+        }
+      }
+      if (!silent) {
+        toast(`${updatedCount} dossier(s) mis à jour avec [OTS] / [SUIVI] dans Supabase ✓`);
+      }
+      return updatedCount;
+    }
+
+    document.getElementById('btn-kpi-push-tags')?.addEventListener('click', async () => {
+      const btn = document.getElementById('btn-kpi-push-tags');
+      if (!currentProfile || currentProfile.role !== 'admin') {
+        return toast('Seul un administrateur peut mettre à jour les étiquettes en lot.', 'error');
+      }
+      btn.disabled = true;
+      btn.textContent = 'Synchronisation...';
+      try {
+        await applyKpiOtsSuiviTagsToSupabase(null, false);
+        await loadAllData();
+      } catch (err) {
+        toast(err.message, 'error');
+      } finally {
+        btn.disabled = false;
+        btn.textContent = '🏷 Appliquer OTS / Suivi aux ventes';
       }
     });
 
