@@ -746,9 +746,9 @@
                 <div class="text-[11px] text-slate-500">Chaque vente enregistrée fait avancer vos barres de progression en direct</div>
               </div>
             </div>
-            <button type="button" id="btn-toggle-personal-goal" class="self-start sm:self-auto px-3 py-1.5 text-xs font-bold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 rounded-xl transition">
-              ✎ Ajuster les targets ($)
-            </button>
+            <span class="self-start sm:self-auto px-2.5 py-1 text-[11px] font-semibold text-slate-500 bg-slate-100 rounded-xl">
+              Objectifs fixés par la direction
+            </span>
           </div>
 
           <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -785,31 +785,7 @@
             </div>
           </div>
 
-          <!-- FORMULAIRE D'AJUSTEMENT DES TARGETS (ADMIN = CHOIX DU REPRÉSENTANT, REP = SON PROPRE TARGET) -->
-          <form id="form-personal-goal" class="hidden pt-3 border-t border-slate-100 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5 items-end">
-            <div id="goal-rep-picker-wrap" class="hidden">
-              <label for="select-goal-rep" class="block text-[11px] font-bold text-slate-700 mb-1">Représentant :</label>
-              <select id="select-goal-rep" class="w-full px-3 py-2 text-xs font-bold bg-slate-50 border border-slate-200 rounded-xl">
-                <option value="Olivier">Olivier</option>
-                <option value="Jean-Sébastien">Jean-Sébastien</option>
-                <option value="Gabryel">Gabryel</option>
-                <option value="Samuel">Samuel</option>
-                <option value="Alexandre">Alexandre</option>
-              </select>
-            </div>
-            <div>
-              <label for="input-personal-comm-goal" class="block text-[11px] font-bold text-emerald-800 mb-1">Target Commission ($/mois) :</label>
-              <input id="input-personal-comm-goal" type="number" step="100" min="100" required placeholder="8000" class="w-full px-3 py-2 text-xs font-extrabold text-emerald-900 bg-emerald-50/50 border border-emerald-200 rounded-xl tabular-nums focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-600" />
-            </div>
-            <div>
-              <label for="input-personal-goal" class="block text-[11px] font-bold text-slate-700 mb-1">Objectif Ventes ($/mois) :</label>
-              <input id="input-personal-goal" type="number" step="500" min="100" required placeholder="150000" class="w-full px-3 py-2 text-xs font-bold bg-slate-50 border border-slate-200 rounded-xl tabular-nums focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-600" />
-            </div>
-            <div class="flex gap-2">
-              <button type="submit" class="flex-1 px-4 py-2 text-xs font-extrabold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl transition">Enregistrer</button>
-              <button type="button" id="btn-cancel-personal-goal" class="px-3 py-2 text-xs font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-xl transition">Annuler</button>
-            </div>
-          </form>
+
         </div>
 
         <!-- KPIs REPRÉSENTANT / OLIVIER -->
@@ -1412,7 +1388,38 @@
       <!-- ============================================================ -->
       <!-- ONGLET 7 : ENTREPRISES & ÉQUIPE (ADMIN UNIQUEMENT)           -->
       <!-- ============================================================ -->
-      <section id="tab-admin-equipe" class="hidden grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <section id="tab-admin-equipe" class="hidden space-y-6">
+        <!-- GESTION DES TARGETS MENSUELS PAR REPRÉSENTANT (ADMIN UNIQUEMENT) -->
+        <div class="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-xs space-y-4">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+              <div class="flex items-center gap-2">
+                <h2 class="text-base font-extrabold text-slate-900">🎯 Targets mensuels par représentant</h2>
+                <span class="px-2.5 py-0.5 text-[11px] font-bold rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200">Admin uniquement</span>
+              </div>
+              <p class="text-xs text-slate-500 mt-0.5">Définissez le target de commission et l'objectif de ventes mensuel de chaque représentant. Seul vous pouvez modifier ces montants.</p>
+            </div>
+            <button type="button" id="btn-save-all-equipe-targets" class="px-4 py-2 text-xs font-extrabold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl shadow-xs transition shrink-0">
+              ✓ Enregistrer tous les targets
+            </button>
+          </div>
+
+          <div class="overflow-x-auto border border-slate-200/80 rounded-xl">
+            <table class="w-full text-left border-collapse text-sm">
+              <thead>
+                <tr class="bg-slate-50 border-b border-slate-200 text-[11px] font-bold uppercase text-slate-500">
+                  <th class="py-3 px-4">Représentant</th>
+                  <th class="py-3 px-4">Target Commission ($ / mois)</th>
+                  <th class="py-3 px-4">Objectif Ventes ($ / mois)</th>
+                  <th class="py-3 px-4 text-right">Action</th>
+                </tr>
+              </thead>
+              <tbody id="tbody-equipe-targets" class="divide-y divide-slate-100"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div class="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-xs space-y-4">
           <div>
             <h2 class="text-base font-extrabold text-slate-900">Entreprises partenaires</h2>
@@ -1442,6 +1449,7 @@
             </div>
           </form>
           <ul id="list-representants" class="divide-y divide-slate-100 border border-slate-200/80 rounded-xl overflow-hidden"></ul>
+        </div>
         </div>
       </section>
 
@@ -4586,6 +4594,7 @@
     }
 
     async function saveRepTargetsToStorageAndCloud(repName, activeYm, salesGoal, commGoal, applyAll = true) {
+      if (currentProfile?.role !== 'admin') return toast('Seul l’administrateur peut modifier les targets.', 'error');
       personalMonthlyTargets[`${repName}_${activeYm}`] = salesGoal;
       personalCommTargets[`${repName}_${activeYm}`] = commGoal;
       if (applyAll) {
@@ -4624,43 +4633,25 @@
       if (!currentProfile) return;
       const isAdmin = currentProfile.role === 'admin';
       const activeYm = monthFilter || currentMonthStr;
-      const pickerWrap = document.getElementById('goal-rep-picker-wrap');
-      const pickerSel = document.getElementById('select-goal-rep');
-      if (pickerWrap) pickerWrap.classList.toggle('hidden', !isAdmin);
-
-      // Si Admin choisit un représentant dans le sélecteur (ou regarde sa propre vue), afficher les barres de ce représentant !
-      const inspectedRepName = (isAdmin && pickerSel && pickerSel.value) ? pickerSel.value : currentProfile.nom;
-      const inspectedRepObj = state.representants.find(r => r.nom === inspectedRepName) || currentProfile;
+      const inspectedRepName = currentProfile.nom;
 
       const salesTarget = getSalesTargetForRep(inspectedRepName, activeYm);
       const commTarget = getCommissionTargetForRep(inspectedRepName, activeYm);
 
       const myMonthSales = state.mesVentes.filter(v => {
-        if (isAdmin) {
-          if (inspectedRepObj && inspectedRepObj.role !== 'admin') {
-            if (String(v.representant_id) !== String(inspectedRepObj.id)) return false;
-          } else if (scopeFilter === 'direct') {
-            if (String(v.representant_id) !== String(currentProfile.id)) return false;
-          }
+        if (isAdmin && scopeFilter === 'direct') {
+          if (String(v.representant_id) !== String(currentProfile.id)) return false;
         }
         if (monthFilter) return v.mois_commission === monthFilter;
         return v.mois_commission === currentMonthStr;
       });
 
       const achievedSales = myMonthSales.reduce((s, v) => s + Number(v.valeur || 0), 0);
-      const achievedComm = myMonthSales.reduce((s, v) => {
-        if (isAdmin && inspectedRepObj && inspectedRepObj.role !== 'admin') {
-          const rawV = state.ventes.find(x => String(x.id) === String(v.id));
-          return s + Number(rawV ? rawV.commission_rep : (v.commission_rep || 0));
-        }
-        return s + Number(v.commission_rep || 0);
-      }, 0);
+      const achievedComm = myMonthSales.reduce((s, v) => s + Number(v.commission_rep || 0), 0);
 
       const headerTitleEl = document.getElementById('goal-card-header-title');
       if (headerTitleEl) {
-        headerTitleEl.textContent = isAdmin
-          ? `Objectifs & Targets — ${inspectedRepName} (${activeYm})`
-          : `Mes objectifs du mois (${activeYm})`;
+        headerTitleEl.textContent = `Mes objectifs du mois (${activeYm})`;
       }
 
       // 1. Mise à jour de la barre TARGET COMMISSION ($)
@@ -4733,63 +4724,100 @@
       }
     }
 
-    function fillPersonalGoalFormInputs() {
-      const isAdmin = currentProfile?.role === 'admin';
-      const pickerSel = document.getElementById('select-goal-rep');
-      const targetRepName = (isAdmin && pickerSel) ? pickerSel.value : (currentProfile?.nom || 'Rep');
-      const activeYm = document.getElementById('filter-rep-month').value || currentMonthStr;
-      const commIn = document.getElementById('input-personal-comm-goal');
-      const salesIn = document.getElementById('input-personal-goal');
-      if (commIn) commIn.value = getCommissionTargetForRep(targetRepName, activeYm);
-      if (salesIn) salesIn.value = getSalesTargetForRep(targetRepName, activeYm);
+    function renderEquipeTargetsTable() {
+      const tbody = document.getElementById('tbody-equipe-targets');
+      if (!tbody) return;
+      if (currentProfile?.role !== 'admin') {
+        tbody.innerHTML = '';
+        return;
+      }
+      const repNames = Array.from(new Set([
+        ...ALL_KPI_REPS,
+        ...state.representants.map(r => r.nom)
+      ]));
+
+      tbody.innerHTML = repNames.map(rn => {
+        const repObj = state.representants.find(r => r.nom === rn);
+        const roleLabel = repObj ? (repObj.role === 'admin' ? 'Admin' : 'Rep') : 'Rep';
+        const commVal = getCommissionTargetForRep(rn, currentMonthStr);
+        const salesVal = getSalesTargetForRep(rn, currentMonthStr);
+        const safeKey = rn.replace(/'/g, "\'");
+        return `
+          <tr class="hover:bg-slate-50/80 transition" data-target-rep="${rn}">
+            <td class="py-3 px-4">
+              <div class="font-bold text-slate-900 flex items-center gap-2">
+                <span>${rn}</span>
+                <span class="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">${roleLabel}</span>
+              </div>
+            </td>
+            <td class="py-2.5 px-4">
+              <div class="relative max-w-[190px]">
+                <input type="number" step="100" min="0" data-comm-input="${rn}" value="${commVal}" class="w-full pl-3 pr-7 py-2 text-xs font-extrabold text-emerald-900 bg-emerald-50/50 border border-emerald-200 rounded-xl tabular-nums focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-600" />
+                <span class="absolute right-2.5 top-2 text-xs font-bold text-emerald-700">$</span>
+              </div>
+            </td>
+            <td class="py-2.5 px-4">
+              <div class="relative max-w-[190px]">
+                <input type="number" step="500" min="0" data-sales-input="${rn}" value="${salesVal}" class="w-full pl-3 pr-7 py-2 text-xs font-bold text-slate-900 bg-slate-50 border border-slate-200 rounded-xl tabular-nums focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-600" />
+                <span class="absolute right-2.5 top-2 text-xs font-semibold text-slate-400">$</span>
+              </div>
+            </td>
+            <td class="py-2.5 px-4 text-right">
+              <button type="button" onclick="saveSingleEquipeTarget('${safeKey}')" class="px-3 py-1.5 text-xs font-bold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 rounded-xl transition">
+                Enregistrer
+              </button>
+            </td>
+          </tr>
+        `;
+      }).join('');
     }
 
-    document.getElementById('select-goal-rep')?.addEventListener('change', () => {
-      fillPersonalGoalFormInputs();
-      const monthFilter = document.getElementById('filter-rep-month').value;
-      const scopeFilter = currentProfile?.role === 'admin' ? document.getElementById('filter-admin-scope').value : 'all';
-      updatePersonalGoalProgressBar(monthFilter, scopeFilter);
-    });
+    window.saveSingleEquipeTarget = async (repName) => {
+      if (currentProfile?.role !== 'admin') return toast('Réservé à l’administrateur.', 'error');
+      const commIn = document.querySelector(`input[data-comm-input="${repName}"]`);
+      const salesIn = document.querySelector(`input[data-sales-input="${repName}"]`);
+      const newComm = parseFloat(commIn?.value) || 0;
+      const newSales = parseFloat(salesIn?.value) || 0;
+      if (newComm <= 0 || newSales <= 0) return toast('Entrez des montants supérieurs à 0 $', 'error');
 
-    document.getElementById('btn-toggle-personal-goal')?.addEventListener('click', () => {
-      const form = document.getElementById('form-personal-goal');
-      const isAdmin = currentProfile?.role === 'admin';
-      const pickerWrap = document.getElementById('goal-rep-picker-wrap');
-      if (pickerWrap) pickerWrap.classList.toggle('hidden', !isAdmin);
-      form.classList.toggle('hidden');
-      if (!form.classList.contains('hidden')) {
-        fillPersonalGoalFormInputs();
-        document.getElementById('input-personal-comm-goal')?.focus();
-      }
-    });
-
-    document.getElementById('btn-cancel-personal-goal')?.addEventListener('click', () => {
-      document.getElementById('form-personal-goal').classList.add('hidden');
-    });
-
-    document.getElementById('form-personal-goal')?.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const newCommVal = parseFloat(document.getElementById('input-personal-comm-goal')?.value) || 0;
-      const newSalesVal = parseFloat(document.getElementById('input-personal-goal').value) || 0;
-      if (newCommVal <= 0 || newSalesVal <= 0) return toast('Entrez des montants supérieurs à 0 $', 'error');
-
-      const isAdmin = currentProfile?.role === 'admin';
-      const pickerSel = document.getElementById('select-goal-rep');
-      const repName = (isAdmin && pickerSel) ? pickerSel.value : (currentProfile?.nom || 'Rep');
-      const activeYm = document.getElementById('filter-rep-month').value || currentMonthStr;
-
-      await saveRepTargetsToStorageAndCloud(repName, activeYm, newSalesVal, newCommVal, true);
-
-      if (kpiStore[activeYm]?.reps?.[repName]?.['Vente $']) {
-        kpiStore[activeYm].reps[repName]['Vente $'].objectif = newSalesVal;
-        recalcTeamObjectivesForMonth(kpiStore[activeYm]);
-        localStorage.setItem('korpo_kpi_store_v1', JSON.stringify(kpiStore));
-      }
-
-      document.getElementById('form-personal-goal').classList.add('hidden');
+      await saveRepTargetsToStorageAndCloud(repName, currentMonthStr, newSales, newComm, true);
+      Object.keys(kpiStore).forEach(ym => {
+        if (kpiStore[ym]?.reps?.[repName]?.['Vente $']) {
+          kpiStore[ym].reps[repName]['Vente $'].objectif = newSales;
+          recalcTeamObjectivesForMonth(kpiStore[ym]);
+        }
+      });
+      localStorage.setItem('korpo_kpi_store_v1', JSON.stringify(kpiStore));
       renderMesVentes();
+      renderClassement();
       renderKpiDashboard();
-      toast(`Targets enregistrés pour ${repName} : ${fmtMoney0(newCommVal)} comm. / ${fmtMoney0(newSalesVal)} ventes 🎯`);
+      toast(`Targets enregistrés pour ${repName} : ${fmtMoney0(newComm)} comm. / ${fmtMoney0(newSales)} ventes 🎯`);
+    };
+
+    document.getElementById('btn-save-all-equipe-targets')?.addEventListener('click', async () => {
+      if (currentProfile?.role !== 'admin') return toast('Réservé à l’administrateur.', 'error');
+      const rows = document.querySelectorAll('#tbody-equipe-targets tr[data-target-rep]');
+      let count = 0;
+      for (const tr of rows) {
+        const rn = tr.getAttribute('data-target-rep');
+        const newComm = parseFloat(tr.querySelector('input[data-comm-input]')?.value) || 0;
+        const newSales = parseFloat(tr.querySelector('input[data-sales-input]')?.value) || 0;
+        if (rn && newComm > 0 && newSales > 0) {
+          await saveRepTargetsToStorageAndCloud(rn, currentMonthStr, newSales, newComm, true);
+          Object.keys(kpiStore).forEach(ym => {
+            if (kpiStore[ym]?.reps?.[rn]?.['Vente $']) {
+              kpiStore[ym].reps[rn]['Vente $'].objectif = newSales;
+              recalcTeamObjectivesForMonth(kpiStore[ym]);
+            }
+          });
+          count++;
+        }
+      }
+      localStorage.setItem('korpo_kpi_store_v1', JSON.stringify(kpiStore));
+      renderMesVentes();
+      renderClassement();
+      renderKpiDashboard();
+      toast(`${count} représentant(s) mis à jour 🎯`);
     });
 
     function renderMesVentes() {
@@ -5563,6 +5591,7 @@
     }
 
     function renderAdminEquipe() {
+      renderEquipeTargetsTable();
       document.getElementById('list-entreprises').innerHTML = state.entreprises.map(e => `
         <li class="px-4 py-3 flex items-center justify-between text-sm bg-white">
           ${entBadge(e.nom)}
