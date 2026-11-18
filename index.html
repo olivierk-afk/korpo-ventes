@@ -2653,8 +2653,7 @@
       const cliObj = state.clients.find(c => c.id === v.client_id);
       const rawName = (cliObj?.nom || v.client_nom || '').trim().toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/\s+/g, ' ');
       const repKey = String(v.representant_id || '');
-      const entKey = String(v.entreprise_id || '');
-      return rawName ? `${repKey}__${entKey}__${rawName}` : `sale_${v.id}`;
+      return rawName ? `${repKey}__${rawName}` : `sale_${v.id}`;
     }
 
     function syncSalesIntoKpi() {
@@ -2777,10 +2776,31 @@
           targetEnt.reps[repName].weeks[entWIdx] = Math.round(((targetEnt.reps[repName].weeks[entWIdx] || 0) + val) * 100) / 100;
         });
 
-        // Recalculer cumuls et % Close par représentant en préservant toujours la répartition OTS / SUIVI importée :
+        // Recalculer cumuls et % Close par représentant :
+        // Dès qu'un représentant a des ventes enregistrées dans Supabase pour ce mois (repHasDbSalesInMonth),
+        // le Tableau KPI reflète STRICTEMENT ses ventes dédupliquées en base (zéro ajout fantôme depuis DEFAULT_KPI_DATA).
         repNames.forEach(rn => {
           const rData = mObj.reps[rn];
           if (repsManagedByDb.includes(rn)) {
+            const repHasDbSalesInMonth = taggedCounts[rn].totalDbSales > 0;
+            const repMonthUniqueCount = taggedCounts[rn].ots.reduce((a, b) => a + b, 0) + taggedCounts[rn].suivi.reduce((a, b) => a + b, 0);
+            const repMonthExplicitSuivi = taggedCounts[rn].suivi.reduce((a, b) => a + b, 0);
+
+            // Si des ventes en base existent pour ce mois mais qu'aucune n'a encore de tag [SUIVI] explicite,
+            // répartir au prorata du ratio SUIVI importé/historique du mois sans JAMAIS dépasser repMonthUniqueCount
+            let monthRefOts = 0, monthRefSuivi = 0;
+            for (let wi = 0; wi < nw; wi++) {
+              const ovKey = `${ym}_${rn}_${wi}`;
+              const mSalesOv = manualSalesOverrides[ovKey];
+              const defRep = defaultMonthObj?.reps?.[rn];
+              monthRefOts += (mSalesOv && mSalesOv.fromImport) ? Number(mSalesOv.ots || 0) : Number(defRep?.['Ventes OTS']?.weeks?.[wi] || 0);
+              monthRefSuivi += (mSalesOv && mSalesOv.fromImport) ? Number(mSalesOv.suivi || 0) : Number(defRep?.['Ventes SUIVI']?.weeks?.[wi] || 0);
+            }
+            const monthRefTotal = monthRefOts + monthRefSuivi;
+            let remainingImputedSuivi = (repHasDbSalesInMonth && repMonthExplicitSuivi === 0 && monthRefTotal > 0)
+              ? Math.min(repMonthUniqueCount, Math.round(repMonthUniqueCount * (monthRefSuivi / monthRefTotal)))
+              : 0;
+
             for (let wi = 0; wi < nw; wi++) {
               const ovKey = `${ym}_${rn}_${wi}`;
               const mSalesOv = manualSalesOverrides[ovKey];
@@ -2802,31 +2822,26 @@
                 if (rawWeekCount === 0) {
                   rData['Vente $'].weeks[wi] = Number(mSalesOv.dollars || 0);
                 }
-              } else if (rawWeekCount > 0) {
-                // Des ventes réelles existent en base pour cette semaine : respecter strictement le décompte dédupliqué (dbWeekCount)
-                const refOts = (mSalesOv && mSalesOv.fromImport) ? Number(mSalesOv.ots || 0) : defOts;
-                const refSuivi = (mSalesOv && mSalesOv.fromImport) ? Number(mSalesOv.suivi || 0) : defSuivi;
-                const refTotal = refOts + refSuivi;
-
-                if (dbSuivi > 0 || refTotal <= 0) {
+              } else if (repHasDbSalesInMonth) {
+                // Le représentant a des ventes dans la base pour ce mois : n'utiliser QUE les ventes réelles dédupliquées
+                if (dbSuivi > 0 || monthRefTotal <= 0) {
                   rData['Ventes OTS'].weeks[wi] = dbOts;
                   rData['Ventes SUIVI'].weeks[wi] = dbSuivi;
                 } else if (dbWeekCount === 0) {
                   rData['Ventes OTS'].weeks[wi] = 0;
                   rData['Ventes SUIVI'].weeks[wi] = 0;
                 } else {
-                  // Conserver la proportion OTS / SUIVI (importée ou intégrée 2026) tout en plafonnant au nombre exact de clients uniques (dbWeekCount)
-                  const scaledSuivi = Math.min(dbWeekCount, Math.round(dbWeekCount * (refSuivi / refTotal)));
-                  rData['Ventes SUIVI'].weeks[wi] = scaledSuivi;
-                  rData['Ventes OTS'].weeks[wi] = dbWeekCount - scaledSuivi;
+                  const takeSuivi = Math.min(dbWeekCount, remainingImputedSuivi);
+                  remainingImputedSuivi -= takeSuivi;
+                  rData['Ventes SUIVI'].weeks[wi] = takeSuivi;
+                  rData['Ventes OTS'].weeks[wi] = dbWeekCount - takeSuivi;
                 }
               } else if (mSalesOv && mSalesOv.fromImport) {
-                // Aucune vente individuelle en base pour cette semaine (mois purement historique importé)
+                // Mois purement historique sans aucune vente enregistrée en base pour ce représentant
                 rData['Ventes OTS'].weeks[wi] = Number(mSalesOv.ots || 0);
                 rData['Ventes SUIVI'].weeks[wi] = Number(mSalesOv.suivi || 0);
                 rData['Vente $'].weeks[wi] = Number(mSalesOv.dollars || 0);
               } else if (hasDefaultHist) {
-                // Fallback automatique sur l'historique intégré 2026 (utile sur un nouveau domaine comme ventes.korposolutions.com)
                 rData['Ventes OTS'].weeks[wi] = defOts;
                 rData['Ventes SUIVI'].weeks[wi] = defSuivi;
                 rData['Vente $'].weeks[wi] = defDollars;
