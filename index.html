@@ -1014,7 +1014,16 @@
               <label class="block text-[11px] font-bold text-slate-600 mb-1">Ventes ($)</label>
               <input id="kpi-in-dollars" type="number" step="0.01" min="0" class="w-full px-3 py-2 text-xs font-bold bg-slate-50 border border-slate-200 rounded-xl tabular-nums" />
             </div>
-            <div class="col-span-full flex justify-end pt-1">
+            <div class="col-span-full flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-slate-100">
+              <div class="flex flex-wrap items-center gap-3">
+                <label class="inline-flex items-center gap-2 text-xs font-semibold text-slate-700 cursor-pointer">
+                  <input id="kpi-edit-replace-whole-month" type="checkbox" class="rounded border-slate-300 text-indigo-600" />
+                  <span>Remplacer tout le mois par cette saisie (effacer les autres semaines)</span>
+                </label>
+                <button type="button" id="btn-kpi-clear-rep-month" class="px-3 py-1.5 text-xs font-bold text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 rounded-xl transition">
+                  🧹 Remettre ce représentant à 0 ce mois-ci
+                </button>
+              </div>
               <button type="submit" class="px-5 py-2.5 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl shadow-xs transition">Enregistrer cette semaine</button>
             </div>
           </form>
@@ -1647,22 +1656,52 @@
       localStorage.setItem('korpo_kpi_manual_sales_v1', JSON.stringify(manualSalesOverrides));
     }
 
+    async function safeUpsertKpiHebdoRow(rowObj) {
+      if (!sb || !currentProfile) return { error: null };
+      try {
+        // Essayer d'abord upsert standard
+        const upRes = await sb.from('kpi_hebdo').upsert(rowObj, {
+          onConflict: 'mois_commission,semaine_index,representant_nom'
+        });
+        if (!upRes.error) return upRes;
+      } catch (e) {}
+
+      // Secours universel : select -> update ou insert (fonctionne même sans contrainte UNIQUE composite)
+      try {
+        let q = sb.from('kpi_hebdo').select('id').eq('mois_commission', rowObj.mois_commission).eq('semaine_index', rowObj.semaine_index);
+        if (Number(rowObj.semaine_index) >= -1) {
+          q = q.eq('representant_nom', rowObj.representant_nom);
+        }
+        const { data: existingRows } = await q.limit(1);
+        if (existingRows && existingRows.length > 0) {
+          return await sb.from('kpi_hebdo').update({
+            representant_nom: rowObj.representant_nom,
+            booke: rowObj.booke,
+            rdv_realise: rowObj.rdv_realise,
+            updated_at: rowObj.updated_at || new Date().toISOString()
+          }).eq('id', existingRows[0].id);
+        } else {
+          return await sb.from('kpi_hebdo').insert(rowObj);
+        }
+      } catch (err) {
+        return { error: err };
+      }
+    }
+
     async function persistSingleManualKpiToCloud(ovKey) {
       if (!sb || !currentProfile) return;
       const payload = {
         rdv: manualRdvOverrides[ovKey] || null,
         sales: manualSalesOverrides[ovKey] || null
       };
-      try {
-        await sb.from('kpi_hebdo').upsert({
-          mois_commission: ovKey,
-          semaine_index: -6,
-          representant_nom: JSON.stringify(payload),
-          booke: 0,
-          rdv_realise: 0,
-          updated_at: new Date().toISOString()
-        }, { onConflict: 'mois_commission,semaine_index,representant_nom' });
-      } catch (e) {}
+      await safeUpsertKpiHebdoRow({
+        mois_commission: ovKey,
+        semaine_index: -6,
+        representant_nom: JSON.stringify(payload),
+        booke: 0,
+        rdv_realise: 0,
+        updated_at: new Date().toISOString()
+      });
     }
 
     // =========================================================================
@@ -3531,16 +3570,52 @@
         const suivi = parseFloat(document.getElementById('kpi-in-suivi').value) || 0;
         const dollars = parseFloat(document.getElementById('kpi-in-dollars').value) || 0;
 
+        const replaceWholeMonth = Boolean(document.getElementById('kpi-edit-replace-whole-month')?.checked);
         const mObj = ensureKpiMonthStructure(ym);
         const rObj = mObj.reps[rep];
         if (!rObj) return;
+        const nw = mObj.num_weeks || 4;
+        const nowIso = new Date().toISOString();
 
-        rObj['Booké'].weeks[wIdx] = booke;
-        rObj['RDV Réalisé'].weeks[wIdx] = rdv;
-        rObj['Ventes OTS'].weeks[wIdx] = ots;
-        rObj['Ventes SUIVI'].weeks[wIdx] = suivi;
-        rObj['Vente $'].weeks[wIdx] = dollars;
-        rObj['% Close'].weeks[wIdx] = rdv > 0 ? Math.round(((ots + suivi) / rdv) * 10000) / 100 : 0;
+        for (let wi = 0; wi < nw; wi++) {
+          if (wi === wIdx || replaceWholeMonth) {
+            const wBooke = wi === wIdx ? booke : 0;
+            const wRdv = wi === wIdx ? rdv : 0;
+            const wOts = wi === wIdx ? ots : 0;
+            const wSuivi = wi === wIdx ? suivi : 0;
+            const wDol = wi === wIdx ? dollars : 0;
+
+            rObj['Booké'].weeks[wi] = wBooke;
+            rObj['RDV Réalisé'].weeks[wi] = wRdv;
+            rObj['Ventes OTS'].weeks[wi] = wOts;
+            rObj['Ventes SUIVI'].weeks[wi] = wSuivi;
+            rObj['Vente $'].weeks[wi] = wDol;
+            rObj['% Close'].weeks[wi] = wRdv > 0 ? Math.round(((wOts + wSuivi) / wRdv) * 10000) / 100 : 0;
+
+            const ovKey = `${ym}_${rep}_${wi}`;
+            manualRdvOverrides[ovKey] = { booke: wBooke, rdv: wRdv, manual: true, updatedAt: nowIso };
+            manualSalesOverrides[ovKey] = { ots: wOts, suivi: wSuivi, dollars: wDol, hasManualDollars: true, fromImport: false, updatedAt: nowIso };
+            await persistSingleManualKpiToCloud(ovKey);
+
+            const existingIdx = kpiHebdoRows.findIndex(r => r.mois_commission === ym && Number(r.semaine_index) === wi && r.representant_nom === rep);
+            if (existingIdx >= 0) {
+              kpiHebdoRows[existingIdx].booke = wBooke;
+              kpiHebdoRows[existingIdx].rdv_realise = wRdv;
+            } else {
+              kpiHebdoRows.push({ mois_commission: ym, semaine_index: wi, representant_nom: rep, booke: wBooke, rdv_realise: wRdv });
+            }
+            if (sb && currentProfile) {
+              await safeUpsertKpiHebdoRow({
+                mois_commission: ym,
+                semaine_index: wi,
+                representant_nom: rep,
+                booke: wBooke,
+                rdv_realise: wRdv,
+                updated_at: nowIso
+              });
+            }
+          }
+        }
 
         ['Booké', 'RDV Réalisé', 'Ventes OTS', 'Ventes SUIVI', 'Vente $'].forEach(k => {
           rObj[k].cumul = Math.round(rObj[k].weeks.reduce((a, b) => a + b, 0) * 100) / 100;
@@ -3549,54 +3624,69 @@
         const totVentes = rObj['Ventes OTS'].cumul + rObj['Ventes SUIVI'].cumul;
         rObj['% Close'].cumul = totRdv > 0 ? Math.round((totVentes / totRdv) * 10000) / 100 : 0;
 
-        // Recalculer les totaux d'équipe pour cette semaine
+        // Recalculer les totaux d'équipe sur toutes les semaines du mois
         const allReps = Object.keys(mObj.reps);
-        mObj.team['Booké'].weeks[wIdx] = allReps.reduce((s, rp) => s + (mObj.reps[rp]['Booké'].weeks[wIdx] || 0), 0);
-        mObj.team['RDV RÉA'].weeks[wIdx] = allReps.reduce((s, rp) => s + (mObj.reps[rp]['RDV Réalisé'].weeks[wIdx] || 0), 0);
-        mObj.team['VENTE OTS'].weeks[wIdx] = allReps.reduce((s, rp) => s + (mObj.reps[rp]['Ventes OTS'].weeks[wIdx] || 0), 0);
-        mObj.team['VENTE SUIVI'].weeks[wIdx] = allReps.reduce((s, rp) => s + (mObj.reps[rp]['Ventes SUIVI'].weeks[wIdx] || 0), 0);
-        mObj.team['VENTE TOTAL'].weeks[wIdx] = mObj.team['VENTE OTS'].weeks[wIdx] + mObj.team['VENTE SUIVI'].weeks[wIdx];
-        mObj.team['VENTE $'].weeks[wIdx] = Math.round(allReps.reduce((s, rp) => s + (mObj.reps[rp]['Vente $'].weeks[wIdx] || 0), 0) * 100) / 100;
+        for (let wi = 0; wi < nw; wi++) {
+          mObj.team['Booké'].weeks[wi] = allReps.reduce((s, rp) => s + (mObj.reps[rp]['Booké'].weeks[wi] || 0), 0);
+          mObj.team['RDV RÉA'].weeks[wi] = allReps.reduce((s, rp) => s + (mObj.reps[rp]['RDV Réalisé'].weeks[wi] || 0), 0);
+          mObj.team['VENTE OTS'].weeks[wi] = allReps.reduce((s, rp) => s + (mObj.reps[rp]['Ventes OTS'].weeks[wi] || 0), 0);
+          mObj.team['VENTE SUIVI'].weeks[wi] = allReps.reduce((s, rp) => s + (mObj.reps[rp]['Ventes SUIVI'].weeks[wi] || 0), 0);
+          mObj.team['VENTE TOTAL'].weeks[wi] = mObj.team['VENTE OTS'].weeks[wi] + mObj.team['VENTE SUIVI'].weeks[wi];
+          mObj.team['VENTE $'].weeks[wi] = Math.round(allReps.reduce((s, rp) => s + (mObj.reps[rp]['Vente $'].weeks[wi] || 0), 0) * 100) / 100;
+        }
 
         ['Booké', 'RDV RÉA', 'VENTE OTS', 'VENTE SUIVI', 'VENTE TOTAL', 'VENTE $'].forEach(k => {
           mObj.team[k].cumul = Math.round(mObj.team[k].weeks.reduce((a, b) => a + b, 0) * 100) / 100;
         });
 
-        // Sauvegarder en mémoire locale + dans kpiHebdoRows + dans Supabase (priorité manuelle)
-        const nowIso = new Date().toISOString();
-        const ovKey = `${ym}_${rep}_${wIdx}`;
-        manualRdvOverrides[ovKey] = { booke, rdv, manual: true, updatedAt: nowIso };
-        manualSalesOverrides[ovKey] = { ots, suivi, dollars, hasManualDollars: true, fromImport: false, updatedAt: nowIso };
         saveManualKpiOverrides();
         localStorage.setItem('korpo_kpi_store_v1', JSON.stringify(kpiStore));
-        await persistSingleManualKpiToCloud(ovKey);
-
-        const existingIdx = kpiHebdoRows.findIndex(r => r.mois_commission === ym && Number(r.semaine_index) === wIdx && r.representant_nom === rep);
-        if (existingIdx >= 0) {
-          kpiHebdoRows[existingIdx].booke = booke;
-          kpiHebdoRows[existingIdx].rdv_realise = rdv;
-        } else {
-          kpiHebdoRows.push({ mois_commission: ym, semaine_index: wIdx, representant_nom: rep, booke, rdv_realise: rdv });
-        }
-
         renderKpiDashboard();
+        toast(replaceWholeMonth
+          ? `Tout le mois de ${rep} (${ym}) a été remplacé par ces chiffres ✓`
+          : `KPI enregistrés pour ${rep} (Semaine ${wIdx + 1}) ✓`);
+      });
 
-        if (sb && currentProfile) {
-          const { error } = await sb.from('kpi_hebdo').upsert({
-            mois_commission: ym,
-            semaine_index: wIdx,
-            representant_nom: rep,
-            booke,
-            rdv_realise: rdv,
-            updated_at: new Date().toISOString()
-          }, { onConflict: 'mois_commission,semaine_index,representant_nom' });
-          if (error) {
-            console.warn('Sync kpi_hebdo:', error.message);
-            toast(`RDV enregistrés localement (Supabase : ${error.message})`, 'error');
-            return;
+      document.getElementById('btn-kpi-clear-rep-month')?.addEventListener('click', async () => {
+        if (currentProfile?.role !== 'admin') return;
+        const ym = document.getElementById('kpi-select-month').value;
+        const rep = document.getElementById('kpi-edit-rep').value;
+        if (!ym || ym.startsWith('YEAR_')) return toast('Sélectionnez un mois précis.', 'error');
+        const ok = await askConfirm(`Remettre ${rep} à 0 pour ${ym} ?`, 'Toutes les semaines (RDV Bookés, RDV Réalisés, OTS, Suivi et Ventes $) de ce représentant seront mises à 0 pour ce mois.');
+        if (!ok) return;
+        const mObj = ensureKpiMonthStructure(ym);
+        const rObj = mObj.reps[rep];
+        const nw = mObj.num_weeks || 4;
+        const nowIso = new Date().toISOString();
+        for (let wi = 0; wi < nw; wi++) {
+          ['Booké', 'RDV Réalisé', 'Ventes OTS', 'Ventes SUIVI', 'Vente $', '% Close'].forEach(k => {
+            if (rObj[k]) rObj[k].weeks[wi] = 0;
+          });
+          const ovKey = `${ym}_${rep}_${wi}`;
+          manualRdvOverrides[ovKey] = { booke: 0, rdv: 0, manual: true, updatedAt: nowIso };
+          manualSalesOverrides[ovKey] = { ots: 0, suivi: 0, dollars: 0, hasManualDollars: true, fromImport: false, updatedAt: nowIso };
+          await persistSingleManualKpiToCloud(ovKey);
+          if (sb && currentProfile) {
+            await safeUpsertKpiHebdoRow({
+              mois_commission: ym,
+              semaine_index: wi,
+              representant_nom: rep,
+              booke: 0,
+              rdv_realise: 0,
+              updated_at: nowIso
+            });
           }
         }
-        toast(`RDV et KPI enregistrés pour ${rep} (Semaine ${wIdx + 1}) ✓`);
+        ['Booké', 'RDV Réalisé', 'Ventes OTS', 'Ventes SUIVI', 'Vente $', '% Close'].forEach(k => {
+          if (rObj[k]) rObj[k].cumul = 0;
+        });
+        saveManualKpiOverrides();
+        localStorage.setItem('korpo_kpi_store_v1', JSON.stringify(kpiStore));
+        syncSalesIntoKpi();
+        syncGoogleAgendaIntoKpi();
+        syncKpiEditorInputs();
+        renderKpiDashboard();
+        toast(`${rep} a été remis à 0 pour ${ym} ✓`);
       });
 
       document.getElementById('btn-kpi-export-csv').addEventListener('click', exportKpiCsv);
@@ -4988,7 +5078,7 @@
         const rData = mObj.reps[rn];
         if (!rData) return;
 
-        // Répartir proprement sur les semaines du mois et enregistrer les overrides
+        // Répartir proprement sur les semaines du mois et remettre les autres semaines OTS/Suivi/RDV à 0 (en conservant les Ventes $ réelles)
         rData['Booké'].weeks = [booke, ...Array(nw - 1).fill(0)];
         rData['Booké'].cumul = booke;
         rData['RDV Réalisé'].weeks = [rdv, ...Array(nw - 1).fill(0)];
@@ -5024,7 +5114,9 @@
       }
 
       if (sb && currentProfile && hebdoUpserts.length) {
-        await sb.from('kpi_hebdo').upsert(hebdoUpserts, { onConflict: 'mois_commission,semaine_index,representant_nom' });
+        for (const hRow of hebdoUpserts) {
+          await safeUpsertKpiHebdoRow(hRow);
+        }
       }
       await applyKpiOtsSuiviTagsToSupabase(new Set([ym]), true);
       kpiImportModal.classList.add('hidden');
@@ -5343,12 +5435,21 @@
     function updatePersonalGoalProgressBar(monthFilter, scopeFilter) {
       if (!currentProfile) return;
       const isAdmin = currentProfile.role === 'admin';
+      const isInspectingRep = isAdmin && typeof scopeFilter === 'string' && scopeFilter.startsWith('rep:');
+      const inspectedRepId = isInspectingRep ? scopeFilter.slice(4) : String(currentProfile.id);
+      const inspectedRepObj = isInspectingRep
+        ? state.representants.find(r => String(r.id) === inspectedRepId)
+        : currentProfile;
       const isAllTime = !monthFilter;
       const activeYm = monthFilter || currentMonthStr;
-      const inspectedRepName = currentProfile.nom;
+      const inspectedRepName = inspectedRepObj?.nom || currentProfile.nom;
 
-      const myPeriodSales = state.mesVentes.filter(v => {
-        if (isAdmin && scopeFilter === 'direct') {
+      const sourceRows = isInspectingRep
+        ? (state.ventes || []).filter(v => String(v.representant_id) === inspectedRepId)
+        : state.mesVentes;
+
+      const myPeriodSales = sourceRows.filter(v => {
+        if (!isInspectingRep && isAdmin && scopeFilter === 'direct') {
           if (String(v.representant_id) !== String(currentProfile.id)) return false;
         }
         if (monthFilter) return getSaleStatsMonth(v) === monthFilter;
@@ -5372,9 +5473,9 @@
 
       const headerTitleEl = document.getElementById('goal-card-header-title');
       if (headerTitleEl) {
-        headerTitleEl.textContent = isAllTime
-          ? `Mes objectifs cumulés (Depuis le début)`
-          : `Mes objectifs du mois (${activeYm})`;
+        headerTitleEl.textContent = isInspectingRep
+          ? (isAllTime ? `Objectifs cumulés de ${inspectedRepName} (Depuis le début)` : `Objectifs du mois de ${inspectedRepName} (${activeYm})`)
+          : (isAllTime ? `Mes objectifs cumulés (Depuis le début)` : `Mes objectifs du mois (${activeYm})`);
       }
 
       // 1. Mise à jour de la barre TARGET COMMISSION ($)
@@ -5588,10 +5689,38 @@
       const q = document.getElementById('search-rep-ventes').value.trim().toLowerCase();
       const currentYear = new Date().getFullYear().toString();
 
-      const scopeFilteredAll = state.mesVentes.filter(v => {
-        if (isAdmin && scopeFilter === 'direct' && v.representant_id !== currentProfile.id) return false;
-        return true;
-      });
+      const isInspectingRep = isAdmin && typeof scopeFilter === 'string' && scopeFilter.startsWith('rep:');
+      const inspectedRepId = isInspectingRep ? scopeFilter.slice(4) : null;
+      const inspectedRepObj = isInspectingRep
+        ? state.representants.find(r => String(r.id) === inspectedRepId)
+        : null;
+
+      const subtitleEl = document.getElementById('mes-ventes-subtitle');
+      const commCardTitleEl = document.getElementById('kpi-rep-comm-mois')?.parentElement?.querySelector('span');
+      if (isInspectingRep && inspectedRepObj) {
+        if (subtitleEl) subtitleEl.textContent = `Vue miroir de ${inspectedRepObj.nom} — ses ventes, ses commissions et ses objectifs`;
+        if (commCardTitleEl) commCardTitleEl.textContent = `Commission de ${inspectedRepObj.nom} (Période)`;
+      } else {
+        if (subtitleEl) subtitleEl.textContent = isAdmin
+          ? 'Vos ventes directes et vos commissions sur l’ensemble de l’équipe'
+          : 'Suivi confidentiel de vos dossiers fermés, paiements reçus et soldes à venir';
+        if (commCardTitleEl) commCardTitleEl.textContent = 'Ma commission (Période)';
+      }
+
+      const scopeFilteredAll = isInspectingRep
+        ? state.ventes
+            .filter(v => String(v.representant_id) === inspectedRepId)
+            .map(v => ({
+              ...v,
+              client_nom: state.clients.find(c => c.id === v.client_id)?.nom || '—',
+              entreprise_nom: state.entreprises.find(e => e.id === v.entreprise_id)?.nom || '—',
+              rep_nom: inspectedRepObj?.nom || '—',
+              commission_rep: Number(v.commission_rep || 0)
+            }))
+        : state.mesVentes.filter(v => {
+            if (isAdmin && scopeFilter === 'direct' && v.representant_id !== currentProfile.id) return false;
+            return true;
+          });
 
       const filtered = scopeFilteredAll.filter(v => {
         if (monthFilter && v.mois_commission !== monthFilter) return false;
@@ -6057,6 +6186,23 @@
 
       document.getElementById('admin-filter-rep').innerHTML = `<option value="">Tous les représentants</option>${repOptions}`;
       document.getElementById('admin-filter-ent').innerHTML = `<option value="">Toutes les entreprises</option>${entOptions}`;
+
+      const scopeSel = document.getElementById('filter-admin-scope');
+      if (scopeSel) {
+        const prevScope = scopeSel.value || 'all';
+        const otherRepsOpts = state.representants
+          .filter(r => String(r.id) !== String(currentProfile?.id))
+          .map(r => `<option value="rep:${r.id}">👤 Vue de ${r.nom} (ses ventes & commissions)</option>`)
+          .join('');
+        scopeSel.innerHTML = `
+          <option value="all">Toutes mes commissions (Directes + Équipe)</option>
+          <option value="direct">Mes ventes directes uniquement</option>
+          ${otherRepsOpts ? `<optgroup label="Inspecter la vue d'un représentant">${otherRepsOpts}</optgroup>` : ''}
+        `;
+        if (Array.from(scopeSel.options).some(o => o.value === prevScope)) {
+          scopeSel.value = prevScope;
+        }
+      }
 
       if (prevFilterRep) document.getElementById('admin-filter-rep').value = prevFilterRep;
       if (prevFilterEnt) document.getElementById('admin-filter-ent').value = prevFilterEnt;
