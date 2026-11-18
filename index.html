@@ -1023,7 +1023,7 @@
 
       <!-- BARRE D'ONGLETS -->
       <div class="bg-slate-900/95 border-t border-slate-800">
-        <div class="max-w-7xl mx-auto px-3 sm:px-6 flex gap-1.5 overflow-x-auto no-scrollbar py-1.5" id="nav-tabs"></div>
+        <div class="max-w-7xl mx-auto px-2 sm:px-6 py-1.5 space-y-1.5" id="nav-tabs"></div>
       </div>
     </header>
 
@@ -3160,31 +3160,59 @@
     function buildNavigation() {
       const nav = document.getElementById('nav-tabs');
       const isAdmin = currentProfile.role === 'admin';
-      const tabs = [
-        { id: 'tab-mes-ventes', icon: '💵', label: 'Mes ventes & commissions', desktopOnly: true },
-        { id: 'tab-mes-ventes', icon: '💵', label: 'Mes ventes', mobileOnly: true },
-        { id: 'tab-mes-commissions', icon: '💰', label: 'Mes commissions', mobileOnly: true },
-        { id: 'tab-kpi', icon: '📊', label: 'Tableau KPI' },
-        { id: 'tab-classement', icon: '🏆', label: 'Classement équipe' }
+
+      const mobilePrimaryTabs = [
+        { id: 'tab-mes-ventes', icon: '💵', shortLabel: 'Ventes' },
+        { id: 'tab-mes-commissions', icon: '💰', shortLabel: 'Commissions' },
+        { id: 'tab-kpi', icon: '📊', shortLabel: 'KPI' },
+        { id: 'tab-classement', icon: '🏆', shortLabel: 'Classement' }
       ];
-      if (isAdmin) {
-        tabs.push(
+
+      const mobileAdminTabs = isAdmin ? [
+        { id: 'tab-admin-ventes', icon: '📋', shortLabel: 'Registre' },
+        { id: 'tab-admin-dashboard', icon: '📈', shortLabel: 'Direction' },
+        { id: 'tab-admin-taux', icon: '⚙️', shortLabel: 'Taux' },
+        { id: 'tab-admin-equipe', icon: '🏢', shortLabel: 'Équipe' }
+      ] : [];
+
+      const desktopTabs = [
+        { id: 'tab-mes-ventes', icon: '💵', label: 'Mes ventes & commissions' },
+        { id: 'tab-kpi', icon: '📊', label: 'Tableau KPI' },
+        { id: 'tab-classement', icon: '🏆', label: 'Classement équipe' },
+        ...(isAdmin ? [
           { id: 'tab-admin-ventes', icon: '📋', label: 'Toutes les ventes & CSV' },
           { id: 'tab-admin-dashboard', icon: '📈', label: 'Tableau de bord' },
           { id: 'tab-admin-taux', icon: '⚙️', label: 'Grille des taux' },
           { id: 'tab-admin-equipe', icon: '🏢', label: 'Entreprises & Équipe' }
-        );
-      }
+        ] : [])
+      ];
 
-      nav.innerHTML = tabs.map((t, idx) => {
-        const dispCls = t.desktopOnly ? 'hidden md:inline-flex' : (t.mobileOnly ? 'inline-flex md:hidden' : 'inline-flex');
-        return `
-          <button data-tab="${t.id}" class="nav-btn px-3.5 py-2 text-xs font-semibold rounded-xl transition whitespace-nowrap ${dispCls} items-center gap-1.5 ${idx === 0 ? 'bg-indigo-600 text-white shadow-xs' : 'text-slate-300 hover:text-white hover:bg-slate-800'}">
-            <span class="text-sm leading-none">${t.icon}</span>
-            <span>${t.label}</span>
-          </button>
-        `;
-      }).join('');
+      const renderMobileGrid = (items, extraCls = '') => `
+        <div class="grid grid-cols-4 gap-1 md:hidden ${extraCls}">
+          ${items.map(t => `
+            <button data-tab="${t.id}" class="nav-btn flex flex-col items-center justify-center py-1.5 px-1 rounded-xl text-[11px] font-bold transition text-slate-300 hover:text-white hover:bg-slate-800">
+              <span class="text-base leading-none mb-0.5">${t.icon}</span>
+              <span class="truncate max-w-full">${t.shortLabel}</span>
+            </button>
+          `).join('')}
+        </div>
+      `;
+
+      const desktopBar = `
+        <div class="hidden md:flex flex-wrap items-center gap-1.5">
+          ${desktopTabs.map(t => `
+            <button data-tab="${t.id}" class="nav-btn px-3.5 py-2 text-xs font-semibold rounded-xl transition whitespace-nowrap inline-flex items-center gap-1.5 text-slate-300 hover:text-white hover:bg-slate-800">
+              <span class="text-sm leading-none">${t.icon}</span>
+              <span>${t.label}</span>
+            </button>
+          `).join('')}
+        </div>
+      `;
+
+      nav.innerHTML =
+        renderMobileGrid(mobilePrimaryTabs) +
+        (mobileAdminTabs.length ? renderMobileGrid(mobileAdminTabs, 'pt-1 border-t border-slate-800/90') : '') +
+        desktopBar;
 
       document.querySelectorAll('.nav-btn').forEach(btn => {
         btn.addEventListener('click', () => switchTab(btn.dataset.tab));
@@ -3234,7 +3262,8 @@
         sec.classList.toggle('hidden', sec.id !== targetSectionId);
       });
       document.querySelectorAll('.nav-btn').forEach(btn => {
-        const active = btn.dataset.tab === tabId || (btn.classList.contains('md:inline-flex') && tabId === 'tab-mes-commissions' && btn.dataset.tab === 'tab-mes-ventes');
+        const isDesktopUnified = btn.classList.contains('inline-flex');
+        const active = btn.dataset.tab === tabId || (isDesktopUnified && tabId === 'tab-mes-commissions' && btn.dataset.tab === 'tab-mes-ventes');
         btn.classList.toggle('bg-indigo-600', active);
         btn.classList.toggle('text-white', active);
         btn.classList.toggle('shadow-xs', active);
@@ -4399,9 +4428,17 @@
             rObj['Vente $'].weeks[wi] = wDol;
             rObj['% Close'].weeks[wi] = wRdv > 0 ? Math.round(((wOts + wSuivi) / wRdv) * 10000) / 100 : 0;
 
+            const dbWeek = getDbWeekCountsForRep(ym, rep, nw);
             const ovKey = `${ym}_${rep}_${wi}`;
             manualRdvOverrides[ovKey] = { booke: wBooke, rdv: wRdv, manual: true, updatedAt: nowIso };
-            manualSalesOverrides[ovKey] = { ots: wOts, suivi: wSuivi, dollars: wDol, hasManualDollars: true, fromImport: false, updatedAt: nowIso };
+            manualSalesOverrides[ovKey] = {
+              ots: Math.max(0, wOts - (dbWeek.ots[wi] || 0)),
+              suivi: Math.max(0, wSuivi - (dbWeek.suivi[wi] || 0)),
+              dollars: Math.max(0, Math.round((wDol - (dbWeek.dollars[wi] || 0)) * 100) / 100),
+              hasManualDollars: true,
+              fromImport: false,
+              updatedAt: nowIso
+            };
             await persistSingleManualKpiToCloud(ovKey);
 
             const existingIdx = kpiHebdoRows.findIndex(r => r.mois_commission === ym && Number(r.semaine_index) === wi && r.representant_nom === rep);
@@ -4621,6 +4658,32 @@
       return rawName ? `${ym}__${repKey}__${rawName}` : `sale_${v.id}`;
     }
 
+        function getDbWeekCountsForRep(ym, repName, nw = 4) {
+      const res = { ots: Array(nw).fill(0), suivi: Array(nw).fill(0), dollars: Array(nw).fill(0) };
+      const allVentes = [...(state.ventes || [])].sort((a, b) => {
+        const dA = a.date_vente || `${a.mois_commission || '9999-99'}-01`;
+        const dB = b.date_vente || `${b.mois_commission || '9999-99'}-01`;
+        if (dA !== dB) return dA.localeCompare(dB);
+        return String(a.created_at || a.id || '').localeCompare(String(b.created_at || b.id || ''));
+      });
+      const seen = new Set();
+      allVentes.forEach(v => {
+        const uKey = getUniqueClientKpiKey(v);
+        const isFirst = !seen.has(uKey);
+        if (isFirst) seen.add(uKey);
+        if (getSaleStatsMonth(v) !== ym) return;
+        const repObj = state.representants.find(r => r.id === v.representant_id);
+        if (!repObj || repObj.nom !== repName) return;
+        const wi = getWeekIndexFromDate(v.date_vente, nw);
+        res.dollars[wi] = Math.round((res.dollars[wi] + Number(v.valeur || 0)) * 100) / 100;
+        if (isFirst) {
+          if ((v.note || '').toUpperCase().includes('[SUIVI]')) res.suivi[wi] += 1;
+          else res.ots[wi] += 1;
+        }
+      });
+      return res;
+    }
+
     function syncSalesIntoKpi() {
       const isAdmin = currentProfile && currentProfile.role === 'admin';
       // Trier chronologiquement (date_vente puis mois_commission) afin que la 1re apparition d'un nom client soit comptabilisée 1 seule fois
@@ -4668,33 +4731,35 @@
           ? repNames
           : (currentProfile && mObj.reps[currentProfile.nom] ? [currentProfile.nom] : []);
 
+        // Initialiser chaque représentant et chaque entreprise à partir de leur base historique (DEFAULT_KPI_DATA) avant d'additionner les ventes Supabase
         repsManagedByDb.forEach(rn => {
-          // Toujours repartir de 0 pour ce représentant et chaque entreprise avant d'additionner les ventes actives de Supabase :
-          // ainsi toute vente supprimée disparaît immédiatement des résultats par représentant ET par compagnie partenaire !
+          const defRep = defaultMonthObj?.reps?.[rn];
           if (mObj.reps[rn] && mObj.reps[rn]['Vente $']) {
-            mObj.reps[rn]['Vente $'].weeks = Array(nw).fill(0);
+            mObj.reps[rn]['Vente $'].weeks = Array.from({ length: nw }, (_, wi) => Number(defRep?.['Vente $']?.weeks?.[wi] || 0));
           }
           if (mObj.reps[rn] && mObj.reps[rn]['Ventes OTS']) {
-            mObj.reps[rn]['Ventes OTS'].weeks = Array(nw).fill(0);
+            mObj.reps[rn]['Ventes OTS'].weeks = Array.from({ length: nw }, (_, wi) => Number(defRep?.['Ventes OTS']?.weeks?.[wi] || 0));
           }
           if (mObj.reps[rn] && mObj.reps[rn]['Ventes SUIVI']) {
-            mObj.reps[rn]['Ventes SUIVI'].weeks = Array(nw).fill(0);
+            mObj.reps[rn]['Ventes SUIVI'].weeks = Array.from({ length: nw }, (_, wi) => Number(defRep?.['Ventes SUIVI']?.weeks?.[wi] || 0));
           }
           Object.keys(mObj.entreprises).forEach(entK => {
             const eObj = mObj.entreprises[entK];
+            const defEntRep = defaultMonthObj?.entreprises?.[entK]?.reps?.[rn];
+            const wLen = eObj.reps[rn]?.weeks?.length || nw;
             if (eObj.reps[rn]) {
-              eObj.reps[rn].weeks = Array(eObj.reps[rn].weeks.length || nw).fill(0);
+              eObj.reps[rn].weeks = Array.from({ length: wLen }, (_, wi) => Number(defEntRep?.weeks?.[wi] || 0));
             }
           });
         });
 
-        // Compteurs hebdomadaires de ventes : chaque client unique compte 1 seule fois (SUIVI si tagué [SUIVI], sinon OTS par défaut)
+        // Compteurs hebdomadaires des ventes enregistrées dans Supabase : chaque client unique compte 1 fois (SUIVI si tagué [SUIVI], sinon OTS par défaut)
         const taggedCounts = {};
         repNames.forEach(rn => {
-          taggedCounts[rn] = { ots: Array(nw).fill(0), suivi: Array(nw).fill(0), rawWeekSales: Array(nw).fill(0), totalDbSales: 0 };
+          taggedCounts[rn] = { ots: Array(nw).fill(0), suivi: Array(nw).fill(0), dollars: Array(nw).fill(0), rawWeekSales: Array(nw).fill(0), totalDbSales: 0 };
         });
 
-        // Injecter chaque vente active dans la bonne semaine, le bon représentant et la bonne entreprise
+        // Additionner chaque vente active de Supabase dans la bonne semaine, le bon représentant et la bonne entreprise
         monthSales.forEach(v => {
           const repObj = state.representants.find(r => r.id === v.representant_id);
           const entObj = state.entreprises.find(e => e.id === v.entreprise_id);
@@ -4706,11 +4771,11 @@
           const wIdx = getWeekIndexFromDate(v.date_vente, nw);
 
           if (mObj.reps[repName]) {
-            mObj.reps[repName]['Vente $'].weeks[wIdx] = Math.round(((mObj.reps[repName]['Vente $'].weeks[wIdx] || 0) + val) * 100) / 100;
+            taggedCounts[repName].dollars[wIdx] = Math.round(((taggedCounts[repName].dollars[wIdx] || 0) + val) * 100) / 100;
             taggedCounts[repName].totalDbSales += 1;
             taggedCounts[repName].rawWeekSales[wIdx] += 1;
 
-            // Ne comptabiliser le dossier (OTS / SUIVI) que la 1re fois que ce nom de client apparaît
+            // Ne comptabiliser le dossier (OTS / SUIVI) que la 1re fois que ce nom de client apparaît ce mois-ci
             if (firstOccurrenceSaleIds.has(String(v.id))) {
               const noteUp = (v.note || '').toUpperCase();
               if (noteUp.includes('[SUIVI]')) {
@@ -4741,79 +4806,26 @@
           targetEnt.reps[repName].weeks[entWIdx] = Math.round(((targetEnt.reps[repName].weeks[entWIdx] || 0) + val) * 100) / 100;
         });
 
-        // Recalculer cumuls et % Close par représentant :
-        // Dès qu'un représentant a des ventes enregistrées dans Supabase pour ce mois (repHasDbSalesInMonth),
-        // le Tableau KPI reflète STRICTEMENT ses ventes dédupliquées en base (zéro ajout fantôme depuis DEFAULT_KPI_DATA).
+        // Combiner les statistiques existantes (importées / historiques / manuelles) + les ventes enregistrées dans l'application
         repNames.forEach(rn => {
           const rData = mObj.reps[rn];
           if (repsManagedByDb.includes(rn)) {
-            const repHasDbSalesInMonth = taggedCounts[rn].totalDbSales > 0;
-            const repMonthUniqueCount = taggedCounts[rn].ots.reduce((a, b) => a + b, 0) + taggedCounts[rn].suivi.reduce((a, b) => a + b, 0);
-            const repMonthExplicitSuivi = taggedCounts[rn].suivi.reduce((a, b) => a + b, 0);
-
-            // Si des ventes en base existent pour ce mois mais qu'aucune n'a encore de tag [SUIVI] explicite,
-            // répartir au prorata du ratio SUIVI importé/historique du mois sans JAMAIS dépasser repMonthUniqueCount
-            let monthRefOts = 0, monthRefSuivi = 0;
+            const defRep = defaultMonthObj?.reps?.[rn];
             for (let wi = 0; wi < nw; wi++) {
               const ovKey = `${ym}_${rn}_${wi}`;
               const mSalesOv = manualSalesOverrides[ovKey];
-              const defRep = defaultMonthObj?.reps?.[rn];
-              monthRefOts += (mSalesOv && mSalesOv.fromImport) ? Number(mSalesOv.ots || 0) : Number(defRep?.['Ventes OTS']?.weeks?.[wi] || 0);
-              monthRefSuivi += (mSalesOv && mSalesOv.fromImport) ? Number(mSalesOv.suivi || 0) : Number(defRep?.['Ventes SUIVI']?.weeks?.[wi] || 0);
-            }
-            const monthRefTotal = monthRefOts + monthRefSuivi;
-            let remainingImputedSuivi = (repHasDbSalesInMonth && repMonthExplicitSuivi === 0 && monthRefTotal > 0)
-              ? Math.min(repMonthUniqueCount, Math.round(repMonthUniqueCount * (monthRefSuivi / monthRefTotal)))
-              : 0;
 
-            for (let wi = 0; wi < nw; wi++) {
-              const ovKey = `${ym}_${rn}_${wi}`;
-              const mSalesOv = manualSalesOverrides[ovKey];
-              const defRep = defaultMonthObj?.reps?.[rn];
-              const defOts = Number(defRep?.['Ventes OTS']?.weeks?.[wi] || 0);
-              const defSuivi = Number(defRep?.['Ventes SUIVI']?.weeks?.[wi] || 0);
-              const defDollars = Number(defRep?.['Vente $']?.weeks?.[wi] || 0);
-              const hasDefaultHist = (defOts + defSuivi) > 0;
+              const baseOts = mSalesOv ? Number(mSalesOv.ots || 0) : Number(defRep?.['Ventes OTS']?.weeks?.[wi] || 0);
+              const baseSuivi = mSalesOv ? Number(mSalesOv.suivi || 0) : Number(defRep?.['Ventes SUIVI']?.weeks?.[wi] || 0);
+              const baseDollars = mSalesOv ? Number(mSalesOv.dollars || 0) : Number(defRep?.['Vente $']?.weeks?.[wi] || 0);
 
-              const dbOts = taggedCounts[rn].ots[wi];
-              const dbSuivi = taggedCounts[rn].suivi[wi];
-              const dbWeekCount = dbOts + dbSuivi;
-              const rawWeekCount = taggedCounts[rn].rawWeekSales[wi];
+              const dbOts = taggedCounts[rn].ots[wi] || 0;
+              const dbSuivi = taggedCounts[rn].suivi[wi] || 0;
+              const dbDollars = taggedCounts[rn].dollars[wi] || 0;
 
-              if (mSalesOv && !mSalesOv.fromImport) {
-                // Saisie manuelle explicite via l'éditeur KPI hebdomadaire ou la grille directe
-                rData['Ventes OTS'].weeks[wi] = Number(mSalesOv.ots || 0);
-                rData['Ventes SUIVI'].weeks[wi] = Number(mSalesOv.suivi || 0);
-                if (mSalesOv.hasManualDollars && rawWeekCount === 0) {
-                  rData['Vente $'].weeks[wi] = Number(mSalesOv.dollars || 0);
-                }
-              } else if (repHasDbSalesInMonth) {
-                // Le représentant a des ventes dans la base pour ce mois : n'utiliser QUE les ventes réelles dédupliquées
-                if (dbSuivi > 0 || monthRefTotal <= 0) {
-                  rData['Ventes OTS'].weeks[wi] = dbOts;
-                  rData['Ventes SUIVI'].weeks[wi] = dbSuivi;
-                } else if (dbWeekCount === 0) {
-                  rData['Ventes OTS'].weeks[wi] = 0;
-                  rData['Ventes SUIVI'].weeks[wi] = 0;
-                } else {
-                  const takeSuivi = Math.min(dbWeekCount, remainingImputedSuivi);
-                  remainingImputedSuivi -= takeSuivi;
-                  rData['Ventes SUIVI'].weeks[wi] = takeSuivi;
-                  rData['Ventes OTS'].weeks[wi] = dbWeekCount - takeSuivi;
-                }
-              } else if (mSalesOv && mSalesOv.fromImport) {
-                // Mois purement historique sans aucune vente enregistrée en base pour ce représentant
-                rData['Ventes OTS'].weeks[wi] = Number(mSalesOv.ots || 0);
-                rData['Ventes SUIVI'].weeks[wi] = Number(mSalesOv.suivi || 0);
-                rData['Vente $'].weeks[wi] = Number(mSalesOv.dollars || 0);
-              } else if (hasDefaultHist) {
-                rData['Ventes OTS'].weeks[wi] = defOts;
-                rData['Ventes SUIVI'].weeks[wi] = defSuivi;
-                rData['Vente $'].weeks[wi] = defDollars;
-              } else {
-                rData['Ventes OTS'].weeks[wi] = 0;
-                rData['Ventes SUIVI'].weeks[wi] = 0;
-              }
+              rData['Ventes OTS'].weeks[wi] = baseOts + dbOts;
+              rData['Ventes SUIVI'].weeks[wi] = baseSuivi + dbSuivi;
+              rData['Vente $'].weeks[wi] = Math.round((baseDollars + dbDollars) * 100) / 100;
             }
           }
           ['Booké', 'RDV Réalisé', 'Ventes OTS', 'Ventes SUIVI', 'Vente $'].forEach(k => {
@@ -5950,10 +5962,21 @@
         rData['Ventes SUIVI'].cumul = suivi;
 
         const nowIsoGrid = new Date().toISOString();
+        const dbWeekGrid = getDbWeekCountsForRep(ym, rn, nw);
         for (let wi = 0; wi < nw; wi++) {
           const ovKey = `${ym}_${rn}_${wi}`;
+          const targetOts = wi === 0 ? ots : 0;
+          const targetSuivi = wi === 0 ? suivi : 0;
+          const existingBaseDol = Math.max(0, Math.round(((rData['Vente $'].weeks[wi] || 0) - (dbWeekGrid.dollars[wi] || 0)) * 100) / 100);
           manualRdvOverrides[ovKey] = { booke: wi === 0 ? booke : 0, rdv: wi === 0 ? rdv : 0, manual: true, updatedAt: nowIsoGrid };
-          manualSalesOverrides[ovKey] = { ots: wi === 0 ? ots : 0, suivi: wi === 0 ? suivi : 0, dollars: rData['Vente $'].weeks[wi] || 0, hasManualDollars: false, fromImport: false, updatedAt: nowIsoGrid };
+          manualSalesOverrides[ovKey] = {
+            ots: Math.max(0, targetOts - (dbWeekGrid.ots[wi] || 0)),
+            suivi: Math.max(0, targetSuivi - (dbWeekGrid.suivi[wi] || 0)),
+            dollars: existingBaseDol,
+            hasManualDollars: false,
+            fromImport: false,
+            updatedAt: nowIsoGrid
+          };
           hebdoUpserts.push({
             mois_commission: ym,
             semaine_index: wi,
@@ -6157,10 +6180,17 @@
         renderAdminNotifications();
         subscribeToNewSalesRealtime();
       } else {
-        const [mesVentesRows, myTauxRows] = await Promise.all([
+        const [mesVentesRows, myTauxRows, rawNotesRows] = await Promise.all([
           fetchAllRows(() => sb.from('vue_ventes_representant').select('*').eq('representant_id', currentProfile.id).order('date_vente', { ascending: false }).order('created_at', { ascending: false })),
-          fetchAllRows(() => sb.from('taux_commission').select('*').eq('representant_id', currentProfile.id))
+          fetchAllRows(() => sb.from('taux_commission').select('*').eq('representant_id', currentProfile.id)),
+          fetchAllRows(() => sb.from('ventes').select('id,note').eq('representant_id', currentProfile.id)).catch(() => [])
         ]);
+        const noteByIdMap = new Map((rawNotesRows || []).map(r => [String(r.id), r.note]));
+        mesVentesRows.forEach(r => {
+          if (r.note === undefined && noteByIdMap.has(String(r.id))) {
+            r.note = noteByIdMap.get(String(r.id));
+          }
+        });
         state.representants = [currentProfile];
         state.mesVentes = mesVentesRows;
         state.ventes = state.mesVentes.map(v => ({
@@ -7315,9 +7345,7 @@
         const trashOk = await moveSalesToTrash(toTrash);
         if (!trashOk) return toast('La sauvegarde cloud de la corbeille a échoué : suppression annulée.', 'error');
         for (const ts of toTrash) {
-          const delYm = getSaleStatsMonth(ts);
-          const delRep = state.representants.find(r => String(r.id) === String(ts.representant_id));
-          if (delYm && delRep?.nom) await clearManualSalesOverridesForRepMonth(delYm, delRep.nom);
+
         }
       }
       const { error } = await sb.from('ventes').delete().in('id', ids);
@@ -7813,12 +7841,7 @@
       const cleanBody = rawNote.replace(/^\[(OTS|SUIVI)\]\s*/i, '').trim();
       const updatedNote = cleanBody ? `[${nextTag}] ${cleanBody}` : `[${nextTag}]`;
 
-      // Libérer toute surcharge manuelle KPI sur ce mois/représentant pour que le basculement OTS/SUIVI se reflète en direct
-      const ym = getSaleStatsMonth(v);
-      const repObj = state.representants.find(r => String(r.id) === String(v.representant_id));
-      if (ym && repObj?.nom) {
-        await clearManualSalesOverridesForRepMonth(ym, repObj.nom);
-      }
+
 
       const { error } = await sb.from('ventes').update({ note: updatedNote }).eq('id', id);
       if (error) return toast(error.message, 'error');
@@ -7834,9 +7857,7 @@
       if (targetSale) {
         const trashOk = await moveSalesToTrash([targetSale]);
         if (!trashOk) toast('Attention : la corbeille n’a pu être sauvegardée que sur cet appareil.', 'error');
-        const delYm = getSaleStatsMonth(targetSale);
-        const delRep = state.representants.find(r => String(r.id) === String(targetSale.representant_id));
-        if (delYm && delRep?.nom) await clearManualSalesOverridesForRepMonth(delYm, delRep.nom);
+
       }
       const { error } = await sb.from('ventes').delete().eq('id', id);
       if (error) return toast(error.message, 'error');
@@ -8526,21 +8547,8 @@
           await sb.from('ventes').update({ preuve_url: pendingProofDataUrl }).eq('id', editId);
         }
 
-        // Synchroniser immédiatement le Tableau KPI avec les ventes modifiées/ajoutées
-        const targetRepObj = state.representants.find(r => String(r.id) === String(repId));
-        const newStatsYm = (payload.date_vente && payload.date_vente.length >= 7) ? payload.date_vente.slice(0, 7) : payload.mois_commission;
-        if (targetRepObj?.nom && newStatsYm) {
-          await clearManualSalesOverridesForRepMonth(newStatsYm, targetRepObj.nom);
-        }
         if (editId) {
-          const prevSale = state.ventes.find(v => String(v.id) === String(editId));
-          if (prevSale) {
-            const prevRepObj = state.representants.find(r => String(r.id) === String(prevSale.representant_id));
-            const prevStatsYm = getSaleStatsMonth(prevSale);
-            if (prevRepObj?.nom && prevStatsYm && (prevRepObj.nom !== targetRepObj?.nom || prevStatsYm !== newStatsYm)) {
-              await clearManualSalesOverridesForRepMonth(prevStatsYm, prevRepObj.nom);
-            }
-          }
+          const newStatsYm = (payload.date_vente && payload.date_vente.length >= 7) ? payload.date_vente.slice(0, 7) : payload.mois_commission;
           if (carriedOverSalesStore[String(editId)] && newStatsYm) {
             carriedOverSalesStore[String(editId)].origYm = newStatsYm;
             lsSet('korpo_carried_over_sales_v1', JSON.stringify(carriedOverSalesStore));
