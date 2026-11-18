@@ -554,13 +554,13 @@
     </div>
   </div>
 
-    <!-- MODALE RÉIMPORTER & RECALCULER LES KPI (EXCEL / CSV / ÉDITEUR DIRECT / RESET) -->
+    <!-- MODALE FICHIER CONDENSÉ & BASE HISTORIQUE KPI -->
   <div id="kpi-import-modal" class="hidden fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-sm flex items-center justify-center p-4 no-print">
     <div class="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-5xl w-full max-h-[92vh] flex flex-col overflow-hidden">
       <div class="px-6 py-4 bg-slate-900 text-white flex items-center justify-between">
         <div>
-          <h3 class="text-base font-bold">Réimporter & Recalculer les KPI</h3>
-          <p class="text-xs text-slate-400">Importez votre fichier Excel/CSV, modifiez directement les totaux OTS / Suivi / RDV par mois, ou recalculez proprement tout le tableau.</p>
+          <h3 class="text-base font-bold">Importer le fichier condensé (Base historique KPI)</h3>
+          <p class="text-xs text-slate-400">Chargez une seule fois votre tableau condensé Excel/CSV : toutes vos nouvelles ventes du fichier de ventes s'additionneront automatiquement par-dessus.</p>
         </div>
         <button id="btn-close-kpi-import" class="w-8 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 flex items-center justify-center">✕</button>
       </div>
@@ -568,68 +568,70 @@
       <!-- ONGLETS INTERNES DE LA MODALE -->
       <div class="px-6 pt-3 bg-slate-50 border-b border-slate-200 flex flex-wrap gap-2">
         <button type="button" id="kpi-modal-tab-file" onclick="switchKpiImportTab('file')" class="px-4 py-2 text-xs font-extrabold rounded-t-xl border-b-2 border-indigo-600 text-indigo-700 bg-white">
-          1. Importer Excel (.xlsx) ou CSV
+          1. Importer le fichier condensé (.xlsx / .csv)
         </button>
         <button type="button" id="kpi-modal-tab-grid" onclick="switchKpiImportTab('grid')" class="px-4 py-2 text-xs font-bold rounded-t-xl border-b-2 border-transparent text-slate-600 hover:text-slate-900">
-          2. Grille directe OTS / Suivi / RDV (sans fichier)
-        </button>
-        <button type="button" id="kpi-modal-tab-reset" onclick="switchKpiImportTab('reset')" class="px-4 py-2 text-xs font-bold rounded-t-xl border-b-2 border-transparent text-slate-600 hover:text-slate-900">
-          3. Réinitialiser & Recalculer tout
+          2. Base condensée active & Saisie RDV
         </button>
       </div>
 
       <div class="p-6 overflow-y-auto space-y-5 flex-1">
-        <!-- VUE 1 : IMPORTATION FICHIER EXCEL / CSV -->
+        <!-- VUE 1 : IMPORTATION DU FICHIER CONDENSÉ -->
         <div id="kpi-import-view-file" class="space-y-4">
           <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <label class="md:col-span-2 cursor-pointer border-2 border-dashed border-indigo-300 hover:border-indigo-500 bg-indigo-50/40 rounded-2xl p-6 flex flex-col items-center justify-center text-center transition">
-              <span class="text-2xl mb-1.5">📊</span>
-              <span class="text-xs font-extrabold text-indigo-950">Cliquez pour sélectionner votre fichier Excel (.xlsx) ou CSV (.csv)</span>
-              <span class="text-[11px] text-slate-500 mt-1">Prend en charge vos onglets mensuels (Mars 2026, Octobre 2026...), votre tableau condensé ou un CSV</span>
-              <input id="kpi-import-file-input" type="file" accept=".xlsx,.xls,.csv" class="hidden" />
-            </label>
+            <div class="md:col-span-2 space-y-3">
+              <div class="flex flex-wrap items-center justify-between gap-2 bg-indigo-50/70 border border-indigo-200 rounded-xl px-4 py-2.5">
+                <span class="text-xs font-bold text-indigo-950">Année par défaut si non écrite dans les colonnes :</span>
+                <select id="kpi-import-default-year" class="px-3 py-1.5 text-xs font-extrabold bg-white border border-indigo-200 rounded-lg">
+                  <option value="2026" selected>2026</option>
+                  <option value="2025">2025</option>
+                  <option value="2027">2027</option>
+                </select>
+              </div>
+              <label class="cursor-pointer border-2 border-dashed border-indigo-300 hover:border-indigo-500 bg-indigo-50/40 rounded-2xl p-6 flex flex-col items-center justify-center text-center transition">
+                <span class="text-2xl mb-1.5">📄</span>
+                <span class="text-xs font-extrabold text-indigo-950">Cliquez pour sélectionner votre fichier condensé (.xlsx, .xls ou .csv)</span>
+                <span class="text-[11px] text-slate-500 mt-1">Prend en charge les mois en colonnes (Mars, Avril, Mai...) ou en lignes, par représentant</span>
+                <input id="kpi-import-file-input" type="file" accept=".xlsx,.xls,.csv" class="hidden" />
+              </label>
+            </div>
 
             <div class="bg-slate-50 rounded-2xl border border-slate-200 p-4 flex flex-col justify-between space-y-2.5">
               <div class="space-y-1">
-                <div class="text-xs font-extrabold text-slate-900">Modèle CSV & Export actuel</div>
-                <p class="text-[11px] text-slate-600 leading-relaxed">Téléchargez le modèle CSV pré-rempli avec vos mois actuels, modifiez-le dans Excel puis réimportez-le.</p>
+                <div class="text-xs font-extrabold text-slate-900">Modèle CSV condensé</div>
+                <p class="text-[11px] text-slate-600 leading-relaxed">Besoin d'un format CSV prêt à remplir ? Téléchargez le modèle condensé ou exportez l'état actuel.</p>
               </div>
               <div class="space-y-2">
-                <button id="btn-export-editable-kpi-csv" type="button" class="w-full py-2 px-3 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-xl shadow-xs transition">
-                  📤 Exporter mes KPI actuels (CSV éditable)
-                </button>
                 <button id="btn-download-kpi-template" type="button" class="w-full py-2 px-3 bg-white hover:bg-slate-100 text-slate-800 border border-slate-300 text-xs font-bold rounded-xl transition">
-                  ⬇ Télécharger le modèle vierge CSV
+                  ⬇ Télécharger modèle condensé CSV
+                </button>
+                <button id="btn-export-editable-kpi-csv" type="button" class="w-full py-2 px-3 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-xl shadow-xs transition">
+                  📤 Exporter les KPI actuels (CSV)
                 </button>
               </div>
             </div>
           </div>
 
           <div id="kpi-import-preview-box" class="hidden space-y-3">
-            <div class="flex flex-wrap items-center justify-between gap-2">
-              <div id="kpi-import-summary" class="text-xs font-extrabold text-slate-800"></div>
-              <div class="flex flex-wrap items-center gap-4">
-                <label class="flex items-center gap-1.5 text-xs font-semibold text-slate-700 cursor-pointer">
-                  <input id="kpi-import-sync-supabase" type="checkbox" checked class="rounded border-slate-300 text-indigo-600" />
-                  Sync RDV Supabase
-                </label>
-                <label class="flex items-center gap-1.5 text-xs font-semibold text-purple-800 cursor-pointer">
-                  <input id="kpi-import-tag-sales" type="checkbox" checked class="rounded border-slate-300 text-purple-600" />
-                  Appliquer OTS / Suivi aux ventes
-                </label>
-              </div>
+            <div class="flex flex-wrap items-center justify-between gap-2 bg-emerald-50/80 border border-emerald-200 rounded-xl px-4 py-2.5">
+              <div id="kpi-import-summary" class="text-xs font-extrabold text-emerald-950"></div>
+              <label class="flex items-center gap-2 text-xs font-bold text-slate-700 cursor-pointer">
+                <input id="kpi-import-replace-all" type="checkbox" checked class="rounded border-slate-300 text-indigo-600" />
+                Remplacer toute l'ancienne base condensée par ce fichier
+              </label>
             </div>
 
-            <div class="border border-slate-200 rounded-xl overflow-x-auto max-h-72">
+            <div class="border border-slate-200 rounded-xl overflow-x-auto max-h-80">
               <table class="w-full text-left border-collapse text-xs">
                 <thead>
                   <tr class="bg-slate-50 border-b border-slate-200 text-[11px] font-bold uppercase text-slate-500">
                     <th class="py-2 px-3">Mois</th>
                     <th class="py-2 px-3">Représentant</th>
-                    <th class="py-2 px-3">Indicateur</th>
-                    <th class="py-2 px-3 text-right">Sem. 1–5</th>
-                    <th class="py-2 px-3 text-right">Cumul (modifiable)</th>
-                    <th class="py-2 px-3 text-right">Objectif</th>
+                    <th class="py-2 px-3 text-center">RDV Bookés</th>
+                    <th class="py-2 px-3 text-center">RDV Réalisés</th>
+                    <th class="py-2 px-3 text-center text-sky-700">Ventes OTS</th>
+                    <th class="py-2 px-3 text-center text-purple-700">Ventes SUIVI</th>
+                    <th class="py-2 px-3 text-right">Ventes ($)</th>
                   </tr>
                 </thead>
                 <tbody id="tbody-kpi-import-preview" class="divide-y divide-slate-100"></tbody>
@@ -638,17 +640,17 @@
 
             <div class="flex justify-end gap-3 pt-1">
               <button id="btn-confirm-kpi-import" type="button" class="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl shadow-sm transition">
-                ✓ Importer et recalculer le Tableau KPI
+                ✓ Enregistrer ce fichier condensé comme base KPI
               </button>
             </div>
           </div>
         </div>
 
-        <!-- VUE 2 : GRILLE DIRECTE OTS / SUIVI / RDV PAR MOIS & REPRÉSENTANT -->
+        <!-- VUE 2 : CONSULTATION / AJUSTEMENT BASE CONDENSÉE & RDV -->
         <div id="kpi-import-view-grid" class="hidden space-y-4">
-          <div class="flex flex-wrap items-center justify-between gap-3 bg-indigo-50/70 border border-indigo-200 rounded-xl p-3.5">
-            <div class="text-xs text-indigo-950">
-              <strong>Ajustement rapide par mois :</strong> corrigez directement le nombre de <strong>RDV Bookés</strong>, <strong>RDV Réalisés</strong>, <strong>Ventes OTS</strong> et <strong>Ventes SUIVI</strong> pour chaque représentant, puis cliquez sur <strong>Enregistrer & Recalculer</strong>.
+          <div class="flex flex-wrap items-center justify-between gap-3 bg-slate-50 border border-slate-200 rounded-xl p-3.5">
+            <div class="text-xs text-slate-700">
+              <strong>Ajustement mensuel :</strong> modifiez ici les chiffres du fichier condensé pour un mois donné, ou effacez complètement la base condensée pour fonctionner à 100 % uniquement avec le fichier de ventes.
             </div>
             <div class="flex items-center gap-2">
               <label class="text-xs font-bold text-slate-700">Mois :</label>
@@ -661,43 +663,25 @@
               <thead>
                 <tr class="bg-slate-50 border-b border-slate-200 text-[11px] font-bold uppercase text-slate-500">
                   <th class="py-2.5 px-4">Représentant</th>
-                  <th class="py-2.5 px-3 text-center">RDV Bookés</th>
-                  <th class="py-2.5 px-3 text-center">RDV Réalisés</th>
-                  <th class="py-2.5 px-3 text-center text-sky-700">Ventes OTS</th>
-                  <th class="py-2.5 px-3 text-center text-purple-700">Ventes SUIVI</th>
-                  <th class="py-2.5 px-3 text-right">Ventes ($)</th>
-                  <th class="py-2.5 px-3 text-center">% Close</th>
+                  <th class="py-2.5 px-3 text-center">Base RDV Bookés</th>
+                  <th class="py-2.5 px-3 text-center">Base RDV Réalisés</th>
+                  <th class="py-2.5 px-3 text-center text-sky-700">Base OTS</th>
+                  <th class="py-2.5 px-3 text-center text-purple-700">Base SUIVI</th>
+                  <th class="py-2.5 px-3 text-right">Base Ventes ($)</th>
+                  <th class="py-2.5 px-3 text-right text-emerald-700">+ Ventes App ($)</th>
                 </tr>
               </thead>
               <tbody id="tbody-kpi-direct-grid" class="divide-y divide-slate-100"></tbody>
             </table>
           </div>
 
-          <div class="flex justify-end gap-3">
-            <button id="btn-save-kpi-direct-grid" type="button" class="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl shadow-sm transition">
-              ✓ Enregistrer ce mois & Synchroniser les ventes
+          <div class="flex flex-wrap items-center justify-between gap-3 pt-1">
+            <button id="btn-clear-condensed-baseline" type="button" class="px-4 py-2 text-xs font-bold text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 rounded-xl transition">
+              🗑️ Effacer toute la base condensée (100 % fichier de ventes)
             </button>
-          </div>
-        </div>
-
-        <!-- VUE 3 : RÉINITIALISER LE CACHE LOCAL & RECALCULER TOUT PROPREMENT -->
-        <div id="kpi-import-view-reset" class="hidden space-y-4">
-          <div class="bg-amber-50 border border-amber-200 rounded-2xl p-5 space-y-3">
-            <h4 class="text-sm font-extrabold text-amber-950">Nettoyer le cache local et recalculer tous les KPI</h4>
-            <p class="text-xs text-amber-900 leading-relaxed">
-              Si des imports précédents ont laissé des chiffres incohérents dans le cache de votre navigateur, cette action va :
-            </p>
-            <ul class="text-xs text-amber-900 space-y-1 list-disc pl-5">
-              <li>Purger les surcharges locales obsolètes (<code>localStorage</code>) du navigateur ;</li>
-              <li>Restaurer les données de référence 2026 (Mars à Novembre) et synchroniser vos RDV depuis Supabase ;</li>
-              <li>Appliquer automatiquement les étiquettes <code>[OTS]</code> et <code>[SUIVI]</code> sur vos ventes uniques dans Supabase ;</li>
-              <li>Recalculer de zéro tous les cumuls hebdomadaires, mensuels, annuels, taux de closing et objectifs par compagnie.</li>
-            </ul>
-            <div class="pt-2">
-              <button id="btn-full-kpi-reset-recalc" type="button" class="px-5 py-2.5 bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold rounded-xl shadow-sm transition">
-                🔄 Réinitialiser le cache & Recalculer tous les KPI maintenant
-              </button>
-            </div>
+            <button id="btn-save-kpi-direct-grid" type="button" class="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl shadow-sm transition">
+              ✓ Enregistrer les modifications de ce mois
+            </button>
           </div>
         </div>
       </div>
@@ -1048,34 +1032,49 @@
       <!-- ============================================================ -->
       <!-- ONGLET 1 : MES VENTES & COMMISSIONS (REP + ADMIN)            -->
       <!-- ============================================================ -->
-      <section id="tab-mes-ventes" class="space-y-6">
-        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div>
-            <h2 class="text-xl font-extrabold text-slate-900 tracking-tight flex items-center gap-2"><span id="mes-ventes-main-icon" class="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 border border-emerald-200/80 flex items-center justify-center text-base">💵</span><span id="mes-ventes-main-title">Mes ventes et commissions</span></h2>
-            <p id="mes-ventes-subtitle" class="text-xs text-slate-500 mt-0.5">Suivi confidentiel de vos dossiers fermés, paiements reçus et soldes à venir</p>
+      <section id="tab-mes-ventes" class="space-y-4 sm:space-y-6">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-3 sm:gap-4">
+          <div class="flex items-start justify-between gap-2">
+            <div>
+              <h2 class="text-lg sm:text-xl font-extrabold text-slate-900 tracking-tight flex items-center gap-2"><span id="mes-ventes-main-icon" class="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 border border-emerald-200/80 flex items-center justify-center text-base">💵</span><span id="mes-ventes-main-title">Mes ventes et commissions</span></h2>
+              <p id="mes-ventes-subtitle" class="text-xs text-slate-500 mt-0.5">Suivi confidentiel de vos dossiers fermés, paiements reçus et soldes à venir</p>
+            </div>
+            <button type="button" id="btn-toggle-mobile-rep-filters" onclick="document.getElementById('rep-filters-drawer').classList.toggle('hidden')" class="md:hidden shrink-0 px-3 py-2 text-xs font-bold text-slate-700 bg-white border border-slate-200 rounded-xl shadow-2xs flex items-center gap-1.5">
+              <span>🔍</span>
+              <span>Filtres</span>
+            </button>
           </div>
-          <div class="grid grid-cols-2 sm:flex sm:flex-wrap items-stretch sm:items-center gap-2 w-full md:w-auto">
-            <button id="btn-rep-open-drawer" data-mobile-group="ventes" class="col-span-2 px-4 py-2.5 sm:py-2 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl shadow-sm shadow-indigo-600/20 flex items-center justify-center gap-1.5 transition">
-              <span class="text-base leading-none">💵</span> Déclarer une vente
+
+          <div class="flex flex-col gap-2 w-full md:w-auto">
+            <button id="btn-rep-open-drawer" data-mobile-group="ventes" class="w-full md:hidden px-4 py-3 text-sm font-extrabold text-white bg-indigo-600 hover:bg-indigo-700 rounded-2xl shadow-sm shadow-indigo-600/20 flex items-center justify-center gap-2 transition">
+              <span class="text-base leading-none">💵</span> Déclarer une nouvelle vente
             </button>
-            <select id="filter-admin-scope" data-mobile-group="commissions" class="hidden col-span-2 px-3 py-2 text-xs font-semibold bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-600">
-              <option value="all">Toutes mes commissions (Directes + Équipe)</option>
-              <option value="direct">Mes ventes directes uniquement</option>
-            </select>
-            <input id="search-rep-ventes" type="text" placeholder="Rechercher un client..." class="col-span-2 px-3.5 py-2 text-xs bg-white border border-slate-200 rounded-xl w-full sm:w-56 focus:outline-none focus:ring-2 focus:ring-indigo-600" />
-            <select id="filter-rep-statut" class="col-span-2 sm:col-span-1 px-3 py-2 text-xs font-semibold bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-600">
-              <option value="">Tous les dossiers</option>
-              <option value="en_attente">⏳ En attente</option>
-              <option value="depot_attente">Dépôt à confirmer</option>
-              <option value="non_paye">Commission à recevoir</option>
-              <option value="paye">Commission payée</option>
-            </select>
-            <input id="filter-rep-month" type="month" class="w-full sm:w-auto px-3 py-2 text-xs font-medium bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-600" />
-            <button id="btn-rep-all-months" class="w-full sm:w-auto px-3 py-2 text-xs font-semibold text-slate-700 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 transition text-center">Tout voir</button>
-            <button type="button" data-mobile-group="ventes" onclick="openTrashModal()" class="col-span-2 sm:col-span-1 w-full sm:w-auto px-3 py-2 text-xs font-semibold text-slate-700 bg-white border border-slate-200 rounded-xl hover:bg-rose-50 hover:text-rose-700 hover:border-rose-200 transition text-center flex items-center justify-center gap-1.5">
-              <span>🗑️ Corbeille</span>
-              <span class="trash-badge-count px-1.5 py-0.2 text-[10px] font-extrabold rounded-full bg-slate-100 text-slate-600">0</span>
-            </button>
+
+            <div id="rep-filters-drawer" class="hidden md:flex md:flex-wrap items-stretch md:items-center gap-2 bg-white md:bg-transparent p-3.5 md:p-0 rounded-2xl border border-slate-200/90 md:border-0 shadow-xs md:shadow-none">
+              <button type="button" onclick="document.getElementById('btn-rep-open-drawer').click()" data-mobile-group="ventes" class="hidden md:inline-flex px-4 py-2 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl shadow-sm shadow-indigo-600/20 items-center justify-center gap-1.5 transition">
+                <span class="text-base leading-none">💵</span> Déclarer une vente
+              </button>
+              <select id="filter-admin-scope" data-mobile-group="commissions" class="hidden w-full md:w-auto px-3 py-2 text-xs font-semibold bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-600">
+                <option value="all">Toutes mes commissions (Directes + Équipe)</option>
+                <option value="direct">Mes ventes directes uniquement</option>
+              </select>
+              <input id="search-rep-ventes" type="text" placeholder="Rechercher un client..." class="w-full md:w-52 px-3.5 py-2 text-xs bg-slate-50 md:bg-white border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-600" />
+              <select id="filter-rep-statut" class="w-full md:w-auto px-3 py-2 text-xs font-semibold bg-slate-50 md:bg-white border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-600">
+                <option value="">Tous les dossiers</option>
+                <option value="en_attente">⏳ En attente</option>
+                <option value="depot_attente">Dépôt à confirmer</option>
+                <option value="non_paye">Commission à recevoir</option>
+                <option value="paye">Commission payée</option>
+              </select>
+              <div class="grid grid-cols-2 md:flex gap-2">
+                <input id="filter-rep-month" type="month" class="w-full md:w-auto px-3 py-2 text-xs font-medium bg-slate-50 md:bg-white border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-600" />
+                <button id="btn-rep-all-months" class="w-full md:w-auto px-3 py-2 text-xs font-semibold text-slate-700 bg-slate-50 md:bg-white border border-slate-200 rounded-xl hover:bg-slate-100 transition text-center">Tout voir</button>
+              </div>
+              <button type="button" data-mobile-group="ventes" onclick="openTrashModal()" class="w-full md:w-auto px-3 py-2 text-xs font-semibold text-slate-700 bg-slate-50 md:bg-white border border-slate-200 rounded-xl hover:bg-rose-50 hover:text-rose-700 hover:border-rose-200 transition text-center flex items-center justify-center gap-1.5">
+                <span>🗑️ Corbeille</span>
+                <span class="trash-badge-count px-1.5 py-0.2 text-[10px] font-extrabold rounded-full bg-slate-100 text-slate-600">0</span>
+              </button>
+            </div>
           </div>
         </div>
 
@@ -1208,13 +1207,21 @@
         </div>
 
         <!-- CARTES MOBILES DES VENTES (< 768px : ONGLET MES VENTES) -->
-        <div data-mobile-group="ventes" class="md:hidden space-y-3">
-          <div id="mobile-mes-ventes-cards" class="space-y-3"></div>
+        <div data-mobile-group="ventes" class="md:hidden space-y-3 pt-1">
+          <div class="flex items-center justify-between px-1">
+            <h3 id="mobile-ventes-list-heading" class="text-xs font-extrabold uppercase tracking-wider text-slate-500">Dossiers de vente</h3>
+            <button type="button" onclick="switchTab('tab-mes-commissions')" class="text-xs font-bold text-emerald-700 hover:underline">Voir mes commissions →</button>
+          </div>
+          <div id="mobile-mes-ventes-cards" class="space-y-3.5"></div>
         </div>
 
         <!-- CARTES MOBILES DES COMMISSIONS (< 768px : ONGLET MES COMMISSIONS) -->
-        <div data-mobile-group="commissions" class="md:hidden space-y-3">
-          <div id="mobile-mes-commissions-cards" class="space-y-3"></div>
+        <div data-mobile-group="commissions" class="md:hidden space-y-3 pt-1">
+          <div class="flex items-center justify-between px-1">
+            <h3 id="mobile-commissions-list-heading" class="text-xs font-extrabold uppercase tracking-wider text-slate-500">Détail par commission</h3>
+            <button type="button" onclick="switchTab('tab-mes-ventes')" class="text-xs font-bold text-indigo-600 hover:underline">← Voir mes ventes</button>
+          </div>
+          <div id="mobile-mes-commissions-cards" class="space-y-3.5"></div>
         </div>
 
         <!-- TABLEAU DES VENTES (DESKTOP >= 768px) -->
@@ -1249,9 +1256,9 @@
           <div>
             <div class="flex flex-wrap items-center gap-2.5">
               <h2 class="text-xl font-extrabold text-slate-900 tracking-tight flex items-center gap-2"><span class="w-8 h-8 rounded-xl bg-indigo-50 text-indigo-600 border border-indigo-200/80 flex items-center justify-center text-base">📊</span><span>Performance & Objectifs (KPI)</span></h2>
-              <span class="px-2.5 py-0.5 text-[11px] font-bold rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">⚡ Mis à jour automatiquement avec vos ventes</span>
+              <span id="kpi-source-badge" class="px-2.5 py-0.5 text-[11px] font-bold rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">⚡ Synchronisé avec le fichier de ventes</span>
             </div>
-            <p class="text-xs text-slate-500 mt-1">Comparez en un coup d'œil les rendez-vous, les ventes fermées et l'atteinte des objectifs par représentant et par compagnie.</p>
+            <p class="text-xs text-slate-500 mt-1">Alimenté par votre base condensée et mis à jour automatiquement à chaque vente enregistrée.</p>
           </div>
 
           <div class="grid grid-cols-2 sm:flex sm:flex-wrap items-stretch sm:items-center gap-2 w-full lg:w-auto">
@@ -1268,10 +1275,10 @@
               🎯 Objectifs
             </button>
             <button id="btn-kpi-edit-toggle" class="hidden w-full sm:w-auto px-3 py-2.5 text-xs font-bold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 rounded-xl transition text-center">
-              ✎ RDV semaine
+              ✎ RDV du mois
             </button>
             <button id="btn-kpi-import-open" class="hidden col-span-2 sm:col-span-1 w-full sm:w-auto px-3 py-2.5 text-xs font-bold text-amber-950 bg-amber-100 hover:bg-amber-200 border border-amber-300 rounded-xl transition text-center">
-              🔄 Réimporter / Recalculer
+              📄 Fichier condensé
             </button>
             <button id="btn-kpi-export-csv" class="col-span-2 sm:col-span-1 w-full sm:w-auto px-3 py-2.5 text-xs font-semibold text-slate-700 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 transition text-center">
               Exporter CSV
@@ -1279,17 +1286,17 @@
           </div>
         </div>
 
-        <!-- PANNEAU DE SAISIE HEBDOMADAIRE RAPIDE (MASQUÉ PAR DÉFAUT) -->
+        <!-- PANNEAU DE SAISIE RAPIDE DES RDV DU MOIS (MASQUÉ PAR DÉFAUT) -->
         <div id="kpi-editor-panel" class="hidden bg-white rounded-2xl border-2 border-indigo-300 p-6 shadow-md space-y-4">
           <div class="flex items-center justify-between border-b border-slate-100 pb-3">
             <div>
-              <h3 class="text-sm font-extrabold text-slate-900">Mettre à jour les rendez-vous et ventes d'une semaine</h3>
-              <p class="text-xs text-slate-500">Les montants en dollars ($) sont déjà synchronisés avec vos ventes ; ajustez ici vos RDV bookés/réalisés si nécessaire.</p>
+              <h3 class="text-sm font-extrabold text-slate-900">Mettre à jour les rendez-vous (RDV Bookés & Réalisés) du mois</h3>
+              <p class="text-xs text-slate-500">Les ventes OTS, Suivi et dollars ($) proviennent automatiquement du fichier de ventes et de votre base condensée.</p>
             </div>
             <button id="btn-kpi-close-editor" class="px-2.5 py-1 text-xs font-bold text-slate-500 hover:text-slate-800 bg-slate-100 rounded-lg">Fermer ✕</button>
           </div>
-          <form id="form-kpi-edit" class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3 items-end">
-            <div class="col-span-2 sm:col-span-2">
+          <form id="form-kpi-edit" class="grid grid-cols-1 sm:grid-cols-4 gap-3 items-end">
+            <div>
               <label class="block text-[11px] font-bold text-slate-600 mb-1">Représentant</label>
               <select id="kpi-edit-rep" class="w-full px-3 py-2 text-xs font-semibold bg-slate-50 border border-slate-200 rounded-xl">
                 <option value="Olivier">Olivier</option>
@@ -1300,40 +1307,15 @@
               </select>
             </div>
             <div>
-              <label class="block text-[11px] font-bold text-slate-600 mb-1">Semaine</label>
-              <select id="kpi-edit-week" class="w-full px-3 py-2 text-xs font-semibold bg-slate-50 border border-slate-200 rounded-xl"></select>
-            </div>
-            <div>
-              <label class="block text-[11px] font-bold text-slate-600 mb-1">RDV Bookés</label>
+              <label class="block text-[11px] font-bold text-slate-600 mb-1">RDV Bookés (Mois)</label>
               <input id="kpi-in-booke" type="number" min="0" class="w-full px-3 py-2 text-xs font-bold bg-slate-50 border border-slate-200 rounded-xl tabular-nums" />
             </div>
             <div>
-              <label class="block text-[11px] font-bold text-slate-600 mb-1">RDV Réalisés</label>
+              <label class="block text-[11px] font-bold text-slate-600 mb-1">RDV Réalisés (Mois)</label>
               <input id="kpi-in-rdv" type="number" min="0" class="w-full px-3 py-2 text-xs font-bold bg-slate-50 border border-slate-200 rounded-xl tabular-nums" />
             </div>
             <div>
-              <label class="block text-[11px] font-bold text-slate-600 mb-1">Ventes OTS</label>
-              <input id="kpi-in-ots" type="number" min="0" class="w-full px-3 py-2 text-xs font-bold bg-slate-50 border border-slate-200 rounded-xl tabular-nums" />
-            </div>
-            <div>
-              <label class="block text-[11px] font-bold text-slate-600 mb-1">Ventes Suivi</label>
-              <input id="kpi-in-suivi" type="number" min="0" class="w-full px-3 py-2 text-xs font-bold bg-slate-50 border border-slate-200 rounded-xl tabular-nums" />
-            </div>
-            <div>
-              <label class="block text-[11px] font-bold text-slate-600 mb-1">Ventes ($)</label>
-              <input id="kpi-in-dollars" type="number" step="0.01" min="0" class="w-full px-3 py-2 text-xs font-bold bg-slate-50 border border-slate-200 rounded-xl tabular-nums" />
-            </div>
-            <div class="col-span-full flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-slate-100">
-              <div class="flex flex-wrap items-center gap-3">
-                <label class="inline-flex items-center gap-2 text-xs font-semibold text-slate-700 cursor-pointer">
-                  <input id="kpi-edit-replace-whole-month" type="checkbox" class="rounded border-slate-300 text-indigo-600" />
-                  <span>Remplacer tout le mois par cette saisie (effacer les autres semaines)</span>
-                </label>
-                <button type="button" id="btn-kpi-clear-rep-month" class="px-3 py-1.5 text-xs font-bold text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 rounded-xl transition">
-                  🧹 Remettre ce représentant à 0 ce mois-ci
-                </button>
-              </div>
-              <button type="submit" class="px-5 py-2.5 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl shadow-xs transition">Enregistrer cette semaine</button>
+              <button type="submit" class="w-full py-2.5 px-4 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl shadow-xs transition">Enregistrer les RDV</button>
             </div>
           </form>
         </div>
@@ -1472,7 +1454,7 @@
           <div class="px-6 py-4 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
             <div>
               <h3 class="text-base font-extrabold text-slate-900">Comparatif des représentants</h3>
-              <p class="text-xs text-slate-500">Cliquez sur un représentant pour ouvrir son détail semaine par semaine</p>
+              <p class="text-xs text-slate-500">Cliquez sur un représentant pour voir le détail de ses ventes et statistiques</p>
             </div>
             <div class="flex flex-wrap items-center gap-3 text-[11px] font-semibold text-slate-500">
               <button type="button" id="btn-kpi-rep-targets-inline" onclick="openRepTargetsPanel()" class="hidden px-3 py-1.5 text-xs font-bold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 rounded-xl transition">
@@ -1489,7 +1471,7 @@
           </div>
         </div>
 
-        <!-- 3. DÉTAIL HEBDOMADAIRE D'UN REPRÉSENTANT (ACCORDÉON / VUE CIBLÉE) -->
+        <!-- 3. DÉTAIL D'UN REPRÉSENTANT (ACCORDÉON / VUE CIBLÉE) -->
         <div id="kpi-rep-weekly-detail"></div>
 
         <!-- 4. PERFORMANCE PAR ENTREPRISE PARTENAIRE (CARTES + DÉTAIL ÉPURÉ) -->
@@ -1521,9 +1503,6 @@
         </div>
       </section>
 
-      <!-- ============================================================ -->
-      <!-- ONGLET 3 : CLASSEMENT ÉQUIPE (REP + ADMIN)                   -->
-      <!-- ============================================================ -->
       <section id="tab-classement" class="hidden space-y-6">
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
@@ -1968,17 +1947,36 @@
     // =========================================================================
     // DONNÉES KPI HISTORIQUES INTÉGRÉES (MARS À NOVEMBRE 2026)
     // =========================================================================
-    const DEFAULT_KPI_DATA = {"2026-08":{"label":"Août 2026","num_weeks":4,"reps":{"Olivier":{"Booké":{"weeks":[0.0,0.0,2.0,4.0],"cumul":6.0,"objectif":40.0},"RDV Réalisé":{"weeks":[0.0,0.0,2.0,3.0],"cumul":5.0,"objectif":30.0},"Ventes OTS":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":7.0},"Ventes SUIVI":{"weeks":[0.0,0.0,0.0,1.0],"cumul":1.0,"objectif":9.0},"Vente $":{"weeks":[0.0,0.0,0.0,17298.0],"cumul":17298.0,"objectif":118000.0},"% Close":{"weeks":[0.0,0.0,0.0,25.0],"cumul":20.0,"objectif":40.0}},"Jean-Sébastien":{"Booké":{"weeks":[5.0,14.0,16.0,0.0],"cumul":35.0,"objectif":80.0},"RDV Réalisé":{"weeks":[5.0,13.0,14.0,0.0],"cumul":32.0,"objectif":60.0},"Ventes OTS":{"weeks":[2.0,2.0,3.0,0.0],"cumul":7.0,"objectif":10.0},"Ventes SUIVI":{"weeks":[1.0,0.0,2.0,0.0],"cumul":3.0,"objectif":20.0},"Vente $":{"weeks":[11991.0,14801.0,61558.0,0.0],"cumul":88350.0,"objectif":250000.0},"% Close":{"weeks":[60.0,14.29,31.25,0.0],"cumul":28.57,"objectif":32.0}},"Gabryel":{"Booké":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0},"RDV Réalisé":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0},"Ventes OTS":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0},"Ventes SUIVI":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0},"Vente $":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0},"% Close":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":35.0}},"Samuel":{"Booké":{"weeks":[30.0,32.0,26.0,23.0],"cumul":111.0,"objectif":80.0},"RDV Réalisé":{"weeks":[24.0,23.0,23.0,22.0],"cumul":92.0,"objectif":60.0},"Ventes OTS":{"weeks":[6.0,5.0,7.0,5.0],"cumul":23.0,"objectif":10.0},"Ventes SUIVI":{"weeks":[7.0,0.0,5.0,0.0],"cumul":12.0,"objectif":20.0},"Vente $":{"weeks":[104710.0,36315.0,93929.0,32630.0],"cumul":267584.0,"objectif":200000.0},"% Close":{"weeks":[43.33,15.63,46.15,21.74],"cumul":31.53,"objectif":33.0}}},"team":{"Booké":{"weeks":[35.0,46.0,44.0,27.0],"cumul":152.0,"objectif":200.0},"RDV RÉA":{"weeks":[29.0,36.0,39.0,25.0],"cumul":129.0,"objectif":150.0},"VENTE OTS":{"weeks":[8.0,7.0,10.0,5.0],"cumul":30.0,"objectif":27.0},"VENTE SUIVI":{"weeks":[8.0,0.0,7.0,1.0],"cumul":16.0,"objectif":49.0},"VENTE TOTAL":{"weeks":[16.0,7.0,17.0,6.0],"cumul":46.0,"objectif":76.0},"VENTE $":{"weeks":[116701.0,51116.0,155487.0,49928.0],"cumul":373232.0,"objectif":568000.0}},"entreprises":{"Toitex":{"reps":{"Olivier":{"weeks":[0.0,0.0,0.0,17298.0],"cumul":17298.0,"objectif":100000.0},"Jean-Sébastien":{"weeks":[1695.0,11301.0,39348.0,0.0],"cumul":52344.0,"objectif":178000.0},"Gabryel":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0},"Samuel":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0}},"total":{"weeks":[1695.0,11301.0,39348.0,17298.0],"cumul":69642.0,"objectif":278000.0}},"MonSpray":{"reps":{"Olivier":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":18000.0},"Jean-Sébastien":{"weeks":[10296.0,3500.0,22210.0,0.0],"cumul":36006.0,"objectif":72000.0},"Gabryel":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0},"Samuel":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0}},"total":{"weeks":[10296.0,3500.0,22210.0,0.0],"cumul":36006.0,"objectif":90000.0}},"VerreVDM":{"reps":{"Olivier":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0},"Jean-Sébastien":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0},"Gabryel":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":100000.0},"Samuel":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0}},"total":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":100000.0}},"Groupe Diamant Pro":{"reps":{"Olivier":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0},"Jean-Sébastien":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0},"Gabryel":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":80000.0},"Samuel":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0}},"total":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":80000.0}},"MaClim":{"reps":{"Olivier":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0},"Jean-Sébastien":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0},"Gabryel":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0},"Samuel":{"weeks":[104710.0,36315.0,93929.0,32630.0],"cumul":267584.0,"objectif":0.0}},"total":{"weeks":[104710.0,36315.0,93929.0,32630.0],"cumul":267584.0,"objectif":140000.0}}}},"2026-04":{"label":"Avril 2026","num_weeks":5,"reps":{"Olivier":{"Booké":{"weeks":[5.0,3.0,7.0,11.0,5.0],"cumul":31.0,"objectif":40.0},"RDV Réalisé":{"weeks":[5.0,1.0,5.0,9.0,4.0],"cumul":24.0,"objectif":30.0},"Ventes OTS":{"weeks":[2.0,0.0,1.0,2.0,2.0],"cumul":7.0,"objectif":7.0},"Ventes SUIVI":{"weeks":[0.0,0.0,1.0,2.0,1.0],"cumul":4.0,"objectif":9.0},"Vente $":{"weeks":[53240.0,0.0,29285.0,35900.0,46445.0],"cumul":164870.0,"objectif":100000.0},"% Close":{"weeks":[40.0,0.0,28.57,36.36,60.0],"cumul":45.83,"objectif":40.0}},"Jean-Sébastien":{"Booké":{"weeks":[3.0,21.0,17.0,9.0,16.0],"cumul":66.0,"objectif":80.0},"RDV Réalisé":{"weeks":[3.0,21.0,16.0,9.0,13.0],"cumul":62.0,"objectif":60.0},"Ventes OTS":{"weeks":[0.0,1.0,4.0,3.0,1.0],"cumul":9.0,"objectif":10.0},"Ventes SUIVI":{"weeks":[0.0,2.0,7.0,4.0,2.0],"cumul":15.0,"objectif":20.0},"Vente $":{"weeks":[0.0,31177.0,105920.0,55540.0,39515.0],"cumul":232152.0,"objectif":312500.0},"% Close":{"weeks":[0.0,14.29,64.71,77.78,18.75],"cumul":38.71,"objectif":32.0}},"Gabryel":{"Booké":{"weeks":[11.0,16.0,15.0,19.0,13.0],"cumul":74.0,"objectif":80.0},"RDV Réalisé":{"weeks":[11.0,14.0,12.0,18.0,13.0],"cumul":68.0,"objectif":60.0},"Ventes OTS":{"weeks":[2.0,2.0,4.0,3.0,2.0],"cumul":13.0,"objectif":10.0},"Ventes SUIVI":{"weeks":[4.0,3.0,2.0,5.0,5.0],"cumul":19.0,"objectif":20.0},"Vente $":{"weeks":[37387.0,31030.0,25890.0,48329.0,47052.0],"cumul":189688.0,"objectif":230000.0},"% Close":{"weeks":[54.55,31.25,40.0,42.11,0.0],"cumul":47.06,"objectif":35.0}},"Samuel":{"Booké":{"weeks":[0.0,0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0},"RDV Réalisé":{"weeks":[0.0,0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0},"Ventes OTS":{"weeks":[0.0,0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0},"Ventes SUIVI":{"weeks":[0.0,0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0},"Vente $":{"weeks":[0.0,0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0},"% Close":{"weeks":[0.0,0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0}}},"team":{"Booké":{"weeks":[19.0,40.0,39.0,39.0,34.0],"cumul":171.0,"objectif":200.0},"RDV RÉA":{"weeks":[19.0,36.0,33.0,36.0,30.0],"cumul":154.0,"objectif":150.0},"VENTE OTS":{"weeks":[4.0,3.0,9.0,8.0,5.0],"cumul":29.0,"objectif":27.0},"VENTE SUIVI":{"weeks":[4.0,5.0,10.0,11.0,8.0],"cumul":38.0,"objectif":49.0},"VENTE TOTAL":{"weeks":[8.0,8.0,19.0,19.0,13.0],"cumul":67.0,"objectif":76.0},"VENTE $":{"weeks":[90627.0,62207.0,161095.0,139769.0,133012.0],"cumul":586710.0,"objectif":642500.0}},"entreprises":{"Toitex":{"reps":{"Olivier":{"weeks":[53240.0,0.0,29285.0,25900.0],"cumul":108425.0,"objectif":100000.0},"Jean-Sébastien":{"weeks":[0.0,27690.0,89215.0,25365.0],"cumul":142270.0,"objectif":240000.0},"Gabryel":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0},"Samuel":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0}},"total":{"weeks":[53240.0,27690.0,118500.0,51265.0],"cumul":250695.0,"objectif":340000.0}},"MonSpray":{"reps":{"Olivier":{"weeks":[0.0,0.0,0.0,10000.0],"cumul":10000.0,"objectif":0.0},"Jean-Sébastien":{"weeks":[0.0,3487.0,16705.0,30175.0],"cumul":50367.0,"objectif":72000.0},"Gabryel":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0},"Samuel":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0}},"total":{"weeks":[0.0,3487.0,16705.0,40175.0],"cumul":60367.0,"objectif":72000.0}},"VerreVDM":{"reps":{"Olivier":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":25000.0},"Jean-Sébastien":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0},"Gabryel":{"weeks":[25435.0,20280.0,15190.0,32276.0],"cumul":93181.0,"objectif":75000.0},"Samuel":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0}},"total":{"weeks":[25435.0,20280.0,15190.0,32276.0],"cumul":93181.0,"objectif":100000.0}},"Groupe Diamant Pro":{"reps":{"Olivier":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0},"Jean-Sébastien":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0},"Gabryel":{"weeks":[11952.0,10750.0,10700.0,16053.0],"cumul":49455.0,"objectif":0.0},"Samuel":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":80000.0}},"total":{"weeks":[11952.0,10750.0,10700.0,16053.0],"cumul":49455.0,"objectif":80000.0}}}},"2026-07":{"label":"Juillet 2026","num_weeks":4,"reps":{"Olivier":{"Booké":{"weeks":[2.0,1.0,3.0,0.0],"cumul":6.0,"objectif":40.0},"RDV Réalisé":{"weeks":[2.0,1.0,1.0,0.0],"cumul":4.0,"objectif":30.0},"Ventes OTS":{"weeks":[2.0,1.0,1.0,0.0],"cumul":4.0,"objectif":7.0},"Ventes SUIVI":{"weeks":[0.0,0.0,2.0,0.0],"cumul":2.0,"objectif":9.0},"Vente $":{"weeks":[8250.0,3500.0,54680.0,0.0],"cumul":66430.0,"objectif":118000.0},"% Close":{"weeks":[100.0,100.0,100.0,0.0],"cumul":100.0,"objectif":40.0}},"Jean-Sébastien":{"Booké":{"weeks":[15.0,11.0,13.0,0.0],"cumul":39.0,"objectif":80.0},"RDV Réalisé":{"weeks":[15.0,11.0,13.0,0.0],"cumul":39.0,"objectif":60.0},"Ventes OTS":{"weeks":[1.0,0.0,0.0,0.0],"cumul":1.0,"objectif":10.0},"Ventes SUIVI":{"weeks":[5.0,2.0,6.0,0.0],"cumul":13.0,"objectif":20.0},"Vente $":{"weeks":[85479.0,29174.0,110328.0,0.0],"cumul":224981.0,"objectif":250000.0},"% Close":{"weeks":[40.0,18.18,46.15,0.0],"cumul":35.9,"objectif":32.0}},"Gabryel":{"Booké":{"weeks":[16.0,17.0,19.0,13.0],"cumul":65.0,"objectif":80.0},"RDV Réalisé":{"weeks":[14.0,15.0,19.0,13.0],"cumul":61.0,"objectif":60.0},"Ventes OTS":{"weeks":[4.0,3.0,7.0,3.0],"cumul":17.0,"objectif":10.0},"Ventes SUIVI":{"weeks":[0.0,4.0,5.0,1.0],"cumul":10.0,"objectif":20.0},"Vente $":{"weeks":[20378.0,26262.0,76701.0,19500.0],"cumul":142841.0,"objectif":180000.0},"% Close":{"weeks":[25.0,41.18,63.16,30.77],"cumul":41.54,"objectif":35.0}},"Samuel":{"Booké":{"weeks":[15.0,26.0,28.0,0.0],"cumul":69.0,"objectif":80.0},"RDV Réalisé":{"weeks":[14.0,25.0,26.0,0.0],"cumul":65.0,"objectif":60.0},"Ventes OTS":{"weeks":[2.0,6.0,7.0,0.0],"cumul":15.0,"objectif":10.0},"Ventes SUIVI":{"weeks":[3.0,6.0,4.0,0.0],"cumul":13.0,"objectif":20.0},"Vente $":{"weeks":[37275.0,80200.0,110800.0,0.0],"cumul":228275.0,"objectif":140000.0},"% Close":{"weeks":[33.33,46.15,39.29,0.0],"cumul":40.58,"objectif":35.0}}},"team":{"Booké":{"weeks":[48.0,55.0,63.0,13.0],"cumul":179.0,"objectif":280.0},"RDV RÉA":{"weeks":[45.0,52.0,59.0,13.0],"cumul":169.0,"objectif":210.0},"VENTE OTS":{"weeks":[9.0,10.0,15.0,3.0],"cumul":37.0,"objectif":37.0},"VENTE SUIVI":{"weeks":[8.0,12.0,17.0,1.0],"cumul":38.0,"objectif":69.0},"VENTE TOTAL":{"weeks":[17.0,22.0,32.0,4.0],"cumul":75.0,"objectif":106.0},"VENTE $":{"weeks":[151382.0,135636.0,352509.0,19500.0],"cumul":659027.0,"objectif":688000.0}},"entreprises":{"Ornithorynque":{"reps":{"Olivier":{"weeks":[0.0,0.0,41379.0,0.0],"cumul":41379.0,"objectif":100000.0},"Jean-Sébastien":{"weeks":[78609.0,17869.0,110328.0,0.0],"cumul":206806.0,"objectif":178000.0},"Gabryel":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0},"Samuel":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0}},"total":{"weeks":[78609.0,17869.0,151707.0,0.0],"cumul":248185.0,"objectif":278000.0}},"MonSpray":{"reps":{"Olivier":{"weeks":[0.0,3500.0,0.0,0.0],"cumul":3500.0,"objectif":18000.0},"Jean-Sébastien":{"weeks":[6870.0,11305.0,0.0,0.0],"cumul":18175.0,"objectif":72000.0},"Gabryel":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0},"Samuel":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0}},"total":{"weeks":[6870.0,14805.0,0.0,0.0],"cumul":21675.0,"objectif":90000.0}},"VerreVDM":{"reps":{"Olivier":{"weeks":[0.0,0.0,13310.0,0.0],"cumul":13310.0,"objectif":0.0},"Jean-Sébastien":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0},"Gabryel":{"weeks":[14478.0,6722.0,34381.0,0.0],"cumul":55581.0,"objectif":100000.0},"Samuel":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0}},"total":{"weeks":[14478.0,6722.0,47691.0,0.0],"cumul":68891.0,"objectif":100000.0}},"Groupe Diamant Pro":{"reps":{"Olivier":{"weeks":[8250.0,0.0,0.0,0.0],"cumul":8250.0,"objectif":0.0},"Jean-Sébastien":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0},"Gabryel":{"weeks":[5900.0,19540.0,42360.0,19500.0],"cumul":87300.0,"objectif":80000.0},"Samuel":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0}},"total":{"weeks":[14150.0,19540.0,42360.0,19500.0],"cumul":95550.0,"objectif":80000.0}},"MaClim":{"reps":{"Olivier":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0},"Jean-Sébastien":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0},"Gabryel":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0},"Samuel":{"weeks":[37275.0,80200.0,110800.0,0.0],"cumul":228275.0,"objectif":140000.0}},"total":{"weeks":[37275.0,80200.0,110800.0,0.0],"cumul":228275.0,"objectif":140000.0}}}},"2026-06":{"label":"Juin 2026","num_weeks":4,"reps":{"Olivier":{"Booké":{"weeks":[1.0,7.0,3.0,0.0],"cumul":11.0,"objectif":40.0},"RDV Réalisé":{"weeks":[1.0,6.0,3.0,0.0],"cumul":10.0,"objectif":30.0},"Ventes OTS":{"weeks":[0.0,1.0,1.0,0.0],"cumul":2.0,"objectif":7.0},"Ventes SUIVI":{"weeks":[1.0,0.0,1.0,0.0],"cumul":2.0,"objectif":9.0},"Vente $":{"weeks":[7200.0,23455.0,29581.0,0.0],"cumul":60236.0,"objectif":118000.0},"% Close":{"weeks":[100.0,14.29,66.67,0.0],"cumul":36.36,"objectif":40.0}},"Jean-Sébastien":{"Booké":{"weeks":[10.0,18.0,18.0,12.0],"cumul":58.0,"objectif":80.0},"RDV Réalisé":{"weeks":[10.0,17.0,16.0,11.0],"cumul":54.0,"objectif":60.0},"Ventes OTS":{"weeks":[3.0,1.0,3.0,0.0],"cumul":7.0,"objectif":10.0},"Ventes SUIVI":{"weeks":[2.0,6.0,2.0,3.0],"cumul":13.0,"objectif":20.0},"Vente $":{"weeks":[21490.0,78460.0,61455.0,8247.0],"cumul":169652.0,"objectif":250000.0},"% Close":{"weeks":[50.0,38.89,27.78,25.0],"cumul":34.48,"objectif":32.0}},"Gabryel":{"Booké":{"weeks":[19.0,21.0,18.0,7.0],"cumul":65.0,"objectif":80.0},"RDV Réalisé":{"weeks":[18.0,20.0,16.0,6.0],"cumul":60.0,"objectif":60.0},"Ventes OTS":{"weeks":[1.0,4.0,6.0,1.0],"cumul":12.0,"objectif":10.0},"Ventes SUIVI":{"weeks":[5.0,4.0,2.0,2.0],"cumul":13.0,"objectif":20.0},"Vente $":{"weeks":[38065.0,46182.0,30760.0,39398.0],"cumul":154405.0,"objectif":180000.0},"% Close":{"weeks":[31.58,38.1,44.44,42.86],"cumul":38.46,"objectif":35.0}},"Samuel":{"Booké":{"weeks":[0.0,0.0,12.0,18.0],"cumul":30.0,"objectif":80.0},"RDV Réalisé":{"weeks":[0.0,0.0,11.0,14.0],"cumul":25.0,"objectif":60.0},"Ventes OTS":{"weeks":[0.0,0.0,2.0,3.0],"cumul":5.0,"objectif":10.0},"Ventes SUIVI":{"weeks":[0.0,0.0,2.0,2.0],"cumul":4.0,"objectif":20.0},"Vente $":{"weeks":[0.0,0.0,21386.0,35900.0],"cumul":57286.0,"objectif":140000.0},"% Close":{"weeks":[0.0,0.0,33.33,27.78],"cumul":30.0,"objectif":0.0}}},"team":{"Booké":{"weeks":[30.0,46.0,51.0,37.0],"cumul":164.0,"objectif":280.0},"RDV RÉA":{"weeks":[29.0,43.0,46.0,31.0],"cumul":149.0,"objectif":210.0},"VENTE OTS":{"weeks":[4.0,6.0,12.0,4.0],"cumul":26.0,"objectif":37.0},"VENTE SUIVI":{"weeks":[8.0,10.0,7.0,7.0],"cumul":32.0,"objectif":69.0},"VENTE TOTAL":{"weeks":[12.0,16.0,19.0,11.0],"cumul":58.0,"objectif":106.0},"VENTE $":{"weeks":[66755.0,148097.0,143182.0,83545.0],"cumul":441579.0,"objectif":688000.0}},"entreprises":{"Ornithorynque":{"reps":{"Olivier":{"weeks":[0.0,23455.0,29581.0,0.0],"cumul":53036.0,"objectif":100000.0},"Jean-Sébastien":{"weeks":[0.0,68285.0,48460.0,0.0],"cumul":116745.0,"objectif":178000.0},"Gabryel":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0},"Samuel":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0}},"total":{"weeks":[0.0,91740.0,78041.0,0.0],"cumul":169781.0,"objectif":278000.0}},"MonSpray":{"reps":{"Olivier":{"weeks":[7200.0,0.0,0.0,0.0],"cumul":7200.0,"objectif":18000.0},"Jean-Sébastien":{"weeks":[21490.0,10175.0,12995.0,3847.0],"cumul":48507.0,"objectif":72000.0},"Gabryel":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0},"Samuel":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0}},"total":{"weeks":[28690.0,10175.0,12995.0,3847.0],"cumul":55707.0,"objectif":90000.0}},"VerreVDM":{"reps":{"Olivier":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0},"Jean-Sébastien":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0},"Gabryel":{"weeks":[35365.0,43682.0,20240.0,31598.0],"cumul":130885.0,"objectif":100000.0},"Samuel":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0}},"total":{"weeks":[35365.0,43682.0,20240.0,31598.0],"cumul":130885.0,"objectif":100000.0}},"Groupe Diamant Pro":{"reps":{"Olivier":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0},"Jean-Sébastien":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0},"Gabryel":{"weeks":[2700.0,2500.0,10560.0,7800.0],"cumul":23560.0,"objectif":80000.0},"Samuel":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0}},"total":{"weeks":[2700.0,2500.0,10560.0,7800.0],"cumul":23560.0,"objectif":80000.0}},"MaClim":{"reps":{"Olivier":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0},"Jean-Sébastien":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0},"Gabryel":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0},"Samuel":{"weeks":[0.0,0.0,21836.0,35900.0],"cumul":57736.0,"objectif":0.0}},"total":{"weeks":[0.0,0.0,21836.0,35900.0],"cumul":57736.0,"objectif":140000.0}}}},"2026-05":{"label":"Mai 2026","num_weeks":4,"reps":{"Olivier":{"Booké":{"weeks":[8.0,8.0,7.0,2.0],"cumul":25.0,"objectif":40.0},"RDV Réalisé":{"weeks":[7.0,8.0,7.0,1.0],"cumul":23.0,"objectif":30.0},"Ventes OTS":{"weeks":[1.0,2.0,1.0,0.0],"cumul":4.0,"objectif":7.0},"Ventes SUIVI":{"weeks":[2.0,2.0,2.0,1.0],"cumul":7.0,"objectif":9.0},"Vente $":{"weeks":[64390.0,54874.0,29735.0,26785.0],"cumul":175784.0,"objectif":100000.0},"% Close":{"weeks":[37.5,50.0,42.86,50.0],"cumul":44.0,"objectif":40.0}},"Jean-Sébastien":{"Booké":{"weeks":[19.0,14.0,21.0,17.0],"cumul":71.0,"objectif":80.0},"RDV Réalisé":{"weeks":[17.0,14.0,18.0,16.0],"cumul":65.0,"objectif":60.0},"Ventes OTS":{"weeks":[1.0,2.0,1.0,3.0],"cumul":7.0,"objectif":10.0},"Ventes SUIVI":{"weeks":[4.0,4.0,4.0,1.0],"cumul":13.0,"objectif":20.0},"Vente $":{"weeks":[28182.0,71093.0,81959.0,11535.0],"cumul":192769.0,"objectif":312500.0},"% Close":{"weeks":[26.32,42.86,23.81,23.53],"cumul":28.17,"objectif":32.0}},"Gabryel":{"Booké":{"weeks":[21.0,19.0,20.0,24.0],"cumul":84.0,"objectif":80.0},"RDV Réalisé":{"weeks":[17.0,17.0,20.0,21.0],"cumul":75.0,"objectif":60.0},"Ventes OTS":{"weeks":[3.0,2.0,3.0,6.0],"cumul":14.0,"objectif":10.0},"Ventes SUIVI":{"weeks":[3.0,3.0,3.0,2.0],"cumul":11.0,"objectif":20.0},"Vente $":{"weeks":[30547.0,60852.0,28935.0,38875.0],"cumul":159209.0,"objectif":230000.0},"% Close":{"weeks":[28.57,26.32,30.0,33.33],"cumul":29.76,"objectif":35.0}},"Samuel":{"Booké":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0},"RDV Réalisé":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0},"Ventes OTS":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0},"Ventes SUIVI":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0},"Vente $":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0},"% Close":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0}}},"team":{"Booké":{"weeks":[48.0,41.0,48.0,43.0],"cumul":180.0,"objectif":200.0},"RDV RÉA":{"weeks":[41.0,39.0,45.0,38.0],"cumul":163.0,"objectif":150.0},"VENTE OTS":{"weeks":[5.0,6.0,5.0,9.0],"cumul":25.0,"objectif":27.0},"VENTE SUIVI":{"weeks":[9.0,9.0,9.0,4.0],"cumul":31.0,"objectif":49.0},"VENTE TOTAL":{"weeks":[14.0,15.0,14.0,13.0],"cumul":56.0,"objectif":76.0},"VENTE $":{"weeks":[123119.0,186819.0,140629.0,77195.0],"cumul":527762.0,"objectif":642500.0}},"entreprises":{"Toitex":{"reps":{"Olivier":{"weeks":[55390.0,21450.0,17345.0,26785.0],"cumul":120970.0,"objectif":150000.0},"Jean-Sébastien":{"weeks":[18570.0,59493.0,72887.0,0.0],"cumul":150950.0,"objectif":150000.0},"Gabryel":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0},"Samuel":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0}},"total":{"weeks":[73960.0,80943.0,90232.0,26785.0],"cumul":271920.0,"objectif":300000.0}},"MonSpray":{"reps":{"Olivier":{"weeks":[9000.0,19000.0,12390.0,0.0],"cumul":40390.0,"objectif":36000.0},"Jean-Sébastien":{"weeks":[9612.0,11150.0,9072.0,11535.0],"cumul":41369.0,"objectif":36000.0},"Gabryel":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0},"Samuel":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0}},"total":{"weeks":[18612.0,30150.0,21462.0,11535.0],"cumul":81759.0,"objectif":72000.0}},"VerreVDM":{"reps":{"Olivier":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":25000.0},"Jean-Sébastien":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0},"Gabryel":{"weeks":[22572.0,57052.0,10235.0,23375.0],"cumul":113234.0,"objectif":75000.0},"Samuel":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0}},"total":{"weeks":[22572.0,57052.0,10235.0,23375.0],"cumul":113234.0,"objectif":100000.0}},"Groupe Diamant Pro":{"reps":{"Olivier":{"weeks":[0.0,15884.0,0.0,0.0],"cumul":15884.0,"objectif":0.0},"Jean-Sébastien":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0},"Gabryel":{"weeks":[7975.0,3800.0,18700.0,15500.0],"cumul":45975.0,"objectif":0.0},"Samuel":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":80000.0}},"total":{"weeks":[7975.0,19684.0,18700.0,15500.0],"cumul":61859.0,"objectif":80000.0}}}},"2026-03":{"label":"Mars 2026","num_weeks":4,"reps":{"Olivier":{"Booké":{"weeks":[0.0,0.0,4.0,9.0],"cumul":13.0,"objectif":40.0},"RDV Réalisé":{"weeks":[0.0,0.0,4.0,9.0],"cumul":13.0,"objectif":30.0},"Ventes OTS":{"weeks":[0.0,0.0,2.0,0.0],"cumul":2.0,"objectif":7.0},"Ventes SUIVI":{"weeks":[0.0,0.0,0.0,3.0],"cumul":3.0,"objectif":9.0},"Vente $":{"weeks":[0.0,0.0,19270.0,30895.0],"cumul":50165.0,"objectif":100000.0},"% Close":{"weeks":[0.0,0.0,50.0,33.33],"cumul":38.46,"objectif":40.0}},"Jean-Sébastien":{"Booké":{"weeks":[0.0,7.0,9.0,16.0],"cumul":32.0,"objectif":80.0},"RDV Réalisé":{"weeks":[0.0,7.0,8.0,13.0],"cumul":28.0,"objectif":60.0},"Ventes OTS":{"weeks":[0.0,0.0,0.0,5.0],"cumul":5.0,"objectif":10.0},"Ventes SUIVI":{"weeks":[0.0,1.0,3.0,0.0],"cumul":4.0,"objectif":20.0},"Vente $":{"weeks":[0.0,6540.0,52925.0,23094.0],"cumul":82559.0,"objectif":312500.0},"% Close":{"weeks":[0.0,14.29,33.33,31.25],"cumul":32.14,"objectif":32.0}},"Gabryel":{"Booké":{"weeks":[0.0,0.0,12.0,19.0],"cumul":31.0,"objectif":80.0},"RDV Réalisé":{"weeks":[0.0,0.0,12.0,19.0],"cumul":31.0,"objectif":60.0},"Ventes OTS":{"weeks":[0.0,0.0,1.0,5.0],"cumul":6.0,"objectif":10.0},"Ventes SUIVI":{"weeks":[0.0,0.0,2.0,2.0],"cumul":4.0,"objectif":20.0},"Vente $":{"weeks":[0.0,0.0,19768.0,26712.0],"cumul":46480.0,"objectif":230000.0},"% Close":{"weeks":[0.0,0.0,25.0,36.84],"cumul":32.26,"objectif":35.0}},"Samuel":{"Booké":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0},"RDV Réalisé":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0},"Ventes OTS":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0},"Ventes SUIVI":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0},"Vente $":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0},"% Close":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0}}},"team":{"Booké":{"weeks":[0.0,7.0,25.0,44.0],"cumul":76.0,"objectif":200.0},"RDV RÉA":{"weeks":[0.0,7.0,24.0,41.0],"cumul":72.0,"objectif":150.0},"VENTE OTS":{"weeks":[0.0,0.0,3.0,10.0],"cumul":13.0,"objectif":27.0},"VENTE SUIVI":{"weeks":[0.0,1.0,5.0,5.0],"cumul":11.0,"objectif":49.0},"VENTE TOTAL":{"weeks":[0.0,1.0,8.0,15.0],"cumul":24.0,"objectif":76.0},"VENTE $":{"weeks":[0.0,6540.0,91963.0,80701.0],"cumul":179204.0,"objectif":642500.0}},"entreprises":{"Toitex":{"reps":{"Olivier":{"weeks":[0.0,0.0,16770.0,28895.0],"cumul":45665.0,"objectif":150000.0},"Jean-Sébastien":{"weeks":[0.0,0.0,52925.0,0.0],"cumul":52925.0,"objectif":150000.0},"Gabryel":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0},"Samuel":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0}},"total":{"weeks":[0.0,0.0,69695.0,28895.0],"cumul":98590.0,"objectif":300000.0}},"MonSpray":{"reps":{"Olivier":{"weeks":[0.0,0.0,0.0,2250.0],"cumul":2250.0,"objectif":36000.0},"Jean-Sébastien":{"weeks":[0.0,6540.0,0.0,23094.0],"cumul":29634.0,"objectif":36000.0},"Gabryel":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0},"Samuel":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0}},"total":{"weeks":[0.0,6540.0,0.0,25344.0],"cumul":31884.0,"objectif":72000.0}},"VerreVDM":{"reps":{"Olivier":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":25000.0},"Jean-Sébastien":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0},"Gabryel":{"weeks":[0.0,0.0,11790.0,13020.0],"cumul":24810.0,"objectif":75000.0},"Samuel":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0}},"total":{"weeks":[0.0,0.0,11790.0,13020.0],"cumul":24810.0,"objectif":100000.0}},"Groupe Diamant Pro":{"reps":{"Olivier":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0},"Jean-Sébastien":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0},"Gabryel":{"weeks":[0.0,0.0,7978.0,13692.0],"cumul":21670.0,"objectif":80000.0},"Samuel":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0}},"total":{"weeks":[0.0,0.0,7978.0,13692.0],"cumul":21670.0,"objectif":80000.0}}}},"2026-11":{"label":"Novembre 2026","num_weeks":4,"reps":{"Olivier":{"Booké":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":40.0},"RDV Réalisé":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":30.0},"Ventes OTS":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":7.0},"Ventes SUIVI":{"weeks":[0.0,1.0,0.0,0.0],"cumul":1.0,"objectif":9.0},"Vente $":{"weeks":[0.0,41095.0,0.0,0.0],"cumul":41095.0,"objectif":118000.0},"% Close":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":40.0}},"Jean-Sébastien":{"Booké":{"weeks":[12.0,6.0,0.0,0.0],"cumul":18.0,"objectif":80.0},"RDV Réalisé":{"weeks":[9.0,6.0,0.0,0.0],"cumul":15.0,"objectif":60.0},"Ventes OTS":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":10.0},"Ventes SUIVI":{"weeks":[6.0,1.0,0.0,0.0],"cumul":7.0,"objectif":20.0},"Vente $":{"weeks":[70054.0,23808.0,0.0,0.0],"cumul":93862.0,"objectif":250000.0},"% Close":{"weeks":[50.0,16.67,0.0,0.0],"cumul":38.89,"objectif":32.0}},"Gabryel":{"Booké":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":80.0},"RDV Réalisé":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":60.0},"Ventes OTS":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":10.0},"Ventes SUIVI":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":20.0},"Vente $":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":180000.0},"% Close":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":35.0}},"Samuel":{"Booké":{"weeks":[12.0,14.0,0.0,0.0],"cumul":26.0,"objectif":80.0},"RDV Réalisé":{"weeks":[10.0,12.0,0.0,0.0],"cumul":22.0,"objectif":60.0},"Ventes OTS":{"weeks":[0.0,4.0,0.0,0.0],"cumul":4.0,"objectif":10.0},"Ventes SUIVI":{"weeks":[5.0,7.0,0.0,0.0],"cumul":12.0,"objectif":20.0},"Vente $":{"weeks":[31950.0,78680.0,0.0,0.0],"cumul":110630.0,"objectif":140000.0},"% Close":{"weeks":[41.67,78.57,0.0,0.0],"cumul":61.54,"objectif":0.0}}},"team":{"Booké":{"weeks":[24.0,20.0,0.0,0.0],"cumul":44.0,"objectif":200.0},"RDV RÉA":{"weeks":[19.0,18.0,0.0,0.0],"cumul":37.0,"objectif":180.0},"VENTE OTS":{"weeks":[0.0,4.0,0.0,0.0],"cumul":4.0,"objectif":27.0},"VENTE SUIVI":{"weeks":[11.0,9.0,0.0,0.0],"cumul":20.0,"objectif":49.0},"VENTE TOTAL":{"weeks":[11.0,13.0,0.0,0.0],"cumul":24.0,"objectif":76.0},"VENTE $":{"weeks":[102004.0,143583.0,0.0,0.0],"cumul":245587.0,"objectif":508000.0}},"entreprises":{"Toitex":{"reps":{"Olivier":{"weeks":[0.0,41095.0,0.0,0.0],"cumul":41095.0,"objectif":80000.0},"Jean-Sébastien":{"weeks":[58395.0,23808.0,0.0,0.0],"cumul":82203.0,"objectif":178000.0},"Gabryel":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0},"Samuel":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0}},"total":{"weeks":[58395.0,64903.0,0.0,0.0],"cumul":123298.0,"objectif":258000.0}},"MonSpray":{"reps":{"Olivier":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0},"Jean-Sébastien":{"weeks":[11659.0,0.0,0.0,0.0],"cumul":11659.0,"objectif":50000.0},"Gabryel":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0},"Samuel":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0}},"total":{"weeks":[11659.0,0.0,0.0,0.0],"cumul":11659.0,"objectif":50000.0}},"VerreVDM":{"reps":{"Olivier":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0},"Jean-Sébastien":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0},"Gabryel":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0},"Samuel":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0}},"total":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0}},"Groupe Diamant Pro":{"reps":{"Olivier":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0},"Jean-Sébastien":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0},"Gabryel":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0},"Samuel":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0}},"total":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0}},"MaClim":{"reps":{"Olivier":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0},"Jean-Sébastien":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0},"Gabryel":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0},"Samuel":{"weeks":[31950.0,0.0,0.0,0.0],"cumul":31950.0,"objectif":0.0}},"total":{"weeks":[31950.0,0.0,0.0,0.0],"cumul":31950.0,"objectif":200000.0}}}},"2026-09":{"label":"Septembre 2026","num_weeks":4,"reps":{"Olivier":{"Booké":{"weeks":[2.0,3.0,2.0,3.0],"cumul":10.0,"objectif":40.0},"RDV Réalisé":{"weeks":[0.0,3.0,2.0,3.0],"cumul":8.0,"objectif":30.0},"Ventes OTS":{"weeks":[0.0,1.0,0.0,1.0],"cumul":2.0,"objectif":7.0},"Ventes SUIVI":{"weeks":[0.0,0.0,1.0,1.0],"cumul":2.0,"objectif":9.0},"Vente $":{"weeks":[0.0,10500.0,4450.0,21715.0],"cumul":36665.0,"objectif":118000.0},"% Close":{"weeks":[0.0,33.33,50.0,66.67],"cumul":50.0,"objectif":40.0}},"Jean-Sébastien":{"Booké":{"weeks":[12.0,15.0,0.0,0.0],"cumul":27.0,"objectif":80.0},"RDV Réalisé":{"weeks":[12.0,14.0,0.0,0.0],"cumul":26.0,"objectif":60.0},"Ventes OTS":{"weeks":[5.0,0.0,0.0,0.0],"cumul":5.0,"objectif":10.0},"Ventes SUIVI":{"weeks":[6.0,2.0,0.0,0.0],"cumul":8.0,"objectif":20.0},"Vente $":{"weeks":[123021.0,22672.0,0.0,0.0],"cumul":145693.0,"objectif":200000.0},"% Close":{"weeks":[91.67,13.33,0.0,0.0],"cumul":48.15,"objectif":32.0}},"Gabryel":{"Booké":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0},"RDV Réalisé":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0},"Ventes OTS":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0},"Ventes SUIVI":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0},"Vente $":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0},"% Close":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":35.0}},"Samuel":{"Booké":{"weeks":[22.0,27.0,26.0,0.0],"cumul":75.0,"objectif":80.0},"RDV Réalisé":{"weeks":[22.0,27.0,24.0,0.0],"cumul":73.0,"objectif":60.0},"Ventes OTS":{"weeks":[6.0,9.0,6.0,0.0],"cumul":21.0,"objectif":10.0},"Ventes SUIVI":{"weeks":[3.0,2.0,7.0,0.0],"cumul":12.0,"objectif":20.0},"Vente $":{"weeks":[78810.0,68665.0,100110.0,0.0],"cumul":247585.0,"objectif":200000.0},"% Close":{"weeks":[40.91,40.74,50.0,0.0],"cumul":44.0,"objectif":33.0}}},"team":{"Booké":{"weeks":[36.0,45.0,28.0,3.0],"cumul":112.0,"objectif":200.0},"RDV RÉA":{"weeks":[34.0,44.0,26.0,3.0],"cumul":107.0,"objectif":150.0},"VENTE OTS":{"weeks":[11.0,10.0,6.0,1.0],"cumul":28.0,"objectif":27.0},"VENTE SUIVI":{"weeks":[9.0,4.0,8.0,1.0],"cumul":22.0,"objectif":49.0},"VENTE TOTAL":{"weeks":[20.0,14.0,14.0,2.0],"cumul":50.0,"objectif":76.0},"VENTE $":{"weeks":[201831.0,101837.0,104560.0,21715.0],"cumul":429943.0,"objectif":518000.0}},"entreprises":{"Toitex":{"reps":{"Olivier":{"weeks":[0.0,10500.0,0.0,17595.0],"cumul":28095.0,"objectif":80000.0},"Jean-Sébastien":{"weeks":[121614.0,23998.0,0.0,0.0],"cumul":145612.0,"objectif":178000.0},"Gabryel":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0},"Samuel":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0}},"total":{"weeks":[121614.0,34498.0,0.0,17595.0],"cumul":173707.0,"objectif":278000.0}},"MonSpray":{"reps":{"Olivier":{"weeks":[4250.0,0.0,0.0,4150.0],"cumul":8400.0,"objectif":18000.0},"Jean-Sébastien":{"weeks":[19451.0,0.0,0.0,0.0],"cumul":19451.0,"objectif":72000.0},"Gabryel":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0},"Samuel":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0}},"total":{"weeks":[23701.0,0.0,0.0,4150.0],"cumul":27851.0,"objectif":90000.0}},"VerreVDM":{"reps":{"Olivier":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0},"Jean-Sébastien":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0},"Gabryel":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0},"Samuel":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0}},"total":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0}},"Groupe Diamant Pro":{"reps":{"Olivier":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0},"Jean-Sébastien":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0},"Gabryel":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0},"Samuel":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0}},"total":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0}},"MaClim":{"reps":{"Olivier":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0},"Jean-Sébastien":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0},"Gabryel":{"weeks":[0.0,0.0,0.0,0.0],"cumul":0.0,"objectif":0.0},"Samuel":{"weeks":[78810.0,68665.0,100110.0,0.0],"cumul":247585.0,"objectif":0.0}},"total":{"weeks":[78810.0,68665.0,100110.0,0.0],"cumul":247585.0,"objectif":200000.0}}}}};
-
-    let kpiStore = lsGetJson('korpo_kpi_store_v1', 'null') || DEFAULT_KPI_DATA;
+    // =========================================================================
+    // ARCHITECTURE KPI UNIFIÉE : BASE FICHIER CONDENSÉ + FICHIER DE VENTES
+    // =========================================================================
     const ALL_KPI_REPS = ['Olivier', 'Jean-Sébastien', 'Gabryel', 'Samuel', 'Alexandre'];
-
     const isValidYearMonth = (ym) => typeof ym === 'string' && /^\d{4}-(0[1-9]|1[0-2])$/.test(ym.trim());
 
+    let kpiStore = {};
+    let kpiHebdoRows = [];
+    let condensedBaselineStore = lsGetJson('korpo_kpi_condensed_v1', '{}');
+    let monthlyRdvOverrides = lsGetJson('korpo_kpi_monthly_rdv_v1', '{}');
+
+    function saveCondensedBaselineStore() {
+      lsSet('korpo_kpi_condensed_v1', JSON.stringify(condensedBaselineStore));
+    }
+
+    function saveMonthlyRdvOverrides() {
+      lsSet('korpo_kpi_monthly_rdv_v1', JSON.stringify(monthlyRdvOverrides));
+    }
+
+    function hasActiveCondensedBaseline() {
+      if (!condensedBaselineStore || typeof condensedBaselineStore !== 'object') return false;
+      return Object.keys(condensedBaselineStore).some(ym => {
+        if (!isValidYearMonth(ym)) return false;
+        const m = condensedBaselineStore[ym];
+        return m && typeof m === 'object' && Object.keys(m).some(k => !k.startsWith('_'));
+      });
+    }
+
     function normalizeKpiStoreReps() {
-      if (!kpiStore || typeof kpiStore !== 'object') {
-        kpiStore = JSON.parse(JSON.stringify(DEFAULT_KPI_DATA));
-      }
+      if (!kpiStore || typeof kpiStore !== 'object') kpiStore = {};
       Object.keys(kpiStore).forEach(ym => {
         if (!isValidYearMonth(ym)) {
           delete kpiStore[ym];
@@ -2031,21 +2029,9 @@
         });
       });
     }
-    normalizeKpiStoreReps();
-
-    let kpiHebdoRows = [];
-    let manualRdvOverrides = lsGetJson('korpo_kpi_manual_rdv_v1', '{}');
-    let manualSalesOverrides = lsGetJson('korpo_kpi_manual_sales_v1', '{}');
-
-    function saveManualKpiOverrides() {
-      lsSet('korpo_kpi_manual_rdv_v1', JSON.stringify(manualRdvOverrides));
-      lsSet('korpo_kpi_manual_sales_v1', JSON.stringify(manualSalesOverrides));
-    }
 
     async function safeUpsertKpiHebdoRow(rowObj) {
       if (!sb || !currentProfile) return { error: null };
-      // Lignes « techniques » (index < -1) : le JSON est stocké dans representant_nom, donc un upsert
-      // sur cette colonne créerait une nouvelle ligne à chaque modification. On met à jour la ligne existante.
       if (Number(rowObj.semaine_index) >= -1) {
         try {
           const upRes = await sb.from('kpi_hebdo').upsert(rowObj, {
@@ -2055,7 +2041,6 @@
         } catch (e) {}
       }
 
-      // Secours universel : select -> update ou insert (fonctionne même sans contrainte UNIQUE composite)
       try {
         let q = sb.from('kpi_hebdo').select('id').eq('mois_commission', rowObj.mois_commission).eq('semaine_index', rowObj.semaine_index);
         if (Number(rowObj.semaine_index) >= -1) {
@@ -2077,44 +2062,30 @@
       }
     }
 
-    async function persistSingleManualKpiToCloud(ovKey) {
+    async function persistCondensedEntryToCloud(ym, repName, entryObj) {
       if (!sb || !currentProfile) return;
-      const payload = {
-        rdv: manualRdvOverrides[ovKey] || null,
-        sales: manualSalesOverrides[ovKey] || null
-      };
+      const key = `${ym}__${repName}`;
       await safeUpsertKpiHebdoRow({
-        mois_commission: ovKey,
-        semaine_index: -6,
-        representant_nom: JSON.stringify(payload),
-        booke: 0,
-        rdv_realise: 0,
+        mois_commission: key,
+        semaine_index: -9,
+        representant_nom: JSON.stringify(entryObj),
+        booke: Number(entryObj.booke || 0),
+        rdv_realise: Number(entryObj.rdv || 0),
         updated_at: new Date().toISOString()
       });
     }
 
-    async function clearManualSalesOverridesForRepMonth(ym, repName) {
-      if (!isValidYearMonth(ym) || !repName) return;
-      let changed = false;
-      for (let wi = 0; wi < 5; wi++) {
-        const ovKey = `${ym}_${repName}_${wi}`;
-        if (manualSalesOverrides[ovKey]) {
-          delete manualSalesOverrides[ovKey];
-          changed = true;
-          if (sb && currentProfile) {
-            if (manualRdvOverrides[ovKey]) {
-              await persistSingleManualKpiToCloud(ovKey);
-            } else {
-              try {
-                await sb.from('kpi_hebdo').delete().eq('mois_commission', ovKey).eq('semaine_index', -6);
-              } catch (e) {}
-            }
-          }
-        }
-      }
-      if (changed) {
-        saveManualKpiOverrides();
-      }
+    async function persistMonthlyRdvToCloud(ym, repName, rdvObj) {
+      if (!sb || !currentProfile) return;
+      const key = `${ym}_${repName}`;
+      await safeUpsertKpiHebdoRow({
+        mois_commission: key,
+        semaine_index: -10,
+        representant_nom: JSON.stringify(rdvObj),
+        booke: Number(rdvObj.booke || 0),
+        rdv_realise: Number(rdvObj.rdv || 0),
+        updated_at: new Date().toISOString()
+      });
     }
 
     // =========================================================================
@@ -2187,20 +2158,26 @@
               lsSet('korpo_personal_bonus_pct_v1', JSON.stringify(personalBonusPctTargets));
             }
           } catch (e) {}
-        } else if (sIdx === -6 && r.mois_commission && r.representant_nom) {
+        } else if (sIdx === -9 && r.mois_commission && r.representant_nom) {
           try {
-            const kpiOv = JSON.parse(r.representant_nom);
-            const ovKey = String(r.mois_commission);
-            if (kpiOv && kpiOv.rdv) {
-              const localRdv = manualRdvOverrides[ovKey];
-              if (!localRdv || !localRdv.updatedAt || (kpiOv.rdv.updatedAt && kpiOv.rdv.updatedAt >= localRdv.updatedAt)) {
-                manualRdvOverrides[ovKey] = kpiOv.rdv;
+            const cData = JSON.parse(r.representant_nom);
+            const [cYm, cRep] = String(r.mois_commission).split('__');
+            if (isValidYearMonth(cYm) && cRep && cData && typeof cData === 'object') {
+              if (!condensedBaselineStore[cYm]) condensedBaselineStore[cYm] = {};
+              const localEntry = condensedBaselineStore[cYm][cRep];
+              if (!localEntry || !localEntry.updatedAt || (cData.updatedAt && cData.updatedAt >= localEntry.updatedAt)) {
+                condensedBaselineStore[cYm][cRep] = cData;
               }
             }
-            if (kpiOv && kpiOv.sales) {
-              const localSales = manualSalesOverrides[ovKey];
-              if (!localSales || !localSales.updatedAt || (kpiOv.sales.updatedAt && kpiOv.sales.updatedAt >= localSales.updatedAt)) {
-                manualSalesOverrides[ovKey] = kpiOv.sales;
+          } catch (e) {}
+        } else if (sIdx === -10 && r.mois_commission && r.representant_nom) {
+          try {
+            const rdvData = JSON.parse(r.representant_nom);
+            const key = String(r.mois_commission);
+            if (rdvData && typeof rdvData === 'object') {
+              const localR = monthlyRdvOverrides[key];
+              if (!localR || !localR.updatedAt || (rdvData.updatedAt && rdvData.updatedAt >= localR.updatedAt)) {
+                monthlyRdvOverrides[key] = rdvData;
               }
             }
           } catch (e) {}
@@ -2222,7 +2199,8 @@
       lsSet('korpo_sale_trash_v1', JSON.stringify(saleTrashStore));
       lsSet('korpo_sale_bonus_overrides_v1', JSON.stringify(saleBonusOverridesStore));
       lsSet('korpo_carried_over_sales_v1', JSON.stringify(carriedOverSalesStore));
-      saveManualKpiOverrides();
+      saveCondensedBaselineStore();
+      saveMonthlyRdvOverrides();
       applySaleBonusOverridesToState();
       applyCarryOverMetadataToState();
       updateTrashBadges();
@@ -2831,82 +2809,7 @@
     });
 
     function syncGoogleAgendaIntoKpi() {
-      const validHebdoRows = (kpiHebdoRows || []).filter(r => Number(r.semaine_index) >= 0 && isValidYearMonth(r.mois_commission));
-      const allMonths = new Set([
-        ...validHebdoRows.map(r => r.mois_commission),
-        ...Object.keys(manualRdvOverrides).map(k => k.split('_')[0]).filter(isValidYearMonth)
-      ]);
-      if (!allMonths.size) return;
-
-      const byMonth = new Map();
-      validHebdoRows.forEach(row => {
-        const ym = row.mois_commission;
-        if (!byMonth.has(ym)) byMonth.set(ym, []);
-        byMonth.get(ym).push(row);
-      });
-
-      allMonths.forEach(ym => {
-        const rows = byMonth.get(ym) || [];
-        const mObj = ensureKpiMonthStructure(ym);
-        const nw = mObj.num_weeks || 4;
-
-        // 1. Appliquer les données synchronisées depuis Supabase (kpi_hebdo)
-        rows.forEach(row => {
-          const rn = row.representant_nom;
-          const wIdx = Number(row.semaine_index);
-          if (!mObj.reps[rn] || wIdx < 0 || wIdx >= nw) return;
-          const dbBooke = Number(row.booke || 0);
-          const dbRea = Number(row.rdv_realise || 0);
-          const ovKey = `${ym}_${rn}_${wIdx}`;
-          const manualOv = manualRdvOverrides[ovKey];
-
-          // Priorité aux saisies manuelles enregistrées par l'administrateur
-          if (manualOv && (manualOv.manual || (dbBooke === 0 && dbRea === 0 && (manualOv.booke > 0 || manualOv.rdv > 0)))) {
-            mObj.reps[rn]['Booké'].weeks[wIdx] = Number(manualOv.booke || 0);
-            mObj.reps[rn]['RDV Réalisé'].weeks[wIdx] = Number(manualOv.rdv || 0);
-          } else {
-            mObj.reps[rn]['Booké'].weeks[wIdx] = dbBooke;
-            mObj.reps[rn]['RDV Réalisé'].weeks[wIdx] = dbRea;
-          }
-        });
-
-        // 2. Appliquer les saisies manuelles locales qui n'existent pas encore dans kpi_hebdo
-        Object.entries(manualRdvOverrides).forEach(([ovKey, ovVal]) => {
-          const [ovYm, rn, wStr] = ovKey.split('_');
-          const wIdx = Number(wStr);
-          if (ovYm !== ym || !mObj.reps[rn] || wIdx < 0 || wIdx >= nw) return;
-          const hasDbRow = rows.some(r => r.representant_nom === rn && Number(r.semaine_index) === wIdx);
-          if (!hasDbRow) {
-            mObj.reps[rn]['Booké'].weeks[wIdx] = Number(ovVal.booke || 0);
-            mObj.reps[rn]['RDV Réalisé'].weeks[wIdx] = Number(ovVal.rdv || 0);
-          }
-        });
-
-        ALL_KPI_REPS.forEach(rn => {
-          const rData = mObj.reps[rn];
-          if (!rData) return;
-          rData['Booké'].cumul = rData['Booké'].weeks.reduce((a, b) => a + b, 0);
-          rData['RDV Réalisé'].cumul = rData['RDV Réalisé'].weeks.reduce((a, b) => a + b, 0);
-          for (let wi = 0; wi < nw; wi++) {
-            const rdvW = rData['RDV Réalisé'].weeks[wi] || 0;
-            const vW = (rData['Ventes OTS'].weeks[wi] || 0) + (rData['Ventes SUIVI'].weeks[wi] || 0);
-            rData['% Close'].weeks[wi] = rdvW > 0 ? Math.round((vW / rdvW) * 10000) / 100 : 0;
-          }
-          const totRdv = rData['RDV Réalisé'].cumul;
-          const totV = rData['Ventes OTS'].cumul + rData['Ventes SUIVI'].cumul;
-          rData['% Close'].cumul = totRdv > 0 ? Math.round((totV / totRdv) * 10000) / 100 : 0;
-        });
-
-        for (let wi = 0; wi < nw; wi++) {
-          mObj.team['Booké'].weeks[wi] = ALL_KPI_REPS.reduce((s, rn) => s + (mObj.reps[rn]?.['Booké']?.weeks[wi] || 0), 0);
-          mObj.team['RDV RÉA'].weeks[wi] = ALL_KPI_REPS.reduce((s, rn) => s + (mObj.reps[rn]?.['RDV Réalisé']?.weeks[wi] || 0), 0);
-        }
-        mObj.team['Booké'].cumul = mObj.team['Booké'].weeks.reduce((a, b) => a + b, 0);
-        mObj.team['RDV RÉA'].cumul = mObj.team['RDV RÉA'].weeks.reduce((a, b) => a + b, 0);
-      });
-
-      populateKpiMonthSelect(true);
-      lsSet('korpo_kpi_store_v1', JSON.stringify(kpiStore));
+      rebuildKpiStore();
     }
 
     let sb = null;
@@ -3225,6 +3128,7 @@
       if (!sec) return;
       const isCommMobile = activeMobilePersonalView === 'commissions';
       const isMobile = window.innerWidth < 768;
+      const isAdmin = currentProfile?.role === 'admin';
 
       const titleTextEl = document.getElementById('mes-ventes-main-title');
       const titleIconEl = document.getElementById('mes-ventes-main-icon');
@@ -3246,8 +3150,19 @@
         el.classList.toggle('hidden', isMobile && isCommMobile);
       });
       sec.querySelectorAll('[data-mobile-group="commissions"]').forEach(el => {
-        el.classList.toggle('hidden', isMobile && !isCommMobile);
+        if (el.id === 'filter-admin-scope') {
+          el.classList.toggle('hidden', !isAdmin || (isMobile && !isCommMobile));
+        } else {
+          el.classList.toggle('hidden', isMobile && !isCommMobile);
+        }
       });
+
+      const subEl = document.getElementById('mes-ventes-subtitle');
+      if (subEl && isMobile) {
+        subEl.textContent = isCommMobile
+          ? 'Vos gains confirmés, paiements reçus et soldes à venir'
+          : 'Vos dossiers fermés et le suivi de vos dépôts';
+      }
     }
 
     window.addEventListener('resize', applyMobilePersonalSplitLayout);
@@ -4254,7 +4169,6 @@
       const titleEl = document.getElementById('forecast-title');
       if (titleEl) titleEl.textContent = `Projection de fin de mois — ${mObj.label || targetYm}`;
 
-      // Calculer les moyennes historiques (taux de closing et panier moyen) par représentant
       const histStats = {};
       ALL_KPI_REPS.forEach(rn => {
         let sumRdv = 0, sumVentes = 0, sumDol = 0;
@@ -4350,6 +4264,7 @@
       initProofUploadControls();
       initAdminNotificationControls();
       initClientTargetsControls();
+      rebuildKpiStore();
       populateKpiMonthSelect(false);
       const selMonth = document.getElementById('kpi-select-month');
 
@@ -4365,13 +4280,13 @@
 
       document.getElementById('btn-kpi-edit-toggle').addEventListener('click', () => {
         if (currentProfile?.role !== 'admin') return;
-        const selMonth = document.getElementById('kpi-select-month');
-        if (selMonth.value.startsWith('YEAR_')) {
-          const months = Object.keys(kpiStore).sort().reverse();
+        const selM = document.getElementById('kpi-select-month');
+        if (selM.value.startsWith('YEAR_')) {
+          const months = Object.keys(kpiStore).filter(isValidYearMonth).sort().reverse();
           if (months.length) {
-            selMonth.value = months[0];
+            selM.value = months[0];
             renderKpiDashboard();
-            toast(`Basculé sur ${kpiStore[months[0]].label} pour la saisie hebdomadaire`);
+            toast(`Basculé sur ${kpiStore[months[0]].label} pour modifier les RDV`);
           }
         }
         const panel = document.getElementById('kpi-editor-panel');
@@ -4391,146 +4306,29 @@
       });
 
       document.getElementById('kpi-edit-rep').addEventListener('change', syncKpiEditorInputs);
-      document.getElementById('kpi-edit-week').addEventListener('change', syncKpiEditorInputs);
 
       document.getElementById('form-kpi-edit').addEventListener('submit', async (e) => {
         e.preventDefault();
         if (currentProfile?.role !== 'admin') return toast('Action réservée aux administrateurs.', 'error');
         const ym = document.getElementById('kpi-select-month').value;
+        if (!isValidYearMonth(ym)) return toast('Sélectionnez un mois précis.', 'error');
         const rep = document.getElementById('kpi-edit-rep').value;
-        const wIdx = parseInt(document.getElementById('kpi-edit-week').value, 10);
+        const totalBooke = Math.max(0, parseFloat(document.getElementById('kpi-in-booke').value) || 0);
+        const totalRdv = Math.max(0, parseFloat(document.getElementById('kpi-in-rdv').value) || 0);
 
-        const booke = parseFloat(document.getElementById('kpi-in-booke').value) || 0;
-        const rdv = parseFloat(document.getElementById('kpi-in-rdv').value) || 0;
-        const ots = parseFloat(document.getElementById('kpi-in-ots').value) || 0;
-        const suivi = parseFloat(document.getElementById('kpi-in-suivi').value) || 0;
-        const dollars = parseFloat(document.getElementById('kpi-in-dollars').value) || 0;
-
-        const replaceWholeMonth = Boolean(document.getElementById('kpi-edit-replace-whole-month')?.checked);
-        const mObj = ensureKpiMonthStructure(ym);
-        const rObj = mObj.reps[rep];
-        if (!rObj) return;
-        const nw = mObj.num_weeks || 4;
+        const baseEntry = condensedBaselineStore[ym]?.[rep] || { booke: 0, rdv: 0, ots: 0, suivi: 0, dollars: 0 };
+        const extraBooke = totalBooke - Number(baseEntry.booke || 0);
+        const extraRdv = totalRdv - Number(baseEntry.rdv || 0);
         const nowIso = new Date().toISOString();
 
-        for (let wi = 0; wi < nw; wi++) {
-          if (wi === wIdx || replaceWholeMonth) {
-            const wBooke = wi === wIdx ? booke : 0;
-            const wRdv = wi === wIdx ? rdv : 0;
-            const wOts = wi === wIdx ? ots : 0;
-            const wSuivi = wi === wIdx ? suivi : 0;
-            const wDol = wi === wIdx ? dollars : 0;
+        const rdvPayload = { booke: extraBooke, rdv: extraRdv, updatedAt: nowIso };
+        monthlyRdvOverrides[`${ym}_${rep}`] = rdvPayload;
+        saveMonthlyRdvOverrides();
+        await persistMonthlyRdvToCloud(ym, rep, rdvPayload);
 
-            rObj['Booké'].weeks[wi] = wBooke;
-            rObj['RDV Réalisé'].weeks[wi] = wRdv;
-            rObj['Ventes OTS'].weeks[wi] = wOts;
-            rObj['Ventes SUIVI'].weeks[wi] = wSuivi;
-            rObj['Vente $'].weeks[wi] = wDol;
-            rObj['% Close'].weeks[wi] = wRdv > 0 ? Math.round(((wOts + wSuivi) / wRdv) * 10000) / 100 : 0;
-
-            const dbWeek = getDbWeekCountsForRep(ym, rep, nw);
-            const ovKey = `${ym}_${rep}_${wi}`;
-            manualRdvOverrides[ovKey] = { booke: wBooke, rdv: wRdv, manual: true, updatedAt: nowIso };
-            manualSalesOverrides[ovKey] = {
-              ots: Math.max(0, wOts - (dbWeek.ots[wi] || 0)),
-              suivi: Math.max(0, wSuivi - (dbWeek.suivi[wi] || 0)),
-              dollars: Math.max(0, Math.round((wDol - (dbWeek.dollars[wi] || 0)) * 100) / 100),
-              hasManualDollars: true,
-              fromImport: false,
-              updatedAt: nowIso
-            };
-            await persistSingleManualKpiToCloud(ovKey);
-
-            const existingIdx = kpiHebdoRows.findIndex(r => r.mois_commission === ym && Number(r.semaine_index) === wi && r.representant_nom === rep);
-            if (existingIdx >= 0) {
-              kpiHebdoRows[existingIdx].booke = wBooke;
-              kpiHebdoRows[existingIdx].rdv_realise = wRdv;
-            } else {
-              kpiHebdoRows.push({ mois_commission: ym, semaine_index: wi, representant_nom: rep, booke: wBooke, rdv_realise: wRdv });
-            }
-            if (sb && currentProfile) {
-              await safeUpsertKpiHebdoRow({
-                mois_commission: ym,
-                semaine_index: wi,
-                representant_nom: rep,
-                booke: wBooke,
-                rdv_realise: wRdv,
-                updated_at: nowIso
-              });
-            }
-          }
-        }
-
-        ['Booké', 'RDV Réalisé', 'Ventes OTS', 'Ventes SUIVI', 'Vente $'].forEach(k => {
-          rObj[k].cumul = Math.round(rObj[k].weeks.reduce((a, b) => a + b, 0) * 100) / 100;
-        });
-        const totRdv = rObj['RDV Réalisé'].cumul;
-        const totVentes = rObj['Ventes OTS'].cumul + rObj['Ventes SUIVI'].cumul;
-        rObj['% Close'].cumul = totRdv > 0 ? Math.round((totVentes / totRdv) * 10000) / 100 : 0;
-
-        // Recalculer les totaux d'équipe sur toutes les semaines du mois
-        const allReps = Object.keys(mObj.reps);
-        for (let wi = 0; wi < nw; wi++) {
-          mObj.team['Booké'].weeks[wi] = allReps.reduce((s, rp) => s + (mObj.reps[rp]['Booké'].weeks[wi] || 0), 0);
-          mObj.team['RDV RÉA'].weeks[wi] = allReps.reduce((s, rp) => s + (mObj.reps[rp]['RDV Réalisé'].weeks[wi] || 0), 0);
-          mObj.team['VENTE OTS'].weeks[wi] = allReps.reduce((s, rp) => s + (mObj.reps[rp]['Ventes OTS'].weeks[wi] || 0), 0);
-          mObj.team['VENTE SUIVI'].weeks[wi] = allReps.reduce((s, rp) => s + (mObj.reps[rp]['Ventes SUIVI'].weeks[wi] || 0), 0);
-          mObj.team['VENTE TOTAL'].weeks[wi] = mObj.team['VENTE OTS'].weeks[wi] + mObj.team['VENTE SUIVI'].weeks[wi];
-          mObj.team['VENTE $'].weeks[wi] = Math.round(allReps.reduce((s, rp) => s + (mObj.reps[rp]['Vente $'].weeks[wi] || 0), 0) * 100) / 100;
-        }
-
-        ['Booké', 'RDV RÉA', 'VENTE OTS', 'VENTE SUIVI', 'VENTE TOTAL', 'VENTE $'].forEach(k => {
-          mObj.team[k].cumul = Math.round(mObj.team[k].weeks.reduce((a, b) => a + b, 0) * 100) / 100;
-        });
-
-        saveManualKpiOverrides();
-        lsSet('korpo_kpi_store_v1', JSON.stringify(kpiStore));
+        rebuildKpiStore();
         renderKpiDashboard();
-        toast(replaceWholeMonth
-          ? `Tout le mois de ${rep} (${ym}) a été remplacé par ces chiffres ✓`
-          : `KPI enregistrés pour ${rep} (Semaine ${wIdx + 1}) ✓`);
-      });
-
-      document.getElementById('btn-kpi-clear-rep-month')?.addEventListener('click', async () => {
-        if (currentProfile?.role !== 'admin') return;
-        const ym = document.getElementById('kpi-select-month').value;
-        const rep = document.getElementById('kpi-edit-rep').value;
-        if (!ym || ym.startsWith('YEAR_')) return toast('Sélectionnez un mois précis.', 'error');
-        const ok = await askConfirm(`Remettre ${rep} à 0 pour ${ym} ?`, 'Toutes les semaines (RDV Bookés, RDV Réalisés, OTS, Suivi et Ventes $) de ce représentant seront mises à 0 pour ce mois.');
-        if (!ok) return;
-        const mObj = ensureKpiMonthStructure(ym);
-        const rObj = mObj.reps[rep];
-        const nw = mObj.num_weeks || 4;
-        const nowIso = new Date().toISOString();
-        for (let wi = 0; wi < nw; wi++) {
-          ['Booké', 'RDV Réalisé', 'Ventes OTS', 'Ventes SUIVI', 'Vente $', '% Close'].forEach(k => {
-            if (rObj[k]) rObj[k].weeks[wi] = 0;
-          });
-          const ovKey = `${ym}_${rep}_${wi}`;
-          manualRdvOverrides[ovKey] = { booke: 0, rdv: 0, manual: true, updatedAt: nowIso };
-          manualSalesOverrides[ovKey] = { ots: 0, suivi: 0, dollars: 0, hasManualDollars: true, fromImport: false, updatedAt: nowIso };
-          await persistSingleManualKpiToCloud(ovKey);
-          if (sb && currentProfile) {
-            await safeUpsertKpiHebdoRow({
-              mois_commission: ym,
-              semaine_index: wi,
-              representant_nom: rep,
-              booke: 0,
-              rdv_realise: 0,
-              updated_at: nowIso
-            });
-          }
-        }
-        ['Booké', 'RDV Réalisé', 'Ventes OTS', 'Ventes SUIVI', 'Vente $', '% Close'].forEach(k => {
-          if (rObj[k]) rObj[k].cumul = 0;
-        });
-        saveManualKpiOverrides();
-        lsSet('korpo_kpi_store_v1', JSON.stringify(kpiStore));
-        syncSalesIntoKpi();
-        syncGoogleAgendaIntoKpi();
-        syncKpiEditorInputs();
-        renderKpiDashboard();
-        toast(`${rep} a été remis à 0 pour ${ym} ✓`);
+        toast(`RDV mis à jour pour ${rep} (${kpiStore[ym]?.label || ym}) ✓`);
       });
 
       document.getElementById('btn-kpi-export-csv').addEventListener('click', exportKpiCsv);
@@ -4540,10 +4338,6 @@
       const ym = document.getElementById('kpi-select-month').value;
       const mObj = ensureKpiMonthStructure(ym);
       if (!mObj) return;
-      const weekSel = document.getElementById('kpi-edit-week');
-      const prevW = weekSel.value || '0';
-      weekSel.innerHTML = Array.from({ length: mObj.num_weeks }, (_, i) => `<option value="${i}">Semaine ${i + 1}</option>`).join('');
-      if (Number(prevW) < mObj.num_weeks) weekSel.value = prevW;
 
       const editRepSel = document.getElementById('kpi-edit-rep');
       if (currentProfile && currentProfile.role !== 'admin' && ALL_KPI_REPS.includes(currentProfile.nom)) {
@@ -4554,22 +4348,18 @@
       }
 
       const rep = editRepSel.value;
-      const wIdx = parseInt(weekSel.value, 10) || 0;
       const rObj = mObj.reps[rep];
       if (!rObj) return;
 
-      document.getElementById('kpi-in-booke').value = rObj['Booké'].weeks[wIdx] || 0;
-      document.getElementById('kpi-in-rdv').value = rObj['RDV Réalisé'].weeks[wIdx] || 0;
-      document.getElementById('kpi-in-ots').value = rObj['Ventes OTS'].weeks[wIdx] || 0;
-      document.getElementById('kpi-in-suivi').value = rObj['Ventes SUIVI'].weeks[wIdx] || 0;
-      document.getElementById('kpi-in-dollars').value = rObj['Vente $'].weeks[wIdx] || 0;
+      document.getElementById('kpi-in-booke').value = rObj['Booké'].cumul || 0;
+      document.getElementById('kpi-in-rdv').value = rObj['RDV Réalisé'].cumul || 0;
     }
 
     function statusBadge(cumul, obj, isPct = false) {
       if (!obj || obj <= 0) {
         return `<span class="px-2 py-0.5 text-[11px] font-semibold rounded-full bg-slate-100 text-slate-500">—</span>`;
       }
-      const ratio = isPct ? (cumul / obj) : (cumul / obj);
+      const ratio = cumul / obj;
       if (ratio >= 0.999) {
         return `<span class="px-2.5 py-0.5 text-[11px] font-bold rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">Réussi</span>`;
       }
@@ -4579,8 +4369,8 @@
       return `<span class="px-2.5 py-0.5 text-[11px] font-bold rounded-full bg-rose-50 text-rose-700 border border-rose-200">Non réussi</span>`;
     }
 
-        // =========================================================================
-    // SYNCHRONISATION AUTOMATIQUE DES VENTES ENREGISTRÉES VERS LE TABLEAU KPI
+    // =========================================================================
+    // MOTEUR DÉTERMINISTE DU TABLEAU KPI (BASE CONDENSÉE + FICHIER DE VENTES)
     // =========================================================================
     const MONTH_NAMES_FR = {
       '01': 'Janvier', '02': 'Février', '03': 'Mars', '04': 'Avril',
@@ -4588,18 +4378,14 @@
       '09': 'Septembre', '10': 'Octobre', '11': 'Novembre', '12': 'Décembre'
     };
 
-    function getWeekIndexFromDate(dateStr, numWeeks) {
+    function getWeekIndexFromDate(dateStr, numWeeks = 4) {
       if (!dateStr || dateStr.length < 10) return 0;
       const day = parseInt(dateStr.slice(8, 10), 10) || 1;
       const idx = Math.floor((day - 1) / 7);
       return Math.min(Math.max(0, idx), numWeeks - 1);
     }
 
-    function ensureKpiMonthStructure(ym) {
-      if (!isValidYearMonth(ym)) {
-        ym = (typeof currentMonthStr !== 'undefined' && isValidYearMonth(currentMonthStr)) ? currentMonthStr : '2026-11';
-      }
-      if (kpiStore[ym]) return kpiStore[ym];
+    function createEmptyMonthKpiObject(ym) {
       const [y, m] = ym.split('-');
       const label = `${MONTH_NAMES_FR[m] || m} ${y}`;
       const numWeeks = 4;
@@ -4621,7 +4407,7 @@
         },
         total: { weeks: [0, 0, 0, 0], cumul: 0, objectif: 0 }
       });
-      kpiStore[ym] = {
+      return {
         label,
         num_weeks: numWeeks,
         reps: {
@@ -4647,18 +4433,19 @@
           'MaClim': makeEmptyEnt()
         }
       };
+    }
+
+    function ensureKpiMonthStructure(ym) {
+      if (!isValidYearMonth(ym)) {
+        ym = (typeof currentMonthStr !== 'undefined' && isValidYearMonth(currentMonthStr)) ? currentMonthStr : '2026-11';
+      }
+      if (!kpiStore[ym]) {
+        kpiStore[ym] = createEmptyMonthKpiObject(ym);
+      }
       return kpiStore[ym];
     }
 
-    function getUniqueClientKpiKey(v) {
-      const cliObj = state.clients.find(c => c.id === v.client_id);
-      const rawName = (cliObj?.nom || v.client_nom || '').trim().toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/\s+/g, ' ');
-      const repKey = String(v.representant_id || '');
-      const ym = v.mois_commission || (v.date_vente ? v.date_vente.slice(0, 7) : '');
-      return rawName ? `${ym}__${repKey}__${rawName}` : `sale_${v.id}`;
-    }
-
-        function resolveKpiRepName(raw) {
+    function resolveKpiRepName(raw) {
       if (!raw) return '';
       const norm = normalizeImportedRepName(raw);
       if (norm) return norm;
@@ -4667,24 +4454,15 @@
       return exact || trimmed;
     }
 
-    function getDbWeekCountsForRep(ym, repName, nw = 4) {
-      const targetCanon = resolveKpiRepName(repName);
-      const res = { ots: Array(nw).fill(0), suivi: Array(nw).fill(0), dollars: Array(nw).fill(0) };
-      (state.ventes || []).forEach(v => {
-        if (getSaleStatsMonth(v) !== ym) return;
-        const repObj = state.representants.find(r => String(r.id) === String(v.representant_id));
-        const saleRepCanon = resolveKpiRepName(repObj?.nom || v.rep_nom || '');
-        if (!saleRepCanon || saleRepCanon !== targetCanon) return;
-        const wi = getWeekIndexFromDate(v.date_vente, nw);
-        res.dollars[wi] = Math.round((res.dollars[wi] + Number(v.valeur || 0)) * 100) / 100;
-        if ((v.note || '').toUpperCase().includes('[SUIVI]')) res.suivi[wi] += 1;
-        else res.ots[wi] += 1;
-      });
-      return res;
+    function getUniqueClientKpiKey(v) {
+      const cliObj = state.clients.find(c => c.id === v.client_id);
+      const rawName = (cliObj?.nom || v.client_nom || '').trim().toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/\s+/g, ' ');
+      const repKey = String(v.representant_id || '');
+      const ym = getSaleStatsMonth(v);
+      return rawName ? `${ym}__${repKey}__${rawName}` : `sale_${v.id}`;
     }
 
-    function syncSalesIntoKpi() {
-      const isAdmin = currentProfile && currentProfile.role === 'admin';
+    function rebuildKpiStore() {
       const allVentes = [...(state.ventes || [])].sort((a, b) => {
         const dA = a.date_vente || `${a.mois_commission || '9999-99'}-01`;
         const dB = b.date_vente || `${b.mois_commission || '9999-99'}-01`;
@@ -4694,123 +4472,133 @@
 
       window._kpiCountedFirstSaleIds = new Set(allVentes.map(v => String(v.id)));
 
-      // Regrouper les ventes réelles par leur mois statistique d'origine (hors reports non confirmés)
-      const salesByMonth = new Map();
+      // 1. Collecter tous les mois pertinents (fichier condensé + fichier de ventes + RDV saisis + mois courant)
+      const validMonths = new Set();
+      if (typeof currentMonthStr !== 'undefined' && isValidYearMonth(currentMonthStr)) {
+        validMonths.add(currentMonthStr);
+      }
+      Object.keys(condensedBaselineStore || {}).forEach(ym => {
+        if (isValidYearMonth(ym)) validMonths.add(ym);
+      });
       allVentes.forEach(v => {
         const ym = getSaleStatsMonth(v);
-        if (!ym) return;
-        if (!salesByMonth.has(ym)) salesByMonth.set(ym, []);
-        salesByMonth.get(ym).push(v);
+        if (isValidYearMonth(ym)) validMonths.add(ym);
+      });
+      Object.keys(monthlyRdvOverrides || {}).forEach(k => {
+        const ym = k.split('_')[0];
+        if (isValidYearMonth(ym)) validMonths.add(ym);
+      });
+      (kpiHebdoRows || []).forEach(r => {
+        if (Number(r.semaine_index) >= 0 && isValidYearMonth(r.mois_commission)) {
+          validMonths.add(r.mois_commission);
+        }
       });
 
-      const allMonthsToSync = new Set([...Object.keys(kpiStore), ...salesByMonth.keys()].filter(isValidYearMonth));
+      // 2. Reconstruire `kpiStore` à neuf sans aucun résidu de cache
+      const freshStore = {};
+      validMonths.forEach(ym => {
+        freshStore[ym] = createEmptyMonthKpiObject(ym);
+      });
 
-      allMonthsToSync.forEach(ym => {
-        const monthSales = salesByMonth.get(ym) || [];
-        const mObj = ensureKpiMonthStructure(ym);
-        const nw = mObj.num_weeks || 4;
-        const repNames = Object.keys(mObj.reps);
-        const defaultMonthObj = DEFAULT_KPI_DATA[ym];
+      // 3. Appliquer la base du fichier condensé (si importé)
+      Object.entries(condensedBaselineStore || {}).forEach(([ym, monthData]) => {
+        if (!freshStore[ym] || !monthData || typeof monthData !== 'object') return;
+        const mObj = freshStore[ym];
+        ALL_KPI_REPS.forEach(rn => {
+          const entry = monthData[rn];
+          if (!entry || typeof entry !== 'object') return;
+          mObj.reps[rn]['Booké'].weeks[0] = Number(entry.booke || 0);
+          mObj.reps[rn]['RDV Réalisé'].weeks[0] = Number(entry.rdv || 0);
+          mObj.reps[rn]['Ventes OTS'].weeks[0] = Number(entry.ots || 0);
+          mObj.reps[rn]['Ventes SUIVI'].weeks[0] = Number(entry.suivi || 0);
+          mObj.reps[rn]['Vente $'].weeks[0] = Math.round(Number(entry.dollars || 0) * 100) / 100;
+        });
 
-        const myCanonRep = resolveKpiRepName(currentProfile?.nom || '');
-        const repsManagedByDb = isAdmin
-          ? repNames
-          : (myCanonRep && mObj.reps[myCanonRep] ? [myCanonRep] : []);
-
-        // Initialiser chaque représentant et chaque entreprise à partir de leur base historique (DEFAULT_KPI_DATA) avant d'additionner les ventes Supabase
-        repsManagedByDb.forEach(rn => {
-          const defRep = defaultMonthObj?.reps?.[rn];
-          if (mObj.reps[rn] && mObj.reps[rn]['Vente $']) {
-            mObj.reps[rn]['Vente $'].weeks = Array.from({ length: nw }, (_, wi) => Number(defRep?.['Vente $']?.weeks?.[wi] || 0));
-          }
-          if (mObj.reps[rn] && mObj.reps[rn]['Ventes OTS']) {
-            mObj.reps[rn]['Ventes OTS'].weeks = Array.from({ length: nw }, (_, wi) => Number(defRep?.['Ventes OTS']?.weeks?.[wi] || 0));
-          }
-          if (mObj.reps[rn] && mObj.reps[rn]['Ventes SUIVI']) {
-            mObj.reps[rn]['Ventes SUIVI'].weeks = Array.from({ length: nw }, (_, wi) => Number(defRep?.['Ventes SUIVI']?.weeks?.[wi] || 0));
-          }
-          Object.keys(mObj.entreprises).forEach(entK => {
-            const eObj = mObj.entreprises[entK];
-            const defEntRep = defaultMonthObj?.entreprises?.[entK]?.reps?.[rn];
-            const wLen = eObj.reps[rn]?.weeks?.length || nw;
-            if (eObj.reps[rn]) {
-              eObj.reps[rn].weeks = Array.from({ length: wLen }, (_, wi) => Number(defEntRep?.weeks?.[wi] || 0));
+        // Entreprises partenaires éventuellement présentes dans le fichier condensé
+        if (monthData._entreprises && typeof monthData._entreprises === 'object') {
+          Object.entries(monthData._entreprises).forEach(([entName, repMap]) => {
+            if (!mObj.entreprises[entName]) {
+              mObj.entreprises[entName] = {
+                reps: Object.fromEntries(ALL_KPI_REPS.map(rn => [rn, { weeks: [0, 0, 0, 0], cumul: 0, objectif: 0 }])),
+                total: { weeks: [0, 0, 0, 0], cumul: 0, objectif: 0 }
+              };
             }
+            ALL_KPI_REPS.forEach(rn => {
+              const val = Number(repMap?.[rn] || 0);
+              if (val > 0) {
+                mObj.entreprises[entName].reps[rn].weeks[0] = val;
+              }
+            });
           });
-        });
+        }
+      });
 
-        // Compteurs hebdomadaires des ventes enregistrées dans Supabase (SUIVI si tagué [SUIVI], sinon OTS par défaut)
-        const taggedCounts = {};
-        repNames.forEach(rn => {
-          taggedCounts[rn] = { ots: Array(nw).fill(0), suivi: Array(nw).fill(0), dollars: Array(nw).fill(0), rawWeekSales: Array(nw).fill(0), totalDbSales: 0 };
-        });
+      // 4. Appliquer les RDV saisis manuellement (monthlyRdvOverrides ou kpi_hebdo semaine_index >= 0)
+      Object.entries(monthlyRdvOverrides || {}).forEach(([key, rdvOv]) => {
+        const [ym, rn] = key.split('_');
+        if (!freshStore[ym] || !freshStore[ym].reps[rn] || !rdvOv) return;
+        freshStore[ym].reps[rn]['Booké'].weeks[0] = Math.max(0, (freshStore[ym].reps[rn]['Booké'].weeks[0] || 0) + Number(rdvOv.booke || 0));
+        freshStore[ym].reps[rn]['RDV Réalisé'].weeks[0] = Math.max(0, (freshStore[ym].reps[rn]['RDV Réalisé'].weeks[0] || 0) + Number(rdvOv.rdv || 0));
+      });
 
-        // Additionner chaque vente active de Supabase dans la bonne semaine, le bon représentant et la bonne entreprise
-        monthSales.forEach(v => {
-          const repObj = state.representants.find(r => String(r.id) === String(v.representant_id));
-          const entObj = state.entreprises.find(e => String(e.id) === String(v.entreprise_id));
-          const repName = resolveKpiRepName(repObj?.nom || v.rep_nom || '');
-          const entName = (entObj?.nom || v.entreprise_nom || '').trim();
-          if (!repName || !entName) return;
+      (kpiHebdoRows || []).forEach(row => {
+        const wIdx = Number(row.semaine_index);
+        if (wIdx < 0 || wIdx >= 4) return;
+        const ym = row.mois_commission;
+        const rn = resolveKpiRepName(row.representant_nom);
+        if (!freshStore[ym] || !freshStore[ym].reps[rn]) return;
+        // Ignorer si déjà géré par monthlyRdvOverrides pour ce mois/rep
+        if (monthlyRdvOverrides[`${ym}_${rn}`]) return;
+        freshStore[ym].reps[rn]['Booké'].weeks[wIdx] += Number(row.booke || 0);
+        freshStore[ym].reps[rn]['RDV Réalisé'].weeks[wIdx] += Number(row.rdv_realise || 0);
+      });
 
-          const val = Number(v.valeur || 0);
-          const wIdx = getWeekIndexFromDate(v.date_vente, nw);
+      // 5. Additionner chaque vente active du fichier de ventes (`state.ventes`)
+      allVentes.forEach(v => {
+        const ym = getSaleStatsMonth(v);
+        if (!freshStore[ym]) return;
+        const mObj = freshStore[ym];
+        const nw = mObj.num_weeks || 4;
 
-          if (mObj.reps[repName]) {
-            taggedCounts[repName].dollars[wIdx] = Math.round(((taggedCounts[repName].dollars[wIdx] || 0) + val) * 100) / 100;
-            taggedCounts[repName].totalDbSales += 1;
-            taggedCounts[repName].rawWeekSales[wIdx] += 1;
+        const repObj = state.representants.find(r => String(r.id) === String(v.representant_id));
+        const entObj = state.entreprises.find(e => String(e.id) === String(v.entreprise_id));
+        const repName = resolveKpiRepName(repObj?.nom || v.rep_nom || '');
+        const entName = (entObj?.nom || v.entreprise_nom || '').trim();
+        if (!repName) return;
 
-            const noteUp = (v.note || '').toUpperCase();
-            if (noteUp.includes('[SUIVI]')) {
-              taggedCounts[repName].suivi[wIdx] += 1;
-            } else {
-              taggedCounts[repName].ots[wIdx] += 1;
-            }
+        const val = Number(v.valeur || 0);
+        const wIdx = getWeekIndexFromDate(v.date_vente, nw);
+        const noteUp = (v.note || '').toUpperCase();
+        const isSuivi = noteUp.includes('[SUIVI]');
+
+        if (mObj.reps[repName]) {
+          mObj.reps[repName]['Vente $'].weeks[wIdx] = Math.round(((mObj.reps[repName]['Vente $'].weeks[wIdx] || 0) + val) * 100) / 100;
+          if (isSuivi) {
+            mObj.reps[repName]['Ventes SUIVI'].weeks[wIdx] += 1;
+          } else {
+            mObj.reps[repName]['Ventes OTS'].weeks[wIdx] += 1;
           }
+        }
 
+        if (entName) {
           if (!mObj.entreprises[entName]) {
             mObj.entreprises[entName] = {
-              reps: {
-                'Olivier': { weeks: Array(nw).fill(0), cumul: 0, objectif: 0 },
-                'Jean-Sébastien': { weeks: Array(nw).fill(0), cumul: 0, objectif: 0 },
-                'Gabryel': { weeks: Array(nw).fill(0), cumul: 0, objectif: 0 },
-                'Samuel': { weeks: Array(nw).fill(0), cumul: 0, objectif: 0 },
-                'Alexandre': { weeks: Array(nw).fill(0), cumul: 0, objectif: 0 }
-              },
+              reps: Object.fromEntries(ALL_KPI_REPS.map(rn => [rn, { weeks: Array(nw).fill(0), cumul: 0, objectif: 0 }])),
               total: { weeks: Array(nw).fill(0), cumul: 0, objectif: 0 }
             };
           }
-          const targetEnt = mObj.entreprises[entName];
-          if (!targetEnt.reps[repName]) {
-            targetEnt.reps[repName] = { weeks: Array(nw).fill(0), cumul: 0, objectif: 0 };
+          if (!mObj.entreprises[entName].reps[repName]) {
+            mObj.entreprises[entName].reps[repName] = { weeks: Array(nw).fill(0), cumul: 0, objectif: 0 };
           }
-          const entWIdx = Math.min(wIdx, targetEnt.reps[repName].weeks.length - 1);
-          targetEnt.reps[repName].weeks[entWIdx] = Math.round(((targetEnt.reps[repName].weeks[entWIdx] || 0) + val) * 100) / 100;
-        });
+          mObj.entreprises[entName].reps[repName].weeks[wIdx] = Math.round(((mObj.entreprises[entName].reps[repName].weeks[wIdx] || 0) + val) * 100) / 100;
+        }
+      });
 
-        // Combiner les statistiques existantes (importées / historiques / manuelles) + les ventes enregistrées dans l'application
-        repNames.forEach(rn => {
+      // 6. Calculer tous les cumuls, % Close, totaux entreprises et totaux équipe
+      Object.values(freshStore).forEach(mObj => {
+        const nw = mObj.num_weeks || 4;
+        ALL_KPI_REPS.forEach(rn => {
           const rData = mObj.reps[rn];
-          if (repsManagedByDb.includes(rn)) {
-            const defRep = defaultMonthObj?.reps?.[rn];
-            for (let wi = 0; wi < nw; wi++) {
-              const ovKey = `${ym}_${rn}_${wi}`;
-              const mSalesOv = manualSalesOverrides[ovKey];
-
-              const baseOts = mSalesOv ? Number(mSalesOv.ots || 0) : Number(defRep?.['Ventes OTS']?.weeks?.[wi] || 0);
-              const baseSuivi = mSalesOv ? Number(mSalesOv.suivi || 0) : Number(defRep?.['Ventes SUIVI']?.weeks?.[wi] || 0);
-              const baseDollars = mSalesOv ? Number(mSalesOv.dollars || 0) : Number(defRep?.['Vente $']?.weeks?.[wi] || 0);
-
-              const dbOts = taggedCounts[rn].ots[wi] || 0;
-              const dbSuivi = taggedCounts[rn].suivi[wi] || 0;
-              const dbDollars = taggedCounts[rn].dollars[wi] || 0;
-
-              rData['Ventes OTS'].weeks[wi] = baseOts + dbOts;
-              rData['Ventes SUIVI'].weeks[wi] = baseSuivi + dbSuivi;
-              rData['Vente $'].weeks[wi] = Math.round((baseDollars + dbDollars) * 100) / 100;
-            }
-          }
           ['Booké', 'RDV Réalisé', 'Ventes OTS', 'Ventes SUIVI', 'Vente $'].forEach(k => {
             rData[k].cumul = Math.round(rData[k].weeks.reduce((a, b) => a + b, 0) * 100) / 100;
           });
@@ -4824,14 +4612,11 @@
           rData['% Close'].cumul = totRdv > 0 ? Math.round((totV / totRdv) * 10000) / 100 : 0;
         });
 
-        // Recalculer totaux par entreprise
-        Object.keys(mObj.entreprises).forEach(entK => {
-          const eObj = mObj.entreprises[entK];
-          const wLen = eObj.total.weeks.length || nw;
-          const sumW = Array(wLen).fill(0);
+        Object.values(mObj.entreprises).forEach(eObj => {
+          const sumW = Array(nw).fill(0);
           Object.values(eObj.reps).forEach(rpObj => {
             rpObj.cumul = Math.round(rpObj.weeks.reduce((a, b) => a + b, 0) * 100) / 100;
-            for (let wi = 0; wi < wLen; wi++) {
+            for (let wi = 0; wi < nw; wi++) {
               sumW[wi] = Math.round((sumW[wi] + (rpObj.weeks[wi] || 0)) * 100) / 100;
             }
           });
@@ -4839,22 +4624,41 @@
           eObj.total.cumul = Math.round(sumW.reduce((a, b) => a + b, 0) * 100) / 100;
         });
 
-        // Recalculer totaux d'équipe
         for (let wi = 0; wi < nw; wi++) {
-          mObj.team['Booké'].weeks[wi] = repNames.reduce((s, rn) => s + (mObj.reps[rn]['Booké'].weeks[wi] || 0), 0);
-          mObj.team['RDV RÉA'].weeks[wi] = repNames.reduce((s, rn) => s + (mObj.reps[rn]['RDV Réalisé'].weeks[wi] || 0), 0);
-          mObj.team['VENTE OTS'].weeks[wi] = repNames.reduce((s, rn) => s + (mObj.reps[rn]['Ventes OTS'].weeks[wi] || 0), 0);
-          mObj.team['VENTE SUIVI'].weeks[wi] = repNames.reduce((s, rn) => s + (mObj.reps[rn]['Ventes SUIVI'].weeks[wi] || 0), 0);
+          mObj.team['Booké'].weeks[wi] = ALL_KPI_REPS.reduce((s, rn) => s + (mObj.reps[rn]['Booké'].weeks[wi] || 0), 0);
+          mObj.team['RDV RÉA'].weeks[wi] = ALL_KPI_REPS.reduce((s, rn) => s + (mObj.reps[rn]['RDV Réalisé'].weeks[wi] || 0), 0);
+          mObj.team['VENTE OTS'].weeks[wi] = ALL_KPI_REPS.reduce((s, rn) => s + (mObj.reps[rn]['Ventes OTS'].weeks[wi] || 0), 0);
+          mObj.team['VENTE SUIVI'].weeks[wi] = ALL_KPI_REPS.reduce((s, rn) => s + (mObj.reps[rn]['Ventes SUIVI'].weeks[wi] || 0), 0);
           mObj.team['VENTE TOTAL'].weeks[wi] = mObj.team['VENTE OTS'].weeks[wi] + mObj.team['VENTE SUIVI'].weeks[wi];
-          mObj.team['VENTE $'].weeks[wi] = Math.round(repNames.reduce((s, rn) => s + (mObj.reps[rn]['Vente $'].weeks[wi] || 0), 0) * 100) / 100;
+          mObj.team['VENTE $'].weeks[wi] = Math.round(ALL_KPI_REPS.reduce((s, rn) => s + (mObj.reps[rn]['Vente $'].weeks[wi] || 0), 0) * 100) / 100;
         }
         ['Booké', 'RDV RÉA', 'VENTE OTS', 'VENTE SUIVI', 'VENTE TOTAL', 'VENTE $'].forEach(k => {
           mObj.team[k].cumul = Math.round(mObj.team[k].weeks.reduce((a, b) => a + b, 0) * 100) / 100;
         });
       });
 
+      kpiStore = freshStore;
+      applyRepTargetsOverridesToStore();
+      applyCompanyTargetsMetaToStore();
+      updateKpiSourceBadge();
       populateKpiMonthSelect(true);
-      lsSet('korpo_kpi_store_v1', JSON.stringify(kpiStore));
+    }
+
+    function updateKpiSourceBadge() {
+      const badge = document.getElementById('kpi-source-badge');
+      if (!badge) return;
+      if (hasActiveCondensedBaseline()) {
+        const countMonths = Object.keys(condensedBaselineStore).filter(isValidYearMonth).length;
+        badge.textContent = `📄 Base condensée (${countMonths} mois) + 💵 Fichier de ventes`;
+        badge.className = 'px-2.5 py-0.5 text-[11px] font-bold rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200';
+      } else {
+        badge.textContent = '💵 100 % basé sur le fichier de ventes';
+        badge.className = 'px-2.5 py-0.5 text-[11px] font-bold rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200';
+      }
+    }
+
+    function syncSalesIntoKpi() {
+      rebuildKpiStore();
     }
 
     function progressColor(pct) {
@@ -4952,7 +4756,6 @@
         });
       });
 
-      // Recalculer le % Close annuel exact (Total Ventes / Total RDV Réalisés)
       allReps.forEach(rn => {
         const totRdv = agg.reps[rn]['RDV Réalisé'].cumul;
         const totV = agg.reps[rn]['Ventes OTS'].cumul + agg.reps[rn]['Ventes SUIVI'].cumul;
@@ -4973,7 +4776,6 @@
       if (allMeta && Number(allMeta.annualAmount) > 0) return Number(allMeta.annualAmount);
       if (allMeta && Number(allMeta.monthlyAmount) > 0) return Number(allMeta.monthlyAmount) * 12;
 
-      // Vérifier si des objectifs individuels par représentant existent pour cette compagnie
       const repMetas = ALL_KPI_REPS
         .map(rn => companyTargetsMetaStore[`${entName}__${rn}`])
         .filter(Boolean);
@@ -4984,9 +4786,7 @@
     }
 
     function renderKpiDashboard() {
-      normalizeKpiStoreReps();
-      applyRepTargetsOverridesToStore();
-      applyCompanyTargetsMetaToStore();
+      rebuildKpiStore();
       const selMonthEl = document.getElementById('kpi-select-month');
       if (!selMonthEl.value) populateKpiMonthSelect(false);
       const selVal = selMonthEl.value || currentMonthStr;
@@ -4999,7 +4799,7 @@
       const { isYear, data: mObj } = getAggregatedKpiForSelection(selVal);
       if (!mObj) return;
 
-      // 1. Cartes synthèse (4 étapes claires de l'entonnoir de vente)
+      // 1. Cartes synthèse (4 étapes de l'entonnoir de vente)
       let booke = 0, rdv = 0, ots = 0, suivi = 0, ventesDol = 0, objDol = 0, objRdv = 0, objVentesCnt = 0;
       if (repFilter === 'ALL' || !mObj.reps?.[repFilter]) {
         booke = mObj.team?.['Booké']?.cumul || 0;
@@ -5087,7 +4887,7 @@
         </div>
       `;
 
-      // 2. Tableau comparatif synthétique des 4 représentants (1 ligne par rep = ultra lisible !)
+      // 2. Tableau comparatif des représentants
       const allReps = ALL_KPI_REPS;
       const compareRows = allReps.map(rn => {
         const r = mObj.reps[rn];
@@ -5111,7 +4911,7 @@
                 <span class="w-8 h-8 rounded-xl ${isSelected ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-700'} text-xs font-extrabold flex items-center justify-center">${esc(rn.slice(0, 2).toUpperCase())}</span>
                 <div>
                   <div class="font-bold text-slate-900">${esc(rn)}</div>
-                  <div class="text-[11px] text-slate-400">${isYear ? 'Voir le détail mois par mois →' : 'Voir le détail par semaine →'}</div>
+                  <div class="text-[11px] text-slate-400">${isYear ? 'Voir mois par mois →' : 'Voir le détail du mois →'}</div>
                 </div>
               </div>
             </td>
@@ -5217,16 +5017,14 @@
         }).join('');
       }
 
-      // 3. Détail hebdomadaire (affiché uniquement si un représentant précis est sélectionné, ou avec onglets rapides)
+      // 3. Détail ciblé d'un représentant (Mois par mois sur vue annuelle, OU décomposition Base condensée + Ventes enregistrées sur vue mensuelle)
       const weeklyContainer = document.getElementById('kpi-rep-weekly-detail');
       if (repFilter === 'ALL') {
         weeklyContainer.innerHTML = '';
-      } else {
+      } else if (isYear) {
         const rData = mObj.reps[repFilter];
-        const colLabels = isYear && mObj.monthLabels
-          ? mObj.monthLabels
-          : Array.from({ length: mObj.num_weeks }, (_, i) => `Semaine ${i + 1}`);
-        const wHeaders = colLabels.map(lbl => `<th class="py-2.5 px-3 text-right whitespace-nowrap">${lbl}</th>`).join('');
+        const colLabels = mObj.monthLabels || [];
+        const wHeaders = colLabels.map(lbl => `<th class="py-2.5 px-3 text-right whitespace-nowrap">${esc(lbl)}</th>`).join('');
         const metricsOrder = ['Booké', 'RDV Réalisé', 'Ventes OTS', 'Ventes SUIVI', 'Vente $', '% Close'];
         const rowsHtml = metricsOrder.map(mKey => {
           const item = rData[mKey];
@@ -5246,9 +5044,7 @@
         weeklyContainer.innerHTML = `
           <div class="bg-white rounded-2xl border-2 border-indigo-200 shadow-xs overflow-hidden">
             <div class="px-5 py-3.5 bg-indigo-950 text-white flex items-center justify-between">
-              <div class="flex items-center gap-2.5">
-                <span class="text-sm font-extrabold">${isYear ? 'Évolution mois par mois' : 'Détail semaine par semaine'} — ${esc(repFilter)}</span>
-              </div>
+              <span class="text-sm font-extrabold">Évolution mois par mois — ${esc(repFilter)}</span>
               <button onclick="selectKpiRep('ALL')" class="px-3 py-1 text-xs font-bold bg-white/10 hover:bg-white/20 rounded-lg transition">← Revenir à toute l'équipe</button>
             </div>
             <div class="overflow-x-auto">
@@ -5257,7 +5053,7 @@
                   <tr class="bg-slate-50 border-b border-slate-200 text-[11px] font-bold uppercase text-slate-500">
                     <th class="py-2.5 px-5">Indicateur</th>
                     ${wHeaders}
-                    <th class="py-2.5 px-4 text-right text-indigo-700">${isYear ? 'Cumul Année' : 'Total Mois'}</th>
+                    <th class="py-2.5 px-4 text-right text-indigo-700">Cumul Année</th>
                     <th class="py-2.5 px-5 text-right">Objectif</th>
                   </tr>
                 </thead>
@@ -5266,9 +5062,102 @@
             </div>
           </div>
         `;
+      } else {
+        const baseEntry = condensedBaselineStore[selVal]?.[repFilter] || { booke: 0, rdv: 0, ots: 0, suivi: 0, dollars: 0 };
+        const repMonthSales = (state.ventes || []).filter(v => {
+          if (getSaleStatsMonth(v) !== selVal) return false;
+          const rObj = state.representants.find(r => String(r.id) === String(v.representant_id));
+          return resolveKpiRepName(rObj?.nom || v.rep_nom || '') === repFilter;
+        });
+        const appOts = repMonthSales.filter(v => !(v.note || '').toUpperCase().includes('[SUIVI]')).length;
+        const appSuivi = repMonthSales.filter(v => (v.note || '').toUpperCase().includes('[SUIVI]')).length;
+        const appDol = repMonthSales.reduce((s, v) => s + Number(v.valeur || 0), 0);
+        const rData = mObj.reps[repFilter];
+
+        const salesListHtml = repMonthSales.length
+          ? repMonthSales.map(v => {
+              const cli = v.client_nom || state.clients.find(c => String(c.id) === String(v.client_id))?.nom || '—';
+              const ent = v.entreprise_nom || state.entreprises.find(e => String(e.id) === String(v.entreprise_id))?.nom || '—';
+              const isSui = (v.note || '').toUpperCase().includes('[SUIVI]');
+              return `
+                <tr class="hover:bg-slate-50">
+                  <td class="py-2 px-4 text-slate-600 tabular-nums">${esc(v.date_vente || selVal)}</td>
+                  <td class="py-2 px-4">${entBadge(ent)}</td>
+                  <td class="py-2 px-4 font-bold text-slate-900">${esc(cli)}</td>
+                  <td class="py-2 px-4">
+                    <span class="px-2 py-0.5 text-[10px] font-extrabold rounded-full ${isSui ? 'bg-purple-50 text-purple-700 border border-purple-200' : 'bg-sky-50 text-sky-700 border border-sky-200'}">${isSui ? 'SUIVI' : 'OTS'}</span>
+                  </td>
+                  <td class="py-2 px-4 text-right font-extrabold text-slate-900 tabular-nums">${fmtMoney(v.valeur)}</td>
+                </tr>
+              `;
+            }).join('')
+          : `<tr><td colspan="5" class="py-4 px-4 text-center text-xs text-slate-400">Aucune vente individuelle enregistrée dans l'application pour ${esc(repFilter)} ce mois-ci.</td></tr>`;
+
+        weeklyContainer.innerHTML = `
+          <div class="bg-white rounded-2xl border-2 border-indigo-200 shadow-xs overflow-hidden space-y-0">
+            <div class="px-5 py-3.5 bg-indigo-950 text-white flex items-center justify-between">
+              <span class="text-sm font-extrabold">Détail du mois (${esc(mObj.label)}) — ${esc(repFilter)}</span>
+              <button onclick="selectKpiRep('ALL')" class="px-3 py-1 text-xs font-bold bg-white/10 hover:bg-white/20 rounded-lg transition">← Revenir à toute l'équipe</button>
+            </div>
+            <div class="overflow-x-auto">
+              <table class="w-full text-left border-collapse text-xs">
+                <thead>
+                  <tr class="bg-slate-50 border-b border-slate-200 text-[11px] font-bold uppercase text-slate-500">
+                    <th class="py-2.5 px-4">Source</th>
+                    <th class="py-2.5 px-3 text-center">RDV Bookés</th>
+                    <th class="py-2.5 px-3 text-center">RDV Réalisés</th>
+                    <th class="py-2.5 px-3 text-center text-sky-700">Ventes OTS</th>
+                    <th class="py-2.5 px-3 text-center text-purple-700">Ventes SUIVI</th>
+                    <th class="py-2.5 px-4 text-right">Volume ($)</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100 tabular-nums">
+                  <tr>
+                    <td class="py-2.5 px-4 font-semibold text-slate-600">📄 Base fichier condensé</td>
+                    <td class="py-2.5 px-3 text-center">${Number(baseEntry.booke || 0)}</td>
+                    <td class="py-2.5 px-3 text-center">${Number(baseEntry.rdv || 0)}</td>
+                    <td class="py-2.5 px-3 text-center font-bold text-sky-700">${Number(baseEntry.ots || 0)}</td>
+                    <td class="py-2.5 px-3 text-center font-bold text-purple-700">${Number(baseEntry.suivi || 0)}</td>
+                    <td class="py-2.5 px-4 text-right font-bold text-slate-700">${fmtMoney0(baseEntry.dollars || 0)}</td>
+                  </tr>
+                  <tr>
+                    <td class="py-2.5 px-4 font-semibold text-emerald-700">💵 Fichier de ventes (${repMonthSales.length} vente(s))</td>
+                    <td class="py-2.5 px-3 text-center text-slate-400">—</td>
+                    <td class="py-2.5 px-3 text-center text-slate-400">—</td>
+                    <td class="py-2.5 px-3 text-center font-bold text-sky-700">+ ${appOts}</td>
+                    <td class="py-2.5 px-3 text-center font-bold text-purple-700">+ ${appSuivi}</td>
+                    <td class="py-2.5 px-4 text-right font-bold text-emerald-700">+ ${fmtMoney0(appDol)}</td>
+                  </tr>
+                  <tr class="bg-indigo-50/50 font-extrabold text-slate-900">
+                    <td class="py-2.5 px-4">Total consolidé</td>
+                    <td class="py-2.5 px-3 text-center">${rData['Booké'].cumul}</td>
+                    <td class="py-2.5 px-3 text-center">${rData['RDV Réalisé'].cumul}</td>
+                    <td class="py-2.5 px-3 text-center text-sky-800">${rData['Ventes OTS'].cumul}</td>
+                    <td class="py-2.5 px-3 text-center text-purple-800">${rData['Ventes SUIVI'].cumul}</td>
+                    <td class="py-2.5 px-4 text-right text-indigo-900">${fmtMoney0(rData['Vente $'].cumul)}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="border-t border-slate-200 overflow-x-auto">
+              <table class="w-full text-left border-collapse text-xs">
+                <thead>
+                  <tr class="bg-slate-50/70 border-b border-slate-200 text-[10px] font-bold uppercase text-slate-400">
+                    <th class="py-2 px-4">Date</th>
+                    <th class="py-2 px-4">Compagnie</th>
+                    <th class="py-2 px-4">Client</th>
+                    <th class="py-2 px-4">Type KPI</th>
+                    <th class="py-2 px-4 text-right">Montant</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100">${salesListHtml}</tbody>
+              </table>
+            </div>
+          </div>
+        `;
       }
 
-      // 4. Cartes visuelles par entreprise partenaire (plus lisible qu'un tableau de 35 lignes !)
+      // 4. Cartes visuelles par entreprise partenaire
       const entSubEl = document.getElementById('kpi-entreprises-subtitle');
       if (entSubEl) {
         entSubEl.textContent = isYear
@@ -5348,17 +5237,24 @@
       const selVal = document.getElementById('kpi-select-month').value;
       const { isYear, data: mObj } = getAggregatedKpiForSelection(selVal);
       if (!mObj) return;
-      const colHeaders = isYear && mObj.monthLabels
-        ? mObj.monthLabels
-        : ['Semaine_1', 'Semaine_2', 'Semaine_3', 'Semaine_4', 'Semaine_5'];
-      const rows = [['Periode', 'Representant', 'Indicateur', ...colHeaders, 'Cumul', 'Objectif']];
-      Object.entries(mObj.reps).forEach(([rep, metrics]) => {
-        Object.entries(metrics).forEach(([mKey, obj]) => {
-          const w = colHeaders.map((_, idx) => obj.weeks[idx] ?? '');
-          rows.push([selVal, rep, mKey, ...w, obj.cumul, obj.objectif]);
-        });
+      const rows = [['Periode', 'Representant', 'RDV_Bookes', 'RDV_Realises', 'Ventes_OTS', 'Ventes_SUIVI', 'Ventes_Dollars', 'Pct_Close', 'Objectif_Dollars']];
+      ALL_KPI_REPS.forEach(rep => {
+        const r = mObj.reps?.[rep];
+        if (!r) return;
+        rows.push([
+          selVal,
+          rep,
+          r['Booké'].cumul,
+          r['RDV Réalisé'].cumul,
+          r['Ventes OTS'].cumul,
+          r['Ventes SUIVI'].cumul,
+          r['Vente $'].cumul,
+          r['% Close'].cumul,
+          r['Vente $'].objectif
+        ]);
       });
-      const csv = rows.map(r => r.join(',')).join('\n');
+      const csv = rows.map(r => r.join(',')).join('
+');
       const a = document.createElement('a');
       a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8;' }));
       a.download = `korpo-kpi-${selVal.toLowerCase()}.csv`;
@@ -5366,10 +5262,9 @@
     }
 
     // =========================================================================
-        // =========================================================================
-    // IMPORTATION HISTORIQUE KPI (EXCEL .XLSX MULTI-ONGLETS OU .CSV)
+    // IMPORTATION DU FICHIER CONDENSÉ (EXCEL .XLSX / .XLS OU .CSV)
     // =========================================================================
-    let parsedKpiImportRows = [];
+    let parsedCondensedRows = []; // [{ ym, rep, booke, rdv, ots, suivi, dollars }]
 
     const kpiImportModal = document.getElementById('kpi-import-modal');
     document.getElementById('btn-kpi-import-open')?.addEventListener('click', () => {
@@ -5385,30 +5280,25 @@
 
     document.getElementById('btn-download-kpi-template')?.addEventListener('click', () => {
       const sample = [
-        ['Periode', 'Representant', 'Indicateur', 'Semaine_1', 'Semaine_2', 'Semaine_3', 'Semaine_4', 'Semaine_5', 'Cumul', 'Objectif'],
-        ['2026-10', 'Olivier', 'Booké', 8, 9, 7, 10, '', 34, 40],
-        ['2026-10', 'Olivier', 'RDV Réalisé', 7, 8, 6, 9, '', 30, 30],
-        ['2026-10', 'Olivier', 'Ventes OTS', 2, 2, 1, 2, '', 7, 7],
-        ['2026-10', 'Olivier', 'Ventes SUIVI', 1, 2, 2, 2, '', 7, 9],
-        ['2026-10', 'Olivier', 'Vente $', 28500, 34200, 19800, 41500, '', 124000, 118000],
-        ['2026-10', 'Olivier', '% Close', 42.86, 50.0, 50.0, 44.44, '', 46.67, 40],
-        ['2026-10', 'Samuel', 'Booké', 20, 22, 19, 21, '', 82, 80],
-        ['2026-10', 'Samuel', 'RDV Réalisé', 18, 19, 17, 18, '', 72, 60],
-        ['2026-10', 'Samuel', 'Ventes OTS', 4, 5, 4, 5, '', 18, 10],
-        ['2026-10', 'Samuel', 'Ventes SUIVI', 3, 2, 3, 3, '', 11, 20],
-        ['2026-10', 'Samuel', 'Vente $', 54000, 62000, 48500, 59000, '', 223500, 200000],
-        ['2026-10', 'Samuel', '% Close', 38.89, 36.84, 41.18, 44.44, '', 40.28, 33]
+        ['Periode', 'Representant', 'RDV_Bookes', 'RDV_Realises', 'Ventes_OTS', 'Ventes_Suivi', 'Ventes_Dollars'],
+        ['2026-03', 'Olivier', 13, 13, 2, 3, 50165],
+        ['2026-03', 'Jean-Sébastien', 32, 28, 5, 4, 82559],
+        ['2026-03', 'Gabryel', 31, 31, 6, 4, 46480],
+        ['2026-04', 'Olivier', 31, 24, 7, 4, 164870],
+        ['2026-04', 'Jean-Sébastien', 66, 62, 9, 15, 232152],
+        ['2026-04', 'Gabryel', 74, 68, 13, 19, 189688]
       ];
-      const csv = sample.map(r => r.join(',')).join('\n');
+      const csv = sample.map(r => r.join(',')).join('
+');
       const a = document.createElement('a');
       a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8;' }));
-      a.download = 'modele-import-kpi-korpo.csv';
+      a.download = 'modele-fichier-condense-korpo.csv';
       a.click();
     });
 
     function normalizeImportedRepName(raw) {
       if (!raw) return null;
-      const s = String(raw).trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+      const s = String(raw).trim().toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
       if (s.includes('olivier')) return 'Olivier';
       if (s.includes('jean') || s === 'j-s' || s === 'js') return 'Jean-Sébastien';
       if (s.includes('gabryel') || s.includes('gabriel')) return 'Gabryel';
@@ -5419,20 +5309,19 @@
 
     function normalizeImportedMetricName(raw) {
       if (!raw) return null;
-      const s = String(raw).trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+      const s = String(raw).trim().toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
       if (s.includes('vente total') || s.includes('ventes total')) return null;
-      if (s === 'booke' || s.includes('book')) return 'Booké';
-      if (s.includes('rdv') && (s.includes('rea') || s.includes('fait') || s.includes('comple'))) return 'RDV Réalisé';
-      if (s.includes('ots')) return 'Ventes OTS';
-      if (s.includes('suivi')) return 'Ventes SUIVI';
-      if (s.includes('vente') && (s.includes('$') || s.includes('dol') || s.includes('vol') || s.includes('ca'))) return 'Vente $';
-      if (s.includes('close') || s.includes('closing') || s.includes('%')) return '% Close';
+      if (s === 'booke' || s.includes('book')) return 'booke';
+      if (s.includes('rdv') && (s.includes('rea') || s.includes('fait') || s.includes('comple'))) return 'rdv';
+      if (s.includes('ots')) return 'ots';
+      if (s.includes('suivi')) return 'suivi';
+      if (s.includes('vente') && (s.includes('$') || s.includes('dol') || s.includes('vol') || s.includes('ca'))) return 'dollars';
       return null;
     }
 
     function parseSheetNameToYm(sheetName, fallbackYear = '2026') {
-      const s = String(sheetName || '').trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-      if (/^\d{4}-\d{2}$/.test(s)) return s;
+      const s = String(sheetName || '').trim().toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+      if (/^\d{4}-(0[1-9]|1[0-2])$/.test(s)) return s;
       const yearMatch = s.match(/(20\d{2})/);
       const year = yearMatch ? yearMatch[1] : fallbackYear;
       const monthMap = {
@@ -5450,113 +5339,66 @@
     function cleanNumCell(val) {
       if (val === null || val === undefined || val === '') return 0;
       if (typeof val === 'number') return Math.round(val * 100) / 100;
-      const str = String(val).trim();
-      const isPct = str.includes('%');
-      const cleaned = str.replace(/[\s$%,]/g, (m) => m === ',' && !str.includes('.') ? '.' : '');
-      const n = parseFloat(cleaned);
-      if (isNaN(n)) return 0;
-      // Si Excel a exporté un pourcentage sous forme décimale (ex: 0.3846 avec % ou < 1 pour % Close), convertir en %
-      if (isPct && Math.abs(n) <= 1 && n !== 0) return Math.round(n * 10000) / 100;
-      return Math.round(n * 100) / 100;
+      const n = parseAmount(val);
+      return isNaN(n) ? 0 : Math.round(n * 100) / 100;
     }
 
-    function isWeekColHeader(txt) {
-      const clean = String(txt || '').trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-      return /^(semaine|sem\.?|s|week|w)\s*[-_]?\s*[1-5]$/i.test(clean) || /^semaine\s+[1-5]/i.test(clean);
-    }
+    function parseCondensedSheetToRecords(aoa, sheetName, fallbackYear = '2026') {
+      const map = new Map(); // key: `${ym}__${rep}` -> { ym, rep, booke, rdv, ots, suivi, dollars }
+      const getRec = (ym, rep) => {
+        const k = `${ym}__${rep}`;
+        if (!map.has(k)) {
+          map.set(k, { ym, rep, booke: 0, rdv: 0, ots: 0, suivi: 0, dollars: 0 });
+        }
+        return map.get(k);
+      };
 
-    function showKpiImportPreview() {
-      const box = document.getElementById('kpi-import-preview-box');
-      const tbody = document.getElementById('tbody-kpi-import-preview');
-      const sumEl = document.getElementById('kpi-import-summary');
+      const sheetRep = normalizeImportedRepName(sheetName);
+      const sheetYm = parseSheetNameToYm(sheetName, fallbackYear);
 
-      if (!parsedKpiImportRows.length) {
-        box.classList.add('hidden');
-        return false;
-      }
-
-      const monthsCount = new Set(parsedKpiImportRows.map(r => r.ym)).size;
-      sumEl.textContent = `${parsedKpiImportRows.length} ligne(s) KPI détectée(s) sur ${monthsCount} mois`;
-
-      tbody.innerHTML = parsedKpiImportRows.slice(0, 120).map((r, idx) => `
-        <tr class="hover:bg-slate-50">
-          <td class="py-2 px-3 font-bold text-slate-800">${esc(r.ym)}</td>
-          <td class="py-2 px-3 font-semibold text-indigo-700">${esc(r.rep)}</td>
-          <td class="py-2 px-3 font-medium text-slate-700">${esc(r.metric)}</td>
-          <td class="py-2 px-3 text-right tabular-nums text-slate-500">${r.weeks.join(' / ')}</td>
-          <td class="py-2 px-3 text-right">
-            <input type="number" step="0.01" value="${r.cumul}" onchange="parsedKpiImportRows[${idx}].cumul = parseFloat(this.value) || 0; parsedKpiImportRows[${idx}].weeks = [parsedKpiImportRows[${idx}].cumul, 0, 0, 0];" class="w-24 px-2 py-0.5 text-right font-extrabold text-slate-900 bg-slate-50 border border-slate-200 rounded-md tabular-nums" />
-          </td>
-          <td class="py-2 px-3 text-right tabular-nums text-slate-500">${r.objectif || '—'}</td>
-        </tr>
-      `).join('') + (parsedKpiImportRows.length > 120 ? `<tr><td colspan="6" class="py-2 px-3 text-center text-[11px] text-slate-400">... et ${parsedKpiImportRows.length - 120} autres lignes</td></tr>` : '');
-
-      box.classList.remove('hidden');
-      return true;
-    }
-
-    document.getElementById('btn-load-builtin-2026')?.addEventListener('click', () => {
-      parsedKpiImportRows = [];
-      Object.entries(DEFAULT_KPI_DATA).sort((a, b) => a[0].localeCompare(b[0])).forEach(([ym, mObj]) => {
-        Object.entries(mObj.reps || {}).forEach(([rep, metrics]) => {
-          Object.entries(metrics).forEach(([metric, data]) => {
-            parsedKpiImportRows.push({
-              ym,
-              rep,
-              metric,
-              weeks: [...(data.weeks || [0, 0, 0, 0])],
-              cumul: Number(data.cumul || 0),
-              objectif: Number(data.objectif || 0)
-            });
-          });
-        });
-      });
-      if (showKpiImportPreview()) {
-        toast(`${parsedKpiImportRows.length} lignes KPI (Mars–Novembre 2026) prêtes à importer`);
-      }
-    });
-
-    function parseKorpoExcelSheet(aoa, defaultYm, fallbackYear = '2026') {
-      const results = [];
-      const fallbackActiveYm = defaultYm || (document.getElementById('kpi-select-month')?.value?.startsWith('YEAR_')
-        ? currentMonthStr
-        : (document.getElementById('kpi-select-month')?.value || currentMonthStr));
-
-      let currentYm = fallbackActiveYm;
-      let currentRep = null;
-      let weekCols = [];
-      let monthCols = []; // [{ idx, ym }] pour les tableaux condensés où les colonnes sont les mois (Mars, Avril, Mai...)
-      let cumulCol = -1;
-      let objCol = -1;
-      let isTeamOrPartnerSection = false;
+      let currentRep = sheetRep || null;
+      let currentYm = sheetYm || null;
+      let monthCols = []; // [{ idx, ym }]
+      let metricCols = {}; // { booke: idx, rdv: idx, ots: idx, suivi: idx, dollars: idx }
+      let skipPartnerSection = false;
 
       for (let r = 0; r < aoa.length; r++) {
         const row = aoa[r] || [];
         const nonEmpty = row.map((c, idx) => ({ val: String(c ?? '').trim(), idx })).filter(x => x.val !== '');
         if (!nonEmpty.length) continue;
 
-        // MODE A : Tableau plat avec colonnes [Mois/Période, Représentant, Indicateur, ...]
+        // 1. Format CSV condensé direct (1 ligne = Periode, Representant, Booke, RDV, OTS, Suivi, Dollars)
+        if (nonEmpty.length >= 6) {
+          const ymDirect = parseSheetNameToYm(nonEmpty[0].val, fallbackYear);
+          const repDirect = normalizeImportedRepName(nonEmpty[1].val);
+          if (ymDirect && repDirect && !normalizeImportedMetricName(nonEmpty[2].val)) {
+            const c0 = nonEmpty[0].idx;
+            const rec = getRec(ymDirect, repDirect);
+            rec.booke = cleanNumCell(row[c0 + 2]);
+            rec.rdv = cleanNumCell(row[c0 + 3]);
+            rec.ots = cleanNumCell(row[c0 + 4]);
+            rec.suivi = cleanNumCell(row[c0 + 5]);
+            rec.dollars = cleanNumCell(row[c0 + 6]);
+            continue;
+          }
+        }
+
+        // 2. Format CSV Korpo exporté (Periode, Representant, Indicateur, ..., Cumul)
         if (nonEmpty.length >= 4) {
           const ymFlat = parseSheetNameToYm(nonEmpty[0].val, fallbackYear);
           const repFlat = normalizeImportedRepName(nonEmpty[1].val);
           const metFlat = normalizeImportedMetricName(nonEmpty[2].val);
           if (ymFlat && repFlat && metFlat) {
             const c0 = nonEmpty[0].idx;
-            const wVals = [row[c0 + 3], row[c0 + 4], row[c0 + 5], row[c0 + 6], row[c0 + 7]]
-              .filter((v, i) => i < 4 || (v !== undefined && String(v).trim() !== ''))
-              .map(cleanNumCell);
-            const cum = (row[c0 + 8] !== undefined && String(row[c0 + 8]).trim() !== '')
-              ? cleanNumCell(row[c0 + 8])
-              : Math.round(wVals.reduce((a, b) => a + b, 0) * 100) / 100;
-            const obj = (row[c0 + 9] !== undefined && String(row[c0 + 9]).trim() !== '')
-              ? cleanNumCell(row[c0 + 9])
-              : 0;
-            results.push({ ym: ymFlat, rep: repFlat, metric: metFlat, weeks: wVals, cumul: cum, objectif: obj });
+            const rec = getRec(ymFlat, repFlat);
+            // Prendre la colonne Cumul (index +8) si présente, sinon la 4e colonne (index +3)
+            const valCell = (row[c0 + 8] !== undefined && String(row[c0 + 8]).trim() !== '') ? row[c0 + 8] : row[c0 + 3];
+            rec[metFlat] = cleanNumCell(valCell);
             continue;
           }
         }
 
-        // MODE B : Ligne d'en-tête avec les MOIS en colonnes (ex: ["Olivier", "Mars", "Avril", "Mai", ..., "Objectif"] dans un fichier condensé !)
+        // 3. Détecter une ligne d'en-tête avec les MOIS en colonnes (Mars, Avril, Mai...)
         const rowMonthCols = [];
         nonEmpty.forEach(cell => {
           const ymCol = parseSheetNameToYm(cell.val, fallbackYear);
@@ -5566,40 +5408,36 @@
         });
         if (rowMonthCols.length >= 2) {
           monthCols = rowMonthCols;
-          weekCols = [];
-          objCol = -1;
-          nonEmpty.forEach(cell => {
-            if (/objectif|cible|obj/i.test(cell.val)) objCol = cell.idx;
-          });
-          const repOnMonthHeader = nonEmpty.map(c => normalizeImportedRepName(c.val)).find(Boolean);
-          if (repOnMonthHeader) {
-            currentRep = repOnMonthHeader;
-            isTeamOrPartnerSection = false;
-          }
+          metricCols = {};
+          skipPartnerSection = false;
+          const repOnHeader = nonEmpty.map(c => normalizeImportedRepName(c.val)).find(Boolean);
+          if (repOnHeader) currentRep = repOnHeader;
           continue;
         }
 
-        const firstCell = nonEmpty[0].val;
-        const firstLow = firstCell.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
-
-        // Détecter un titre de mois dans la feuille (ex: "MARS 2026", "Avril 2026")
-        if (nonEmpty.length <= 3) {
-          const detectedMonthInRow = nonEmpty
-            .map(c => parseSheetNameToYm(c.val, fallbackYear))
-            .find(Boolean);
-          if (detectedMonthInRow && !nonEmpty.some(c => normalizeImportedRepName(c.val)) && !nonEmpty.some(c => normalizeImportedMetricName(c.val))) {
-            currentYm = detectedMonthInRow;
-            currentRep = null;
-            isTeamOrPartnerSection = false;
-            continue;
+        // 4. Détecter une ligne d'en-tête avec les INDICATEURS en colonnes (Booké, RDV Réalisé, OTS, Suivi, Vente $)
+        const detectedMetricHeaders = {};
+        nonEmpty.forEach(cell => {
+          const mk = normalizeImportedMetricName(cell.val);
+          if (mk && detectedMetricHeaders[mk] === undefined) {
+            detectedMetricHeaders[mk] = cell.idx;
           }
+        });
+        if (Object.keys(detectedMetricHeaders).length >= 3) {
+          metricCols = detectedMetricHeaders;
+          monthCols = [];
+          skipPartnerSection = false;
+          const repOnHeader = nonEmpty.map(c => normalizeImportedRepName(c.val)).find(Boolean);
+          if (repOnHeader) currentRep = repOnHeader;
+          continue;
         }
 
-        // Détecter la fin des blocs représentants (section Équipe ou Entreprises partenaires)
+        const firstLow = nonEmpty[0].val.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+
+        // Ignorer les blocs récapitulatifs d'équipe ou entreprises
         if (
-          firstLow.includes('equipe') ||
           firstLow.includes('total equipe') ||
-          firstLow.includes('entreprise') ||
+          firstLow.includes('equipe') ||
           firstLow.includes('partenaire') ||
           firstLow.includes('compagnie') ||
           firstLow.includes('toitex') ||
@@ -5608,122 +5446,147 @@
           firstLow.includes('verrevdm') ||
           firstLow.includes('diamant')
         ) {
+          skipPartnerSection = true;
           currentRep = null;
-          isTeamOrPartnerSection = true;
           continue;
         }
 
-        // Détecter un nom de représentant (sur une ligne titre seule OU avec Semaine 1..5)
-        const repCandidate = nonEmpty.slice(0, 2).map(c => normalizeImportedRepName(c.val)).find(Boolean);
-        const rowWeekCols = nonEmpty.filter(c => isWeekColHeader(c.val)).map(c => c.idx);
+        // Détecter un titre de représentant sur une ligne dédiée
+        if (nonEmpty.length <= 2) {
+          const repTitle = normalizeImportedRepName(nonEmpty[0].val);
+          if (repTitle && !normalizeImportedMetricName(nonEmpty[0].val)) {
+            currentRep = repTitle;
+            skipPartnerSection = false;
+            continue;
+          }
+          const ymTitle = parseSheetNameToYm(nonEmpty[0].val, fallbackYear);
+          if (ymTitle && Object.keys(metricCols).length >= 3) {
+            currentYm = ymTitle;
+            continue;
+          }
+        }
 
-        if (repCandidate && (nonEmpty.length <= 2 || rowWeekCols.length > 0)) {
-          currentRep = repCandidate;
-          isTeamOrPartnerSection = false;
-          if (rowWeekCols.length > 0) {
-            weekCols = rowWeekCols;
-            monthCols = [];
-            cumulCol = -1;
-            objCol = -1;
-            nonEmpty.forEach(cell => {
-              if (/cumul|total|reel|realise/i.test(cell.val) && !/rdv/i.test(cell.val)) cumulCol = cell.idx;
-              else if (/objectif|cible|obj/i.test(cell.val)) objCol = cell.idx;
+        if (skipPartnerSection) continue;
+
+        // Cas Layout A : Mois en colonnes (`monthCols.length >= 2`), Indicateur en ligne
+        if (monthCols.length >= 2) {
+          const inlineRep = nonEmpty.length >= 3 ? normalizeImportedRepName(nonEmpty[0].val) : null;
+          const activeRep = inlineRep || currentRep;
+          const metricStr = inlineRep ? nonEmpty[1]?.val : nonEmpty[0]?.val;
+          const mk = normalizeImportedMetricName(metricStr);
+          if (activeRep && mk) {
+            monthCols.forEach(mc => {
+              const rec = getRec(mc.ym, activeRep);
+              rec[mk] = cleanNumCell(row[mc.idx]);
             });
           }
           continue;
         }
 
-        // Détecter une ligne d'en-tête Semaine 1..5
-        if (rowWeekCols.length >= 2) {
-          weekCols = rowWeekCols;
-          monthCols = [];
-          cumulCol = -1;
-          objCol = -1;
-          nonEmpty.forEach(cell => {
-            if (/cumul|total|reel|realise/i.test(cell.val) && !/rdv/i.test(cell.val)) cumulCol = cell.idx;
-            else if (/objectif|cible|obj/i.test(cell.val)) objCol = cell.idx;
-          });
-          continue;
-        }
-
-        // Extraction des valeurs d'indicateur (soit par colonnes de mois condensées, soit par semaines)
-        if (!isTeamOrPartnerSection) {
-          // Cas où chaque ligne contient [Représentant, Indicateur, Valeurs...]
-          const rowRepInline = nonEmpty.length >= 3 ? normalizeImportedRepName(nonEmpty[0].val) : null;
-          const activeRep = rowRepInline || currentRep;
-          const metricCell = rowRepInline ? nonEmpty[1]?.val : nonEmpty[0]?.val;
-          const metric = normalizeImportedMetricName(metricCell);
-
-          if (activeRep && metric) {
-            if (monthCols.length >= 2) {
-              const obj = objCol >= 0 ? cleanNumCell(row[objCol]) : 0;
-              monthCols.forEach(mc => {
-                const val = cleanNumCell(row[mc.idx]);
-                const existingWeeks = kpiStore[mc.ym]?.reps?.[activeRep]?.[metric]?.weeks;
-                const nw = existingWeeks?.length || 4;
-                const weeksArr = existingWeeks && existingWeeks.reduce((a, b) => a + b, 0) === val
-                  ? [...existingWeeks]
-                  : [val, ...Array(nw - 1).fill(0)];
-                results.push({ ym: mc.ym, rep: activeRep, metric, weeks: weeksArr, cumul: val, objectif: obj });
-              });
-            } else if (currentYm) {
-              const startCol = (rowRepInline ? nonEmpty[1].idx : nonEmpty[0].idx) + 1;
-              const activeWeekCols = weekCols.length ? weekCols : [startCol, startCol + 1, startCol + 2, startCol + 3];
-              const weeks = activeWeekCols.map(cIdx => cleanNumCell(row[cIdx]));
-              const cumul = cumulCol >= 0 ? cleanNumCell(row[cumulCol]) : Math.round(weeks.reduce((a, b) => a + b, 0) * 100) / 100;
-              const objectif = objCol >= 0 ? cleanNumCell(row[objCol]) : 0;
-              results.push({ ym: currentYm, rep: activeRep, metric, weeks, cumul, objectif });
-            }
+        // Cas Layout B : Indicateurs en colonnes (`Object.keys(metricCols).length >= 3`), Mois (ou Rep) en ligne
+        if (Object.keys(metricCols).length >= 3) {
+          const inlineRep = nonEmpty.map(c => normalizeImportedRepName(c.val)).find(Boolean);
+          const inlineYm = nonEmpty.map(c => parseSheetNameToYm(c.val, fallbackYear)).find(Boolean);
+          const activeRep = inlineRep || currentRep;
+          const activeYm = inlineYm || currentYm;
+          if (activeRep && activeYm) {
+            const rec = getRec(activeYm, activeRep);
+            Object.entries(metricCols).forEach(([mk, cIdx]) => {
+              rec[mk] = cleanNumCell(row[cIdx]);
+            });
           }
         }
       }
-      return results;
+
+      return Array.from(map.values()).filter(r =>
+        r.booke > 0 || r.rdv > 0 || r.ots > 0 || r.suivi > 0 || r.dollars > 0
+      );
+    }
+
+    function showCondensedImportPreview() {
+      const box = document.getElementById('kpi-import-preview-box');
+      const tbody = document.getElementById('tbody-kpi-import-preview');
+      const sumEl = document.getElementById('kpi-import-summary');
+
+      if (!parsedCondensedRows.length) {
+        box.classList.add('hidden');
+        return false;
+      }
+
+      parsedCondensedRows.sort((a, b) => a.ym.localeCompare(b.ym) || a.rep.localeCompare(b.rep));
+      const monthsCount = new Set(parsedCondensedRows.map(r => r.ym)).size;
+      const repsCount = new Set(parsedCondensedRows.map(r => r.rep)).size;
+      sumEl.textContent = `${parsedCondensedRows.length} ligne(s) détectée(s) (${monthsCount} mois • ${repsCount} représentant(s))`;
+
+      tbody.innerHTML = parsedCondensedRows.map((r, idx) => `
+        <tr class="hover:bg-slate-50">
+          <td class="py-2 px-3 font-bold text-slate-800">${esc(r.ym)}</td>
+          <td class="py-2 px-3 font-semibold text-indigo-700">${esc(r.rep)}</td>
+          <td class="py-2 px-3 text-center">
+            <input type="number" min="0" value="${r.booke}" onchange="parsedCondensedRows[${idx}].booke = parseFloat(this.value) || 0" class="w-16 px-1.5 py-0.5 text-center font-bold bg-slate-50 border border-slate-200 rounded-md tabular-nums" />
+          </td>
+          <td class="py-2 px-3 text-center">
+            <input type="number" min="0" value="${r.rdv}" onchange="parsedCondensedRows[${idx}].rdv = parseFloat(this.value) || 0" class="w-16 px-1.5 py-0.5 text-center font-bold bg-slate-50 border border-slate-200 rounded-md tabular-nums" />
+          </td>
+          <td class="py-2 px-3 text-center">
+            <input type="number" min="0" value="${r.ots}" onchange="parsedCondensedRows[${idx}].ots = parseFloat(this.value) || 0" class="w-16 px-1.5 py-0.5 text-center font-extrabold text-sky-700 bg-sky-50/50 border border-sky-200 rounded-md tabular-nums" />
+          </td>
+          <td class="py-2 px-3 text-center">
+            <input type="number" min="0" value="${r.suivi}" onchange="parsedCondensedRows[${idx}].suivi = parseFloat(this.value) || 0" class="w-16 px-1.5 py-0.5 text-center font-extrabold text-purple-700 bg-purple-50/50 border border-purple-200 rounded-md tabular-nums" />
+          </td>
+          <td class="py-2 px-3 text-right">
+            <input type="number" step="0.01" min="0" value="${r.dollars}" onchange="parsedCondensedRows[${idx}].dollars = parseFloat(this.value) || 0" class="w-28 px-2 py-0.5 text-right font-extrabold text-slate-900 bg-slate-50 border border-slate-200 rounded-md tabular-nums" />
+          </td>
+        </tr>
+      `).join('');
+
+      box.classList.remove('hidden');
+      return true;
     }
 
     document.getElementById('kpi-import-file-input')?.addEventListener('change', async (e) => {
       const file = e.target.files[0];
       if (!file) return;
-      parsedKpiImportRows = [];
+      parsedCondensedRows = [];
 
       try {
         const ext = file.name.split('.').pop().toLowerCase();
+        const selYear = document.getElementById('kpi-import-default-year')?.value || '2026';
         const fileYearMatch = file.name.match(/(20\d{2})/);
-        const fallbackYear = fileYearMatch ? fileYearMatch[1] : '2026';
+        const fallbackYear = fileYearMatch ? fileYearMatch[1] : selYear;
+
+        const mergedMap = new Map();
+        const mergeRows = (rows) => {
+          rows.forEach(r => {
+            const k = `${r.ym}__${r.rep}`;
+            mergedMap.set(k, { ...r });
+          });
+        };
 
         if ((ext === 'xlsx' || ext === 'xls') && window.XLSX) {
           const buf = await file.arrayBuffer();
           const wb = XLSX.read(buf, { type: 'array' });
           wb.SheetNames.forEach(sName => {
-            const ym = parseSheetNameToYm(sName, fallbackYear);
             const aoa = XLSX.utils.sheet_to_json(wb.Sheets[sName], { header: 1, defval: '' });
-            const sheetRows = parseKorpoExcelSheet(aoa, ym, fallbackYear);
-            parsedKpiImportRows.push(...sheetRows);
+            const sheetRecs = parseCondensedSheetToRecords(aoa, sName, fallbackYear);
+            mergeRows(sheetRecs);
           });
         } else {
-          // Lecture CSV standard (format exporté par Korpo ou modèle CSV)
           const text = await file.text();
-          const lines = text.split(/\r?\n/).filter(l => l.trim());
+          const lines = text.split(/
+?
+/).filter(l => l.trim());
           const sep = lines[0]?.includes(';') ? ';' : ',';
-          for (let i = 1; i < lines.length; i++) {
-            const cols = parseCsvLine(lines[i], sep);
-            if (cols.length < 4) continue;
-            const ym = parseSheetNameToYm(cols[0]) || (cols[0].trim().slice(0, 7));
-            const rep = normalizeImportedRepName(cols[1]);
-            const metric = normalizeImportedMetricName(cols[2]);
-            if (!ym || !rep || !metric) continue;
-            const weeks = [cols[3], cols[4], cols[5], cols[6], cols[7]]
-              .filter((_, idx) => idx < 4 || (cols[7] !== undefined && cols[7] !== ''))
-              .map(cleanNumCell);
-            const cumul = cols[8] !== undefined && cols[8] !== '' ? cleanNumCell(cols[8]) : Math.round(weeks.reduce((a, b) => a + b, 0) * 100) / 100;
-            const objectif = cols[9] !== undefined && cols[9] !== '' ? cleanNumCell(cols[9]) : 0;
-            parsedKpiImportRows.push({ ym, rep, metric, weeks, cumul, objectif });
-          }
+          const aoa = lines.map(l => parseCsvLine(l, sep));
+          const csvRecs = parseCondensedSheetToRecords(aoa, file.name, fallbackYear);
+          mergeRows(csvRecs);
         }
 
-        if (!showKpiImportPreview()) {
-          return toast('Aucune ligne KPI reconnue dans ce fichier. Cliquez sur « ⚡ Charger Mars–Nov 2026 intégré » ou utilisez le modèle CSV.', 'error');
+        parsedCondensedRows = Array.from(mergedMap.values());
+        if (!showCondensedImportPreview()) {
+          return toast('Aucune donnée reconnue dans ce fichier condensé. Vérifiez que les noms des mois et des représentants sont lisibles.', 'error');
         }
-        toast(`${parsedKpiImportRows.length} lignes KPI prêtes à importer`);
+        toast(`${parsedCondensedRows.length} ligne(s) du fichier condensé prêtes à enregistrer ✓`);
       } catch (err) {
         toast('Erreur de lecture du fichier : ' + err.message, 'error');
       } finally {
@@ -5733,122 +5596,58 @@
 
     document.getElementById('btn-confirm-kpi-import')?.addEventListener('click', async () => {
       if (currentProfile?.role !== 'admin') return toast('Action réservée aux administrateurs.', 'error');
-      if (!parsedKpiImportRows.length) return;
+      if (!parsedCondensedRows.length) return;
       const btn = document.getElementById('btn-confirm-kpi-import');
       btn.disabled = true;
-      btn.textContent = 'Importation en cours...';
-
-      const syncToSb = document.getElementById('kpi-import-sync-supabase')?.checked;
-      const impactedMonths = new Set();
-      const hebdoUpserts = new Map();
+      btn.textContent = 'Enregistrement en cours...';
 
       try {
-        parsedKpiImportRows.forEach(r => {
-          const mObj = ensureKpiMonthStructure(r.ym);
+        const replaceAll = document.getElementById('kpi-import-replace-all')?.checked;
+        if (replaceAll) {
+          condensedBaselineStore = {};
+          if (sb && currentProfile) {
+            try {
+              await sb.from('kpi_hebdo').delete().eq('semaine_index', -9);
+            } catch (e) {}
+          }
+        }
+
+        const nowIso = new Date().toISOString();
+        const impactedMonths = new Set();
+
+        for (const r of parsedCondensedRows) {
+          if (!isValidYearMonth(r.ym) || !r.rep) continue;
           impactedMonths.add(r.ym);
-          if (r.weeks.length > (mObj.num_weeks || 4)) {
-            mObj.num_weeks = r.weeks.length;
-          }
-          const nw = mObj.num_weeks || 4;
-          const repData = mObj.reps[r.rep];
-          if (!repData || !repData[r.metric]) return;
-
-          const paddedWeeks = Array.from({ length: nw }, (_, i) => Number(r.weeks[i] || 0));
-          repData[r.metric].weeks = paddedWeeks;
-          repData[r.metric].cumul = r.cumul || Math.round(paddedWeeks.reduce((a, b) => a + b, 0) * 100) / 100;
-          if (r.objectif > 0) {
-            repData[r.metric].objectif = r.objectif;
-          }
-
-          // Enregistrer en surcharge manuelle locale pour que les RDV et ventes historiques importés soient conservés
-          paddedWeeks.forEach((val, wIdx) => {
-            const ovKey = `${r.ym}_${r.rep}_${wIdx}`;
-            if (r.metric === 'Booké') {
-              manualRdvOverrides[ovKey] = { ...(manualRdvOverrides[ovKey] || { booke: 0, rdv: 0 }), booke: val };
-              const hRec = hebdoUpserts.get(ovKey) || { mois_commission: r.ym, semaine_index: wIdx, representant_nom: r.rep, booke: 0, rdv_realise: 0 };
-              hRec.booke = val;
-              hebdoUpserts.set(ovKey, hRec);
-            } else if (r.metric === 'RDV Réalisé') {
-              manualRdvOverrides[ovKey] = { ...(manualRdvOverrides[ovKey] || { booke: 0, rdv: 0 }), rdv: val };
-              const hRec = hebdoUpserts.get(ovKey) || { mois_commission: r.ym, semaine_index: wIdx, representant_nom: r.rep, booke: 0, rdv_realise: 0 };
-              hRec.rdv_realise = val;
-              hebdoUpserts.set(ovKey, hRec);
-            } else if (r.metric === 'Ventes OTS' || r.metric === 'Ventes SUIVI' || r.metric === 'Vente $') {
-              const curS = manualSalesOverrides[ovKey] || { ots: 0, suivi: 0, dollars: 0, fromImport: true };
-              if (r.metric === 'Ventes OTS') curS.ots = val;
-              if (r.metric === 'Ventes SUIVI') curS.suivi = val;
-              if (r.metric === 'Vente $') curS.dollars = val;
-              curS.fromImport = true;
-              manualSalesOverrides[ovKey] = curS;
-            }
-          });
-        });
-
-        // Recalculer les totaux d'équipe et % Close pour chaque mois importé
-        impactedMonths.forEach(ym => {
-          const mObj = ensureKpiMonthStructure(ym);
-          const nw = mObj.num_weeks || 4;
-          const repNames = Object.keys(mObj.reps);
-          repNames.forEach(rn => {
-            const rData = mObj.reps[rn];
-            for (let wi = 0; wi < nw; wi++) {
-              const rdvW = rData['RDV Réalisé'].weeks[wi] || 0;
-              const vW = (rData['Ventes OTS'].weeks[wi] || 0) + (rData['Ventes SUIVI'].weeks[wi] || 0);
-              rData['% Close'].weeks[wi] = rdvW > 0 ? Math.round((vW / rdvW) * 10000) / 100 : 0;
-            }
-            const totRdv = rData['RDV Réalisé'].cumul;
-            const totV = rData['Ventes OTS'].cumul + rData['Ventes SUIVI'].cumul;
-            rData['% Close'].cumul = totRdv > 0 ? Math.round((totV / totRdv) * 10000) / 100 : 0;
-          });
-
-          for (let wi = 0; wi < nw; wi++) {
-            mObj.team['Booké'].weeks[wi] = repNames.reduce((s, rn) => s + (mObj.reps[rn]['Booké'].weeks[wi] || 0), 0);
-            mObj.team['RDV RÉA'].weeks[wi] = repNames.reduce((s, rn) => s + (mObj.reps[rn]['RDV Réalisé'].weeks[wi] || 0), 0);
-            mObj.team['VENTE OTS'].weeks[wi] = repNames.reduce((s, rn) => s + (mObj.reps[rn]['Ventes OTS'].weeks[wi] || 0), 0);
-            mObj.team['VENTE SUIVI'].weeks[wi] = repNames.reduce((s, rn) => s + (mObj.reps[rn]['Ventes SUIVI'].weeks[wi] || 0), 0);
-            mObj.team['VENTE TOTAL'].weeks[wi] = mObj.team['VENTE OTS'].weeks[wi] + mObj.team['VENTE SUIVI'].weeks[wi];
-            mObj.team['VENTE $'].weeks[wi] = Math.round(repNames.reduce((s, rn) => s + (mObj.reps[rn]['Vente $'].weeks[wi] || 0), 0) * 100) / 100;
-          }
-          ['Booké', 'RDV RÉA', 'VENTE OTS', 'VENTE SUIVI', 'VENTE TOTAL', 'VENTE $'].forEach(k => {
-            mObj.team[k].cumul = Math.round(mObj.team[k].weeks.reduce((a, b) => a + b, 0) * 100) / 100;
-          });
-          recalcTeamObjectivesForMonth(mObj);
-        });
-
-        saveManualKpiOverrides();
-        lsSet('korpo_kpi_store_v1', JSON.stringify(kpiStore));
-        populateKpiMonthSelect(true);
-
-        if (syncToSb && sb && currentProfile && hebdoUpserts.size > 0) {
-          const rowsToUpsert = Array.from(hebdoUpserts.values()).map(item => ({
-            ...item,
-            updated_at: new Date().toISOString()
-          }));
-          const { error } = await sb.from('kpi_hebdo').upsert(rowsToUpsert, {
-            onConflict: 'mois_commission,semaine_index,representant_nom'
-          });
-          if (error) console.warn('Sync import kpi_hebdo:', error.message);
+          if (!condensedBaselineStore[r.ym]) condensedBaselineStore[r.ym] = {};
+          const entryObj = {
+            booke: Number(r.booke || 0),
+            rdv: Number(r.rdv || 0),
+            ots: Number(r.ots || 0),
+            suivi: Number(r.suivi || 0),
+            dollars: Math.round(Number(r.dollars || 0) * 100) / 100,
+            updatedAt: nowIso
+          };
+          condensedBaselineStore[r.ym][r.rep] = entryObj;
+          await persistCondensedEntryToCloud(r.ym, r.rep, entryObj);
         }
 
-        const tagSalesToo = document.getElementById('kpi-import-tag-sales')?.checked;
-        if (tagSalesToo) {
-          await applyKpiOtsSuiviTagsToSupabase(impactedMonths, true);
-        }
-
+        saveCondensedBaselineStore();
+        rebuildKpiStore();
         kpiImportModal.classList.add('hidden');
         document.getElementById('kpi-import-preview-box').classList.add('hidden');
-        await loadAllData();
-        toast(`Historique KPI importé et recalculé sur ${impactedMonths.size} mois ✓`);
+        renderKpiDashboard();
+        renderExecutiveForecast();
+        toast(`Fichier condensé enregistré sur ${impactedMonths.size} mois ! Vos futures ventes s'y ajouteront automatiquement ✓`);
       } catch (err) {
-        toast('Erreur lors de l’importation : ' + err.message, 'error');
+        toast('Erreur lors de l’enregistrement : ' + err.message, 'error');
       } finally {
         btn.disabled = false;
-        btn.textContent = '✓ Importer et recalculer le Tableau KPI';
+        btn.textContent = '✓ Enregistrer ce fichier condensé comme base KPI';
       }
     });
 
     window.switchKpiImportTab = (tabName) => {
-      ['file', 'grid', 'reset'].forEach(t => {
+      ['file', 'grid'].forEach(t => {
         const view = document.getElementById(`kpi-import-view-${t}`);
         const btn = document.getElementById(`kpi-modal-tab-${t}`);
         const active = t === tabName;
@@ -5871,7 +5670,7 @@
       const sel = document.getElementById('kpi-grid-month-select');
       if (!sel) return;
       const curMain = document.getElementById('kpi-select-month')?.value;
-      const months = Object.keys(kpiStore).sort().reverse();
+      const months = Object.keys(kpiStore).filter(isValidYearMonth).sort().reverse();
       sel.innerHTML = months.map(ym => `<option value="${ym}">${esc(kpiStore[ym].label)}</option>`).join('');
       if (curMain && !curMain.startsWith('YEAR_') && months.includes(curMain)) {
         sel.value = curMain;
@@ -5880,35 +5679,39 @@
 
     function renderKpiDirectGrid() {
       const ym = document.getElementById('kpi-grid-month-select')?.value || currentMonthStr;
-      const mObj = ensureKpiMonthStructure(ym);
+      ensureKpiMonthStructure(ym);
       const tbody = document.getElementById('tbody-kpi-direct-grid');
       if (!tbody) return;
 
       tbody.innerHTML = ALL_KPI_REPS.map(rn => {
-        const r = mObj.reps[rn];
-        const booke = Number(r?.['Booké']?.cumul || 0);
-        const rdv = Number(r?.['RDV Réalisé']?.cumul || 0);
-        const ots = Number(r?.['Ventes OTS']?.cumul || 0);
-        const suivi = Number(r?.['Ventes SUIVI']?.cumul || 0);
-        const dol = Number(r?.['Vente $']?.cumul || 0);
-        const close = rdv > 0 ? (((ots + suivi) / rdv) * 100).toFixed(1) : '0.0';
+        const base = condensedBaselineStore[ym]?.[rn] || { booke: 0, rdv: 0, ots: 0, suivi: 0, dollars: 0 };
+        const appSalesDol = (state.ventes || [])
+          .filter(v => {
+            if (getSaleStatsMonth(v) !== ym) return false;
+            const rObj = state.representants.find(r => String(r.id) === String(v.representant_id));
+            return resolveKpiRepName(rObj?.nom || v.rep_nom || '') === rn;
+          })
+          .reduce((s, v) => s + Number(v.valeur || 0), 0);
+
         return `
           <tr class="hover:bg-slate-50" data-rep="${esc(rn)}">
             <td class="py-2.5 px-4 font-bold text-slate-900">${esc(rn)}</td>
             <td class="py-2 px-3 text-center">
-              <input type="number" min="0" data-field="booke" value="${booke}" class="w-20 px-2 py-1 text-center font-bold bg-slate-50 border border-slate-200 rounded-lg tabular-nums" />
+              <input type="number" min="0" data-field="booke" value="${Number(base.booke || 0)}" class="w-16 px-2 py-1 text-center font-bold bg-slate-50 border border-slate-200 rounded-lg tabular-nums" />
             </td>
             <td class="py-2 px-3 text-center">
-              <input type="number" min="0" data-field="rdv" value="${rdv}" class="w-20 px-2 py-1 text-center font-bold bg-slate-50 border border-slate-200 rounded-lg tabular-nums" />
+              <input type="number" min="0" data-field="rdv" value="${Number(base.rdv || 0)}" class="w-16 px-2 py-1 text-center font-bold bg-slate-50 border border-slate-200 rounded-lg tabular-nums" />
             </td>
             <td class="py-2 px-3 text-center">
-              <input type="number" min="0" data-field="ots" value="${ots}" class="w-20 px-2 py-1 text-center font-extrabold text-sky-700 bg-sky-50/50 border border-sky-200 rounded-lg tabular-nums" />
+              <input type="number" min="0" data-field="ots" value="${Number(base.ots || 0)}" class="w-16 px-2 py-1 text-center font-extrabold text-sky-700 bg-sky-50/50 border border-sky-200 rounded-lg tabular-nums" />
             </td>
             <td class="py-2 px-3 text-center">
-              <input type="number" min="0" data-field="suivi" value="${suivi}" class="w-20 px-2 py-1 text-center font-extrabold text-purple-700 bg-purple-50/50 border border-purple-200 rounded-lg tabular-nums" />
+              <input type="number" min="0" data-field="suivi" value="${Number(base.suivi || 0)}" class="w-16 px-2 py-1 text-center font-extrabold text-purple-700 bg-purple-50/50 border border-purple-200 rounded-lg tabular-nums" />
             </td>
-            <td class="py-2 px-3 text-right font-bold text-slate-700 tabular-nums">${fmtMoney0(dol)}</td>
-            <td class="py-2 px-3 text-center font-bold text-emerald-700 tabular-nums">${close} %</td>
+            <td class="py-2 px-3 text-right">
+              <input type="number" step="0.01" min="0" data-field="dollars" value="${Number(base.dollars || 0)}" class="w-28 px-2 py-1 text-right font-extrabold text-slate-900 bg-slate-50 border border-slate-200 rounded-lg tabular-nums" />
+            </td>
+            <td class="py-2 px-3 text-right font-bold text-emerald-700 tabular-nums">+ ${fmtMoney0(appSalesDol)}</td>
           </tr>
         `;
       }).join('');
@@ -5919,192 +5722,79 @@
     document.getElementById('btn-save-kpi-direct-grid')?.addEventListener('click', async () => {
       if (currentProfile?.role !== 'admin') return toast('Action réservée aux administrateurs.', 'error');
       const ym = document.getElementById('kpi-grid-month-select')?.value;
-      if (!ym) return;
-      const mObj = ensureKpiMonthStructure(ym);
-      const nw = mObj.num_weeks || 4;
+      if (!isValidYearMonth(ym)) return;
       const rows = document.querySelectorAll('#tbody-kpi-direct-grid tr[data-rep]');
-      const hebdoUpserts = [];
+      const nowIso = new Date().toISOString();
+      if (!condensedBaselineStore[ym]) condensedBaselineStore[ym] = {};
 
-      rows.forEach(tr => {
-        const rn = tr.getAttribute('data-rep');
-        const booke = parseFloat(tr.querySelector('input[data-field="booke"]').value) || 0;
-        const rdv = parseFloat(tr.querySelector('input[data-field="rdv"]').value) || 0;
-        const ots = parseFloat(tr.querySelector('input[data-field="ots"]').value) || 0;
-        const suivi = parseFloat(tr.querySelector('input[data-field="suivi"]').value) || 0;
-        const rData = mObj.reps[rn];
-        if (!rData) return;
-
-        // Répartir proprement sur les semaines du mois et remettre les autres semaines OTS/Suivi/RDV à 0 (en conservant les Ventes $ réelles)
-        rData['Booké'].weeks = [booke, ...Array(nw - 1).fill(0)];
-        rData['Booké'].cumul = booke;
-        rData['RDV Réalisé'].weeks = [rdv, ...Array(nw - 1).fill(0)];
-        rData['RDV Réalisé'].cumul = rdv;
-        rData['Ventes OTS'].weeks = [ots, ...Array(nw - 1).fill(0)];
-        rData['Ventes OTS'].cumul = ots;
-        rData['Ventes SUIVI'].weeks = [suivi, ...Array(nw - 1).fill(0)];
-        rData['Ventes SUIVI'].cumul = suivi;
-
-        const nowIsoGrid = new Date().toISOString();
-        const dbWeekGrid = getDbWeekCountsForRep(ym, rn, nw);
-        for (let wi = 0; wi < nw; wi++) {
-          const ovKey = `${ym}_${rn}_${wi}`;
-          const targetOts = wi === 0 ? ots : 0;
-          const targetSuivi = wi === 0 ? suivi : 0;
-          const existingBaseDol = Math.max(0, Math.round(((rData['Vente $'].weeks[wi] || 0) - (dbWeekGrid.dollars[wi] || 0)) * 100) / 100);
-          manualRdvOverrides[ovKey] = { booke: wi === 0 ? booke : 0, rdv: wi === 0 ? rdv : 0, manual: true, updatedAt: nowIsoGrid };
-          manualSalesOverrides[ovKey] = {
-            ots: Math.max(0, targetOts - (dbWeekGrid.ots[wi] || 0)),
-            suivi: Math.max(0, targetSuivi - (dbWeekGrid.suivi[wi] || 0)),
-            dollars: existingBaseDol,
-            hasManualDollars: false,
-            fromImport: false,
-            updatedAt: nowIsoGrid
-          };
-          hebdoUpserts.push({
-            mois_commission: ym,
-            semaine_index: wi,
-            representant_nom: rn,
-            booke: wi === 0 ? booke : 0,
-            rdv_realise: wi === 0 ? rdv : 0,
-            updated_at: nowIsoGrid
-          });
-        }
-      });
-
-      saveManualKpiOverrides();
-      lsSet('korpo_kpi_store_v1', JSON.stringify(kpiStore));
       for (const tr of rows) {
         const rn = tr.getAttribute('data-rep');
-        for (let wi = 0; wi < nw; wi++) {
-          await persistSingleManualKpiToCloud(`${ym}_${rn}_${wi}`);
-        }
+        const entryObj = {
+          booke: Math.max(0, parseFloat(tr.querySelector('input[data-field="booke"]').value) || 0),
+          rdv: Math.max(0, parseFloat(tr.querySelector('input[data-field="rdv"]').value) || 0),
+          ots: Math.max(0, parseFloat(tr.querySelector('input[data-field="ots"]').value) || 0),
+          suivi: Math.max(0, parseFloat(tr.querySelector('input[data-field="suivi"]').value) || 0),
+          dollars: Math.max(0, Math.round((parseFloat(tr.querySelector('input[data-field="dollars"]').value) || 0) * 100) / 100),
+          updatedAt: nowIso
+        };
+        condensedBaselineStore[ym][rn] = entryObj;
+        await persistCondensedEntryToCloud(ym, rn, entryObj);
       }
 
-      if (sb && currentProfile && hebdoUpserts.length) {
-        for (const hRow of hebdoUpserts) {
-          await safeUpsertKpiHebdoRow(hRow);
-        }
+      saveCondensedBaselineStore();
+      rebuildKpiStore();
+      renderKpiDashboard();
+      renderExecutiveForecast();
+      toast(`Base condensée mise à jour pour ${kpiStore[ym]?.label || ym} ✓`);
+    });
+
+    document.getElementById('btn-clear-condensed-baseline')?.addEventListener('click', async () => {
+      if (currentProfile?.role !== 'admin') return toast('Action réservée aux administrateurs.', 'error');
+      const ok = await askConfirm(
+        'Effacer toute la base condensée ?',
+        'Le Tableau KPI s’appuiera désormais uniquement sur les ventes enregistrées dans le fichier de ventes.'
+      );
+      if (!ok) return;
+      condensedBaselineStore = {};
+      saveCondensedBaselineStore();
+      if (sb && currentProfile) {
+        try {
+          await sb.from('kpi_hebdo').delete().eq('semaine_index', -9);
+        } catch (e) {}
       }
-      await applyKpiOtsSuiviTagsToSupabase(new Set([ym]), true);
-      kpiImportModal.classList.add('hidden');
-      await loadAllData();
-      toast(`KPI de ${mObj.label} enregistrés et synchronisés avec les ventes ✓`);
+      rebuildKpiStore();
+      renderKpiDirectGrid();
+      renderKpiDashboard();
+      renderExecutiveForecast();
+      toast('Base condensée effacée : mode 100 % fichier de ventes actif ✓');
     });
 
     document.getElementById('btn-export-editable-kpi-csv')?.addEventListener('click', () => {
-      const rows = [['Periode', 'Representant', 'Indicateur', 'Semaine_1', 'Semaine_2', 'Semaine_3', 'Semaine_4', 'Semaine_5', 'Cumul', 'Objectif']];
-      Object.keys(kpiStore).sort().forEach(ym => {
+      const rows = [['Periode', 'Representant', 'RDV_Bookes', 'RDV_Realises', 'Ventes_OTS', 'Ventes_Suivi', 'Ventes_Dollars']];
+      Object.keys(kpiStore).filter(isValidYearMonth).sort().forEach(ym => {
         const mObj = kpiStore[ym];
         ALL_KPI_REPS.forEach(rep => {
-          const metrics = mObj.reps?.[rep];
-          if (!metrics) return;
-          ['Booké', 'RDV Réalisé', 'Ventes OTS', 'Ventes SUIVI', 'Vente $', '% Close'].forEach(mKey => {
-            const obj = metrics[mKey];
-            if (!obj) return;
-            const w = [0, 1, 2, 3, 4].map(idx => obj.weeks[idx] ?? '');
-            rows.push([ym, rep, mKey, ...w, obj.cumul, obj.objectif]);
-          });
+          const r = mObj.reps?.[rep];
+          if (!r) return;
+          rows.push([
+            ym,
+            rep,
+            r['Booké'].cumul,
+            r['RDV Réalisé'].cumul,
+            r['Ventes OTS'].cumul,
+            r['Ventes SUIVI'].cumul,
+            r['Vente $'].cumul
+          ]);
         });
       });
-      const csv = rows.map(r => r.join(',')).join('\n');
+      const csv = rows.map(r => r.join(',')).join('
+');
       const a = document.createElement('a');
       a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8;' }));
-      a.download = `korpo-kpi-complet-editable.csv`;
+      a.download = 'korpo-kpi-condense-export.csv';
       a.click();
-      toast('Export CSV complet téléchargé ✓');
+      toast('Export CSV condensé téléchargé ✓');
     });
-
-    document.getElementById('btn-full-kpi-reset-recalc')?.addEventListener('click', async () => {
-      if (currentProfile?.role !== 'admin') return toast('Action réservée aux administrateurs.', 'error');
-      const btn = document.getElementById('btn-full-kpi-reset-recalc');
-      btn.disabled = true;
-      btn.textContent = 'Recalcul complet en cours...';
-      try {
-        localStorage.removeItem('korpo_kpi_store_v1');
-        localStorage.removeItem('korpo_kpi_manual_rdv_v1');
-        localStorage.removeItem('korpo_kpi_manual_sales_v1');
-        manualRdvOverrides = {};
-        manualSalesOverrides = {};
-        kpiStore = JSON.parse(JSON.stringify(DEFAULT_KPI_DATA));
-        normalizeKpiStoreReps();
-        applyRepTargetsOverridesToStore();
-
-        // Appliquer les ratios OTS/SUIVI de référence aux ventes Supabase AVANT de recalculer syncSalesIntoKpi
-        await applyKpiOtsSuiviTagsToSupabase(null, true);
-        kpiImportModal.classList.add('hidden');
-        await loadAllData();
-        toast('Cache nettoyé et tous les KPI recalculés avec succès ✓');
-      } catch (err) {
-        toast('Erreur : ' + err.message, 'error');
-      } finally {
-        btn.disabled = false;
-        btn.textContent = '🔄 Réinitialiser le cache & Recalculer tous les KPI maintenant';
-      }
-    });
-
-    async function applyKpiOtsSuiviTagsToSupabase(monthsFilterSet = null, silent = false) {
-      if (!sb || !currentProfile || currentProfile.role !== 'admin') return 0;
-      const allVentesSorted = [...(state.ventes || [])].sort((a, b) => {
-        const dA = a.date_vente || `${a.mois_commission || '9999-99'}-01`;
-        const dB = b.date_vente || `${b.mois_commission || '9999-99'}-01`;
-        if (dA !== dB) return dA.localeCompare(dB);
-        return String(a.created_at || a.id || '').localeCompare(String(b.created_at || b.id || ''));
-      });
-
-      const seenClients = new Set();
-      const firstSalesByRepMonth = new Map();
-      allVentesSorted.forEach(v => {
-        const uKey = getUniqueClientKpiKey(v);
-        if (seenClients.has(uKey)) return;
-        seenClients.add(uKey);
-        const ym = v.mois_commission || (v.date_vente ? v.date_vente.slice(0, 7) : null);
-        const repObj = state.representants.find(r => r.id === v.representant_id);
-        if (!ym || !repObj) return;
-        if (monthsFilterSet && !monthsFilterSet.has(ym)) return;
-        const mapKey = `${ym}__${repObj.nom}`;
-        if (!firstSalesByRepMonth.has(mapKey)) firstSalesByRepMonth.set(mapKey, []);
-        firstSalesByRepMonth.get(mapKey).push(v);
-      });
-
-      let updatedCount = 0;
-      for (const [mapKey, salesList] of firstSalesByRepMonth.entries()) {
-        const [ym, rn] = mapKey.split('__');
-        const mObj = kpiStore[ym];
-        const rData = mObj?.reps?.[rn];
-        if (!rData) continue;
-
-        // Utiliser le cumul KPI importé (ou le fallback DEFAULT_KPI_DATA si kpiStore avait été mis à 0)
-        const defMonth = DEFAULT_KPI_DATA[ym]?.reps?.[rn];
-        const refSuivi = Number(rData['Ventes SUIVI']?.cumul || 0) || Number(defMonth?.['Ventes SUIVI']?.cumul || 0);
-        const refOts = Number(rData['Ventes OTS']?.cumul || 0) || Number(defMonth?.['Ventes OTS']?.cumul || 0);
-        const refTotal = refOts + refSuivi;
-
-        const targetSuivi = refTotal > 0
-          ? Math.min(salesList.length, Math.round(salesList.length * (refSuivi / refTotal)))
-          : 0;
-
-        const alreadySuivi = salesList.filter(v => (v.note || '').toUpperCase().includes('[SUIVI]'));
-        const untaggedOrOts = salesList.filter(v => !(v.note || '').toUpperCase().includes('[SUIVI]'));
-        const ordered = [...alreadySuivi, ...untaggedOrOts];
-
-        for (let i = 0; i < ordered.length; i++) {
-          const v = ordered[i];
-          const desiredTag = i < targetSuivi ? 'SUIVI' : 'OTS';
-          const rawNote = v.note || '';
-          const curTag = rawNote.toUpperCase().includes('[SUIVI]') ? 'SUIVI' : (rawNote.toUpperCase().includes('[OTS]') ? 'OTS' : '');
-          if (curTag !== desiredTag) {
-            const cleanBody = rawNote.replace(/^\[(OTS|SUIVI)\]\s*/i, '').trim();
-            const nextNote = cleanBody ? `[${desiredTag}] ${cleanBody}` : `[${desiredTag}]`;
-            const { error } = await sb.from('ventes').update({ note: nextNote }).eq('id', v.id);
-            if (!error) updatedCount++;
-          }
-        }
-      }
-      if (!silent) {
-        toast(`${updatedCount} dossier(s) mis à jour avec [OTS] / [SUIVI] dans Supabase ✓`);
-      }
-      return updatedCount;
-    }
 
     // CHARGEMENT SUPABASE (VENTES & COMMISSIONS)
     // =========================================================================
@@ -6545,13 +6235,7 @@
       if (newComm <= 0 || newSales <= 0) return toast('Entrez des montants supérieurs à 0 $', 'error');
 
       await saveRepTargetsToStorageAndCloud(repName, currentMonthStr, newSales, newComm, true, newBonusDec);
-      Object.keys(kpiStore).forEach(ym => {
-        if (kpiStore[ym]?.reps?.[repName]?.['Vente $']) {
-          kpiStore[ym].reps[repName]['Vente $'].objectif = newSales;
-          recalcTeamObjectivesForMonth(kpiStore[ym]);
-        }
-      });
-      lsSet('korpo_kpi_store_v1', JSON.stringify(kpiStore));
+      rebuildKpiStore();
       renderMesVentes();
       renderClassement();
       renderKpiDashboard();
@@ -6571,16 +6255,10 @@
         const newBonusDec = isNaN(rawBonusPct) ? getBonusPctForRep(rn, currentMonthStr) : Math.max(0, rawBonusPct / 100);
         if (rn && newComm > 0 && newSales > 0) {
           await saveRepTargetsToStorageAndCloud(rn, currentMonthStr, newSales, newComm, true, newBonusDec);
-          Object.keys(kpiStore).forEach(ym => {
-            if (kpiStore[ym]?.reps?.[rn]?.['Vente $']) {
-              kpiStore[ym].reps[rn]['Vente $'].objectif = newSales;
-              recalcTeamObjectivesForMonth(kpiStore[ym]);
-            }
-          });
           count++;
         }
       }
-      lsSet('korpo_kpi_store_v1', JSON.stringify(kpiStore));
+      rebuildKpiStore();
       renderMesVentes();
       renderClassement();
       renderKpiDashboard();
@@ -6629,7 +6307,9 @@
       const isAdmin = currentProfile.role === 'admin';
       const monthFilter = document.getElementById('filter-rep-month').value;
       const statutFilter = document.getElementById('filter-rep-statut')?.value || '';
-      const scopeFilter = isAdmin ? document.getElementById('filter-admin-scope').value : 'all';
+      const scopeSelEl = document.getElementById('filter-admin-scope');
+      if (scopeSelEl && !isAdmin) scopeSelEl.classList.add('hidden');
+      const scopeFilter = (isAdmin && scopeSelEl) ? scopeSelEl.value : 'all';
       const q = document.getElementById('search-rep-ventes').value.trim().toLowerCase();
       const currentYear = new Date().getFullYear().toString();
 
@@ -6754,15 +6434,10 @@
       const mobileCommCardsBox = document.getElementById('mobile-mes-commissions-cards');
       if (!filtered.length) {
         tbody.innerHTML = `<tr><td colspan="${isAdmin ? 9 : 8}" class="py-12 text-center text-sm text-slate-400">Aucune vente enregistrée pour cette période.</td></tr>`;
-        if (mobileCardsBox) {
-          mobileCardsBox.innerHTML = `<div class="bg-white rounded-2xl border border-slate-200/80 p-8 text-center text-xs text-slate-400">Aucune vente enregistrée pour cette période.</div>`;
-        }
-        if (mobileCommCardsBox) {
-          mobileCommCardsBox.innerHTML = `<div class="bg-white rounded-2xl border border-slate-200/80 p-8 text-center text-xs text-slate-400">Aucune commission enregistrée pour cette période.</div>`;
-        }
-        applyMobilePersonalSplitLayout();
-        return;
-      }
+        const vListHead = document.getElementById('mobile-ventes-list-heading');
+      if (vListHead) vListHead.textContent = `Dossiers de vente (${filtered.length})`;
+      const cListHead = document.getElementById('mobile-commissions-list-heading');
+      if (cListHead) cListHead.textContent = `Détail par commission (${filtered.length})`;
 
       if (mobileCardsBox) {
         mobileCardsBox.innerHTML = filtered.map(v => {
@@ -6772,46 +6447,53 @@
           const proofSrc = getProofForSale(v);
           const cleanNote = v.note ? v.note.replace(/^\[(OTS|SUIVI)\]\s*/i, '') : '';
           return `
-            <div class="bg-white rounded-2xl border border-slate-200/80 p-4 shadow-xs space-y-3">
-              <div class="flex items-start justify-between gap-2">
-                <div class="min-w-0">
+            <div class="bg-white rounded-2xl border border-slate-200/90 p-4 shadow-xs space-y-3.5">
+              <!-- Ligne 1 : Entreprise + Date | Montant de la vente -->
+              <div class="flex items-start justify-between gap-3">
+                <div class="space-y-1.5 min-w-0">
                   <div class="flex items-center flex-wrap gap-1.5">
                     ${entBadge(v.entreprise_nom)}
-                    <span class="text-[11px] font-semibold text-slate-400">${v.date_vente}</span>
-                    ${v._carriedOverFrom ? `<span class="px-1.5 py-0.5 text-[10px] font-bold rounded-md bg-amber-50 text-amber-800 border border-amber-200" title="Comptabilisée dans les stats de ${v._carriedOverFrom}">↪ Reportée de ${v._carriedOverFrom}</span>` : ''}
+                    <span class="text-xs font-semibold text-slate-400">${v.date_vente}</span>
                   </div>
-                  <div class="font-extrabold text-sm text-slate-900 mt-1.5 truncate">${esc(v.client_nom)}</div>
-                  ${isAdmin ? `<div class="text-[11px] font-semibold text-indigo-600">Rep : ${esc(v.rep_nom || '—')}</div>` : ''}
-                  ${cleanNote ? `<div class="text-[11px] text-slate-400 truncate mt-0.5">${esc(cleanNote)}</div>` : ''}
+                  <div class="text-base font-extrabold text-slate-900 leading-snug break-words">${esc(v.client_nom)}</div>
+                  ${isAdmin ? `<div class="text-xs font-semibold text-indigo-600">Rep : ${esc(v.rep_nom || '—')}</div>` : ''}
+                  ${cleanNote ? `<div class="text-xs text-slate-500 break-words">${esc(cleanNote)}</div>` : ''}
                 </div>
                 <div class="text-right shrink-0 tabular-nums">
-                  <div class="text-base font-extrabold text-slate-900">${fmtMoney(v.valeur)}</div>
-                  <button type="button" onclick="switchTab('tab-mes-commissions')" class="text-[11px] font-bold text-emerald-600 hover:underline mt-0.5">Voir comm. →</button>
+                  <div class="text-lg font-extrabold text-slate-900">${fmtMoney(v.valeur)}</div>
+                  <div class="text-[11px] font-semibold text-slate-400">Montant vente</div>
                 </div>
               </div>
 
-              <div class="flex flex-wrap items-center gap-1.5 pt-2 border-t border-slate-100">
-                ${canToggleKpi
-                  ? `<button type="button" onclick="toggleVenteKpiType('${v.id}')" class="px-2.5 py-1 text-[11px] font-extrabold rounded-lg border ${isSuivi ? 'bg-purple-50 text-purple-700 border-purple-200' : 'bg-sky-50 text-sky-700 border-sky-200'}">${isSuivi ? 'SUIVI' : 'OTS'}</button>`
-                  : `<span class="px-2.5 py-1 text-[11px] font-extrabold rounded-lg border ${isSuivi ? 'bg-purple-50 text-purple-700 border-purple-200' : 'bg-sky-50 text-sky-700 border-sky-200'}">${isSuivi ? 'SUIVI' : 'OTS'}</span>`
-                }
-                <span class="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-semibold rounded-full ${v.statut_depot === 'depot_recu' ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'}">
-                  ${v.statut_depot === 'depot_recu' ? '✓ Dépôt reçu' : '⏳ À confirmer'}
-                </span>
-                ${agingBadgeForDeposit(v)}
+              <!-- Ligne 2 : Statuts clairs (Type KPI + Dépôt) -->
+              <div class="flex items-center justify-between gap-2 bg-slate-50/90 rounded-xl px-3 py-2.5 border border-slate-100">
+                <div class="flex items-center gap-2">
+                  ${canToggleKpi
+                    ? `<button type="button" onclick="toggleVenteKpiType('${v.id}')" class="px-2.5 py-1 text-xs font-extrabold rounded-lg border ${isSuivi ? 'bg-purple-50 text-purple-700 border-purple-200' : 'bg-sky-50 text-sky-700 border-sky-200'}">${isSuivi ? 'SUIVI' : 'OTS'}</button>`
+                    : `<span class="px-2.5 py-1 text-xs font-extrabold rounded-lg border ${isSuivi ? 'bg-purple-50 text-purple-700 border-purple-200' : 'bg-sky-50 text-sky-700 border-sky-200'}">${isSuivi ? 'SUIVI' : 'OTS'}</span>`
+                  }
+                  ${v._carriedOverFrom ? `<span class="px-2 py-0.5 text-[10px] font-bold rounded-md bg-amber-50 text-amber-800 border border-amber-200">↪ ${v._carriedOverFrom}</span>` : ''}
+                </div>
+                <div class="flex items-center gap-1.5">
+                  <span class="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-bold rounded-full ${v.statut_depot === 'depot_recu' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200/80' : 'bg-amber-50 text-amber-700 border border-amber-200/80'}">
+                    ${v.statut_depot === 'depot_recu' ? '✓ Dépôt reçu' : '⏳ À confirmer'}
+                  </span>
+                  ${agingBadgeForDeposit(v)}
+                </div>
               </div>
 
-              <div class="grid grid-cols-2 gap-2 pt-1">
+              <!-- Ligne 3 : Actions espacées et lisibles -->
+              <div class="grid ${canDelete ? 'grid-cols-3' : 'grid-cols-2'} gap-2 pt-0.5">
                 ${proofSrc
-                  ? `<button type="button" onclick="openProofModal('${v.id}')" class="w-full py-2 px-3 text-xs font-bold rounded-xl bg-indigo-50 text-indigo-700 border border-indigo-200 flex items-center justify-center gap-1.5">📷 Voir la preuve</button>`
-                  : `<label class="cursor-pointer w-full py-2 px-3 text-xs font-bold rounded-xl bg-slate-100 text-slate-700 hover:bg-indigo-50 hover:text-indigo-700 flex items-center justify-center gap-1.5">+ 📷 Preuve<input type="file" accept="image/*" class="sr-only" onchange="attachProofToExistingSale('${v.id}', this.files[0])" /></label>`
+                  ? `<button type="button" onclick="openProofModal('${v.id}')" class="py-2.5 px-2 text-xs font-bold rounded-xl bg-indigo-50 text-indigo-700 border border-indigo-200 flex items-center justify-center gap-1">📷 Preuve</button>`
+                  : `<label class="cursor-pointer py-2.5 px-2 text-xs font-bold rounded-xl bg-slate-100 text-slate-700 hover:bg-indigo-50 hover:text-indigo-700 flex items-center justify-center gap-1">+ 📷 Preuve<input type="file" accept="image/*" class="sr-only" onchange="attachProofToExistingSale('${v.id}', this.files[0])" /></label>`
                 }
+                <button type="button" onclick="openSaleAuditModal('${v.id}')" class="py-2.5 px-2 text-xs font-bold rounded-xl bg-slate-100 text-slate-700 flex items-center justify-center gap-1">🕒 Historique</button>
                 ${canDelete
-                  ? `<button type="button" onclick="deleteVente('${v.id}')" class="w-full py-2 px-3 text-xs font-bold rounded-xl bg-rose-50 text-rose-600 border border-rose-200 text-center">Supprimer</button>`
-                  : `<button type="button" onclick="openSaleAuditModal('${v.id}')" class="w-full py-2 px-3 text-xs font-bold rounded-xl bg-slate-100 text-slate-700 text-center">🕒 Historique</button>`
+                  ? `<button type="button" onclick="deleteVente('${v.id}')" class="py-2.5 px-2 text-xs font-bold rounded-xl bg-rose-50 text-rose-600 border border-rose-200 flex items-center justify-center gap-1">🗑️ Suppr.</button>`
+                  : ''
                 }
               </div>
-              ${canDelete ? `<button type="button" onclick="openSaleAuditModal('${v.id}')" class="w-full py-1.5 px-3 text-[11px] font-semibold text-slate-500 hover:text-indigo-700 bg-slate-50 rounded-xl text-center">🕒 Voir le journal d'audit</button>` : ''}
             </div>
           `;
         }).join('');
@@ -6823,34 +6505,41 @@
           const diff = baseR ? Math.max(0, Number(v.taux_rep_applique) - Number(baseR.taux)) : 0.01;
           const appliedRate = isAdmin && !isInspectingRep ? Number(v.taux_olivier_applique || 0) : Number(v.taux_rep_applique || 0);
           return `
-            <div class="bg-white rounded-2xl border border-slate-200/80 p-4 shadow-xs space-y-2.5">
-              <div class="flex items-start justify-between gap-2">
-                <div class="min-w-0">
+            <div class="bg-white rounded-2xl border border-slate-200/90 p-4 shadow-xs space-y-3.5">
+              <!-- Ligne 1 : Entreprise + Date | Montant Commission -->
+              <div class="flex items-start justify-between gap-3">
+                <div class="space-y-1.5 min-w-0">
                   <div class="flex items-center flex-wrap gap-1.5">
                     ${entBadge(v.entreprise_nom)}
-                    <span class="text-[11px] font-semibold text-slate-400">${v.date_vente}</span>
-                    ${v._carriedOverFrom ? `<span class="px-1.5 py-0.5 text-[10px] font-bold rounded-md bg-amber-50 text-amber-800 border border-amber-200">↪ ${v._carriedOverFrom}</span>` : ''}
+                    <span class="text-xs font-semibold text-slate-400">${v.date_vente}</span>
                   </div>
-                  <div class="font-extrabold text-sm text-slate-900 mt-1.5 truncate">${esc(v.client_nom)}</div>
-                  ${isAdmin ? `<div class="text-[11px] font-semibold text-indigo-600">Rep : ${esc(v.rep_nom || '—')}</div>` : ''}
-                  <div class="text-[11px] text-slate-500 mt-0.5 tabular-nums">Vente : <strong>${fmtMoney(v.valeur)}</strong> • Taux : <strong>${fmtPct(appliedRate)}</strong></div>
+                  <div class="text-base font-extrabold text-slate-900 leading-snug break-words">${esc(v.client_nom)}</div>
+                  ${isAdmin ? `<div class="text-xs font-semibold text-indigo-600">Rep : ${esc(v.rep_nom || '—')}</div>` : ''}
                 </div>
                 <div class="text-right shrink-0 tabular-nums">
                   <div class="text-lg font-extrabold text-emerald-600">+ ${fmtMoney(v.commission_rep)}</div>
-                  ${v._bonusApplied ? `<span class="inline-block mt-0.5 px-1.5 py-0.5 text-[10px] font-extrabold rounded bg-emerald-100 text-emerald-800">+${formatBonusPctShort(diff || 0.01)} bonus</span>` : ''}
+                  <div class="text-[11px] font-bold text-slate-400">Taux : ${fmtPct(appliedRate)}</div>
+                  ${v._bonusApplied ? `<span class="inline-block mt-1 px-2 py-0.5 text-[10px] font-extrabold rounded-full bg-emerald-100 text-emerald-800">+${formatBonusPctShort(diff || 0.01)} bonus</span>` : ''}
                 </div>
               </div>
 
-              <div class="flex items-center justify-between pt-2 border-t border-slate-100">
-                <div class="flex items-center gap-1.5">
-                  <span class="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-semibold rounded-full ${v.statut_depot === 'depot_recu' ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'}">
+              <!-- Ligne 2 : Base de calcul claire -->
+              <div class="flex items-center justify-between text-xs bg-slate-50/90 rounded-xl px-3 py-2.5 border border-slate-100 tabular-nums">
+                <span class="text-slate-500 font-medium">Valeur de la vente</span>
+                <strong class="text-slate-900 font-extrabold">${fmtMoney(v.valeur)}</strong>
+              </div>
+
+              <!-- Ligne 3 : Statut dépôt + Statut versement -->
+              <div class="flex items-center justify-between gap-2 pt-0.5">
+                <div class="flex items-center flex-wrap gap-1.5">
+                  <span class="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded-full ${v.statut_depot === 'depot_recu' ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'}">
                     ${v.statut_depot === 'depot_recu' ? '✓ Dépôt reçu' : '⏳ À confirmer'}
                   </span>
-                  <span class="px-2.5 py-1 text-[11px] font-bold rounded-full ${v.statut_paiement === 'paye' ? 'bg-indigo-100 text-indigo-800' : 'bg-slate-100 text-slate-600'}">
+                  <span class="px-2.5 py-1 text-xs font-bold rounded-full ${v.statut_paiement === 'paye' ? 'bg-indigo-100 text-indigo-800' : 'bg-slate-100 text-slate-600'}">
                     ${v.statut_paiement === 'paye' ? '✓ Payé' : 'À recevoir'}
                   </span>
                 </div>
-                <button type="button" onclick="openSaleAuditModal('${v.id}')" class="text-[11px] font-semibold text-slate-500 hover:text-indigo-700">🕒 Détails</button>
+                <button type="button" onclick="openSaleAuditModal('${v.id}')" class="px-2.5 py-1.5 text-xs font-bold text-slate-600 hover:text-indigo-700 bg-slate-100 rounded-xl">🕒 Détails</button>
               </div>
             </div>
           `;
