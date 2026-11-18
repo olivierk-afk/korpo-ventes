@@ -208,71 +208,150 @@
     </div>
   </div>
 
-    <!-- MODALE IMPORTATION HISTORIQUE KPI (EXCEL .XLSX / .CSV) -->
+    <!-- MODALE RÉIMPORTER & RECALCULER LES KPI (EXCEL / CSV / ÉDITEUR DIRECT / RESET) -->
   <div id="kpi-import-modal" class="hidden fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-4 no-print">
-    <div class="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-4xl w-full max-h-[92vh] flex flex-col overflow-hidden">
+    <div class="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-5xl w-full max-h-[92vh] flex flex-col overflow-hidden">
       <div class="px-6 py-4 bg-slate-900 text-white flex items-center justify-between">
         <div>
-          <h3 class="text-base font-bold">Importer l'historique KPI (Excel ou CSV)</h3>
-          <p class="text-xs text-slate-400">Importez vos fichiers Excel (<code>.xlsx</code>) ou <code>.csv</code> (format Korpo KPI Condense ou export CSV) pour charger tous vos KPI passés jusqu'à présent.</p>
+          <h3 class="text-base font-bold">Réimporter & Recalculer les KPI</h3>
+          <p class="text-xs text-slate-400">Importez votre fichier Excel/CSV, modifiez directement les totaux OTS / Suivi / RDV par mois, ou recalculez proprement tout le tableau.</p>
         </div>
         <button id="btn-close-kpi-import" class="w-8 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 flex items-center justify-center">✕</button>
       </div>
 
-      <div class="p-6 overflow-y-auto space-y-5 flex-1">
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <label class="md:col-span-2 cursor-pointer border-2 border-dashed border-indigo-300 hover:border-indigo-500 bg-indigo-50/40 rounded-2xl p-6 flex flex-col items-center justify-center text-center transition">
-            <span class="text-2xl mb-1.5">📊</span>
-            <span class="text-xs font-extrabold text-indigo-950">Cliquez pour sélectionner votre fichier Excel (.xlsx) ou CSV (.csv)</span>
-            <span class="text-[11px] text-slate-500 mt-1">Prend en charge votre classeur multi-onglets (Mars 2026, Avril 2026...) ou un fichier CSV exporté</span>
-            <input id="kpi-import-file-input" type="file" accept=".xlsx,.xls,.csv" class="hidden" />
-          </label>
+      <!-- ONGLETS INTERNES DE LA MODALE -->
+      <div class="px-6 pt-3 bg-slate-50 border-b border-slate-200 flex flex-wrap gap-2">
+        <button type="button" id="kpi-modal-tab-file" onclick="switchKpiImportTab('file')" class="px-4 py-2 text-xs font-extrabold rounded-t-xl border-b-2 border-indigo-600 text-indigo-700 bg-white">
+          1. Importer Excel (.xlsx) ou CSV
+        </button>
+        <button type="button" id="kpi-modal-tab-grid" onclick="switchKpiImportTab('grid')" class="px-4 py-2 text-xs font-bold rounded-t-xl border-b-2 border-transparent text-slate-600 hover:text-slate-900">
+          2. Grille directe OTS / Suivi / RDV (sans fichier)
+        </button>
+        <button type="button" id="kpi-modal-tab-reset" onclick="switchKpiImportTab('reset')" class="px-4 py-2 text-xs font-bold rounded-t-xl border-b-2 border-transparent text-slate-600 hover:text-slate-900">
+          3. Réinitialiser & Recalculer tout
+        </button>
+      </div>
 
-          <div class="bg-slate-50 rounded-2xl border border-slate-200 p-4 flex flex-col justify-between space-y-2.5">
-            <div class="space-y-1">
-              <div class="text-xs font-extrabold text-slate-900">Import rapide ou modèle</div>
-              <p class="text-[11px] text-slate-600 leading-relaxed">Rechargez directement vos données condensées 2026 ou téléchargez le gabarit CSV.</p>
+      <div class="p-6 overflow-y-auto space-y-5 flex-1">
+        <!-- VUE 1 : IMPORTATION FICHIER EXCEL / CSV -->
+        <div id="kpi-import-view-file" class="space-y-4">
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <label class="md:col-span-2 cursor-pointer border-2 border-dashed border-indigo-300 hover:border-indigo-500 bg-indigo-50/40 rounded-2xl p-6 flex flex-col items-center justify-center text-center transition">
+              <span class="text-2xl mb-1.5">📊</span>
+              <span class="text-xs font-extrabold text-indigo-950">Cliquez pour sélectionner votre fichier Excel (.xlsx) ou CSV (.csv)</span>
+              <span class="text-[11px] text-slate-500 mt-1">Prend en charge vos onglets mensuels (Mars 2026, Octobre 2026...), votre tableau condensé ou un CSV</span>
+              <input id="kpi-import-file-input" type="file" accept=".xlsx,.xls,.csv" class="hidden" />
+            </label>
+
+            <div class="bg-slate-50 rounded-2xl border border-slate-200 p-4 flex flex-col justify-between space-y-2.5">
+              <div class="space-y-1">
+                <div class="text-xs font-extrabold text-slate-900">Modèle CSV & Export actuel</div>
+                <p class="text-[11px] text-slate-600 leading-relaxed">Téléchargez le modèle CSV pré-rempli avec vos mois actuels, modifiez-le dans Excel puis réimportez-le.</p>
+              </div>
+              <div class="space-y-2">
+                <button id="btn-export-editable-kpi-csv" type="button" class="w-full py-2 px-3 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-xl shadow-xs transition">
+                  📤 Exporter mes KPI actuels (CSV éditable)
+                </button>
+                <button id="btn-download-kpi-template" type="button" class="w-full py-2 px-3 bg-white hover:bg-slate-100 text-slate-800 border border-slate-300 text-xs font-bold rounded-xl transition">
+                  ⬇ Télécharger le modèle vierge CSV
+                </button>
+              </div>
             </div>
-            <div class="space-y-2">
-              <button id="btn-load-builtin-2026" type="button" class="w-full py-2 px-3 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-xl shadow-xs transition">
-                ⚡ Charger Mars–Nov 2026 intégré
-              </button>
-              <button id="btn-download-kpi-template" type="button" class="w-full py-2 px-3 bg-white hover:bg-slate-100 text-slate-800 border border-slate-300 text-xs font-bold rounded-xl transition">
-                ⬇ Télécharger le modèle CSV
+          </div>
+
+          <div id="kpi-import-preview-box" class="hidden space-y-3">
+            <div class="flex flex-wrap items-center justify-between gap-2">
+              <div id="kpi-import-summary" class="text-xs font-extrabold text-slate-800"></div>
+              <div class="flex flex-wrap items-center gap-4">
+                <label class="flex items-center gap-1.5 text-xs font-semibold text-slate-700 cursor-pointer">
+                  <input id="kpi-import-sync-supabase" type="checkbox" checked class="rounded border-slate-300 text-indigo-600" />
+                  Sync RDV Supabase
+                </label>
+                <label class="flex items-center gap-1.5 text-xs font-semibold text-purple-800 cursor-pointer">
+                  <input id="kpi-import-tag-sales" type="checkbox" checked class="rounded border-slate-300 text-purple-600" />
+                  Appliquer OTS / Suivi aux ventes
+                </label>
+              </div>
+            </div>
+
+            <div class="border border-slate-200 rounded-xl overflow-x-auto max-h-72">
+              <table class="w-full text-left border-collapse text-xs">
+                <thead>
+                  <tr class="bg-slate-50 border-b border-slate-200 text-[11px] font-bold uppercase text-slate-500">
+                    <th class="py-2 px-3">Mois</th>
+                    <th class="py-2 px-3">Représentant</th>
+                    <th class="py-2 px-3">Indicateur</th>
+                    <th class="py-2 px-3 text-right">Sem. 1–5</th>
+                    <th class="py-2 px-3 text-right">Cumul (modifiable)</th>
+                    <th class="py-2 px-3 text-right">Objectif</th>
+                  </tr>
+                </thead>
+                <tbody id="tbody-kpi-import-preview" class="divide-y divide-slate-100"></tbody>
+              </table>
+            </div>
+
+            <div class="flex justify-end gap-3 pt-1">
+              <button id="btn-confirm-kpi-import" type="button" class="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl shadow-sm transition">
+                ✓ Importer et recalculer le Tableau KPI
               </button>
             </div>
           </div>
         </div>
 
-        <div id="kpi-import-preview-box" class="hidden space-y-3">
-          <div class="flex flex-wrap items-center justify-between gap-2">
-            <div id="kpi-import-summary" class="text-xs font-extrabold text-slate-800"></div>
-            <label class="flex items-center gap-2 text-xs font-semibold text-slate-700 cursor-pointer">
-              <input id="kpi-import-sync-supabase" type="checkbox" checked class="rounded border-slate-300 text-indigo-600" />
-              Synchroniser les RDV (Bookés / Réalisés) avec Supabase
-            </label>
+        <!-- VUE 2 : GRILLE DIRECTE OTS / SUIVI / RDV PAR MOIS & REPRÉSENTANT -->
+        <div id="kpi-import-view-grid" class="hidden space-y-4">
+          <div class="flex flex-wrap items-center justify-between gap-3 bg-indigo-50/70 border border-indigo-200 rounded-xl p-3.5">
+            <div class="text-xs text-indigo-950">
+              <strong>Ajustement rapide par mois :</strong> corrigez directement le nombre de <strong>RDV Bookés</strong>, <strong>RDV Réalisés</strong>, <strong>Ventes OTS</strong> et <strong>Ventes SUIVI</strong> pour chaque représentant, puis cliquez sur <strong>Enregistrer & Recalculer</strong>.
+            </div>
+            <div class="flex items-center gap-2">
+              <label class="text-xs font-bold text-slate-700">Mois :</label>
+              <select id="kpi-grid-month-select" class="px-3 py-1.5 text-xs font-bold bg-white border border-slate-300 rounded-xl"></select>
+            </div>
           </div>
 
-          <div class="border border-slate-200 rounded-xl overflow-x-auto max-h-72">
+          <div class="border border-slate-200 rounded-xl overflow-x-auto">
             <table class="w-full text-left border-collapse text-xs">
               <thead>
                 <tr class="bg-slate-50 border-b border-slate-200 text-[11px] font-bold uppercase text-slate-500">
-                  <th class="py-2 px-3">Mois</th>
-                  <th class="py-2 px-3">Représentant</th>
-                  <th class="py-2 px-3">Indicateur</th>
-                  <th class="py-2 px-3 text-right">Sem. 1–5</th>
-                  <th class="py-2 px-3 text-right">Cumul</th>
-                  <th class="py-2 px-3 text-right">Objectif</th>
+                  <th class="py-2.5 px-4">Représentant</th>
+                  <th class="py-2.5 px-3 text-center">RDV Bookés</th>
+                  <th class="py-2.5 px-3 text-center">RDV Réalisés</th>
+                  <th class="py-2.5 px-3 text-center text-sky-700">Ventes OTS</th>
+                  <th class="py-2.5 px-3 text-center text-purple-700">Ventes SUIVI</th>
+                  <th class="py-2.5 px-3 text-right">Ventes ($)</th>
+                  <th class="py-2.5 px-3 text-center">% Close</th>
                 </tr>
               </thead>
-              <tbody id="tbody-kpi-import-preview" class="divide-y divide-slate-100"></tbody>
+              <tbody id="tbody-kpi-direct-grid" class="divide-y divide-slate-100"></tbody>
             </table>
           </div>
 
-          <div class="flex justify-end gap-3 pt-1">
-            <button id="btn-confirm-kpi-import" type="button" class="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl shadow-sm transition">
-              ✓ Importer et mettre à jour le Tableau KPI
+          <div class="flex justify-end gap-3">
+            <button id="btn-save-kpi-direct-grid" type="button" class="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl shadow-sm transition">
+              ✓ Enregistrer ce mois & Synchroniser les ventes
             </button>
+          </div>
+        </div>
+
+        <!-- VUE 3 : RÉINITIALISER LE CACHE LOCAL & RECALCULER TOUT PROPREMENT -->
+        <div id="kpi-import-view-reset" class="hidden space-y-4">
+          <div class="bg-amber-50 border border-amber-200 rounded-2xl p-5 space-y-3">
+            <h4 class="text-sm font-extrabold text-amber-950">Nettoyer le cache local et recalculer tous les KPI</h4>
+            <p class="text-xs text-amber-900 leading-relaxed">
+              Si des imports précédents ont laissé des chiffres incohérents dans le cache de votre navigateur, cette action va :
+            </p>
+            <ul class="text-xs text-amber-900 space-y-1 list-disc pl-5">
+              <li>Purger les surcharges locales obsolètes (<code>localStorage</code>) du navigateur ;</li>
+              <li>Restaurer les données de référence 2026 (Mars à Novembre) et synchroniser vos RDV depuis Supabase ;</li>
+              <li>Appliquer automatiquement les étiquettes <code>[OTS]</code> et <code>[SUIVI]</code> sur vos ventes uniques dans Supabase ;</li>
+              <li>Recalculer de zéro tous les cumuls hebdomadaires, mensuels, annuels, taux de closing et objectifs par compagnie.</li>
+            </ul>
+            <div class="pt-2">
+              <button id="btn-full-kpi-reset-recalc" type="button" class="px-5 py-2.5 bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold rounded-xl shadow-sm transition">
+                🔄 Réinitialiser le cache & Recalculer tous les KPI maintenant
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -674,11 +753,8 @@
             <button id="btn-kpi-edit-toggle" class="px-3.5 py-2.5 text-xs font-bold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 rounded-xl transition">
               ✎ Mettre à jour les RDV
             </button>
-            <button id="btn-kpi-import-open" class="px-3.5 py-2.5 text-xs font-bold text-slate-800 bg-amber-50 hover:bg-amber-100 border border-amber-200 rounded-xl transition">
-              📥 Importer KPI (Excel / CSV)
-            </button>
-            <button id="btn-kpi-push-tags" title="Applique automatiquement les étiquettes [OTS] et [SUIVI] sur vos ventes dans Supabase selon le Tableau KPI" class="px-3.5 py-2.5 text-xs font-bold text-purple-800 bg-purple-50 hover:bg-purple-100 border border-purple-200 rounded-xl transition">
-              🏷 Appliquer OTS / Suivi aux ventes
+            <button id="btn-kpi-import-open" class="px-3.5 py-2.5 text-xs font-bold text-amber-950 bg-amber-100 hover:bg-amber-200 border border-amber-300 rounded-xl transition">
+              🔄 Réimporter / Recalculer KPI
             </button>
             <button id="btn-kpi-export-csv" class="px-3.5 py-2.5 text-xs font-semibold text-slate-700 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 transition">
               Exporter CSV
@@ -2656,7 +2732,8 @@
       const cliObj = state.clients.find(c => c.id === v.client_id);
       const rawName = (cliObj?.nom || v.client_nom || '').trim().toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/\s+/g, ' ');
       const repKey = String(v.representant_id || '');
-      return rawName ? `${repKey}__${rawName}` : `sale_${v.id}`;
+      const ym = v.mois_commission || (v.date_vente ? v.date_vente.slice(0, 7) : '');
+      return rawName ? `${ym}__${repKey}__${rawName}` : `sale_${v.id}`;
     }
 
     function syncSalesIntoKpi() {
@@ -3410,16 +3487,18 @@
       const monthsCount = new Set(parsedKpiImportRows.map(r => r.ym)).size;
       sumEl.textContent = `${parsedKpiImportRows.length} ligne(s) KPI détectée(s) sur ${monthsCount} mois`;
 
-      tbody.innerHTML = parsedKpiImportRows.slice(0, 60).map(r => `
+      tbody.innerHTML = parsedKpiImportRows.slice(0, 120).map((r, idx) => `
         <tr class="hover:bg-slate-50">
           <td class="py-2 px-3 font-bold text-slate-800">${r.ym}</td>
           <td class="py-2 px-3 font-semibold text-indigo-700">${r.rep}</td>
           <td class="py-2 px-3 font-medium text-slate-700">${r.metric}</td>
           <td class="py-2 px-3 text-right tabular-nums text-slate-500">${r.weeks.join(' / ')}</td>
-          <td class="py-2 px-3 text-right tabular-nums font-extrabold text-slate-900">${r.metric === 'Vente $' ? fmtMoney0(r.cumul) : r.cumul}</td>
+          <td class="py-2 px-3 text-right">
+            <input type="number" step="0.01" value="${r.cumul}" onchange="parsedKpiImportRows[${idx}].cumul = parseFloat(this.value) || 0; parsedKpiImportRows[${idx}].weeks = [parsedKpiImportRows[${idx}].cumul, 0, 0, 0];" class="w-24 px-2 py-0.5 text-right font-extrabold text-slate-900 bg-slate-50 border border-slate-200 rounded-md tabular-nums" />
+          </td>
           <td class="py-2 px-3 text-right tabular-nums text-slate-500">${r.objectif || '—'}</td>
         </tr>
-      `).join('') + (parsedKpiImportRows.length > 60 ? `<tr><td colspan="6" class="py-2 px-3 text-center text-[11px] text-slate-400">... et ${parsedKpiImportRows.length - 60} autres lignes</td></tr>` : '');
+      `).join('') + (parsedKpiImportRows.length > 120 ? `<tr><td colspan="6" class="py-2 px-3 text-center text-[11px] text-slate-400">... et ${parsedKpiImportRows.length - 120} autres lignes</td></tr>` : '');
 
       box.classList.remove('hidden');
       return true;
@@ -3759,17 +3838,194 @@
           if (error) console.warn('Sync import kpi_hebdo:', error.message);
         }
 
-        await applyKpiOtsSuiviTagsToSupabase(impactedMonths, true);
+        const tagSalesToo = document.getElementById('kpi-import-tag-sales')?.checked;
+        if (tagSalesToo) {
+          await applyKpiOtsSuiviTagsToSupabase(impactedMonths, true);
+        }
 
         kpiImportModal.classList.add('hidden');
         document.getElementById('kpi-import-preview-box').classList.add('hidden');
         await loadAllData();
-        toast(`Historique KPI importé et étiquettes OTS / Suivi appliquées sur ${impactedMonths.size} mois ✓`);
+        toast(`Historique KPI importé et recalculé sur ${impactedMonths.size} mois ✓`);
       } catch (err) {
         toast('Erreur lors de l’importation : ' + err.message, 'error');
       } finally {
         btn.disabled = false;
-        btn.textContent = '✓ Importer et mettre à jour le Tableau KPI';
+        btn.textContent = '✓ Importer et recalculer le Tableau KPI';
+      }
+    });
+
+    window.switchKpiImportTab = (tabName) => {
+      ['file', 'grid', 'reset'].forEach(t => {
+        const view = document.getElementById(`kpi-import-view-${t}`);
+        const btn = document.getElementById(`kpi-modal-tab-${t}`);
+        const active = t === tabName;
+        if (view) view.classList.toggle('hidden', !active);
+        if (btn) {
+          btn.classList.toggle('border-indigo-600', active);
+          btn.classList.toggle('text-indigo-700', active);
+          btn.classList.toggle('bg-white', active);
+          btn.classList.toggle('border-transparent', !active);
+          btn.classList.toggle('text-slate-600', !active);
+        }
+      });
+      if (tabName === 'grid') {
+        populateKpiDirectGridMonths();
+        renderKpiDirectGrid();
+      }
+    };
+
+    function populateKpiDirectGridMonths() {
+      const sel = document.getElementById('kpi-grid-month-select');
+      if (!sel) return;
+      const curMain = document.getElementById('kpi-select-month')?.value;
+      const months = Object.keys(kpiStore).sort().reverse();
+      sel.innerHTML = months.map(ym => `<option value="${ym}">${kpiStore[ym].label}</option>`).join('');
+      if (curMain && !curMain.startsWith('YEAR_') && months.includes(curMain)) {
+        sel.value = curMain;
+      }
+    }
+
+    function renderKpiDirectGrid() {
+      const ym = document.getElementById('kpi-grid-month-select')?.value || currentMonthStr;
+      const mObj = ensureKpiMonthStructure(ym);
+      const tbody = document.getElementById('tbody-kpi-direct-grid');
+      if (!tbody) return;
+
+      tbody.innerHTML = ALL_KPI_REPS.map(rn => {
+        const r = mObj.reps[rn];
+        const booke = Number(r?.['Booké']?.cumul || 0);
+        const rdv = Number(r?.['RDV Réalisé']?.cumul || 0);
+        const ots = Number(r?.['Ventes OTS']?.cumul || 0);
+        const suivi = Number(r?.['Ventes SUIVI']?.cumul || 0);
+        const dol = Number(r?.['Vente $']?.cumul || 0);
+        const close = rdv > 0 ? (((ots + suivi) / rdv) * 100).toFixed(1) : '0.0';
+        return `
+          <tr class="hover:bg-slate-50" data-rep="${rn}">
+            <td class="py-2.5 px-4 font-bold text-slate-900">${rn}</td>
+            <td class="py-2 px-3 text-center">
+              <input type="number" min="0" data-field="booke" value="${booke}" class="w-20 px-2 py-1 text-center font-bold bg-slate-50 border border-slate-200 rounded-lg tabular-nums" />
+            </td>
+            <td class="py-2 px-3 text-center">
+              <input type="number" min="0" data-field="rdv" value="${rdv}" class="w-20 px-2 py-1 text-center font-bold bg-slate-50 border border-slate-200 rounded-lg tabular-nums" />
+            </td>
+            <td class="py-2 px-3 text-center">
+              <input type="number" min="0" data-field="ots" value="${ots}" class="w-20 px-2 py-1 text-center font-extrabold text-sky-700 bg-sky-50/50 border border-sky-200 rounded-lg tabular-nums" />
+            </td>
+            <td class="py-2 px-3 text-center">
+              <input type="number" min="0" data-field="suivi" value="${suivi}" class="w-20 px-2 py-1 text-center font-extrabold text-purple-700 bg-purple-50/50 border border-purple-200 rounded-lg tabular-nums" />
+            </td>
+            <td class="py-2 px-3 text-right font-bold text-slate-700 tabular-nums">${fmtMoney0(dol)}</td>
+            <td class="py-2 px-3 text-center font-bold text-emerald-700 tabular-nums">${close} %</td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    document.getElementById('kpi-grid-month-select')?.addEventListener('change', renderKpiDirectGrid);
+
+    document.getElementById('btn-save-kpi-direct-grid')?.addEventListener('click', async () => {
+      const ym = document.getElementById('kpi-grid-month-select')?.value;
+      if (!ym) return;
+      const mObj = ensureKpiMonthStructure(ym);
+      const nw = mObj.num_weeks || 4;
+      const rows = document.querySelectorAll('#tbody-kpi-direct-grid tr[data-rep]');
+      const hebdoUpserts = [];
+
+      rows.forEach(tr => {
+        const rn = tr.getAttribute('data-rep');
+        const booke = parseFloat(tr.querySelector('input[data-field="booke"]').value) || 0;
+        const rdv = parseFloat(tr.querySelector('input[data-field="rdv"]').value) || 0;
+        const ots = parseFloat(tr.querySelector('input[data-field="ots"]').value) || 0;
+        const suivi = parseFloat(tr.querySelector('input[data-field="suivi"]').value) || 0;
+        const rData = mObj.reps[rn];
+        if (!rData) return;
+
+        // Répartir proprement sur les semaines du mois et enregistrer les overrides
+        rData['Booké'].weeks = [booke, ...Array(nw - 1).fill(0)];
+        rData['Booké'].cumul = booke;
+        rData['RDV Réalisé'].weeks = [rdv, ...Array(nw - 1).fill(0)];
+        rData['RDV Réalisé'].cumul = rdv;
+        rData['Ventes OTS'].weeks = [ots, ...Array(nw - 1).fill(0)];
+        rData['Ventes OTS'].cumul = ots;
+        rData['Ventes SUIVI'].weeks = [suivi, ...Array(nw - 1).fill(0)];
+        rData['Ventes SUIVI'].cumul = suivi;
+
+        for (let wi = 0; wi < nw; wi++) {
+          const ovKey = `${ym}_${rn}_${wi}`;
+          manualRdvOverrides[ovKey] = { booke: wi === 0 ? booke : 0, rdv: wi === 0 ? rdv : 0 };
+          manualSalesOverrides[ovKey] = { ots: wi === 0 ? ots : 0, suivi: wi === 0 ? suivi : 0, dollars: rData['Vente $'].weeks[wi] || 0, fromImport: true };
+          hebdoUpserts.push({
+            mois_commission: ym,
+            semaine_index: wi,
+            representant_nom: rn,
+            booke: wi === 0 ? booke : 0,
+            rdv_realise: wi === 0 ? rdv : 0,
+            updated_at: new Date().toISOString()
+          });
+        }
+      });
+
+      saveManualKpiOverrides();
+      localStorage.setItem('korpo_kpi_store_v1', JSON.stringify(kpiStore));
+
+      if (sb && currentProfile && hebdoUpserts.length) {
+        await sb.from('kpi_hebdo').upsert(hebdoUpserts, { onConflict: 'mois_commission,semaine_index,representant_nom' });
+      }
+      await applyKpiOtsSuiviTagsToSupabase(new Set([ym]), true);
+      kpiImportModal.classList.add('hidden');
+      await loadAllData();
+      toast(`KPI de ${mObj.label} enregistrés et synchronisés avec les ventes ✓`);
+    });
+
+    document.getElementById('btn-export-editable-kpi-csv')?.addEventListener('click', () => {
+      const rows = [['Periode', 'Representant', 'Indicateur', 'Semaine_1', 'Semaine_2', 'Semaine_3', 'Semaine_4', 'Semaine_5', 'Cumul', 'Objectif']];
+      Object.keys(kpiStore).sort().forEach(ym => {
+        const mObj = kpiStore[ym];
+        ALL_KPI_REPS.forEach(rep => {
+          const metrics = mObj.reps?.[rep];
+          if (!metrics) return;
+          ['Booké', 'RDV Réalisé', 'Ventes OTS', 'Ventes SUIVI', 'Vente $', '% Close'].forEach(mKey => {
+            const obj = metrics[mKey];
+            if (!obj) return;
+            const w = [0, 1, 2, 3, 4].map(idx => obj.weeks[idx] ?? '');
+            rows.push([ym, rep, mKey, ...w, obj.cumul, obj.objectif]);
+          });
+        });
+      });
+      const csv = rows.map(r => r.join(',')).join('
+');
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8;' }));
+      a.download = `korpo-kpi-complet-editable.csv`;
+      a.click();
+      toast('Export CSV complet téléchargé ✓');
+    });
+
+    document.getElementById('btn-full-kpi-reset-recalc')?.addEventListener('click', async () => {
+      const btn = document.getElementById('btn-full-kpi-reset-recalc');
+      btn.disabled = true;
+      btn.textContent = 'Recalcul complet en cours...';
+      try {
+        localStorage.removeItem('korpo_kpi_store_v1');
+        localStorage.removeItem('korpo_kpi_manual_rdv_v1');
+        localStorage.removeItem('korpo_kpi_manual_sales_v1');
+        manualRdvOverrides = {};
+        manualSalesOverrides = {};
+        kpiStore = JSON.parse(JSON.stringify(DEFAULT_KPI_DATA));
+        normalizeKpiStoreReps();
+        applyRepTargetsOverridesToStore();
+
+        // Appliquer les ratios OTS/SUIVI de référence aux ventes Supabase AVANT de recalculer syncSalesIntoKpi
+        await applyKpiOtsSuiviTagsToSupabase(null, true);
+        kpiImportModal.classList.add('hidden');
+        await loadAllData();
+        toast('Cache nettoyé et tous les KPI recalculés avec succès ✓');
+      } catch (err) {
+        toast('Erreur : ' + err.message, 'error');
+      } finally {
+        btn.disabled = false;
+        btn.textContent = '🔄 Réinitialiser le cache & Recalculer tous les KPI maintenant';
       }
     });
 
@@ -3804,8 +4060,16 @@
         const rData = mObj?.reps?.[rn];
         if (!rData) continue;
 
-        const targetSuivi = Math.min(salesList.length, Math.round(Number(rData['Ventes SUIVI']?.cumul || 0)));
-        // Trier du plus ancien au plus récent (ou garder ceux déjà tagués [SUIVI] en priorité)
+        // Utiliser le cumul KPI importé (ou le fallback DEFAULT_KPI_DATA si kpiStore avait été mis à 0)
+        const defMonth = DEFAULT_KPI_DATA[ym]?.reps?.[rn];
+        const refSuivi = Number(rData['Ventes SUIVI']?.cumul || 0) || Number(defMonth?.['Ventes SUIVI']?.cumul || 0);
+        const refOts = Number(rData['Ventes OTS']?.cumul || 0) || Number(defMonth?.['Ventes OTS']?.cumul || 0);
+        const refTotal = refOts + refSuivi;
+
+        const targetSuivi = refTotal > 0
+          ? Math.min(salesList.length, Math.round(salesList.length * (refSuivi / refTotal)))
+          : 0;
+
         const alreadySuivi = salesList.filter(v => (v.note || '').toUpperCase().includes('[SUIVI]'));
         const untaggedOrOts = salesList.filter(v => !(v.note || '').toUpperCase().includes('[SUIVI]'));
         const ordered = [...alreadySuivi, ...untaggedOrOts];
@@ -3828,24 +4092,6 @@
       }
       return updatedCount;
     }
-
-    document.getElementById('btn-kpi-push-tags')?.addEventListener('click', async () => {
-      const btn = document.getElementById('btn-kpi-push-tags');
-      if (!currentProfile || currentProfile.role !== 'admin') {
-        return toast('Seul un administrateur peut mettre à jour les étiquettes en lot.', 'error');
-      }
-      btn.disabled = true;
-      btn.textContent = 'Synchronisation...';
-      try {
-        await applyKpiOtsSuiviTagsToSupabase(null, false);
-        await loadAllData();
-      } catch (err) {
-        toast(err.message, 'error');
-      } finally {
-        btn.disabled = false;
-        btn.textContent = '🏷 Appliquer OTS / Suivi aux ventes';
-      }
-    });
 
     // CHARGEMENT SUPABASE (VENTES & COMMISSIONS)
     // =========================================================================
@@ -4365,12 +4611,13 @@
                 <span class="font-semibold text-slate-900">${cli}</span>
               </div>
               <div class="flex items-center gap-1.5 mt-0.5">
+                <button type="button" onclick="toggleVenteKpiType('${v.id}')" title="Cliquer pour basculer entre OTS et SUIVI"
+                  class="px-1.5 py-0.5 text-[10px] font-extrabold rounded-md border transition ${(v.note || '').toUpperCase().includes('[SUIVI]') ? 'bg-purple-50 text-purple-700 border-purple-200 hover:bg-purple-100' : 'bg-sky-50 text-sky-700 border-sky-200 hover:bg-sky-100'}">
+                  ${(v.note || '').toUpperCase().includes('[SUIVI]') ? 'SUIVI' : 'OTS'}
+                </button>
                 ${(window._kpiCountedFirstSaleIds && !window._kpiCountedFirstSaleIds.has(String(v.id)))
-                  ? `<span title="Client déjà comptabilisé 1 fois dans les KPI (seul le montant $ s'ajoute)" class="px-1.5 py-0.5 text-[10px] font-bold rounded-md border bg-slate-100 text-slate-500 border-slate-200">Déjà compté KPI</span>`
-                  : `<button type="button" onclick="toggleVenteKpiType('${v.id}')" title="Cliquer pour basculer entre OTS et SUIVI"
-                      class="px-1.5 py-0.5 text-[10px] font-extrabold rounded-md border transition ${(v.note || '').toUpperCase().includes('[SUIVI]') ? 'bg-purple-50 text-purple-700 border-purple-200 hover:bg-purple-100' : 'bg-sky-50 text-sky-700 border-sky-200 hover:bg-sky-100'}">
-                      ${(v.note || '').toUpperCase().includes('[SUIVI]') ? 'SUIVI' : 'OTS'}
-                    </button>`
+                  ? `<span title="Doublon client ce mois-ci (seul le montant $ s'ajoute)" class="px-1.5 py-0.5 text-[10px] font-semibold rounded-md bg-slate-100 text-slate-500">2e ligne</span>`
+                  : ''
                 }
                 ${v.note ? `<span class="text-[11px] text-slate-400">${v.note.replace(/^\[(OTS|SUIVI)\]\s*/i, '')}</span>` : ''}
               </div>
