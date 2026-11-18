@@ -6444,10 +6444,7 @@
         return;
       }
 
-      const _unusedVListHead = document.getElementById('mobile-ventes-list-heading');
-      if (vListHead) vListHead.textContent = `Dossiers de vente (${filtered.length})`;
-      const cListHead = document.getElementById('mobile-commissions-list-heading');
-      if (cListHead) cListHead.textContent = `Détail par commission (${filtered.length})`;
+
 
       if (mobileCardsBox) {
         mobileCardsBox.innerHTML = filtered.map(v => {
@@ -8527,7 +8524,23 @@
       }
     });
 
-    initApp();
+    window.addEventListener('error', (ev) => {
+      if (document.getElementById('screen-app')?.classList.contains('hidden') &&
+          document.getElementById('screen-login')?.classList.contains('hidden')) {
+        document.getElementById('screen-login')?.classList.remove('hidden');
+      }
+      console.error('Erreur application :', ev.error || ev.message);
+    });
+
+    initApp().catch((err) => {
+      console.error('Erreur initApp :', err);
+      showScreen('screen-login');
+      const errBox = document.getElementById('login-error');
+      if (errBox) {
+        errBox.textContent = 'Erreur de démarrage : ' + (err?.message || err);
+        errBox.classList.remove('hidden');
+      }
+    });
   </script>
 </body>
 </html>
