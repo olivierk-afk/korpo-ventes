@@ -2784,6 +2784,12 @@
             for (let wi = 0; wi < nw; wi++) {
               const ovKey = `${ym}_${rn}_${wi}`;
               const mSalesOv = manualSalesOverrides[ovKey];
+              const defRep = defaultMonthObj?.reps?.[rn];
+              const defOts = Number(defRep?.['Ventes OTS']?.weeks?.[wi] || 0);
+              const defSuivi = Number(defRep?.['Ventes SUIVI']?.weeks?.[wi] || 0);
+              const defDollars = Number(defRep?.['Vente $']?.weeks?.[wi] || 0);
+              const hasDefaultHist = (defOts + defSuivi) > 0;
+
               const dbOts = taggedCounts[rn].ots[wi];
               const dbSuivi = taggedCounts[rn].suivi[wi];
               const dbWeekCount = dbOts + dbSuivi;
@@ -2798,28 +2804,32 @@
                 }
               } else if (rawWeekCount > 0) {
                 // Des ventes réelles existent en base pour cette semaine : respecter strictement le décompte dédupliqué (dbWeekCount)
-                if (dbSuivi > 0 || !mSalesOv || !mSalesOv.fromImport) {
+                const refOts = (mSalesOv && mSalesOv.fromImport) ? Number(mSalesOv.ots || 0) : defOts;
+                const refSuivi = (mSalesOv && mSalesOv.fromImport) ? Number(mSalesOv.suivi || 0) : defSuivi;
+                const refTotal = refOts + refSuivi;
+
+                if (dbSuivi > 0 || refTotal <= 0) {
                   rData['Ventes OTS'].weeks[wi] = dbOts;
                   rData['Ventes SUIVI'].weeks[wi] = dbSuivi;
+                } else if (dbWeekCount === 0) {
+                  rData['Ventes OTS'].weeks[wi] = 0;
+                  rData['Ventes SUIVI'].weeks[wi] = 0;
                 } else {
-                  // Conserver la proportion OTS / SUIVI de l'import historique tout en plafonnant au nombre exact de clients uniques (dbWeekCount)
-                  const impOts = Number(mSalesOv.ots || 0);
-                  const impSuivi = Number(mSalesOv.suivi || 0);
-                  const impTotal = impOts + impSuivi;
-                  if (dbWeekCount === 0 || impTotal <= 0) {
-                    rData['Ventes OTS'].weeks[wi] = dbOts;
-                    rData['Ventes SUIVI'].weeks[wi] = dbSuivi;
-                  } else {
-                    const scaledSuivi = Math.min(dbWeekCount, Math.round(dbWeekCount * (impSuivi / impTotal)));
-                    rData['Ventes SUIVI'].weeks[wi] = scaledSuivi;
-                    rData['Ventes OTS'].weeks[wi] = dbWeekCount - scaledSuivi;
-                  }
+                  // Conserver la proportion OTS / SUIVI (importée ou intégrée 2026) tout en plafonnant au nombre exact de clients uniques (dbWeekCount)
+                  const scaledSuivi = Math.min(dbWeekCount, Math.round(dbWeekCount * (refSuivi / refTotal)));
+                  rData['Ventes SUIVI'].weeks[wi] = scaledSuivi;
+                  rData['Ventes OTS'].weeks[wi] = dbWeekCount - scaledSuivi;
                 }
               } else if (mSalesOv && mSalesOv.fromImport) {
-                // Aucune vente individuelle en base pour cette semaine (mois purement historique)
+                // Aucune vente individuelle en base pour cette semaine (mois purement historique importé)
                 rData['Ventes OTS'].weeks[wi] = Number(mSalesOv.ots || 0);
                 rData['Ventes SUIVI'].weeks[wi] = Number(mSalesOv.suivi || 0);
                 rData['Vente $'].weeks[wi] = Number(mSalesOv.dollars || 0);
+              } else if (hasDefaultHist) {
+                // Fallback automatique sur l'historique intégré 2026 (utile sur un nouveau domaine comme ventes.korposolutions.com)
+                rData['Ventes OTS'].weeks[wi] = defOts;
+                rData['Ventes SUIVI'].weeks[wi] = defSuivi;
+                rData['Vente $'].weeks[wi] = defDollars;
               } else {
                 rData['Ventes OTS'].weeks[wi] = 0;
                 rData['Ventes SUIVI'].weeks[wi] = 0;
