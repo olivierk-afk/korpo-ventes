@@ -4632,26 +4632,38 @@
     function updatePersonalGoalProgressBar(monthFilter, scopeFilter) {
       if (!currentProfile) return;
       const isAdmin = currentProfile.role === 'admin';
+      const isAllTime = !monthFilter;
       const activeYm = monthFilter || currentMonthStr;
       const inspectedRepName = currentProfile.nom;
 
-      const salesTarget = getSalesTargetForRep(inspectedRepName, activeYm);
-      const commTarget = getCommissionTargetForRep(inspectedRepName, activeYm);
-
-      const myMonthSales = state.mesVentes.filter(v => {
+      const myPeriodSales = state.mesVentes.filter(v => {
         if (isAdmin && scopeFilter === 'direct') {
           if (String(v.representant_id) !== String(currentProfile.id)) return false;
         }
         if (monthFilter) return v.mois_commission === monthFilter;
-        return v.mois_commission === currentMonthStr;
+        return true;
       });
 
-      const achievedSales = myMonthSales.reduce((s, v) => s + Number(v.valeur || 0), 0);
-      const achievedComm = myMonthSales.reduce((s, v) => s + Number(v.commission_rep || 0), 0);
+      let salesTarget = getSalesTargetForRep(inspectedRepName, activeYm);
+      let commTarget = getCommissionTargetForRep(inspectedRepName, activeYm);
+
+      if (isAllTime) {
+        const distinctMonths = new Set(
+          myPeriodSales.map(v => v.mois_commission || (v.date_vente ? v.date_vente.slice(0, 7) : null)).filter(Boolean)
+        );
+        const monthsList = distinctMonths.size > 0 ? Array.from(distinctMonths) : [currentMonthStr];
+        salesTarget = monthsList.reduce((sum, ym) => sum + getSalesTargetForRep(inspectedRepName, ym), 0);
+        commTarget = monthsList.reduce((sum, ym) => sum + getCommissionTargetForRep(inspectedRepName, ym), 0);
+      }
+
+      const achievedSales = myPeriodSales.reduce((s, v) => s + Number(v.valeur || 0), 0);
+      const achievedComm = myPeriodSales.reduce((s, v) => s + Number(v.commission_rep || 0), 0);
 
       const headerTitleEl = document.getElementById('goal-card-header-title');
       if (headerTitleEl) {
-        headerTitleEl.textContent = `Mes objectifs du mois (${activeYm})`;
+        headerTitleEl.textContent = isAllTime
+          ? `Mes objectifs cumulés (Depuis le début)`
+          : `Mes objectifs du mois (${activeYm})`;
       }
 
       // 1. Mise à jour de la barre TARGET COMMISSION ($)
