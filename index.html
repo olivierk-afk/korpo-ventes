@@ -5571,9 +5571,7 @@
           });
         } else {
           const text = await file.text();
-          const lines = text.split(/
-?
-/).filter(l => l.trim());
+          const lines = text.split(/\r?\n/).filter(l => l.trim());
           const sep = lines[0]?.includes(';') ? ';' : ',';
           const aoa = lines.map(l => parseCsvLine(l, sep));
           const csvRecs = parseCondensedSheetToRecords(aoa, file.name, fallbackYear);
@@ -6429,9 +6427,24 @@
       const tbody = document.getElementById('tbody-mes-ventes');
       const mobileCardsBox = document.getElementById('mobile-mes-ventes-cards');
       const mobileCommCardsBox = document.getElementById('mobile-mes-commissions-cards');
+      const vListHead = document.getElementById('mobile-ventes-list-heading');
+      if (vListHead) vListHead.textContent = `Dossiers de vente (${filtered.length})`;
+      const cListHead = document.getElementById('mobile-commissions-list-heading');
+      if (cListHead) cListHead.textContent = `Détail par commission (${filtered.length})`;
+
       if (!filtered.length) {
         tbody.innerHTML = `<tr><td colspan="${isAdmin ? 9 : 8}" class="py-12 text-center text-sm text-slate-400">Aucune vente enregistrée pour cette période.</td></tr>`;
-        const vListHead = document.getElementById('mobile-ventes-list-heading');
+        if (mobileCardsBox) {
+          mobileCardsBox.innerHTML = `<div class="bg-white rounded-2xl border border-slate-200/80 p-8 text-center text-xs text-slate-400">Aucune vente enregistrée pour cette période.</div>`;
+        }
+        if (mobileCommCardsBox) {
+          mobileCommCardsBox.innerHTML = `<div class="bg-white rounded-2xl border border-slate-200/80 p-8 text-center text-xs text-slate-400">Aucune commission enregistrée pour cette période.</div>`;
+        }
+        applyMobilePersonalSplitLayout();
+        return;
+      }
+
+      const _unusedVListHead = document.getElementById('mobile-ventes-list-heading');
       if (vListHead) vListHead.textContent = `Dossiers de vente (${filtered.length})`;
       const cListHead = document.getElementById('mobile-commissions-list-heading');
       if (cListHead) cListHead.textContent = `Détail par commission (${filtered.length})`;
