@@ -1204,91 +1204,123 @@
           </div>
         </div>
 
-        <!-- KPIs REPRÉSENTANT / OLIVIER -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div data-mobile-group="ventes" class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs">
-            <div class="flex items-center justify-between">
-              <span class="text-xs font-semibold text-slate-500">Ventes (Période)</span>
-              <span class="w-8 h-8 rounded-lg bg-slate-100 text-slate-700 flex items-center justify-center text-xs font-bold">$</span>
+        <!-- KPIs REPRÉSENTANT / OLIVIER : SÉPARATION NETTE VENTES VS COMMISSIONS -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <!-- BLOC 1 : SECTION VENTES -->
+          <div data-mobile-group="ventes" class="rounded-2xl border border-indigo-200/80 bg-indigo-50/30 p-3.5 sm:p-4 space-y-3">
+            <div class="flex items-center justify-between px-1">
+              <span class="inline-flex items-center gap-1.5 text-xs font-extrabold uppercase tracking-wider text-indigo-800">
+                <span class="w-2 h-2 rounded-full bg-indigo-600"></span>
+                <span>📊 Section Ventes</span>
+              </span>
+              <span class="text-[11px] font-semibold text-slate-500">Volumes & contrats signés</span>
             </div>
-            <div id="kpi-rep-ventes-mois" class="text-2xl font-extrabold text-slate-900 mt-3 tabular-nums">0,00 $</div>
-            <div id="kpi-rep-count-mois" class="text-[11px] text-slate-400 mt-1">0 dossier</div>
-            <div class="mt-2.5 pt-2 border-t border-slate-100 flex justify-between text-[11px] text-slate-500 tabular-nums">
-              <span>Total confirmé :</span>
-              <strong id="kpi-rep-ventes-mois-confirme" class="text-emerald-700">0,00 $</strong>
-            </div>
-          </div>
-
-          <div data-mobile-group="commissions" class="bg-gradient-to-br from-emerald-600 to-teal-700 p-5 rounded-2xl text-white shadow-md shadow-emerald-600/15 flex flex-col justify-between">
-            <div>
-              <div class="flex items-center justify-between gap-2">
-                <span class="text-xs font-semibold text-emerald-100">Ma commission (Période)</span>
-                <div class="inline-flex rounded-lg bg-black/20 p-0.5 text-[10px] font-bold">
-                  <button type="button" onclick="setCommDisplayMode('vendu')" id="btn-rep-comm-mode-vendu" class="px-2 py-0.5 rounded-md bg-white text-emerald-900 shadow-2xs transition">Vendu</button>
-                  <button type="button" onclick="setCommDisplayMode('confirme')" id="btn-rep-comm-mode-confirme" class="px-2 py-0.5 rounded-md text-emerald-100 hover:text-white transition">Confirmé</button>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div class="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/80 shadow-xs">
+                <div class="flex items-center justify-between">
+                  <span class="text-xs font-semibold text-slate-500">Ventes (Période)</span>
+                  <span class="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-700 flex items-center justify-center text-xs font-bold">$</span>
+                </div>
+                <div id="kpi-rep-ventes-mois" class="text-2xl font-extrabold text-slate-900 mt-3 tabular-nums">0,00 $</div>
+                <div id="kpi-rep-count-mois" class="text-[11px] text-slate-400 mt-1">0 dossier</div>
+                <div class="mt-2.5 pt-2 border-t border-slate-100 flex justify-between text-[11px] text-slate-500 tabular-nums">
+                  <span>Total confirmé :</span>
+                  <strong id="kpi-rep-ventes-mois-confirme" class="text-emerald-700">0,00 $</strong>
                 </div>
               </div>
-              <div id="kpi-rep-comm-mois" class="text-2xl font-extrabold mt-2.5 tabular-nums">0,00 $</div>
-              <div id="kpi-rep-comm-mois-sublabel" class="text-[11px] font-bold text-emerald-100 mt-0.5">Sur total vendu</div>
-            </div>
-            <div class="mt-2.5 pt-2 border-t border-white/15 space-y-0.5 text-[11px] tabular-nums">
-              <div class="flex justify-between text-emerald-50">
-                <span>1. Sur total vendu :</span>
-                <strong id="kpi-rep-comm-mois-vendu">0,00 $</strong>
+
+              <div class="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col justify-between">
+                <div>
+                  <div class="flex items-center justify-between">
+                    <span class="text-xs font-semibold text-slate-500">Volume cumulé (Année)</span>
+                    <span class="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center text-xs font-bold">∑</span>
+                  </div>
+                  <div id="kpi-rep-ventes-annee" class="text-2xl font-extrabold text-slate-900 mt-3 tabular-nums">0,00 $</div>
+                  <div class="text-[11px] text-slate-400 mt-1">Total des contrats signés</div>
+                </div>
+                <div class="mt-2.5 pt-2 border-t border-slate-100 flex justify-between text-[11px] text-slate-500 tabular-nums">
+                  <span>Volume confirmé :</span>
+                  <strong id="kpi-rep-ventes-annee-confirme" class="text-slate-800">0,00 $</strong>
+                </div>
               </div>
-              <div class="flex justify-between text-emerald-100">
-                <span>2. Sur total confirmé :</span>
-                <strong id="kpi-rep-comm-mois-confirme">0,00 $</strong>
-              </div>
-              <div id="kpi-rep-paid-split" class="text-[10px] text-emerald-100/85 pt-0.5">Payé : 0,00 $ • À venir : 0,00 $</div>
             </div>
           </div>
 
-          <div data-mobile-group="ventes" class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col justify-between">
-            <div>
-              <div class="flex items-center justify-between">
-                <span class="text-xs font-semibold text-slate-500">Volume cumulé (Année)</span>
-                <span class="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center text-xs font-bold">∑</span>
+          <!-- BLOC 2 : SECTION COMMISSIONS -->
+          <div data-mobile-group="commissions" class="rounded-2xl border border-emerald-200/80 bg-emerald-50/30 p-3.5 sm:p-4 space-y-3">
+            <div class="flex items-center justify-between px-1">
+              <span class="inline-flex items-center gap-1.5 text-xs font-extrabold uppercase tracking-wider text-emerald-800">
+                <span class="w-2 h-2 rounded-full bg-emerald-600"></span>
+                <span>💰 Section Commissions</span>
+              </span>
+              <span class="text-[11px] font-semibold text-slate-500">Gains, dépôts & paiements</span>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div class="bg-gradient-to-br from-emerald-600 to-teal-700 p-4 sm:p-5 rounded-2xl text-white shadow-md shadow-emerald-600/15 flex flex-col justify-between">
+                <div>
+                  <div class="flex items-center justify-between gap-2">
+                    <span class="text-xs font-semibold text-emerald-100">Ma commission (Période)</span>
+                    <div class="inline-flex rounded-lg bg-black/20 p-0.5 text-[10px] font-bold">
+                      <button type="button" onclick="setCommDisplayMode('vendu')" id="btn-rep-comm-mode-vendu" class="px-2 py-0.5 rounded-md bg-white text-emerald-900 shadow-2xs transition">Vendu</button>
+                      <button type="button" onclick="setCommDisplayMode('confirme')" id="btn-rep-comm-mode-confirme" class="px-2 py-0.5 rounded-md text-emerald-100 hover:text-white transition">Confirmé</button>
+                    </div>
+                  </div>
+                  <div id="kpi-rep-comm-mois" class="text-2xl font-extrabold mt-2.5 tabular-nums">0,00 $</div>
+                  <div id="kpi-rep-comm-mois-sublabel" class="text-[11px] font-bold text-emerald-100 mt-0.5">Sur total vendu</div>
+                </div>
+                <div class="mt-2.5 pt-2 border-t border-white/15 space-y-0.5 text-[11px] tabular-nums">
+                  <div class="flex justify-between text-emerald-50">
+                    <span>1. Sur total vendu :</span>
+                    <strong id="kpi-rep-comm-mois-vendu">0,00 $</strong>
+                  </div>
+                  <div class="flex justify-between text-emerald-100">
+                    <span>2. Sur total confirmé :</span>
+                    <strong id="kpi-rep-comm-mois-confirme">0,00 $</strong>
+                  </div>
+                  <div id="kpi-rep-paid-split" class="text-[10px] text-emerald-100/85 pt-0.5">Payé : 0,00 $ • À venir : 0,00 $</div>
+                </div>
               </div>
-              <div id="kpi-rep-ventes-annee" class="text-2xl font-extrabold text-slate-900 mt-3 tabular-nums">0,00 $</div>
-              <div class="text-[11px] text-slate-400 mt-1">Total des contrats signés</div>
-            </div>
-            <div class="mt-2.5 pt-2 border-t border-slate-100 flex justify-between text-[11px] text-slate-500 tabular-nums">
-              <span>Volume confirmé :</span>
-              <strong id="kpi-rep-ventes-annee-confirme" class="text-slate-800">0,00 $</strong>
-            </div>
-          </div>
 
-          <div data-mobile-group="commissions" class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col justify-between">
-            <div>
-              <div class="flex items-center justify-between">
-                <span class="text-xs font-semibold text-slate-500">Commissions cumulées</span>
-                <span class="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center text-xs font-bold">✓</span>
+              <div class="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col justify-between">
+                <div>
+                  <div class="flex items-center justify-between">
+                    <span class="text-xs font-semibold text-slate-500">Commissions cumulées</span>
+                    <span class="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center text-xs font-bold">✓</span>
+                  </div>
+                  <div id="kpi-rep-comm-annee" class="text-2xl font-extrabold text-emerald-600 mt-3 tabular-nums">0,00 $</div>
+                  <div id="kpi-rep-comm-annee-sublabel" class="text-[11px] font-semibold text-slate-500 mt-0.5">Sur total vendu</div>
+                </div>
+                <div class="mt-2.5 pt-2 border-t border-slate-100 space-y-0.5 text-[11px] tabular-nums">
+                  <div class="flex justify-between text-slate-600">
+                    <span>1. Sur total vendu :</span>
+                    <strong id="kpi-rep-comm-annee-vendu" class="text-slate-900">0,00 $</strong>
+                  </div>
+                  <div class="flex justify-between text-emerald-700">
+                    <span>2. Sur total confirmé :</span>
+                    <strong id="kpi-rep-comm-annee-confirme">0,00 $</strong>
+                  </div>
+                  <div id="kpi-rep-annee-paid-split" class="text-[10px] text-slate-400 pt-0.5">Payé : 0,00 $ • À venir : 0,00 $</div>
+                </div>
               </div>
-              <div id="kpi-rep-comm-annee" class="text-2xl font-extrabold text-emerald-600 mt-3 tabular-nums">0,00 $</div>
-              <div id="kpi-rep-comm-annee-sublabel" class="text-[11px] font-semibold text-slate-500 mt-0.5">Sur total vendu</div>
-            </div>
-            <div class="mt-2.5 pt-2 border-t border-slate-100 space-y-0.5 text-[11px] tabular-nums">
-              <div class="flex justify-between text-slate-600">
-                <span>1. Sur total vendu :</span>
-                <strong id="kpi-rep-comm-annee-vendu" class="text-slate-900">0,00 $</strong>
-              </div>
-              <div class="flex justify-between text-emerald-700">
-                <span>2. Sur total confirmé :</span>
-                <strong id="kpi-rep-comm-annee-confirme">0,00 $</strong>
-              </div>
-              <div id="kpi-rep-annee-paid-split" class="text-[10px] text-slate-400 pt-0.5">Payé : 0,00 $ • À venir : 0,00 $</div>
             </div>
           </div>
         </div>
 
         <!-- CARTES MOBILES DES VENTES (< 768px : ONGLET MES VENTES) -->
         <div data-mobile-group="ventes" class="md:hidden space-y-3">
+          <div class="flex items-center justify-between px-3 py-2 rounded-xl bg-indigo-50/80 border border-indigo-200/80">
+            <span class="text-xs font-extrabold uppercase tracking-wider text-indigo-900">📊 Liste des ventes</span>
+            <button type="button" onclick="switchTab('tab-mes-commissions')" class="text-xs font-bold text-emerald-700 hover:underline">Aller aux commissions →</button>
+          </div>
           <div id="mobile-mes-ventes-cards" class="space-y-3"></div>
         </div>
 
         <!-- CARTES MOBILES DES COMMISSIONS (< 768px : ONGLET MES COMMISSIONS) -->
         <div data-mobile-group="commissions" class="md:hidden space-y-3">
+          <div class="flex items-center justify-between px-3 py-2 rounded-xl bg-emerald-50/80 border border-emerald-200/80">
+            <span class="text-xs font-extrabold uppercase tracking-wider text-emerald-900">💰 Liste des commissions</span>
+            <button type="button" onclick="switchTab('tab-mes-ventes')" class="text-xs font-bold text-indigo-700 hover:underline">← Retour aux ventes</button>
+          </div>
           <div id="mobile-mes-commissions-cards" class="space-y-3"></div>
         </div>
 
@@ -1297,13 +1329,21 @@
           <div class="overflow-x-auto">
             <table class="w-full text-left border-collapse">
               <thead>
+                <tr class="border-b border-slate-200 text-[10px] font-extrabold uppercase tracking-widest">
+                  <th id="th-group-ventes" colspan="4" class="py-2 px-4 bg-indigo-50/70 text-indigo-800">
+                    📊 Zone Ventes — Dossiers & montants vendus
+                  </th>
+                  <th colspan="4" class="py-2 px-4 bg-emerald-50/70 text-emerald-800 border-l-2 border-emerald-400/70">
+                    💰 Zone Commissions — Gains, dépôts & paiements
+                  </th>
+                </tr>
                 <tr class="bg-slate-50/80 border-b border-slate-200 text-[11px] font-bold text-slate-500 uppercase tracking-wider select-none">
                   <th onclick="toggleSortMesVentes('date_vente')" class="py-3.5 px-4 cursor-pointer hover:text-indigo-600 transition group">📅 Date & Mois <span id="sort-ind-mes-date_vente" class="ml-1 text-indigo-600">↓</span></th>
                   <th onclick="toggleSortMesVentes('entreprise_nom')" class="py-3.5 px-4 cursor-pointer hover:text-indigo-600 transition group">🏢 Entreprise <span id="sort-ind-mes-entreprise_nom" class="ml-1 text-slate-300 group-hover:text-indigo-400">⇅</span></th>
                   <th onclick="toggleSortMesVentes('client_nom')" class="py-3.5 px-4 cursor-pointer hover:text-indigo-600 transition group">👤 Client <span id="sort-ind-mes-client_nom" class="ml-1 text-slate-300 group-hover:text-indigo-400">⇅</span></th>
                   <th id="th-rep-col" onclick="toggleSortMesVentes('rep_nom')" class="hidden py-3.5 px-4 cursor-pointer hover:text-indigo-600 transition group">🧑‍💼 Représentant <span id="sort-ind-mes-rep_nom" class="ml-1 text-slate-300 group-hover:text-indigo-400">⇅</span></th>
                   <th onclick="toggleSortMesVentes('valeur')" class="py-3.5 px-4 text-right cursor-pointer hover:text-indigo-600 transition group">💵 Valeur vente <span id="sort-ind-mes-valeur" class="ml-1 text-slate-300 group-hover:text-indigo-400">⇅</span></th>
-                  <th onclick="toggleSortMesVentes('commission_rep')" class="py-3.5 px-4 text-right cursor-pointer hover:text-indigo-600 transition group">★ Ma commission <span id="sort-ind-mes-commission_rep" class="ml-1 text-slate-300 group-hover:text-indigo-400">⇅</span></th>
+                  <th onclick="toggleSortMesVentes('commission_rep')" class="py-3.5 px-4 text-right cursor-pointer hover:text-emerald-700 transition group border-l-2 border-emerald-400/70 bg-emerald-50/30">★ Ma commission <span id="sort-ind-mes-commission_rep" class="ml-1 text-slate-300 group-hover:text-emerald-500">⇅</span></th>
                   <th onclick="toggleSortMesVentes('statut_depot')" class="py-3.5 px-4 cursor-pointer hover:text-indigo-600 transition group">🏦 Dépôt <span id="sort-ind-mes-statut_depot" class="ml-1 text-slate-300 group-hover:text-indigo-400">⇅</span></th>
                   <th onclick="toggleSortMesVentes('statut_paiement')" class="py-3.5 px-4 cursor-pointer hover:text-indigo-600 transition group">💳 Paiement <span id="sort-ind-mes-statut_paiement" class="ml-1 text-slate-300 group-hover:text-indigo-400">⇅</span></th>
                   <th class="py-3.5 px-4 text-right">Action</th>
@@ -5109,13 +5149,36 @@
           `;
         }).join('');
 
+        const mobileYearCardsHtml = colLabels.map((lbl, idx) => {
+          const bW = rData['Booké'].weeks[idx] || 0;
+          const rW = rData['RDV Réalisé'].weeks[idx] || 0;
+          const oW = rData['Ventes OTS'].weeks[idx] || 0;
+          const sW = rData['Ventes SUIVI'].weeks[idx] || 0;
+          const dW = rData['Vente $'].weeks[idx] || 0;
+          const cW = rData['% Close'].weeks[idx] || 0;
+          return `
+            <div class="p-3.5 bg-white space-y-2">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-extrabold text-slate-900">${esc(lbl)}</span>
+                <span class="text-sm font-extrabold text-indigo-700 tabular-nums">${fmtMoney0(dW)}</span>
+              </div>
+              <div class="grid grid-cols-3 gap-1.5 bg-slate-50 rounded-xl p-2 text-center text-[11px] tabular-nums">
+                <div><span class="text-slate-400 block text-[10px]">RDV Réa</span><strong>${rW} / ${bW}</strong></div>
+                <div><span class="text-slate-400 block text-[10px]">Ventes</span><strong>${oW + sW}</strong> <span class="text-[10px] text-slate-500">(${oW}/${sW})</span></div>
+                <div><span class="text-slate-400 block text-[10px]">% Close</span><strong>${Number(cW).toFixed(1)}%</strong></div>
+              </div>
+            </div>
+          `;
+        }).join('');
+
         weeklyContainer.innerHTML = `
           <div class="bg-white rounded-2xl border-2 border-indigo-200 shadow-xs overflow-hidden">
-            <div class="px-5 py-3.5 bg-indigo-950 text-white flex items-center justify-between">
-              <span class="text-sm font-extrabold">Évolution mois par mois — ${esc(repFilter)}</span>
-              <button onclick="selectKpiRep('ALL')" class="px-3 py-1 text-xs font-bold bg-white/10 hover:bg-white/20 rounded-lg transition">← Revenir à toute l'équipe</button>
+            <div class="px-4 sm:px-5 py-3.5 bg-indigo-950 text-white flex items-center justify-between gap-2">
+              <span class="text-xs sm:text-sm font-extrabold truncate">Évolution mois par mois — ${esc(repFilter)}</span>
+              <button onclick="selectKpiRep('ALL')" class="shrink-0 px-2.5 sm:px-3 py-1 text-[11px] sm:text-xs font-bold bg-white/10 hover:bg-white/20 rounded-lg transition">← Équipe</button>
             </div>
-            <div class="overflow-x-auto">
+            <div class="md:hidden divide-y divide-slate-100">${mobileYearCardsHtml}</div>
+            <div class="hidden md:block overflow-x-auto">
               <table class="w-full text-left border-collapse text-xs">
                 <thead>
                   <tr class="bg-slate-50 border-b border-slate-200 text-[11px] font-bold uppercase text-slate-500">
@@ -5161,65 +5224,141 @@
             }).join('')
           : `<tr><td colspan="5" class="py-4 px-4 text-center text-xs text-slate-400">Aucune vente individuelle enregistrée dans l'application pour ${esc(repFilter)} ce mois-ci.</td></tr>`;
 
+        const mobileSalesCardsHtml = repMonthSales.length
+          ? repMonthSales.map(v => {
+              const cli = v.client_nom || state.clients.find(c => String(c.id) === String(v.client_id))?.nom || '—';
+              const ent = v.entreprise_nom || state.entreprises.find(e => String(e.id) === String(v.entreprise_id))?.nom || '—';
+              const isSui = (v.note || '').toUpperCase().includes('[SUIVI]');
+              return `
+                <div class="p-3.5 bg-white flex items-center justify-between gap-2.5">
+                  <div class="min-w-0 space-y-1">
+                    <div class="font-bold text-xs text-slate-900 truncate">${esc(cli)}</div>
+                    <div class="flex items-center flex-wrap gap-1.5">
+                      ${entBadge(ent)}
+                      <span class="px-1.5 py-0.5 text-[10px] font-extrabold rounded-md border ${isSui ? 'bg-purple-50 text-purple-700 border-purple-200' : 'bg-sky-50 text-sky-700 border-sky-200'}">${isSui ? 'SUIVI' : 'OTS'}</span>
+                      <span class="text-[11px] text-slate-400 tabular-nums">${esc(v.date_vente || selVal)}</span>
+                    </div>
+                  </div>
+                  <div class="text-right shrink-0 font-extrabold text-xs text-slate-900 tabular-nums">
+                    ${fmtMoney(v.valeur)}
+                  </div>
+                </div>
+              `;
+            }).join('')
+          : `<div class="p-4 text-center text-xs text-slate-400">Aucune vente individuelle enregistrée dans l'application pour ${esc(repFilter)} ce mois-ci.</div>`;
+
         weeklyContainer.innerHTML = `
-          <div class="bg-white rounded-2xl border-2 border-indigo-200 shadow-xs overflow-hidden space-y-0">
-            <div class="px-5 py-3.5 bg-indigo-950 text-white flex items-center justify-between">
-              <span class="text-sm font-extrabold">Détail du mois (${esc(mObj.label)}) — ${esc(repFilter)}</span>
-              <button onclick="selectKpiRep('ALL')" class="px-3 py-1 text-xs font-bold bg-white/10 hover:bg-white/20 rounded-lg transition">← Revenir à toute l'équipe</button>
+          <div class="bg-white rounded-2xl border-2 border-indigo-200 shadow-xs overflow-hidden">
+            <div class="px-4 sm:px-5 py-3.5 bg-indigo-950 text-white flex items-center justify-between gap-2">
+              <span class="text-xs sm:text-sm font-extrabold truncate">Détail (${esc(mObj.label)}) — ${esc(repFilter)}</span>
+              <button onclick="selectKpiRep('ALL')" class="shrink-0 px-2.5 sm:px-3 py-1 text-[11px] sm:text-xs font-bold bg-white/10 hover:bg-white/20 rounded-lg transition">← Équipe</button>
             </div>
-            <div class="overflow-x-auto">
-              <table class="w-full text-left border-collapse text-xs">
-                <thead>
-                  <tr class="bg-slate-50 border-b border-slate-200 text-[11px] font-bold uppercase text-slate-500">
-                    <th class="py-2.5 px-4">Source</th>
-                    <th class="py-2.5 px-3 text-center">RDV Bookés</th>
-                    <th class="py-2.5 px-3 text-center">RDV Réalisés</th>
-                    <th class="py-2.5 px-3 text-center text-sky-700">Ventes OTS</th>
-                    <th class="py-2.5 px-3 text-center text-purple-700">Ventes SUIVI</th>
-                    <th class="py-2.5 px-4 text-right">Volume ($)</th>
-                  </tr>
-                </thead>
-                <tbody class="divide-y divide-slate-100 tabular-nums">
-                  <tr>
-                    <td class="py-2.5 px-4 font-semibold text-slate-600">📄 Base fichier condensé</td>
-                    <td class="py-2.5 px-3 text-center">${Number(baseEntry.booke || 0)}</td>
-                    <td class="py-2.5 px-3 text-center">${Number(baseEntry.rdv || 0)}</td>
-                    <td class="py-2.5 px-3 text-center font-bold text-sky-700">${Number(baseEntry.ots || 0)}</td>
-                    <td class="py-2.5 px-3 text-center font-bold text-purple-700">${Number(baseEntry.suivi || 0)}</td>
-                    <td class="py-2.5 px-4 text-right font-bold text-slate-700">${fmtMoney0(baseEntry.dollars || 0)}</td>
-                  </tr>
-                  <tr>
-                    <td class="py-2.5 px-4 font-semibold text-emerald-700">💵 Fichier de ventes (${repMonthSales.length} vente(s))</td>
-                    <td class="py-2.5 px-3 text-center text-slate-400">—</td>
-                    <td class="py-2.5 px-3 text-center text-slate-400">—</td>
-                    <td class="py-2.5 px-3 text-center font-bold text-sky-700">+ ${appOts}</td>
-                    <td class="py-2.5 px-3 text-center font-bold text-purple-700">+ ${appSuivi}</td>
-                    <td class="py-2.5 px-4 text-right font-bold text-emerald-700">+ ${fmtMoney0(appDol)}</td>
-                  </tr>
-                  <tr class="bg-indigo-50/50 font-extrabold text-slate-900">
-                    <td class="py-2.5 px-4">Total consolidé</td>
-                    <td class="py-2.5 px-3 text-center">${rData['Booké'].cumul}</td>
-                    <td class="py-2.5 px-3 text-center">${rData['RDV Réalisé'].cumul}</td>
-                    <td class="py-2.5 px-3 text-center text-sky-800">${rData['Ventes OTS'].cumul}</td>
-                    <td class="py-2.5 px-3 text-center text-purple-800">${rData['Ventes SUIVI'].cumul}</td>
-                    <td class="py-2.5 px-4 text-right text-indigo-900">${fmtMoney0(rData['Vente $'].cumul)}</td>
-                  </tr>
-                </tbody>
-              </table>
+
+            <!-- VUE MOBILE COMPACTE SANS DÉBORDEMENT (< 768px) -->
+            <div class="md:hidden divide-y divide-slate-100">
+              <div class="p-3.5 space-y-2.5 bg-slate-50/60">
+                <div class="bg-white rounded-xl border border-slate-200/80 p-3 space-y-1.5">
+                  <div class="flex items-center justify-between text-xs">
+                    <span class="font-semibold text-slate-600">📄 Base fichier condensé</span>
+                    <strong class="text-slate-800 tabular-nums">${fmtMoney0(baseEntry.dollars || 0)}</strong>
+                  </div>
+                  <div class="grid grid-cols-4 gap-1 text-center text-[10px] bg-slate-50 rounded-lg p-1.5 tabular-nums">
+                    <div><span class="text-slate-400 block">Bookés</span><strong>${Number(baseEntry.booke || 0)}</strong></div>
+                    <div><span class="text-slate-400 block">RDV Réa</span><strong>${Number(baseEntry.rdv || 0)}</strong></div>
+                    <div><span class="text-sky-700 block">OTS</span><strong class="text-sky-700">${Number(baseEntry.ots || 0)}</strong></div>
+                    <div><span class="text-purple-700 block">SUIVI</span><strong class="text-purple-700">${Number(baseEntry.suivi || 0)}</strong></div>
+                  </div>
+                </div>
+
+                <div class="bg-white rounded-xl border border-emerald-200/80 p-3 space-y-1.5">
+                  <div class="flex items-center justify-between text-xs">
+                    <span class="font-semibold text-emerald-700">💵 Ventes App (${repMonthSales.length})</span>
+                    <strong class="text-emerald-700 tabular-nums">+ ${fmtMoney0(appDol)}</strong>
+                  </div>
+                  <div class="grid grid-cols-2 gap-1.5 text-center text-[10px] bg-emerald-50/50 rounded-lg p-1.5 tabular-nums">
+                    <div><span class="text-sky-700 block">Ventes OTS</span><strong class="text-sky-700">+ ${appOts}</strong></div>
+                    <div><span class="text-purple-700 block">Ventes SUIVI</span><strong class="text-purple-700">+ ${appSuivi}</strong></div>
+                  </div>
+                </div>
+
+                <div class="bg-indigo-50/80 rounded-xl border border-indigo-200 p-3 space-y-1.5">
+                  <div class="flex items-center justify-between text-xs">
+                    <span class="font-extrabold text-indigo-950">Total consolidé</span>
+                    <strong class="text-sm font-extrabold text-indigo-900 tabular-nums">${fmtMoney0(rData['Vente $'].cumul)}</strong>
+                  </div>
+                  <div class="grid grid-cols-4 gap-1 text-center text-[10px] bg-white/80 rounded-lg p-1.5 tabular-nums">
+                    <div><span class="text-slate-500 block">Bookés</span><strong>${rData['Booké'].cumul}</strong></div>
+                    <div><span class="text-slate-500 block">RDV Réa</span><strong>${rData['RDV Réalisé'].cumul}</strong></div>
+                    <div><span class="text-sky-800 block">OTS</span><strong class="text-sky-800">${rData['Ventes OTS'].cumul}</strong></div>
+                    <div><span class="text-purple-800 block">SUIVI</span><strong class="text-purple-800">${rData['Ventes SUIVI'].cumul}</strong></div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="px-3.5 py-2 bg-slate-100/80 text-[10px] font-extrabold uppercase tracking-wider text-slate-500">
+                Ventes individuelles du mois (${repMonthSales.length})
+              </div>
+              <div class="divide-y divide-slate-100">
+                ${mobileSalesCardsHtml}
+              </div>
             </div>
-            <div class="border-t border-slate-200 overflow-x-auto">
-              <table class="w-full text-left border-collapse text-xs">
-                <thead>
-                  <tr class="bg-slate-50/70 border-b border-slate-200 text-[10px] font-bold uppercase text-slate-400">
-                    <th class="py-2 px-4">Date</th>
-                    <th class="py-2 px-4">Compagnie</th>
-                    <th class="py-2 px-4">Client</th>
-                    <th class="py-2 px-4">Type KPI</th>
-                    <th class="py-2 px-4 text-right">Montant</th>
-                  </tr>
-                </thead>
-                <tbody class="divide-y divide-slate-100">${salesListHtml}</tbody>
-              </table>
+
+            <!-- VUE TABLEAU DESKTOP (>= 768px) -->
+            <div class="hidden md:block">
+              <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse text-xs">
+                  <thead>
+                    <tr class="bg-slate-50 border-b border-slate-200 text-[11px] font-bold uppercase text-slate-500">
+                      <th class="py-2.5 px-4">Source</th>
+                      <th class="py-2.5 px-3 text-center">RDV Bookés</th>
+                      <th class="py-2.5 px-3 text-center">RDV Réalisés</th>
+                      <th class="py-2.5 px-3 text-center text-sky-700">Ventes OTS</th>
+                      <th class="py-2.5 px-3 text-center text-purple-700">Ventes SUIVI</th>
+                      <th class="py-2.5 px-4 text-right">Volume ($)</th>
+                    </tr>
+                  </thead>
+                  <tbody class="divide-y divide-slate-100 tabular-nums">
+                    <tr>
+                      <td class="py-2.5 px-4 font-semibold text-slate-600">📄 Base fichier condensé</td>
+                      <td class="py-2.5 px-3 text-center">${Number(baseEntry.booke || 0)}</td>
+                      <td class="py-2.5 px-3 text-center">${Number(baseEntry.rdv || 0)}</td>
+                      <td class="py-2.5 px-3 text-center font-bold text-sky-700">${Number(baseEntry.ots || 0)}</td>
+                      <td class="py-2.5 px-3 text-center font-bold text-purple-700">${Number(baseEntry.suivi || 0)}</td>
+                      <td class="py-2.5 px-4 text-right font-bold text-slate-700">${fmtMoney0(baseEntry.dollars || 0)}</td>
+                    </tr>
+                    <tr>
+                      <td class="py-2.5 px-4 font-semibold text-emerald-700">💵 Fichier de ventes (${repMonthSales.length} vente(s))</td>
+                      <td class="py-2.5 px-3 text-center text-slate-400">—</td>
+                      <td class="py-2.5 px-3 text-center text-slate-400">—</td>
+                      <td class="py-2.5 px-3 text-center font-bold text-sky-700">+ ${appOts}</td>
+                      <td class="py-2.5 px-3 text-center font-bold text-purple-700">+ ${appSuivi}</td>
+                      <td class="py-2.5 px-4 text-right font-bold text-emerald-700">+ ${fmtMoney0(appDol)}</td>
+                    </tr>
+                    <tr class="bg-indigo-50/50 font-extrabold text-slate-900">
+                      <td class="py-2.5 px-4">Total consolidé</td>
+                      <td class="py-2.5 px-3 text-center">${rData['Booké'].cumul}</td>
+                      <td class="py-2.5 px-3 text-center">${rData['RDV Réalisé'].cumul}</td>
+                      <td class="py-2.5 px-3 text-center text-sky-800">${rData['Ventes OTS'].cumul}</td>
+                      <td class="py-2.5 px-3 text-center text-purple-800">${rData['Ventes SUIVI'].cumul}</td>
+                      <td class="py-2.5 px-4 text-right text-indigo-900">${fmtMoney0(rData['Vente $'].cumul)}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+              <div class="border-t border-slate-200 overflow-x-auto">
+                <table class="w-full text-left border-collapse text-xs">
+                  <thead>
+                    <tr class="bg-slate-50/70 border-b border-slate-200 text-[10px] font-bold uppercase text-slate-400">
+                      <th class="py-2 px-4">Date</th>
+                      <th class="py-2 px-4">Compagnie</th>
+                      <th class="py-2 px-4">Client</th>
+                      <th class="py-2 px-4">Type KPI</th>
+                      <th class="py-2 px-4 text-right">Montant</th>
+                    </tr>
+                  </thead>
+                  <tbody class="divide-y divide-slate-100">${salesListHtml}</tbody>
+                </table>
+              </div>
             </div>
           </div>
         `;
@@ -5902,6 +6041,8 @@
 
         document.getElementById('filter-admin-scope').classList.remove('hidden');
         document.getElementById('th-rep-col').classList.remove('hidden');
+        const thGrpVentes = document.getElementById('th-group-ventes');
+        if (thGrpVentes) thGrpVentes.colSpan = 5;
         document.getElementById('mes-ventes-subtitle').textContent = 'Vos ventes directes et vos commissions sur l’ensemble de l’équipe';
 
         mergeCloudAuditAndTrash();
@@ -6620,7 +6761,7 @@
           </td>
           ${isAdmin ? `<td class="py-3.5 px-4 text-xs font-semibold text-slate-700">${esc(v.rep_nom || '—')}</td>` : ''}
           <td class="py-3.5 px-4 text-right font-semibold text-slate-900 tabular-nums">${fmtMoney(v.valeur)}</td>
-          <td class="py-3.5 px-4 text-right font-extrabold text-emerald-600 tabular-nums">
+          <td class="py-3.5 px-4 text-right font-extrabold text-emerald-600 tabular-nums border-l-2 border-emerald-400/50 bg-emerald-50/20">
             ${fmtMoney(v.commission_rep)}
             ${v._bonusApplied ? (() => {
               const baseR = getRateForSale(v.representant_id, v.entreprise_id, v.client_id);
