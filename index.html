@@ -15,7 +15,9 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
+    *, *::before, *::after { box-sizing: border-box; }
     html, body { font-family: 'Plus Jakarta Sans', sans-serif; max-width: 100%; overflow-x: clip; }
+    input[type="date"], input[type="month"], select { max-width: 100%; min-width: 0; }
     .tabular-nums { font-variant-numeric: tabular-nums; }
     .no-scrollbar::-webkit-scrollbar { display: none; }
     .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
@@ -1533,10 +1535,10 @@
     <!-- HEADER -->
     <header class="bg-slate-900 text-white sticky top-0 z-30 shadow-md no-print">
       <div class="max-w-7xl mx-auto px-3 sm:px-6 h-14 sm:h-16 flex items-center justify-between gap-2 sm:gap-4">
-        <div class="flex items-center gap-2 sm:gap-3 min-w-0">
+        <div class="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
           <div class="w-8 h-8 sm:w-9 sm:h-9 shrink-0 rounded-xl bg-gradient-to-br from-indigo-500 to-emerald-400 text-slate-950 flex items-center justify-center font-extrabold text-sm sm:text-base shadow-sm">K</div>
           <div class="flex items-center gap-1.5 sm:gap-2.5 min-w-0">
-            <span class="font-extrabold text-sm sm:text-base tracking-tight text-white truncate">Korpo<span class="hidden xs:inline"> Solutions</span></span>
+            <span class="font-extrabold text-sm sm:text-base tracking-tight text-white truncate">Korpo<span class="hidden sm:inline"> Solutions</span></span>
             <span id="header-role-badge" class="text-[10px] sm:text-[11px] font-semibold px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-400/30 shrink-0"></span>
           </div>
         </div>
@@ -1751,7 +1753,7 @@
             <!-- BARRE 1 : TARGET COMMISSION ($) -->
             <div data-mobile-group="commissions" class="bg-gradient-to-br from-emerald-50/70 to-teal-50/40 rounded-2xl border border-emerald-200/80 p-3.5 space-y-2">
               <div class="flex items-center justify-between gap-2">
-                <span id="comm-bar-title" class="text-xs font-extrabold text-emerald-950">💵 Target Commission (Mois)</span>
+                <span id="comm-bar-title" class="text-xs font-extrabold text-emerald-950">💵 Objectif Commission (Mois)</span>
                 <span id="comm-bar-pct-badge" class="px-2 py-0.5 text-[11px] font-extrabold rounded-full bg-emerald-100 text-emerald-800 tabular-nums">0 %</span>
               </div>
               <div id="comm-bar-subtitle" class="text-xs font-extrabold text-emerald-800 tabular-nums">0,00 $ / 8 000,00 $</div>
@@ -1956,12 +1958,12 @@
       <section id="tab-kpi" class="hidden space-y-6">
         <!-- BARRE SUPÉRIEURE : TITRE + FILTRES CLAIRS -->
         <div class="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-xs flex flex-col lg:flex-row lg:flex-wrap lg:items-center justify-between gap-4">
-          <div>
+          <div class="min-w-0">
             <div class="flex flex-wrap items-center gap-2.5">
-              <h2 class="text-xl font-extrabold text-slate-900 tracking-tight flex items-center gap-2"><span class="w-8 h-8 rounded-xl bg-indigo-50 text-indigo-600 border border-indigo-200/80 flex items-center justify-center text-base">📊</span><span>Performance & Objectifs (KPI)</span></h2>
-              <span id="kpi-source-badge" class="px-2.5 py-0.5 text-[11px] font-bold rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">⚡ Synchronisé avec le fichier de ventes</span>
+              <h2 class="text-lg sm:text-xl font-extrabold text-slate-900 tracking-tight flex items-center gap-2"><span class="w-8 h-8 rounded-xl bg-indigo-50 text-indigo-600 border border-indigo-200/80 flex items-center justify-center text-base shrink-0">📊</span><span>Performance & Objectifs (KPI)</span></h2>
+              <span id="kpi-source-badge" class="px-2.5 py-0.5 text-[11px] font-bold rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 max-w-full truncate">⚡ Synchronisé avec le fichier de ventes</span>
             </div>
-            <p class="text-xs text-slate-500 mt-1">Alimenté par votre base condensée et mis à jour automatiquement à chaque vente enregistrée.</p>
+            <p class="text-xs text-slate-500 mt-1 leading-relaxed">Alimenté par votre base condensée et mis à jour automatiquement à chaque vente enregistrée.</p>
           </div>
 
           <div class="grid grid-cols-2 sm:flex sm:flex-wrap items-stretch sm:items-center gap-2 w-full lg:w-auto">
@@ -1992,19 +1994,23 @@
           <div class="w-full pt-3 mt-1 border-t border-slate-100 flex flex-col gap-2.5">
             <input type="hidden" id="kpi-period-mode" value="this_month" />
             <div id="kpi-quick-pills" class="flex flex-wrap items-center gap-1.5">
-              <button type="button" data-kpi-mode="this_week" onclick="setKpiPeriodQuick('this_week')" class="kpi-pill-btn px-3 py-1.5 text-xs font-bold rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200 transition whitespace-nowrap">📆 Cette semaine</button>
-              <button type="button" data-kpi-mode="this_month" onclick="setKpiPeriodQuick('this_month')" class="kpi-pill-btn px-3 py-1.5 text-xs font-extrabold rounded-xl bg-indigo-600 text-white shadow-2xs transition whitespace-nowrap">📅 Ce mois-ci</button>
-              <button type="button" data-kpi-mode="this_quarter" onclick="setKpiPeriodQuick('this_quarter')" class="kpi-pill-btn px-3 py-1.5 text-xs font-bold rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200 transition whitespace-nowrap">📊 Ce trimestre</button>
-              <button type="button" data-kpi-mode="this_year" onclick="setKpiPeriodQuick('this_year')" class="kpi-pill-btn px-3 py-1.5 text-xs font-bold rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200 transition whitespace-nowrap">🗓️ Cette année</button>
-              <button type="button" data-kpi-mode="all" onclick="setKpiPeriodQuick('all')" class="kpi-pill-btn px-3 py-1.5 text-xs font-bold rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200 transition whitespace-nowrap">∞ Cumul global</button>
-              <button type="button" data-kpi-mode="custom_range" onclick="setKpiPeriodQuick('custom_range')" class="kpi-pill-btn px-3 py-1.5 text-xs font-bold rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200 transition whitespace-nowrap">🎯 Date sur mesure</button>
+              <button type="button" data-kpi-mode="this_week" onclick="setKpiPeriodQuick('this_week')" style="touch-action: manipulation; -webkit-tap-highlight-color: transparent;" class="kpi-pill-btn px-3 py-2 sm:py-1.5 text-xs font-bold rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200 transition whitespace-nowrap cursor-pointer">📆 Cette semaine</button>
+              <button type="button" data-kpi-mode="this_month" onclick="setKpiPeriodQuick('this_month')" style="touch-action: manipulation; -webkit-tap-highlight-color: transparent;" class="kpi-pill-btn px-3 py-2 sm:py-1.5 text-xs font-extrabold rounded-xl bg-indigo-600 text-white shadow-2xs transition whitespace-nowrap cursor-pointer">📅 Ce mois-ci</button>
+              <button type="button" data-kpi-mode="this_quarter" onclick="setKpiPeriodQuick('this_quarter')" style="touch-action: manipulation; -webkit-tap-highlight-color: transparent;" class="kpi-pill-btn px-3 py-2 sm:py-1.5 text-xs font-bold rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200 transition whitespace-nowrap cursor-pointer">📊 Ce trimestre</button>
+              <button type="button" data-kpi-mode="this_year" onclick="setKpiPeriodQuick('this_year')" style="touch-action: manipulation; -webkit-tap-highlight-color: transparent;" class="kpi-pill-btn px-3 py-2 sm:py-1.5 text-xs font-bold rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200 transition whitespace-nowrap cursor-pointer">🗓️ Cette année</button>
+              <button type="button" data-kpi-mode="all" onclick="setKpiPeriodQuick('all')" style="touch-action: manipulation; -webkit-tap-highlight-color: transparent;" class="kpi-pill-btn px-3 py-2 sm:py-1.5 text-xs font-bold rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200 transition whitespace-nowrap cursor-pointer">∞ Cumul global</button>
+              <button type="button" data-kpi-mode="custom_range" onclick="setKpiPeriodQuick('custom_range')" style="touch-action: manipulation; -webkit-tap-highlight-color: transparent;" class="kpi-pill-btn px-3 py-2 sm:py-1.5 text-xs font-bold rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200 transition whitespace-nowrap cursor-pointer">🎯 Date sur mesure</button>
             </div>
 
-            <div id="kpi-custom-range-box" class="hidden flex flex-wrap items-center gap-2 text-xs">
-              <span class="font-bold text-slate-600">Du :</span>
-              <input id="kpi-custom-start" type="date" onchange="renderKpiDashboard()" class="px-3 py-1.5 text-xs font-semibold bg-slate-50 border border-indigo-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-600 cursor-pointer" />
-              <span class="font-bold text-slate-600">Au :</span>
-              <input id="kpi-custom-end" type="date" onchange="renderKpiDashboard()" class="px-3 py-1.5 text-xs font-semibold bg-slate-50 border border-indigo-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-600 cursor-pointer" />
+            <div id="kpi-custom-range-box" class="hidden grid grid-cols-1 sm:flex sm:flex-wrap items-center gap-2.5 text-xs">
+              <div class="flex items-center gap-2 min-w-0">
+                <span class="font-bold text-slate-600 w-7 shrink-0">Du :</span>
+                <input id="kpi-custom-start" type="date" oninput="renderKpiDashboard()" onchange="renderKpiDashboard()" onblur="renderKpiDashboard()" class="flex-1 sm:w-auto min-w-0 px-3 py-2 text-xs font-semibold bg-slate-50 border border-indigo-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-600 cursor-pointer" />
+              </div>
+              <div class="flex items-center gap-2 min-w-0">
+                <span class="font-bold text-slate-600 w-7 shrink-0">Au :</span>
+                <input id="kpi-custom-end" type="date" oninput="renderKpiDashboard()" onchange="renderKpiDashboard()" onblur="renderKpiDashboard()" class="flex-1 sm:w-auto min-w-0 px-3 py-2 text-xs font-semibold bg-slate-50 border border-indigo-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-600 cursor-pointer" />
+              </div>
             </div>
           </div>
         </div>
@@ -2074,7 +2080,7 @@
                 </select>
               </div>
               <div>
-                <label class="block text-[11px] font-bold text-emerald-800 mb-1">Target Comm. ($) *</label>
+                <label class="block text-[11px] font-bold text-emerald-800 mb-1">Objectif Comm. ($) *</label>
                 <input id="rep-obj-comm" type="number" step="100" min="0" required placeholder="8000" class="w-full px-3 py-2 text-xs font-extrabold text-emerald-900 bg-emerald-50/60 border border-emerald-300 rounded-xl tabular-nums" />
               </div>
               <div>
@@ -2232,14 +2238,14 @@
           <div class="bg-white rounded-3xl border border-slate-200/80 p-5 shadow-xs space-y-4">
             <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div>
-                <div class="flex flex-wrap items-center gap-2.5">
-                  <span class="w-10 h-10 rounded-2xl bg-gradient-to-br from-amber-400 via-amber-500 to-orange-500 text-slate-950 shadow-sm flex items-center justify-center text-lg shrink-0">🏆</span>
-                  <div>
+                <div class="flex items-start sm:items-center gap-3 min-w-0">
+                  <span class="w-10 h-10 rounded-2xl bg-gradient-to-br from-amber-400 via-amber-500 to-orange-500 text-slate-950 shadow-sm flex items-center justify-center text-lg shrink-0 mt-0.5 sm:mt-0">🏆</span>
+                  <div class="min-w-0 flex-1">
                     <div class="flex flex-wrap items-center gap-2">
                       <h2 class="text-lg sm:text-xl font-extrabold text-slate-900 tracking-tight">Classement & Performance de l'équipe</h2>
-                      <span id="classement-period-pill" class="px-2.5 py-0.5 text-[11px] font-extrabold rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200">Ce mois-ci</span>
+                      <span id="classement-period-pill" class="px-2.5 py-0.5 text-[11px] font-extrabold rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200 max-w-full truncate">Ce mois-ci</span>
                     </div>
-                    <p class="text-xs text-slate-500 mt-0.5">Volumes signés, progression vers les targets et parts d'équipe (commissions strictement privées)</p>
+                    <p class="text-xs text-slate-500 mt-0.5 leading-relaxed">Volumes signés, progression vers les objectifs et parts d'équipe (commissions strictement privées)</p>
                   </div>
                 </div>
               </div>
@@ -2249,20 +2255,24 @@
 
             <!-- BALISES RAPIDES EN ORDRE DE PÉRIODE + DATE SUR MESURE -->
             <div id="rank-quick-pills" class="flex flex-wrap items-center gap-1.5 pt-2 border-t border-slate-100">
-              <button type="button" data-rank-mode="this_week" onclick="setRankPeriodQuick('this_week')" class="rank-pill-btn px-3 py-1.5 text-xs font-bold rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200 transition whitespace-nowrap">📆 Cette semaine</button>
-              <button type="button" data-rank-mode="this_month" onclick="setRankPeriodQuick('this_month')" class="rank-pill-btn px-3 py-1.5 text-xs font-extrabold rounded-xl bg-indigo-600 text-white shadow-2xs transition whitespace-nowrap">📅 Ce mois-ci</button>
-              <button type="button" data-rank-mode="this_quarter" onclick="setRankPeriodQuick('this_quarter')" class="rank-pill-btn px-3 py-1.5 text-xs font-bold rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200 transition whitespace-nowrap">📊 Ce trimestre</button>
-              <button type="button" data-rank-mode="this_year" onclick="setRankPeriodQuick('this_year')" class="rank-pill-btn px-3 py-1.5 text-xs font-bold rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200 transition whitespace-nowrap">🗓️ Cette année</button>
-              <button type="button" data-rank-mode="all" onclick="setRankPeriodQuick('all')" class="rank-pill-btn px-3 py-1.5 text-xs font-bold rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200 transition whitespace-nowrap">∞ Cumul global</button>
-              <button type="button" data-rank-mode="custom_range" onclick="setRankPeriodQuick('custom_range')" class="rank-pill-btn px-3 py-1.5 text-xs font-bold rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200 transition whitespace-nowrap">🎯 Date sur mesure</button>
+              <button type="button" data-rank-mode="this_week" onclick="setRankPeriodQuick('this_week')" style="touch-action: manipulation; -webkit-tap-highlight-color: transparent;" class="rank-pill-btn px-3 py-2 sm:py-1.5 text-xs font-bold rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200 transition whitespace-nowrap cursor-pointer">📆 Cette semaine</button>
+              <button type="button" data-rank-mode="this_month" onclick="setRankPeriodQuick('this_month')" style="touch-action: manipulation; -webkit-tap-highlight-color: transparent;" class="rank-pill-btn px-3 py-2 sm:py-1.5 text-xs font-extrabold rounded-xl bg-indigo-600 text-white shadow-2xs transition whitespace-nowrap cursor-pointer">📅 Ce mois-ci</button>
+              <button type="button" data-rank-mode="this_quarter" onclick="setRankPeriodQuick('this_quarter')" style="touch-action: manipulation; -webkit-tap-highlight-color: transparent;" class="rank-pill-btn px-3 py-2 sm:py-1.5 text-xs font-bold rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200 transition whitespace-nowrap cursor-pointer">📊 Ce trimestre</button>
+              <button type="button" data-rank-mode="this_year" onclick="setRankPeriodQuick('this_year')" style="touch-action: manipulation; -webkit-tap-highlight-color: transparent;" class="rank-pill-btn px-3 py-2 sm:py-1.5 text-xs font-bold rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200 transition whitespace-nowrap cursor-pointer">🗓️ Cette année</button>
+              <button type="button" data-rank-mode="all" onclick="setRankPeriodQuick('all')" style="touch-action: manipulation; -webkit-tap-highlight-color: transparent;" class="rank-pill-btn px-3 py-2 sm:py-1.5 text-xs font-bold rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200 transition whitespace-nowrap cursor-pointer">∞ Cumul global</button>
+              <button type="button" data-rank-mode="custom_range" onclick="setRankPeriodQuick('custom_range')" style="touch-action: manipulation; -webkit-tap-highlight-color: transparent;" class="rank-pill-btn px-3 py-2 sm:py-1.5 text-xs font-bold rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200 transition whitespace-nowrap cursor-pointer">🎯 Date sur mesure</button>
             </div>
 
             <!-- PLAGE DE DATES SUR MESURE (CLASSEMENT) -->
-            <div id="filter-rank-custom-box" class="hidden flex flex-wrap items-center gap-2 pt-2 border-t border-slate-100 text-xs">
-              <span class="font-bold text-slate-600">Du :</span>
-              <input id="filter-rank-start" type="date" onchange="renderClassement()" class="px-3 py-1.5 text-xs font-semibold bg-slate-50 border border-indigo-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-600 cursor-pointer" />
-              <span class="font-bold text-slate-600">Au :</span>
-              <input id="filter-rank-end" type="date" onchange="renderClassement()" class="px-3 py-1.5 text-xs font-semibold bg-slate-50 border border-indigo-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-600 cursor-pointer" />
+            <div id="filter-rank-custom-box" class="hidden grid grid-cols-1 sm:flex sm:flex-wrap items-center gap-2.5 pt-2.5 border-t border-slate-100 text-xs">
+              <div class="flex items-center gap-2 min-w-0">
+                <span class="font-bold text-slate-600 w-7 shrink-0">Du :</span>
+                <input id="filter-rank-start" type="date" oninput="renderClassement()" onchange="renderClassement()" onblur="renderClassement()" class="flex-1 sm:w-auto min-w-0 px-3 py-2 text-xs font-semibold bg-slate-50 border border-indigo-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-600 cursor-pointer" />
+              </div>
+              <div class="flex items-center gap-2 min-w-0">
+                <span class="font-bold text-slate-600 w-7 shrink-0">Au :</span>
+                <input id="filter-rank-end" type="date" oninput="renderClassement()" onchange="renderClassement()" onblur="renderClassement()" class="flex-1 sm:w-auto min-w-0 px-3 py-2 text-xs font-semibold bg-slate-50 border border-indigo-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-600 cursor-pointer" />
+              </div>
             </div>
           </div>
 
@@ -2490,10 +2500,10 @@
                   <tr class="border-b border-white/10 text-[11px] font-bold uppercase text-indigo-200">
                     <th class="py-2.5 px-4">Représentant</th>
                     <th class="py-2.5 px-3 text-right">Volume signé</th>
-                    <th class="py-2.5 px-3 text-right">Target ventes</th>
+                    <th class="py-2.5 px-3 text-right">Objectif ventes</th>
                     <th class="py-2.5 px-3 text-center">Atteinte</th>
-                    <th class="py-2.5 px-3 text-right">Reste avant bonus</th>
-                    <th class="py-2.5 px-3 text-center">Statut Bonus</th>
+                    <th class="py-2.5 px-3 text-right">Reste avant boni</th>
+                    <th class="py-2.5 px-3 text-center">Statut Boni</th>
                     <th class="py-2.5 px-4 text-right text-emerald-300">Comm. cumulée</th>
                   </tr>
                 </thead>
@@ -2677,13 +2687,13 @@
           <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
               <div class="flex items-center gap-2">
-                <h2 class="text-base font-extrabold text-slate-900">🎯 Targets mensuels par représentant</h2>
+                <h2 class="text-base font-extrabold text-slate-900">🎯 Objectifs mensuels par représentant</h2>
                 <span class="px-2.5 py-0.5 text-[11px] font-bold rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200">Admin uniquement</span>
               </div>
               <p class="text-xs text-slate-500 mt-0.5">Définissez le target de commission et l'objectif de ventes mensuel de chaque représentant. Seul vous pouvez modifier ces montants.</p>
             </div>
             <button type="button" id="btn-save-all-equipe-targets" class="px-4 py-2 text-xs font-extrabold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl shadow-xs transition shrink-0">
-              ✓ Enregistrer tous les targets
+              ✓ Enregistrer tous les objectifs
             </button>
           </div>
 
@@ -2692,7 +2702,7 @@
               <thead>
                 <tr class="bg-slate-50 border-b border-slate-200 text-[11px] font-bold uppercase text-slate-500">
                   <th class="py-3 px-4">Représentant</th>
-                  <th class="py-3 px-4">Target Commission ($ / mois)</th>
+                  <th class="py-3 px-4">Objectif Commission ($ / mois)</th>
                   <th class="py-3 px-4">Objectif Ventes ($ / mois)</th>
                   <th class="py-3 px-4">Bonus Target (% ajouté)</th>
                   <th class="py-3 px-4 text-right">Action</th>
@@ -4746,7 +4756,7 @@
           lsSet('korpo_kpi_store_v1', JSON.stringify(kpiStore));
           renderKpiDashboard();
           renderMesVentes();
-          toast(`Targets mis à jour pour ${rn} : ${fmtMoney0(commGoal)} comm. / ${fmtMoney0(dollars)} ventes ✓`);
+          toast(`Objectifs mis à jour pour ${rn} : ${fmtMoney0(commGoal)} comm. / ${fmtMoney0(dollars)} ventes ✓`);
         });
       }
       const btnClose = document.getElementById('btn-kpi-close-targets');
@@ -4864,14 +4874,23 @@
         return;
       }
 
+      const customRangeFactor = isCustomRange
+        ? computeCustomRangeMonthFactor(
+            document.getElementById('kpi-custom-start')?.value || `${currentMonthStr}-01`,
+            document.getElementById('kpi-custom-end')?.value || currentDateStr
+          )
+        : (isWeek ? (5 / Math.max(1, countBusinessDaysInMonth(currentMonthStr))) : 1);
+
       const monthsCount = isAll
         ? Object.keys(kpiStore).filter(isValidYearMonth).length || 1
         : (isYear
           ? Object.keys(kpiStore).filter(ym => ym.startsWith(yearPrefix)).length || 1
-          : (isQuarter ? Object.keys(kpiStore).filter(ym => getQuarterForMonth(ym) === quarterTarget).length || 1 : 1));
+          : (isQuarter
+            ? Object.keys(kpiStore).filter(ym => getQuarterForMonth(ym) === quarterTarget).length || 1
+            : ((isWeek || isCustomRange) ? customRangeFactor : 1)));
 
       grid.innerHTML = activeTargets.map(t => {
-        const targetAmount = t.monthScope === 'ALL' ? (t.objectif * monthsCount) : t.objectif;
+        const targetAmount = Math.round((t.monthScope === 'ALL' ? (t.objectif * monthsCount) : (t.objectif * ((isWeek || isCustomRange) ? customRangeFactor : 1))));
         const matchedSales = state.ventes.filter(v => {
           const ent = state.entreprises.find(e => e.id === v.entreprise_id)?.nom || '';
           const cli = state.clients.find(c => c.id === v.client_id)?.nom || '';
@@ -6336,17 +6355,62 @@
       renderKpiDashboard();
     };
 
+    function computeCustomRangeMonthFactor(startYmd, endYmd) {
+      if (!startYmd || !endYmd) return 1;
+      const s = startYmd <= endYmd ? startYmd : endYmd;
+      const e = startYmd <= endYmd ? endYmd : startYmd;
+      const startDt = new Date(s + 'T00:00:00');
+      const endDt = new Date(e + 'T00:00:00');
+      if (isNaN(startDt.getTime()) || isNaN(endDt.getTime())) return 1;
+
+      const bizDaysByMonth = new Map();
+      const cur = new Date(startDt);
+      while (cur <= endDt) {
+        const dow = cur.getDay();
+        const ym = `${cur.getFullYear()}-${String(cur.getMonth() + 1).padStart(2, '0')}`;
+        if (!bizDaysByMonth.has(ym)) bizDaysByMonth.set(ym, 0);
+        if (dow !== 0 && dow !== 6) {
+          bizDaysByMonth.set(ym, bizDaysByMonth.get(ym) + 1);
+        }
+        cur.setDate(cur.getDate() + 1);
+      }
+
+      if (!bizDaysByMonth.size) return 1;
+      let totalFactor = 0;
+      bizDaysByMonth.forEach((selectedBizDays, ym) => {
+        const totalMonthBizDays = Math.max(1, countBusinessDaysInMonth(ym));
+        totalFactor += (selectedBizDays / totalMonthBizDays);
+      });
+      return totalFactor > 0 ? totalFactor : (1 / Math.max(1, countBusinessDaysInMonth(s.slice(0, 7))));
+    }
+
     function buildSubMonthKpiObject(label, fakePeriodState) {
       const nw = 4;
+      const refYm = fakePeriodState?.mode === 'custom_range' && fakePeriodState.startVal
+        ? fakePeriodState.startVal.slice(0, 7)
+        : currentMonthStr;
+      const factor = fakePeriodState?.mode === 'custom_range'
+        ? computeCustomRangeMonthFactor(fakePeriodState.startVal, fakePeriodState.endVal)
+        : (fakePeriodState?.mode === 'this_week'
+          ? (5 / Math.max(1, countBusinessDaysInMonth(currentMonthStr)))
+          : 1);
+
+      const scaleObj = (val, isMoney = false) => {
+        const raw = Number(val || 0) * factor;
+        return isMoney ? Math.round(raw) : Math.max(0, Math.round(raw * 10) / 10);
+      };
+
+      const refStoreMonth = kpiStore[refYm] || kpiStore[currentMonthStr];
       const makeRep = (rn) => {
-        const refMonth = kpiStore[currentMonthStr]?.reps?.[rn];
+        const refRep = refStoreMonth?.reps?.[rn];
+        const salesTarget = getSalesTargetForRep(rn, refYm);
         return {
-          'Booké': { weeks: [0, 0, 0, 0], cumul: 0, objectif: refMonth?.['Booké']?.objectif || 80 },
-          'RDV Réalisé': { weeks: [0, 0, 0, 0], cumul: 0, objectif: refMonth?.['RDV Réalisé']?.objectif || 60 },
-          'Ventes OTS': { weeks: [0, 0, 0, 0], cumul: 0, objectif: refMonth?.['Ventes OTS']?.objectif || 10 },
-          'Ventes SUIVI': { weeks: [0, 0, 0, 0], cumul: 0, objectif: refMonth?.['Ventes SUIVI']?.objectif || 20 },
-          'Vente $': { weeks: [0, 0, 0, 0], cumul: 0, objectif: refMonth?.['Vente $']?.objectif || 150000 },
-          '% Close': { weeks: [0, 0, 0, 0], cumul: 0, objectif: refMonth?.['% Close']?.objectif || 35 }
+          'Booké': { weeks: [0, 0, 0, 0], cumul: 0, objectif: scaleObj(refRep?.['Booké']?.objectif || 80, false) },
+          'RDV Réalisé': { weeks: [0, 0, 0, 0], cumul: 0, objectif: scaleObj(refRep?.['RDV Réalisé']?.objectif || 60, false) },
+          'Ventes OTS': { weeks: [0, 0, 0, 0], cumul: 0, objectif: scaleObj(refRep?.['Ventes OTS']?.objectif || 10, false) },
+          'Ventes SUIVI': { weeks: [0, 0, 0, 0], cumul: 0, objectif: scaleObj(refRep?.['Ventes SUIVI']?.objectif || 20, false) },
+          'Vente $': { weeks: [0, 0, 0, 0], cumul: 0, objectif: scaleObj(salesTarget, true) },
+          '% Close': { weeks: [0, 0, 0, 0], cumul: 0, objectif: refRep?.['% Close']?.objectif || 35 }
         };
       };
       const obj = {
@@ -6366,9 +6430,18 @@
       };
       const entNames = new Set(['Toitex', 'MonSpray', 'VerreVDM', 'Groupe Diamant Pro', 'MaClim', ...(state.entreprises || []).map(e => e.nom)]);
       entNames.forEach(en => {
+        const refEnt = refStoreMonth?.entreprises?.[en];
         obj.entreprises[en] = {
-          reps: Object.fromEntries(ALL_KPI_REPS.map(rn => [rn, { weeks: [0, 0, 0, 0], cumul: 0, objectif: 0 }])),
-          total: { weeks: [0, 0, 0, 0], cumul: 0, objectif: 0 }
+          reps: Object.fromEntries(ALL_KPI_REPS.map(rn => [rn, {
+            weeks: [0, 0, 0, 0],
+            cumul: 0,
+            objectif: scaleObj(refEnt?.reps?.[rn]?.objectif || 0, true)
+          }])),
+          total: {
+            weeks: [0, 0, 0, 0],
+            cumul: 0,
+            objectif: scaleObj(refEnt?.total?.objectif || 0, true)
+          }
         };
       });
 
@@ -9463,7 +9536,7 @@
       };
 
       const isSubMonthMode = rankPeriod.mode === 'this_week' || rankPeriod.mode === 'specific_date' || rankPeriod.mode === 'custom_range';
-      const hasFullVentesAccess = isSubMonthMode || (state.ventes && state.ventes.length && currentProfile?.role === 'admin');
+      const hasFullVentesAccess = Boolean(state.ventes && state.ventes.length && currentProfile?.role === 'admin');
 
       if (hasFullVentesAccess) {
         state.representants.forEach(r => ensureRepEntry(r.id, r.nom));
@@ -9492,16 +9565,55 @@
           : ALL_KPI_REPS.map((n, i) => ({ id: `kpi_${i}`, nom: n }));
         knownReps.forEach(r => ensureRepEntry(r.id, r.nom));
 
-        state.classement.forEach(row => {
-          const entry = ensureRepEntry(row.representant_id, row.representant_nom);
-          const fakeRow = { mois_commission: row.mois_commission, date_vente: `${row.mois_commission}-01` };
-          if (matchesSalePeriod(fakeRow, rankPeriod, false)) {
-            const adjTotal = Math.max(0, Number(row.total_ventes || 0));
-            entry.total += adjTotal;
-            entry.dealsCount += Number(row.nb_ventes || row.nombre_ventes || 0);
-            if (row.mois_commission) entry.monthsCount.add(row.mois_commission);
+        if (isSubMonthMode) {
+          // Mode sous-mensuel (cette semaine / date sur mesure) pour un représentant :
+          // 1) Compter ses propres ventes exactes depuis `state.mesVentes`
+          const myIdStr = String(currentProfile?.id || '');
+          (state.mesVentes || []).forEach(v => {
+            if (!matchesSalePeriod(v, rankPeriod, true)) return;
+            const entry = ensureRepEntry(v.representant_id || myIdStr, currentProfile?.nom || 'Moi');
+            const val = Number(v.valeur || 0);
+            entry.total += val;
+            if (v.statut_depot === 'depot_recu') entry.confirmedTotal += val;
+            entry.dealsCount += 1;
+            if (val > entry.bestSale) entry.bestSale = val;
+            if ((v.note || '').toUpperCase().includes('[SUIVI]')) entry.suiviCount += 1;
+            else entry.otsCount += 1;
+            const entN = v.entreprise_nom || state.entreprises.find(e => String(e.id) === String(v.entreprise_id))?.nom || '';
+            if (entN) entry.byEnt.set(entN, (entry.byEnt.get(entN) || 0) + val);
+          });
+          // 2) Ajouter les ventes des collègues publiées dans le canal d'équipe sur cette période
+          if (typeof teamChatMessages !== 'undefined' && Array.isArray(teamChatMessages)) {
+            teamChatMessages.forEach(m => {
+              if (!m || m.type !== 'sale' || !m.repNom) return;
+              if (resolveKpiRepName(m.repNom) === resolveKpiRepName(currentProfile?.nom || '')) return;
+              const dStr = (m.dateVente || m.createdAt || '').slice(0, 10);
+              if (!dStr) return;
+              const fakeSale = { date_vente: dStr, mois_commission: dStr.slice(0, 7) };
+              if (!matchesSalePeriod(fakeSale, rankPeriod, true)) return;
+              const repObj = state.representants.find(r => resolveKpiRepName(r.nom) === resolveKpiRepName(m.repNom));
+              const entry = ensureRepEntry(repObj?.id || m.repNom, repObj?.nom || m.repNom);
+              const val = Number(m.valeur || 0);
+              entry.total += val;
+              entry.dealsCount += 1;
+              if (val > entry.bestSale) entry.bestSale = val;
+              if ((m.typeKpi || '').toUpperCase() === 'SUIVI') entry.suiviCount += 1;
+              else entry.otsCount += 1;
+              if (m.entrepriseNom) entry.byEnt.set(m.entrepriseNom, (entry.byEnt.get(m.entrepriseNom) || 0) + val);
+            });
           }
-        });
+        } else {
+          state.classement.forEach(row => {
+            const entry = ensureRepEntry(row.representant_id, row.representant_nom);
+            const fakeRow = { mois_commission: row.mois_commission, date_vente: `${row.mois_commission}-01` };
+            if (matchesSalePeriod(fakeRow, rankPeriod, false)) {
+              const adjTotal = Math.max(0, Number(row.total_ventes || 0));
+              entry.total += adjTotal;
+              entry.dealsCount += Number(row.nb_ventes || row.nombre_ventes || 0);
+              if (row.mois_commission) entry.monthsCount.add(row.mois_commission);
+            }
+          });
+        }
 
         // Enrichir avec les données détaillées disponibles sur ses propres ventes (`state.mesVentes`)
         const myEntry = Array.from(totalsByRep.values()).find(e => e.nom === currentProfile?.nom);
@@ -9530,17 +9642,19 @@
         }
       }
 
-      const activeYm = rankPeriod.singleMonth || currentMonthStr;
+      const activeYm = rankPeriod.singleMonth || (rankPeriod.mode === 'custom_range' && rankPeriod.startVal ? rankPeriod.startVal.slice(0, 7) : currentMonthStr);
       const bizDaysM = Math.max(1, countBusinessDaysInMonth(activeYm));
-      const mult = rankPeriod.mode === 'this_week'
-        ? (5 / bizDaysM)
-        : (rankPeriod.mode === 'specific_date'
-          ? (1 / bizDaysM)
-          : (rankPeriod.mode === 'this_quarter'
-            ? 3
-            : (rankPeriod.mode === 'this_year'
-              ? 12
-              : (rankPeriod.mode === 'all' ? Math.max(1, Object.keys(kpiStore).length || 1) : 1))));
+      const mult = rankPeriod.mode === 'custom_range'
+        ? computeCustomRangeMonthFactor(rankPeriod.startVal, rankPeriod.endVal)
+        : (rankPeriod.mode === 'this_week'
+          ? (5 / bizDaysM)
+          : (rankPeriod.mode === 'specific_date'
+            ? (1 / bizDaysM)
+            : (rankPeriod.mode === 'this_quarter'
+              ? 3
+              : (rankPeriod.mode === 'this_year'
+                ? 12
+                : (rankPeriod.mode === 'all' ? Math.max(1, Object.keys(kpiStore).length || 1) : 1)))));
 
       const enriched = Array.from(totalsByRep.values()).map(r => {
         const unitTarget = getSalesTargetForRep(r.nom, activeYm);
@@ -9607,7 +9721,7 @@
               <div class="text-base sm:text-lg font-extrabold text-sky-300 tabular-nums mt-0.5">${teamAvgTicket > 0 ? fmtMoney0(teamAvgTicket) : '—'}</div>
             </div>
             <div class="bg-white/10 rounded-2xl p-3 border border-white/10">
-              <div class="text-[11px] text-indigo-200 font-semibold">Targets atteints</div>
+              <div class="text-[11px] text-indigo-200 font-semibold">Objectifs atteints</div>
               <div class="text-base sm:text-lg font-extrabold text-amber-300 tabular-nums mt-0.5">${unlockedRepsCount} / ${enriched.length} reps</div>
             </div>
           </div>
@@ -9651,14 +9765,14 @@
                 <span class="px-3 py-0.5 text-[11px] font-extrabold rounded-full ${badgeStyle}">${crownOrMedal} #${rank}</span>
                 ${isMe ? '<span class="px-2 py-0.5 text-[10px] font-extrabold uppercase rounded-full bg-indigo-600 text-white">Vous</span>' : ''}
               </div>
-              <div class="w-13 h-13 w-12 h-12 mx-auto rounded-2xl ${avatarBg} font-extrabold text-base flex items-center justify-center">
+              <div class="w-12 h-12 mx-auto rounded-2xl ${avatarBg} font-extrabold text-base flex items-center justify-center">
                 ${esc(r.nom.slice(0, 2).toUpperCase())}
               </div>
               <div>
                 <div class="font-extrabold text-base text-slate-900 truncate">${esc(r.nom)}</div>
                 <div class="text-[11px] font-semibold text-slate-500 mt-0.5">${sharePct} % du volume équipe</div>
               </div>
-              <div class="text-xl sm:text-2xl font-extrabold ${isFirst ? 'text-amber-700' : 'text-slate-900'} tabular-nums">
+              <div class="text-lg sm:text-2xl font-extrabold ${isFirst ? 'text-amber-700' : 'text-slate-900'} tabular-nums break-words">
                 ${fmtMoney(r.total)}
               </div>
               <div class="space-y-1.5 pt-1">
