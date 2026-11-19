@@ -10729,8 +10729,64 @@
     bindPeriodSelectorGroup('dash-filter', renderAdminDashboard);
 
     document.getElementById('filter-rep-statut')?.addEventListener('change', renderMesVentes);
+    let _clientSearchScrollTimer = null;
+    function scrollToClientSearchResults(context) {
+      clearTimeout(_clientSearchScrollTimer);
+      _clientSearchScrollTimer = setTimeout(() => {
+        const isMobile = window.innerWidth < 768;
+        let targetEl = null;
+
+        if (context === 'mes') {
+          if (isMobile) {
+            const groupSel = activeMobilePersonalView === 'commissions'
+              ? '#mobile-mes-commissions-cards'
+              : '#mobile-mes-ventes-cards';
+            const box = document.querySelector(groupSel);
+            targetEl = box?.querySelector(':scope > div') || box;
+          } else {
+            const tbody = document.getElementById('tbody-mes-ventes');
+            targetEl = tbody?.querySelector('tr') || tbody?.closest('.bg-white');
+          }
+        } else if (context === 'admin') {
+          if (isMobile) {
+            const box = document.getElementById('mobile-admin-ventes-cards');
+            targetEl = box?.querySelector(':scope > div') || box;
+          } else {
+            const tbody = document.getElementById('tbody-admin-ventes');
+            targetEl = tbody?.querySelector('tr') || tbody?.closest('.bg-white');
+          }
+        }
+
+        if (!targetEl) return;
+        const headerOffset = 88;
+        const rect = targetEl.getBoundingClientRect();
+        const targetY = Math.max(0, window.scrollY + rect.top - headerOffset);
+        window.scrollTo({ top: targetY, behavior: 'smooth' });
+
+        // Mise en surbrillance brève sur la première fiche/ligne correspondante
+        targetEl.classList.add('ring-2', 'ring-indigo-500', 'bg-indigo-50/60');
+        setTimeout(() => {
+          targetEl.classList.remove('ring-2', 'ring-indigo-500', 'bg-indigo-50/60');
+        }, 1600);
+      }, 280);
+    }
+
     document.getElementById('filter-admin-scope')?.addEventListener('change', renderMesVentes);
-    document.getElementById('search-rep-ventes')?.addEventListener('input', renderMesVentes);
+    document.getElementById('search-rep-ventes')?.addEventListener('input', (e) => {
+      renderMesVentes();
+      if (e.target.value.trim().length >= 2) {
+        scrollToClientSearchResults('mes');
+      }
+    });
+    document.getElementById('search-rep-ventes')?.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        renderMesVentes();
+        if (e.target.value.trim().length >= 1) {
+          scrollToClientSearchResults('mes');
+        }
+      }
+    });
 
     document.getElementById('vente-entreprise')?.addEventListener('change', updateClientDatalist);
     document.getElementById('taux-ent')?.addEventListener('change', updateTauxClientSelect);
@@ -10951,8 +11007,22 @@
     });
 
     ['admin-search', 'admin-filter-rep', 'admin-filter-ent', 'admin-filter-statut'].forEach(id => {
-      document.getElementById(id).addEventListener('input', renderAdminVentes);
+      document.getElementById(id).addEventListener('input', () => {
+        renderAdminVentes();
+        if (id === 'admin-search' && document.getElementById('admin-search').value.trim().length >= 2) {
+          scrollToClientSearchResults('admin');
+        }
+      });
       document.getElementById(id).addEventListener('change', renderAdminVentes);
+    });
+    document.getElementById('admin-search')?.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        renderAdminVentes();
+        if (e.target.value.trim().length >= 1) {
+          scrollToClientSearchResults('admin');
+        }
+      }
     });
     document.getElementById('btn-admin-clear-filters')?.addEventListener('click', () => {
       document.getElementById('admin-search').value = '';
