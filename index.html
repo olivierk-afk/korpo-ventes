@@ -15,7 +15,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
-    html, body { font-family: 'Plus Jakarta Sans', sans-serif; max-width: 100%; overflow-x: hidden; }
+    html, body { font-family: 'Plus Jakarta Sans', sans-serif; max-width: 100%; overflow-x: clip; }
     .tabular-nums { font-variant-numeric: tabular-nums; }
     .no-scrollbar::-webkit-scrollbar { display: none; }
     .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
@@ -1558,7 +1558,7 @@
               <option value="all">Toutes mes commissions (Directes + Équipe)</option>
               <option value="direct">Mes ventes directes uniquement</option>
             </select>
-            <input id="search-rep-ventes" type="text" placeholder="Rechercher un client..." class="w-full sm:w-56 px-3.5 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-600" />
+            <input id="search-rep-ventes" type="search" enterkeyhint="search" autocomplete="off" placeholder="Rechercher un client..." class="w-full sm:w-56 px-3.5 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-600" />
             <select id="filter-rep-statut" class="w-full sm:w-auto px-3 py-2 text-xs font-semibold bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-600">
               <option value="">Tous les dossiers</option>
               <option value="en_attente">⏳ En attente</option>
@@ -2092,7 +2092,7 @@
         <!-- BARRE DE RECHERCHE & FILTRES RAPIDES -->
         <div class="bg-white rounded-2xl border border-slate-200/80 p-4 shadow-xs space-y-3">
           <div class="flex flex-wrap items-center justify-center gap-2.5">
-            <input id="admin-search" type="text" placeholder="Rechercher client, note..." class="w-full sm:w-56 px-3.5 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-600" />
+            <input id="admin-search" type="search" enterkeyhint="search" autocomplete="off" placeholder="Rechercher client, note..." class="w-full sm:w-56 px-3.5 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-600" />
             <select id="admin-filter-rep" class="w-full sm:w-auto px-3 py-2 text-xs font-medium bg-slate-50 border border-slate-200 rounded-xl"></select>
             <select id="admin-filter-ent" class="w-full sm:w-auto px-3 py-2 text-xs font-medium bg-slate-50 border border-slate-200 rounded-xl"></select>
             <select id="admin-filter-period" class="w-full sm:w-auto px-3.5 py-2 text-xs font-bold bg-indigo-50/70 text-indigo-950 border border-indigo-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-600 cursor-pointer">
@@ -10730,6 +10730,54 @@
 
     document.getElementById('filter-rep-statut')?.addEventListener('change', renderMesVentes);
     let _clientSearchScrollTimer = null;
+    function getClientSearchTargetElement(context) {
+      const isMobile = window.innerWidth < 768;
+      if (context === 'mes') {
+        if (isMobile) {
+          const groupSel = activeMobilePersonalView === 'commissions'
+            ? '#mobile-mes-commissions-cards'
+            : '#mobile-mes-ventes-cards';
+          const box = document.querySelector(groupSel);
+          return box?.firstElementChild || box;
+        }
+        const tbody = document.getElementById('tbody-mes-ventes');
+        return tbody?.querySelector('tr') || tbody?.closest('.bg-white');
+      }
+      if (context === 'admin') {
+        if (isMobile) {
+          const box = document.getElementById('mobile-admin-ventes-cards');
+          return box?.firstElementChild || box;
+        }
+        const tbody = document.getElementById('tbody-admin-ventes');
+        return tbody?.querySelector('tr') || tbody?.closest('.bg-white');
+      }
+      return null;
+    }
+
+    function showMobileJumpToResultPill(context, count) {
+      let pill = document.getElementById('mobile-search-jump-pill');
+      if (window.innerWidth >= 768 || !count) {
+        if (pill) pill.remove();
+        return;
+      }
+      if (!pill) {
+        pill = document.createElement('button');
+        pill.id = 'mobile-search-jump-pill';
+        pill.type = 'button';
+        pill.className = 'fixed top-28 left-1/2 -translate-x-1/2 z-40 px-4 py-2 rounded-full bg-indigo-600 text-white text-xs font-extrabold shadow-xl border border-indigo-400/50 flex items-center gap-1.5 active:scale-95 transition no-print';
+        document.body.appendChild(pill);
+      }
+      pill.innerHTML = `<span>🎯 ${count} fiche(s) trouvée(s) — Voir</span><span>↓</span>`;
+      pill.onclick = () => {
+        scrollToClientSearchResults(context, true);
+        pill.remove();
+      };
+      clearTimeout(window._mobileSearchPillTimer);
+      window._mobileSearchPillTimer = setTimeout(() => {
+        document.getElementById('mobile-search-jump-pill')?.remove();
+      }, 4500);
+    }
+
     function scrollToClientSearchResults(context, blurMobileKeyboard = false) {
       clearTimeout(_clientSearchScrollTimer);
       const isMobile = window.innerWidth < 768;
@@ -10739,41 +10787,27 @@
       }
 
       const performScroll = () => {
-        let targetEl = null;
-        if (context === 'mes') {
-          if (isMobile) {
-            const groupSel = activeMobilePersonalView === 'commissions'
-              ? '#mobile-mes-commissions-cards'
-              : '#mobile-mes-ventes-cards';
-            const box = document.querySelector(groupSel);
-            targetEl = box?.querySelector(':scope > div') || box;
-          } else {
-            const tbody = document.getElementById('tbody-mes-ventes');
-            targetEl = tbody?.querySelector('tr') || tbody?.closest('.bg-white');
-          }
-        } else if (context === 'admin') {
-          if (isMobile) {
-            const box = document.getElementById('mobile-admin-ventes-cards');
-            targetEl = box?.querySelector(':scope > div') || box;
-          } else {
-            const tbody = document.getElementById('tbody-admin-ventes');
-            targetEl = tbody?.querySelector('tr') || tbody?.closest('.bg-white');
-          }
-        }
-
+        const targetEl = getClientSearchTargetElement(context);
         if (!targetEl) return;
-        const headerEl = document.querySelector('#screen-app header');
-        const headerOffset = (headerEl ? headerEl.offsetHeight : 96) + 12;
-        const rect = targetEl.getBoundingClientRect();
-        const currentScrollTop = window.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop || 0;
-        const targetY = Math.max(0, currentScrollTop + rect.top - headerOffset);
 
-        try {
-          window.scrollTo({ top: targetY, behavior: 'smooth' });
-        } catch (err) {
-          window.scrollTo(0, targetY);
+        const headerEl = document.querySelector('#screen-app header');
+        const headerOffset = (headerEl ? headerEl.offsetHeight : 104) + 14;
+        targetEl.style.scrollMarginTop = `${headerOffset}px`;
+
+        if (typeof targetEl.scrollIntoView === 'function') {
+          try {
+            targetEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          } catch (e) {
+            targetEl.scrollIntoView(true);
+          }
         }
+
+        const rect = targetEl.getBoundingClientRect();
+        const curScroll = window.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop || 0;
+        const targetY = Math.max(0, curScroll + rect.top - headerOffset);
+        window.scrollTo({ top: targetY, behavior: 'smooth' });
         if (document.documentElement) document.documentElement.scrollTop = targetY;
+        if (document.body) document.body.scrollTop = targetY;
 
         targetEl.classList.add('ring-2', 'ring-indigo-500', 'bg-indigo-50/60');
         setTimeout(() => {
@@ -10781,20 +10815,32 @@
         }, 1800);
       };
 
-      // Sur mobile, attendre légèrement plus longtemps (et refaire un calage après fermeture du clavier)
       _clientSearchScrollTimer = setTimeout(() => {
         performScroll();
-        if (isMobile && blurMobileKeyboard) {
-          setTimeout(performScroll, 260);
+        if (isMobile) {
+          setTimeout(performScroll, 280);
+          setTimeout(performScroll, 550);
         }
-      }, isMobile ? (blurMobileKeyboard ? 140 : 480) : 260);
+      }, isMobile ? (blurMobileKeyboard ? 80 : 380) : 240);
     }
 
     document.getElementById('filter-admin-scope')?.addEventListener('change', renderMesVentes);
     document.getElementById('search-rep-ventes')?.addEventListener('input', (e) => {
       renderMesVentes();
-      if (e.target.value.trim().length >= 2) {
+      const val = e.target.value.trim();
+      if (val.length >= 2) {
+        const boxSel = activeMobilePersonalView === 'commissions' ? '#mobile-mes-commissions-cards' : '#mobile-mes-ventes-cards';
+        const cnt = document.querySelectorAll(`${boxSel} > div`).length;
+        showMobileJumpToResultPill('mes', cnt);
         scrollToClientSearchResults('mes', false);
+      } else {
+        document.getElementById('mobile-search-jump-pill')?.remove();
+      }
+    });
+    document.getElementById('search-rep-ventes')?.addEventListener('search', (e) => {
+      renderMesVentes();
+      if (e.target.value.trim().length >= 1) {
+        scrollToClientSearchResults('mes', true);
       }
     });
     document.getElementById('search-rep-ventes')?.addEventListener('change', (e) => {
@@ -10804,7 +10850,7 @@
       }
     });
     document.getElementById('search-rep-ventes')?.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') {
+      if (e.key === 'Enter' || e.keyCode === 13) {
         e.preventDefault();
         renderMesVentes();
         if (e.target.value.trim().length >= 1) {
@@ -11034,8 +11080,15 @@
     ['admin-search', 'admin-filter-rep', 'admin-filter-ent', 'admin-filter-statut'].forEach(id => {
       document.getElementById(id).addEventListener('input', () => {
         renderAdminVentes();
-        if (id === 'admin-search' && document.getElementById('admin-search').value.trim().length >= 2) {
-          scrollToClientSearchResults('admin', false);
+        if (id === 'admin-search') {
+          const val = document.getElementById('admin-search').value.trim();
+          if (val.length >= 2) {
+            const cnt = document.querySelectorAll('#mobile-admin-ventes-cards > div').length;
+            showMobileJumpToResultPill('admin', cnt);
+            scrollToClientSearchResults('admin', false);
+          } else {
+            document.getElementById('mobile-search-jump-pill')?.remove();
+          }
         }
       });
       document.getElementById(id).addEventListener('change', () => {
@@ -11045,8 +11098,14 @@
         }
       });
     });
+    document.getElementById('admin-search')?.addEventListener('search', (e) => {
+      renderAdminVentes();
+      if (e.target.value.trim().length >= 1) {
+        scrollToClientSearchResults('admin', true);
+      }
+    });
     document.getElementById('admin-search')?.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') {
+      if (e.key === 'Enter' || e.keyCode === 13) {
         e.preventDefault();
         renderAdminVentes();
         if (e.target.value.trim().length >= 1) {
