@@ -1471,7 +1471,7 @@
             <button id="btn-kpi-import-open" class="hidden col-span-2 sm:col-span-1 w-full sm:w-auto px-3 py-2.5 text-xs font-bold text-amber-950 bg-amber-100 hover:bg-amber-200 border border-amber-300 rounded-xl transition text-center">
               📄 Fichier condensé
             </button>
-            <button id="btn-kpi-export-csv" class="col-span-2 sm:col-span-1 w-full sm:w-auto px-3 py-2.5 text-xs font-semibold text-slate-700 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 transition text-center">
+            <button id="btn-kpi-export-csv" class="hidden col-span-2 sm:col-span-1 w-full sm:w-auto px-3 py-2.5 text-xs font-semibold text-slate-700 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 transition text-center">
               Exporter CSV
             </button>
           </div>
@@ -2492,15 +2492,18 @@
 
     function getSaleStatsMonth(v) {
       if (!v) return currentMonthStr;
-      if (v._statsMonth) return v._statsMonth;
       const sid = v.id ? String(v.id) : '';
-      if (sid && carriedOverSalesStore[sid]?.origYm) {
-        return carriedOverSalesStore[sid].origYm;
-      }
-      if (v.date_vente && v.date_vente.length >= 7) {
-        return v.date_vente.slice(0, 7);
-      }
-      return v.mois_commission || currentMonthStr;
+      const co = sid ? carriedOverSalesStore[sid] : null;
+      const origYm = co?.origYm || (v.date_vente && v.date_vente.length >= 7 ? v.date_vente.slice(0, 7) : '');
+      const commYm = co?.movedToYm && (!v.mois_commission || v.mois_commission < co.movedToYm)
+        ? co.movedToYm
+        : (v.mois_commission || '');
+      const isCarried = Boolean(co || (origYm && commYm && origYm < commYm));
+      // Si la vente a été transférée vers un mois ultérieur faute de dépôt reçu, elle compte uniquement dans le mois de transfert (`commYm`)
+      if (isCarried && commYm) return commYm;
+      if (v._statsMonth) return v._statsMonth;
+      if (origYm) return origYm;
+      return commYm || currentMonthStr;
     }
 
     function applyCarryOverMetadataToState() {
@@ -2508,11 +2511,12 @@
         const sid = String(row.id);
         const co = carriedOverSalesStore[sid];
         const origYm = co?.origYm || (row.date_vente && row.date_vente.length >= 7 ? row.date_vente.slice(0, 7) : row.mois_commission);
-        const isCarried = Boolean(co || (origYm && row.mois_commission && origYm < row.mois_commission));
+        const effectiveCommYm = co?.movedToYm && row.mois_commission < co.movedToYm ? co.movedToYm : row.mois_commission;
+        const isCarried = Boolean(co || (origYm && effectiveCommYm && origYm < effectiveCommYm));
         return {
           ...row,
-          mois_commission: co?.movedToYm && row.mois_commission < co.movedToYm ? co.movedToYm : row.mois_commission,
-          _statsMonth: origYm,
+          mois_commission: effectiveCommYm,
+          _statsMonth: isCarried ? effectiveCommYm : origYm,
           _carriedOverFrom: isCarried ? origYm : null
         };
       };
@@ -2564,8 +2568,8 @@
           movedCount++;
           await recordSaleAudit(
             sid,
-            `Reportée automatiquement vers ${currentMonthStr}`,
-            `Dossier non confirmé de ${origYm} transféré pour suivi (demeure comptabilisé dans les statistiques de ${origYm})`,
+            `Transférée automatiquement vers ${currentMonthStr}`,
+            `Dossier non confirmé de ${origYm} transféré vers ${currentMonthStr} (comptabilisé uniquement dans ${currentMonthStr})`,
             '↪️'
           );
           try {
@@ -2585,7 +2589,7 @@
       applyCarryOverMetadataToState();
 
       if (movedCount > 0) {
-        toast(`↪️ ${movedCount} vente(s) non confirmée(s) reportée(s) vers ${currentMonthStr} (hors stats du nouveau mois)`);
+        toast(`↪️ ${movedCount} vente(s) non confirmée(s) transférée(s) et comptabilisée(s) dans ${currentMonthStr}`);
       }
     }
 
@@ -3259,7 +3263,7 @@
       document.getElementById('header-role-badge').textContent = profile.role === 'admin' ? 'Administrateur' : 'Représentant';
 
       const isAdminRole = profile.role === 'admin';
-      ['btn-kpi-targets-toggle', 'btn-kpi-edit-toggle', 'btn-kpi-import-open', 'btn-kpi-rep-targets-inline', 'btn-kpi-client-targets-inline'].forEach(btnId => {
+      ['btn-kpi-targets-toggle', 'btn-kpi-edit-toggle', 'btn-kpi-import-open', 'btn-kpi-export-csv', 'btn-kpi-rep-targets-inline', 'btn-kpi-client-targets-inline'].forEach(btnId => {
         const el = document.getElementById(btnId);
         if (el) el.classList.toggle('hidden', !isAdminRole);
       });
@@ -5784,6 +5788,7 @@
     };
 
     function exportKpiCsv() {
+      if (currentProfile?.role !== 'admin') return;
       const selVal = document.getElementById('kpi-select-month').value;
       const { isYear, data: mObj } = getAggregatedKpiForSelection(selVal);
       if (!mObj) return;
@@ -6940,11 +6945,11 @@
       const yearSales = scopeFilteredAll.filter(v => getSaleStatsMonth(v).startsWith(currentYear));
       const isConfirmedOnly = commDisplayMode === 'confirme';
 
-      // Exclure les ventes reportées des mois précédents des statistiques du nouveau mois (déjà comptabilisées le mois d'avant)
+      // Comptabiliser chaque dossier uniquement dans son mois actif (`getSaleStatsMonth` : mois d'origine ou mois de transfert si non confirmé)
       const statsPeriodSales = monthFilter
         ? filtered.filter(v => getSaleStatsMonth(v) === monthFilter)
         : filtered;
-      const carriedInPeriodCount = filtered.length - statsPeriodSales.length;
+      const carriedInPeriodCount = statsPeriodSales.filter(v => v._carriedOverFrom).length;
 
       const filteredConfirmed = filtered.filter(v => v.statut_depot === 'depot_recu');
       const statsPeriodConfirmed = statsPeriodSales.filter(v => v.statut_depot === 'depot_recu');
@@ -6965,7 +6970,7 @@
       const periodSalesTotal = statsPeriodSales.reduce((s, v) => s + Number(v.valeur), 0);
       const periodConfirmedTotal = statsPeriodConfirmed.reduce((s, v) => s + Number(v.valeur), 0);
       document.getElementById('kpi-rep-ventes-mois').textContent = fmtMoney(periodSalesTotal);
-      document.getElementById('kpi-rep-count-mois').textContent = `${statsPeriodSales.length} dossier(s)${carriedInPeriodCount > 0 ? ` + ${carriedInPeriodCount} reporté(s) hors stats` : ` (${statsPeriodConfirmed.length} confirmé(s))`}`;
+      document.getElementById('kpi-rep-count-mois').textContent = `${statsPeriodSales.length} dossier(s) (${statsPeriodConfirmed.length} confirmé(s)${carriedInPeriodCount > 0 ? ` • dont ${carriedInPeriodCount} transféré(s)` : ''})`;
       const elMoisConf = document.getElementById('kpi-rep-ventes-mois-confirme');
       if (elMoisConf) elMoisConf.textContent = fmtMoney(periodConfirmedTotal);
 
@@ -7030,7 +7035,7 @@
                   <div class="font-extrabold text-sm text-slate-900 truncate">${esc(v.client_nom)}</div>
                   ${isAdmin ? `<div class="text-[11px] font-semibold text-indigo-600">Rep : ${esc(v.rep_nom || '—')}</div>` : ''}
                   ${cleanNote ? `<div class="text-[11px] text-slate-400 truncate">${esc(cleanNote)}</div>` : ''}
-                  ${v._carriedOverFrom ? `<span class="inline-block px-1.5 py-0.5 text-[10px] font-bold rounded-md bg-amber-50 text-amber-800 border border-amber-200">↪ Reportée de ${v._carriedOverFrom}</span>` : ''}
+                  ${v._carriedOverFrom ? `<span class="inline-block px-1.5 py-0.5 text-[10px] font-bold rounded-md bg-amber-50 text-amber-800 border border-amber-200">↪ Transférée de ${v._carriedOverFrom}</span>` : ''}
                 </div>
                 <div class="text-right shrink-0 tabular-nums">
                   <div class="text-base font-extrabold text-slate-900">${fmtMoney(v.valeur)}</div>
@@ -7101,7 +7106,7 @@
           <td class="py-3.5 px-4">
             <div class="font-semibold text-slate-800">${v.date_vente}</div>
             <div class="text-[11px] text-slate-400">${v.mois_commission}</div>
-            ${v._carriedOverFrom ? `<span class="mt-0.5 inline-block px-1.5 py-0.5 text-[10px] font-bold rounded-md bg-amber-50 text-amber-800 border border-amber-200" title="Comptabilisée dans les stats de ${v._carriedOverFrom}">↪ Reportée de ${v._carriedOverFrom}</span>` : ''}
+            ${v._carriedOverFrom ? `<span class="mt-0.5 inline-block px-1.5 py-0.5 text-[10px] font-bold rounded-md bg-amber-50 text-amber-800 border border-amber-200" title="Transférée depuis ${v._carriedOverFrom} (comptabilisée dans ce mois)">↪ Transférée de ${v._carriedOverFrom}</span>` : ''}
           </td>
           <td class="py-3.5 px-4">${entBadge(v.entreprise_nom)}</td>
           <td class="py-3.5 px-4">
@@ -7181,32 +7186,14 @@
           }
         });
       } else {
-        // Soustraire les ventes reportées du mois d'arrivée si elles provenaient d'un mois précédent
-        const carriedByRepAndMovedYm = new Map();
-        const carriedByRepAndOrigYm = new Map();
-        Object.values(carriedOverSalesStore).forEach(co => {
-          // Indexé par vente si présente dans state.ventes
-        });
-        (state.ventes || []).forEach(v => {
-          if (v._carriedOverFrom && v._carriedOverFrom !== v.mois_commission) {
-            const kTo = `${v.representant_id}_${v.mois_commission}`;
-            const kFrom = `${v.representant_id}_${v._carriedOverFrom}`;
-            carriedByRepAndMovedYm.set(kTo, (carriedByRepAndMovedYm.get(kTo) || 0) + Number(v.valeur || 0));
-            carriedByRepAndOrigYm.set(kFrom, (carriedByRepAndOrigYm.get(kFrom) || 0) + Number(v.valeur || 0));
-          }
-        });
-
+        // `vue_classement_ventes` regroupe par `mois_commission` : les ventes non confirmées transférées comptent donc uniquement dans le mois de transfert
         state.classement.forEach(row => {
           if (!totalsByRep.has(row.representant_id)) {
             totalsByRep.set(row.representant_id, { nom: row.representant_nom, total: 0, monthsCount: new Set() });
           }
           const entry = totalsByRep.get(row.representant_id);
           if (!monthFilter || row.mois_commission === monthFilter) {
-            let adjTotal = Number(row.total_ventes || 0);
-            if (monthFilter) {
-              const k = `${row.representant_id}_${row.mois_commission}`;
-              adjTotal = adjTotal - (carriedByRepAndMovedYm.get(k) || 0) + (carriedByRepAndOrigYm.get(k) || 0);
-            }
+            const adjTotal = Number(row.total_ventes || 0);
             entry.total += Math.max(0, adjTotal);
             if (row.mois_commission) entry.monthsCount.add(row.mois_commission);
           }
@@ -7658,7 +7645,7 @@
                     ${entBadge(ent)}
                     <span class="text-xs font-bold text-indigo-700">${esc(rep)}</span>
                     <span class="text-[11px] text-slate-400">• ${v.date_vente}</span>
-                    ${v._carriedOverFrom ? `<span class="px-1.5 py-0.5 text-[10px] font-bold rounded-md bg-amber-50 text-amber-800 border border-amber-200">↪ Reportée de ${v._carriedOverFrom}</span>` : ''}
+                    ${v._carriedOverFrom ? `<span class="px-1.5 py-0.5 text-[10px] font-bold rounded-md bg-amber-50 text-amber-800 border border-amber-200">↪ Transférée de ${v._carriedOverFrom}</span>` : ''}
                   </div>
                   <div class="font-extrabold text-sm text-slate-900 mt-1 truncate">${esc(cli)}</div>
                   ${cleanNote ? `<div class="text-[11px] text-slate-400 truncate">${esc(cleanNote)}</div>` : ''}
@@ -7710,7 +7697,7 @@
             <td class="py-3 px-3 text-xs">
               <div class="font-semibold text-slate-900">${v.date_vente}</div>
               <div class="text-slate-400">${v.mois_commission}</div>
-              ${v._carriedOverFrom ? `<span class="mt-0.5 inline-block px-1.5 py-0.5 text-[10px] font-bold rounded-md bg-amber-50 text-amber-800 border border-amber-200" title="Comptabilisée dans les stats de ${v._carriedOverFrom}">↪ Reportée de ${v._carriedOverFrom}</span>` : ''}
+              ${v._carriedOverFrom ? `<span class="mt-0.5 inline-block px-1.5 py-0.5 text-[10px] font-bold rounded-md bg-amber-50 text-amber-800 border border-amber-200" title="Transférée depuis ${v._carriedOverFrom} (comptabilisée dans ce mois)">↪ Transférée de ${v._carriedOverFrom}</span>` : ''}
             </td>
             <td class="py-3 px-3 font-semibold text-slate-800">${esc(rep)}</td>
             <td class="py-3 px-3">
