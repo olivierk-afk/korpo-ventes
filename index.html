@@ -4980,9 +4980,9 @@
         }
         renderKpiDashboard();
       });
-      document.getElementById('kpi-select-rep').addEventListener('change', renderKpiDashboard);
+      document.getElementById('kpi-select-rep')?.addEventListener('change', renderKpiDashboard);
 
-      document.getElementById('btn-kpi-edit-toggle').addEventListener('click', () => {
+      document.getElementById('btn-kpi-edit-toggle')?.addEventListener('click', () => {
         if (currentProfile?.role !== 'admin') return;
         const selM = document.getElementById('kpi-select-month');
         if (selM.value.startsWith('YEAR_')) {
@@ -5005,13 +5005,13 @@
         }
         syncKpiEditorInputs();
       });
-      document.getElementById('btn-kpi-close-editor').addEventListener('click', () => {
+      document.getElementById('btn-kpi-close-editor')?.addEventListener('click', () => {
         document.getElementById('kpi-editor-panel').classList.add('hidden');
       });
 
-      document.getElementById('kpi-edit-rep').addEventListener('change', syncKpiEditorInputs);
+      document.getElementById('kpi-edit-rep')?.addEventListener('change', syncKpiEditorInputs);
 
-      document.getElementById('form-kpi-edit').addEventListener('submit', async (e) => {
+      document.getElementById('form-kpi-edit')?.addEventListener('submit', async (e) => {
         e.preventDefault();
         if (currentProfile?.role !== 'admin') return toast('Action réservée aux administrateurs.', 'error');
         const ym = document.getElementById('kpi-select-month').value;
@@ -5035,7 +5035,7 @@
         toast(`RDV mis à jour pour ${rep} (${kpiStore[ym]?.label || ym}) ✓`);
       });
 
-      document.getElementById('btn-kpi-export-csv').addEventListener('click', exportKpiCsv);
+      document.getElementById('btn-kpi-export-csv')?.addEventListener('click', exportKpiCsv);
     }
 
     function syncKpiEditorInputs() {
@@ -9697,7 +9697,7 @@
       await loadAllData();
     };
 
-    document.getElementById('btn-recalc-all-rates').addEventListener('click', async () => {
+    document.getElementById('btn-recalc-all-rates')?.addEventListener('click', async () => {
       if (!state.ventes.length) return toast('Aucune vente à recalculer.', 'error');
       const ok = await askConfirm(
         `Recalculer les ${state.ventes.length} ventes ?`,
@@ -9774,14 +9774,14 @@
       drawer.classList.remove('hidden');
       updateDrawerCommissionPreview();
     }
-    document.getElementById('btn-open-drawer').addEventListener('click', openNewSaleDrawer);
-    document.getElementById('btn-rep-open-drawer').addEventListener('click', openNewSaleDrawer);
-    document.getElementById('btn-mobile-fab-sale').addEventListener('click', openNewSaleDrawer);
-    document.getElementById('btn-close-drawer').addEventListener('click', () => drawer.classList.add('hidden'));
-    document.getElementById('btn-cancel-drawer').addEventListener('click', () => drawer.classList.add('hidden'));
+    document.getElementById('btn-open-drawer')?.addEventListener('click', openNewSaleDrawer);
+    document.getElementById('btn-rep-open-drawer')?.addEventListener('click', openNewSaleDrawer);
+    document.getElementById('btn-mobile-fab-sale')?.addEventListener('click', openNewSaleDrawer);
+    document.getElementById('btn-close-drawer')?.addEventListener('click', () => drawer.classList.add('hidden'));
+    document.getElementById('btn-cancel-drawer')?.addEventListener('click', () => drawer.classList.add('hidden'));
     drawer.addEventListener('click', (e) => { if (e.target === drawer) drawer.classList.add('hidden'); });
 
-    document.getElementById('btn-close-payslip').addEventListener('click', () => document.getElementById('payslip-modal').classList.add('hidden'));
+    document.getElementById('btn-close-payslip')?.addEventListener('click', () => document.getElementById('payslip-modal').classList.add('hidden'));
 
     const userMenuBtn = document.getElementById('btn-user-menu');
     const userMenuDropdown = document.getElementById('user-menu-dropdown');
@@ -9798,13 +9798,13 @@
     }
 
     const pwdModal = document.getElementById('pwd-modal');
-    document.getElementById('btn-open-pwd').addEventListener('click', () => {
+    document.getElementById('btn-open-pwd')?.addEventListener('click', () => {
       userMenuDropdown?.classList.add('hidden');
       pwdModal.classList.remove('hidden');
     });
-    document.getElementById('btn-close-pwd').addEventListener('click', () => pwdModal.classList.add('hidden'));
-    document.getElementById('btn-cancel-pwd').addEventListener('click', () => pwdModal.classList.add('hidden'));
-    document.getElementById('form-change-pwd').addEventListener('submit', async (e) => {
+    document.getElementById('btn-close-pwd')?.addEventListener('click', () => pwdModal.classList.add('hidden'));
+    document.getElementById('btn-cancel-pwd')?.addEventListener('click', () => pwdModal.classList.add('hidden'));
+    document.getElementById('form-change-pwd')?.addEventListener('submit', async (e) => {
       e.preventDefault();
       const p1 = document.getElementById('new-pwd-1').value;
       const p2 = document.getElementById('new-pwd-2').value;
@@ -9825,7 +9825,7 @@
       el.addEventListener('change', updateDrawerCommissionPreview);
     });
 
-    document.getElementById('select-all-ventes').addEventListener('change', (e) => {
+    document.getElementById('select-all-ventes')?.addEventListener('change', (e) => {
       const checked = e.target.checked;
       currentFilteredAdminSales.forEach(v => {
         if (checked) selectedSaleIds.add(v.id);
@@ -9835,7 +9835,7 @@
       updateBulkBar();
     });
 
-    document.getElementById('config-form').addEventListener('submit', (e) => {
+    document.getElementById('config-form')?.addEventListener('submit', (e) => {
       e.preventDefault();
       lsSet('korpo_sb_url', document.getElementById('cfg-url').value.trim());
       lsSet('korpo_sb_key', document.getElementById('cfg-key').value.trim());
@@ -9848,17 +9848,17 @@
     let parsedWaSales = [];
 
     const waModal = document.getElementById('wa-modal');
-    document.getElementById('btn-open-wa').addEventListener('click', () => {
+    document.getElementById('btn-open-wa')?.addEventListener('click', () => {
       waModal.classList.remove('hidden');
     });
-    document.getElementById('btn-close-wa').addEventListener('click', () => {
+    document.getElementById('btn-close-wa')?.addEventListener('click', () => {
       waModal.classList.add('hidden');
     });
     waModal.addEventListener('click', (e) => {
       if (e.target === waModal) waModal.classList.add('hidden');
     });
 
-    document.getElementById('wa-file-input').addEventListener('change', async (e) => {
+    document.getElementById('wa-file-input')?.addEventListener('change', async (e) => {
       const file = e.target.files[0];
       if (!file) return;
       const txt = await file.text();
@@ -9867,7 +9867,7 @@
       e.target.value = '';
     });
 
-    document.getElementById('btn-wa-scan').addEventListener('click', scanWhatsAppConversation);
+    document.getElementById('btn-wa-scan')?.addEventListener('click', scanWhatsAppConversation);
 
     function detectRepFromSender(senderRaw) {
       const s = senderRaw.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
@@ -10065,7 +10065,7 @@
       toast(`${parsedWaSales.length} vente(s) détectée(s) — vérifiez et confirmez`);
     }
 
-    document.getElementById('btn-wa-import-all').addEventListener('click', async () => {
+    document.getElementById('btn-wa-import-all')?.addEventListener('click', async () => {
       const toImport = parsedWaSales.filter(x => x.selected && x.valeur > 0);
       if (!toImport.length) return toast('Aucune vente sélectionnée.', 'error');
 
@@ -10106,7 +10106,7 @@
       }
     });
 
-    document.getElementById('btn-reset-cfg').addEventListener('click', () => {
+    document.getElementById('btn-reset-cfg')?.addEventListener('click', () => {
       localStorage.removeItem('korpo_sb_url');
       localStorage.removeItem('korpo_sb_key');
       showScreen('screen-config');
@@ -10143,7 +10143,7 @@
       toast('Identifiants mémorisés effacés');
     });
 
-    document.getElementById('login-form').addEventListener('submit', async (e) => {
+    document.getElementById('login-form')?.addEventListener('submit', async (e) => {
       e.preventDefault();
       const errBox = document.getElementById('login-error');
       errBox.classList.add('hidden');
@@ -10207,7 +10207,7 @@
       performAppLogout();
     });
 
-    document.getElementById('btn-refresh').addEventListener('click', async () => {
+    document.getElementById('btn-refresh')?.addEventListener('click', async () => {
       const btn = document.getElementById('btn-refresh');
       btn.disabled = true;
       try {
@@ -10338,13 +10338,13 @@
     bindPeriodSelectorGroup('dash-filter', renderAdminDashboard);
 
     document.getElementById('filter-rep-statut')?.addEventListener('change', renderMesVentes);
-    document.getElementById('filter-admin-scope').addEventListener('change', renderMesVentes);
-    document.getElementById('search-rep-ventes').addEventListener('input', renderMesVentes);
+    document.getElementById('filter-admin-scope')?.addEventListener('change', renderMesVentes);
+    document.getElementById('search-rep-ventes')?.addEventListener('input', renderMesVentes);
 
-    document.getElementById('vente-entreprise').addEventListener('change', updateClientDatalist);
-    document.getElementById('taux-ent').addEventListener('change', updateTauxClientSelect);
+    document.getElementById('vente-entreprise')?.addEventListener('change', updateClientDatalist);
+    document.getElementById('taux-ent')?.addEventListener('change', updateTauxClientSelect);
 
-    document.getElementById('form-new-vente').addEventListener('submit', async (e) => {
+    document.getElementById('form-new-vente')?.addEventListener('submit', async (e) => {
       e.preventDefault();
       try {
         const editId = document.getElementById('vente-edit-id').value;
@@ -10527,7 +10527,7 @@
       document.getElementById(id).addEventListener('input', renderAdminVentes);
       document.getElementById(id).addEventListener('change', renderAdminVentes);
     });
-    document.getElementById('btn-admin-clear-filters').addEventListener('click', () => {
+    document.getElementById('btn-admin-clear-filters')?.addEventListener('click', () => {
       document.getElementById('admin-search').value = '';
       document.getElementById('admin-filter-rep').value = '';
       document.getElementById('admin-filter-ent').value = '';
@@ -10561,7 +10561,7 @@
       toast('Fichier de paie consolidé exporté ✓');
     });
 
-    document.getElementById('btn-delete-all-ventes').addEventListener('click', async () => {
+    document.getElementById('btn-delete-all-ventes')?.addEventListener('click', async () => {
       if (!state.ventes.length) return toast('Aucune vente à supprimer.', 'error');
       const ok = await askConfirm(
         `Mettre les ${state.ventes.length} ventes à la corbeille ?`,
@@ -10595,7 +10595,7 @@
       await loadAllData();
     });
 
-    document.getElementById('form-taux').addEventListener('submit', async (e) => {
+    document.getElementById('form-taux')?.addEventListener('submit', async (e) => {
       e.preventDefault();
       const repId = document.getElementById('taux-rep').value;
       const entId = document.getElementById('taux-ent').value;
@@ -10633,7 +10633,7 @@
       await loadAllData();
     });
 
-    document.getElementById('form-new-entreprise').addEventListener('submit', async (e) => {
+    document.getElementById('form-new-entreprise')?.addEventListener('submit', async (e) => {
       e.preventDefault();
       const nom = document.getElementById('new-entreprise-nom').value.trim();
       const { error } = await sb.from('entreprises').insert({ nom });
@@ -10643,7 +10643,7 @@
       await loadAllData();
     });
 
-    document.getElementById('form-new-rep').addEventListener('submit', async (e) => {
+    document.getElementById('form-new-rep')?.addEventListener('submit', async (e) => {
       e.preventDefault();
       const payload = {
         nom: document.getElementById('new-rep-nom').value.trim(),
@@ -10658,7 +10658,7 @@
       await loadAllData();
     });
 
-    document.getElementById('btn-csv-export').addEventListener('click', () => {
+    document.getElementById('btn-csv-export')?.addEventListener('click', () => {
       const headers = ['date_vente', 'mois_commission', 'representant', 'entreprise', 'client', 'valeur', 'taux_rep', 'commission_rep', 'taux_olivier', 'commission_olivier', 'statut_depot', 'statut_paiement', 'note'];
       const rows = state.ventes.map(v => [
         csvCell(v.date_vente),
@@ -10731,7 +10731,7 @@
       };
     }
 
-    document.getElementById('csv-import-input').addEventListener('change', async (e) => {
+    document.getElementById('csv-import-input')?.addEventListener('change', async (e) => {
       const input = e.target;
       const file = input.files[0];
       if (!file) return;
