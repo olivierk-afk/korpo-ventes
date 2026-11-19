@@ -2236,8 +2236,14 @@
             <button id="btn-open-auto-email-modal" type="button" class="px-3.5 py-2 text-xs font-bold text-indigo-800 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 rounded-xl transition flex items-center gap-1.5">
               <span>✉️</span> Envoyer les relevés par courriel
             </button>
+            <button id="btn-dash-future-view" type="button" onclick="toggleDashFutureQuickView()" title="Basculer en 1 clic sur toutes les ventes et commissions des mois à venir" class="px-3.5 py-2 text-xs font-extrabold text-emerald-900 bg-emerald-50 hover:bg-emerald-100 border border-emerald-300 rounded-xl transition flex items-center gap-1.5 shadow-2xs">
+              <span>🔮</span>
+              <span>Vue Futur</span>
+              <span id="dash-future-btn-badge" class="px-1.5 py-0.2 text-[10px] font-extrabold rounded-full bg-emerald-600 text-white tabular-nums">0</span>
+            </button>
             <select id="dash-filter-period" class="px-3.5 py-2 text-xs font-bold bg-indigo-50/70 text-indigo-950 border border-indigo-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-600 cursor-pointer">
               <option value="all" selected>🗓️ Toute l'année / Tout</option>
+              <option value="future">🔮 Vue Futur (Mois à venir)</option>
               <option value="this_week">📆 Cette semaine</option>
               <option value="this_month">📅 Ce mois-ci</option>
               <option value="this_quarter">📊 Ce trimestre</option>
@@ -5107,7 +5113,7 @@
     function renderExecutiveForecast() {
       const dashPeriod = readPeriodFilterState('dash-filter');
       const isSingleMonthMode = dashPeriod.mode === 'this_month' || dashPeriod.mode === 'specific_month';
-      const targetYm = dashPeriod.singleMonth || currentMonthStr;
+      let targetYm = dashPeriod.singleMonth || currentMonthStr;
       const mObj = ensureKpiMonthStructure(targetYm);
       const isCurrentMonth = isSingleMonthMode && targetYm === currentMonthStr;
 
@@ -5122,6 +5128,9 @@
           coveredMonths = Array.from(allKnownMonths).filter(ym => getQuarterForMonth(ym) === dashPeriod.currentQuarter).sort();
         } else if (dashPeriod.mode === 'this_year') {
           coveredMonths = Array.from(allKnownMonths).filter(ym => ym.startsWith(dashPeriod.currentYear)).sort();
+        } else if (dashPeriod.mode === 'future') {
+          coveredMonths = Array.from(allKnownMonths).filter(ym => ym > currentMonthStr).sort();
+          if (coveredMonths.length) targetYm = coveredMonths[0];
         } else if (dashPeriod.mode === 'all') {
           coveredMonths = Array.from(allKnownMonths).sort();
         } else {
@@ -9539,8 +9548,36 @@
       }).join('');
     }
 
+    window.toggleDashFutureQuickView = () => {
+      const sel = document.getElementById('dash-filter-period');
+      if (!sel) return;
+      sel.value = sel.value === 'future' ? 'all' : 'future';
+      syncPeriodInputsVisibility('dash-filter', false);
+      renderAdminDashboard();
+      if (sel.value === 'future') {
+        toast('🔮 Vue Futur activée : affichage des ventes et commissions à venir');
+      }
+    };
+
+    function syncDashFutureButtonState() {
+      const btn = document.getElementById('btn-dash-future-view');
+      const badge = document.getElementById('dash-future-btn-badge');
+      const futureCount = (state.ventes || []).filter(v => Boolean(getSaleTargetFutureMonth(v))).length;
+      if (badge) badge.textContent = String(futureCount);
+      if (!btn) return;
+      const isFutureActive = document.getElementById('dash-filter-period')?.value === 'future';
+      if (isFutureActive) {
+        btn.className = 'px-3.5 py-2 text-xs font-extrabold text-white bg-emerald-600 hover:bg-emerald-700 border border-emerald-600 rounded-xl transition flex items-center gap-1.5 shadow-sm ring-2 ring-emerald-400/40';
+        if (badge) badge.className = 'px-1.5 py-0.2 text-[10px] font-extrabold rounded-full bg-white text-emerald-800 tabular-nums';
+      } else {
+        btn.className = 'px-3.5 py-2 text-xs font-extrabold text-emerald-900 bg-emerald-50 hover:bg-emerald-100 border border-emerald-300 rounded-xl transition flex items-center gap-1.5 shadow-2xs';
+        if (badge) badge.className = 'px-1.5 py-0.2 text-[10px] font-extrabold rounded-full bg-emerald-600 text-white tabular-nums';
+      }
+    }
+
     function renderAdminDashboard() {
       syncCommDisplayModeButtons();
+      syncDashFutureButtonState();
       const dashPeriod = readPeriodFilterState('dash-filter');
       const m = dashPeriod.singleMonth;
       const statsList = state.ventes.filter(v => matchesSalePeriod(v, dashPeriod, true));
@@ -9588,7 +9625,7 @@
       document.getElementById('dash-monthly-chart').innerHTML = monthsSorted.length
         ? monthsSorted.map(([ym, total]) => {
             const hPct = Math.max(10, Math.round((total / maxVal) * 100));
-            const isSelected = m === ym;
+            const isSelected = dashPeriod.mode === 'future' ? (ym > currentMonthStr) : (m === ym);
             return `
               <button onclick="selectDashMonth('${ym}')" class="group flex flex-col items-center gap-2 text-center focus:outline-none">
                 <span class="text-[10px] font-bold text-slate-500 group-hover:text-indigo-600 tabular-nums">${Math.round(total / 1000)}k$</span>
@@ -11300,6 +11337,7 @@
       else if (mode === 'this_month') { label = `Ce mois-ci (${formatYearMonthLabelFr(currentMonthStr)})`; singleMonth = currentMonthStr; }
       else if (mode === 'this_quarter') label = `Ce trimestre (${currentQuarter.replace('-Q', ' • T')})`;
       else if (mode === 'this_year') label = `Cette année (${currentYear})`;
+      else if (mode === 'future') label = `Vue Futur (Mois à venir > ${formatYearMonthLabelFr(currentMonthStr)})`;
       else if (mode === 'specific_month') { label = formatYearMonthLabelFr(monthVal); singleMonth = monthVal; }
       else if (mode === 'specific_date') { label = formatDateLabelFr(dateVal); singleMonth = dateVal ? dateVal.slice(0, 7) : ''; }
 
@@ -11327,6 +11365,9 @@
       }
       if (mode === 'this_year') {
         return (ym || '').startsWith(currentYear);
+      }
+      if (mode === 'future') {
+        return Boolean(getSaleTargetFutureMonth(v) || (ym && ym > currentMonthStr));
       }
       if (mode === 'specific_month') {
         return !monthVal || ym === monthVal;
