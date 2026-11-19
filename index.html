@@ -544,12 +544,12 @@
   </div>
 
   <!-- BOUTON FLOTTANT MOBILE (+ DÉCLARER UNE VENTE) -->
-  <button id="btn-mobile-fab-sale" title="Déclarer une vente" class="sm:hidden fixed bottom-5 right-5 z-30 w-14 h-14 rounded-full bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white shadow-xl shadow-emerald-600/35 flex items-center justify-center text-2xl font-bold transition no-print">
+  <button id="btn-mobile-fab-sale" title="Déclarer une vente" class="hidden sm:hidden fixed bottom-5 right-5 z-30 w-14 h-14 rounded-full bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white shadow-xl shadow-emerald-600/35 flex items-center justify-center text-2xl font-bold transition no-print">
     💵
   </button>
 
   <!-- BULLE FLOTTANTE EN BAS À GAUCHE : CANAL DE CONVERSATION ÉQUIPE (3 POINTS) -->
-  <button id="btn-floating-chat-bubble" type="button" onclick="openTeamChatModal()" title="Ouvrir Korpo Top Earner 🏆" class="fixed bottom-5 left-5 z-30 w-14 h-14 rounded-full bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white shadow-xl shadow-indigo-600/35 flex items-center justify-center transition no-print group">
+  <button id="btn-floating-chat-bubble" type="button" onclick="openTeamChatModal()" title="Ouvrir Korpo Top Earner 🏆" class="hidden fixed bottom-5 left-5 z-30 w-14 h-14 rounded-full bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white shadow-xl shadow-indigo-600/35 flex items-center justify-center transition no-print group">
     <svg class="w-7 h-7 transition-transform group-hover:scale-105" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
       <path d="M12 3C6.477 3 2 6.805 2 11.5c0 2.31 1.084 4.404 2.845 5.936-.234 1.32-.833 2.573-1.456 3.553a.5.5 0 0 0 .485.764c2.01-.245 3.927-.968 5.29-1.716.905.298 1.855.463 2.836.463 5.523 0 10-3.805 10-8.5S17.523 3 12 3Zm-4 9.75a1.25 1.25 0 1 1 0-2.5 1.25 1.25 0 0 1 0 2.5Zm4 0a1.25 1.25 0 1 1 0-2.5 1.25 1.25 0 0 1 0 2.5Zm4 0a1.25 1.25 0 1 1 0-2.5 1.25 1.25 0 0 1 0 2.5Z"/>
     </svg>
@@ -557,8 +557,8 @@
   </button>
 
   <!-- FENÊTRE MODALE PAR-DESSUS : CANAL DE CONVERSATION ÉQUIPE & VENTES EN DIRECT -->
-  <div id="chat-modal-backdrop" class="hidden fixed inset-0 z-40 bg-slate-950/65 backdrop-blur-sm flex items-center justify-center p-3 sm:p-5 overflow-y-auto no-print">
-    <div class="bg-white w-full max-w-2xl h-[85vh] max-h-[720px] min-h-[440px] rounded-3xl shadow-2xl border border-slate-200/90 flex flex-col overflow-hidden animate-drawer my-auto">
+  <div id="chat-modal-backdrop" class="hidden fixed inset-0 z-40 bg-slate-950/65 backdrop-blur-sm flex items-center justify-center p-3 sm:p-5 overflow-hidden overscroll-none no-print">
+    <div class="bg-white w-full max-w-2xl h-[82dvh] sm:h-[85vh] max-h-[720px] min-h-0 rounded-3xl shadow-2xl border border-slate-200/90 flex flex-col overflow-hidden animate-drawer">
       <!-- EN-TÊTE DU CANAL -->
       <div class="px-4 sm:px-6 py-4 bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white flex items-center justify-between gap-3 shrink-0 border-b border-slate-800/80">
         <div class="flex items-center gap-3 min-w-0">
@@ -587,7 +587,7 @@
       </div>
 
       <!-- FIL DES MESSAGES ET DES VENTES -->
-      <div id="chat-messages-feed" class="flex-1 overflow-y-auto p-4 sm:p-5 space-y-3 bg-slate-50/70">
+      <div id="chat-messages-feed" class="flex-1 min-h-0 overflow-y-auto overscroll-contain touch-pan-y p-4 sm:p-5 space-y-3 bg-slate-50/70" style="-webkit-overflow-scrolling: touch;">
         <div class="py-12 text-center text-xs text-slate-400">Chargement du canal de conversation...</div>
       </div>
 
@@ -3531,6 +3531,13 @@
       ['screen-config', 'screen-login', 'screen-app'].forEach(id => {
         document.getElementById(id).classList.toggle('hidden', id !== name);
       });
+      const isAppActive = name === 'screen-app' && Boolean(currentProfile);
+      document.getElementById('btn-mobile-fab-sale')?.classList.toggle('hidden', !isAppActive);
+      document.getElementById('btn-floating-chat-bubble')?.classList.toggle('hidden', !isAppActive);
+      if (!isAppActive) {
+        closeTeamChatModal();
+        document.getElementById('sale-drawer-backdrop')?.classList.add('hidden');
+      }
     }
 
     function getCredentials() {
@@ -3645,6 +3652,8 @@
       });
 
       if (!isAdminRole) {
+        document.getElementById('admin-notif-wrapper')?.classList.add('hidden');
+        document.getElementById('admin-pending-banner')?.classList.add('hidden');
         document.getElementById('kpi-editor-panel')?.classList.add('hidden');
         document.getElementById('kpi-targets-panel')?.classList.add('hidden');
         document.getElementById('kpi-import-modal')?.classList.add('hidden');
@@ -3798,21 +3807,29 @@
       if (tabId === 'tab-kpi') renderKpiDashboard();
     }
 
+    function setChatBackgroundScrollLocked(locked) {
+      document.documentElement.style.overflow = locked ? 'hidden' : '';
+      document.body.style.overflow = locked ? 'hidden' : '';
+      document.body.style.overscrollBehavior = locked ? 'none' : '';
+    }
+
     window.openTeamChatModal = () => {
       const backdrop = document.getElementById('chat-modal-backdrop');
       if (!backdrop) return;
       backdrop.classList.remove('hidden');
+      setChatBackgroundScrollLocked(true);
       activeChatTabOpen = true;
       markTeamChatAsRead();
       renderTeamChatFeed(true);
       setTimeout(() => {
-        document.getElementById('chat-message-input')?.focus();
+        document.getElementById('chat-message-input')?.focus({ preventScroll: true });
       }, 120);
     };
 
     window.closeTeamChatModal = () => {
       const backdrop = document.getElementById('chat-modal-backdrop');
       if (backdrop) backdrop.classList.add('hidden');
+      setChatBackgroundScrollLocked(false);
       activeChatTabOpen = false;
     };
 
@@ -4408,7 +4425,11 @@
     }
 
     function renderAdminNotifications() {
-      if (!currentProfile || currentProfile.role !== 'admin') return;
+      if (!currentProfile || currentProfile.role !== 'admin') {
+        document.getElementById('admin-notif-wrapper')?.classList.add('hidden');
+        document.getElementById('admin-pending-banner')?.classList.add('hidden');
+        return;
+      }
       const wrapper = document.getElementById('admin-notif-wrapper');
       const badge = document.getElementById('admin-notif-badge');
       const listEl = document.getElementById('admin-notif-list');
@@ -7042,6 +7063,7 @@
 
       const backdrop = document.getElementById('chat-modal-backdrop');
       if (backdrop) backdrop.classList.remove('hidden');
+      setChatBackgroundScrollLocked(true);
       activeChatTabOpen = true;
       markTeamChatAsRead();
       renderTeamChatFeed(false);
@@ -7092,20 +7114,35 @@
     function buildTeamChatMessagesFromState() {
       const itemsMap = new Map();
 
+      const isAdminViewer = currentProfile?.role === 'admin';
+      const unconfirmedOtherSaleIds = new Set(
+        (state.ventes || [])
+          .filter(v => String(v.representant_id) !== String(currentProfile?.id) && v.statut_depot === 'a_confirmer')
+          .map(v => `sale_${v.id}`)
+      );
+
       // 1. Messages & annonces stockés dans kpi_hebdo (semaine_index = -12)
       (kpiHebdoRows || []).forEach(r => {
         if (Number(r.semaine_index) !== -12 || !r.representant_nom) return;
         try {
           const parsed = JSON.parse(r.representant_nom);
           if (parsed && parsed.id) {
+            if (!isAdminViewer && parsed.kind === 'sale' && unconfirmedOtherSaleIds.has(String(parsed.id))) {
+              return;
+            }
             itemsMap.set(String(parsed.id), parsed);
           }
         } catch (e) {}
       });
 
-      // 2. Garantir que toutes les ventes récentes de `state.ventes` apparaissent automatiquement dans le canal
+      // 2. Garantir que toutes les ventes récentes apparaissent dans le canal (les ventes non confirmées des autres reps restent invisibles pour un représentant)
       const isAdminUser = currentProfile?.role === 'admin';
       const sortedSales = [...(state.ventes || [])]
+        .filter(v => {
+          if (isAdminUser) return true;
+          if (String(v.representant_id) === String(currentProfile?.id)) return true;
+          return v.statut_depot === 'depot_recu';
+        })
         .sort((a, b) => String(a.created_at || a.date_vente || '').localeCompare(String(b.created_at || b.date_vente || '')))
         .slice(-40);
 
@@ -7649,7 +7686,7 @@
         }));
         const ownIds = new Set(ownSalesNormalized.map(v => String(v.id)));
         const otherRepsPublicSales = (teamVentesPublicRows || [])
-          .filter(v => String(v.representant_id) !== String(currentProfile.id) && !ownIds.has(String(v.id)))
+          .filter(v => String(v.representant_id) !== String(currentProfile.id) && !ownIds.has(String(v.id)) && v.statut_depot === 'depot_recu')
           .map(v => {
             const rObj = state.representants.find(r => String(r.id) === String(v.representant_id));
             const cRow = (state.classement || []).find(c => String(c.representant_id) === String(v.representant_id));
