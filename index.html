@@ -119,17 +119,22 @@
       color-scheme: dark;
     }
     html.dark body {
-      background-color: #0b1120 !important;
-      color: #f1f5f9 !important;
+      background-color: #060911 !important;
+      color: #f8fafc !important;
     }
 
-    /* Hiérarchie claire des surfaces (Fond #0b1120 -> Cartes #131c2e -> Sous-blocs #1a253c) */
+    /* 1. HIÉRARCHIE DE PROFONDEUR BIEN MARQUÉE (4 NIVEAUX DISTINCTS)
+       Niveau 0 : Fond de page (#060911 - quasi noir profond)
+       Niveau 1 : Cartes principales (.bg-white -> #111827 avec bordure nette #334155 + ombre portée)
+       Niveau 2 : Sous-cartes & en-têtes de tableaux (.bg-slate-50 -> #1a2436)
+       Niveau 3 : Badges, pilules & contrôles secondaires (.bg-slate-100 -> #25334d) */
     html.dark .bg-white,
     html.dark .bg-white\/95 {
-      background-color: #131c2e !important;
+      background-color: #111827 !important;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.04) !important;
     }
     html.dark .bg-white\/80 {
-      background-color: #0f172a !important;
+      background-color: #0d1320 !important;
     }
     html.dark .bg-slate-50,
     html.dark .bg-slate-50\/90,
@@ -138,26 +143,35 @@
     html.dark .bg-slate-50\/60,
     html.dark .bg-slate-50\/50,
     html.dark .bg-slate-50\/40 {
-      background-color: #192338 !important;
+      background-color: #1a2436 !important;
     }
     html.dark .bg-slate-100,
     html.dark .bg-slate-100\/80 {
-      background-color: #202c44 !important;
+      background-color: #25334d !important;
     }
     html.dark .bg-slate-200,
     html.dark .bg-slate-200\/70 {
-      background-color: #293754 !important;
+      background-color: #334463 !important;
     }
 
-    /* Barres de progression : piste sombre lisible au lieu de blanc éblouissant */
+    /* En-têtes de tableaux (thead) bien détachés des lignes du tableau */
+    html.dark table thead tr {
+      background-color: #1e293b !important;
+    }
+    html.dark table tbody tr:nth-child(even) {
+      background-color: rgba(255, 255, 255, 0.018);
+    }
+
+    /* Barres de progression : piste creusée sombre #060911 bien visible */
     html.dark #monthly-goal-card .bg-white.rounded-full,
     html.dark .rounded-full.bg-slate-100,
     html.dark .rounded-full.bg-slate-200\/70 {
-      background-color: #0b1120 !important;
-      border-color: #2d3b55 !important;
+      background-color: #060911 !important;
+      border: 1px solid #3b4c6b !important;
+      box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.6) !important;
     }
 
-    /* Pastilles & cartes colorées douces en mode sombre (zéro clash, zéro fond blanc résiduel) */
+    /* 2. CARTES & PASTILLES COLORÉES À FORTE LISIBILITÉ */
     html.dark .bg-indigo-50,
     html.dark .bg-indigo-50\/80,
     html.dark .bg-indigo-50\/70,
@@ -165,7 +179,7 @@
     html.dark .bg-indigo-50\/40,
     html.dark .bg-indigo-50\/30,
     html.dark .bg-indigo-100 {
-      background-color: rgba(99, 102, 241, 0.18) !important;
+      background-color: rgba(79, 70, 229, 0.24) !important;
     }
     html.dark .bg-emerald-50,
     html.dark .bg-emerald-50\/80,
@@ -176,7 +190,7 @@
     html.dark .bg-emerald-50\/30,
     html.dark .bg-emerald-50\/20,
     html.dark .bg-emerald-100 {
-      background-color: rgba(16, 185, 129, 0.16) !important;
+      background-color: rgba(16, 185, 129, 0.20) !important;
     }
     html.dark .bg-amber-50,
     html.dark .bg-amber-50\/80,
@@ -184,56 +198,58 @@
     html.dark .bg-amber-50\/60,
     html.dark .bg-amber-100,
     html.dark .bg-amber-200 {
-      background-color: rgba(245, 158, 11, 0.18) !important;
+      background-color: rgba(245, 158, 11, 0.22) !important;
     }
     html.dark .bg-rose-50,
     html.dark .bg-rose-100 {
-      background-color: rgba(244, 63, 94, 0.18) !important;
+      background-color: rgba(244, 63, 94, 0.22) !important;
     }
     html.dark .bg-sky-50,
     html.dark .bg-sky-50\/50,
     html.dark .bg-sky-100 {
-      background-color: rgba(56, 189, 248, 0.18) !important;
+      background-color: rgba(14, 165, 233, 0.22) !important;
     }
     html.dark .bg-purple-50,
     html.dark .bg-purple-50\/50,
     html.dark .bg-purple-100 {
-      background-color: rgba(192, 132, 252, 0.18) !important;
+      background-color: rgba(168, 85, 247, 0.22) !important;
     }
     html.dark .from-emerald-50,
     html.dark .from-emerald-50\/70,
     html.dark .from-emerald-50\/90 {
-      --tw-gradient-from: rgba(16, 185, 129, 0.16) var(--tw-gradient-from-position) !important;
+      --tw-gradient-from: rgba(16, 185, 129, 0.20) var(--tw-gradient-from-position) !important;
       --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to) !important;
     }
     html.dark .via-white {
-      --tw-gradient-stops: var(--tw-gradient-from), #162136, var(--tw-gradient-to) !important;
+      --tw-gradient-stops: var(--tw-gradient-from), #151f33, var(--tw-gradient-to) !important;
     }
     html.dark .to-teal-50,
     html.dark .to-teal-50\/40 {
-      --tw-gradient-to: rgba(20, 184, 166, 0.09) var(--tw-gradient-to-position) !important;
+      --tw-gradient-to: rgba(20, 184, 166, 0.14) var(--tw-gradient-to-position) !important;
     }
     html.dark .to-indigo-50\/70,
     html.dark .to-indigo-50\/60 {
-      --tw-gradient-to: rgba(99, 102, 241, 0.16) var(--tw-gradient-to-position) !important;
-    }
-    html.dark #chat-messages-feed {
-      background-color: #0e1626 !important;
-    }
-    html.dark #chat-messages-feed .chat-sale-card {
-      background-image: linear-gradient(135deg, rgba(16, 185, 129, 0.14), #162238 55%, rgba(99, 102, 241, 0.16)) !important;
-      border-color: rgba(52, 211, 153, 0.32) !important;
-    }
-    html.dark #chat-messages-feed .chat-msg-bubble-other {
-      background-color: #19243b !important;
-      border-color: #2c3c5c !important;
-      color: #f1f5f9 !important;
+      --tw-gradient-to: rgba(99, 102, 241, 0.20) var(--tw-gradient-to-position) !important;
     }
 
-    /* En-têtes de modales et barre supérieure bien distincts des cartes */
+    /* Canal de conversation Korpo Top Earner */
+    html.dark #chat-messages-feed {
+      background-color: #080d17 !important;
+    }
+    html.dark #chat-messages-feed .chat-sale-card {
+      background-image: linear-gradient(135deg, rgba(16, 185, 129, 0.18), #141e30 55%, rgba(99, 102, 241, 0.20)) !important;
+      border-color: rgba(52, 211, 153, 0.45) !important;
+    }
+    html.dark #chat-messages-feed .chat-msg-bubble-other {
+      background-color: #1c273d !important;
+      border-color: #364766 !important;
+      color: #f8fafc !important;
+    }
+
+    /* Barre supérieure et en-têtes de fenêtres modales */
     html.dark header.bg-slate-900,
     html.dark header .bg-slate-900\/95 {
-      background-color: #090e1a !important;
+      background-color: #04070d !important;
       border-color: #1e293b !important;
     }
     html.dark #sale-drawer-backdrop .bg-slate-900,
@@ -246,80 +262,82 @@
     html.dark #chat-mention-notif-dropdown .bg-slate-900,
     html.dark #admin-notif-dropdown .bg-slate-900,
     html.dark #user-menu-dropdown .bg-slate-900 {
-      background-color: #0b1120 !important;
-      border-bottom: 1px solid #26334d !important;
+      background-color: #070b14 !important;
+      border-bottom: 1px solid #334155 !important;
     }
     html.dark #toast-container > div.bg-slate-900 {
       background-color: #1e293b !important;
-      border: 1px solid #475569 !important;
+      border: 1px solid #64748b !important;
     }
 
-    /* Bordures nettes et douces en mode sombre */
+    /* 3. BORDURES ET SÉPARATEURS VISIBLES POUR DÉLIMITER CHAQUE BLOC */
     html.dark .border-slate-100 {
-      border-color: #1e293b !important;
+      border-color: #243047 !important;
     }
     html.dark .border-slate-200,
     html.dark .border-slate-200\/90,
     html.dark .border-slate-200\/80,
     html.dark .border-slate-300 {
-      border-color: #27344e !important;
+      border-color: #334155 !important;
     }
     html.dark .border-indigo-100,
     html.dark .border-indigo-200,
     html.dark .border-indigo-200\/80,
     html.dark .border-indigo-200\/70,
     html.dark .border-indigo-300 {
-      border-color: rgba(129, 140, 248, 0.35) !important;
+      border-color: rgba(129, 140, 248, 0.48) !important;
     }
     html.dark .border-emerald-200,
     html.dark .border-emerald-200\/80,
     html.dark .border-emerald-300,
     html.dark .border-emerald-400\/50,
     html.dark .border-emerald-400\/70 {
-      border-color: rgba(52, 211, 153, 0.35) !important;
+      border-color: rgba(52, 211, 153, 0.48) !important;
     }
     html.dark .border-amber-200,
     html.dark .border-amber-200\/80,
     html.dark .border-amber-300 {
-      border-color: rgba(251, 191, 36, 0.38) !important;
+      border-color: rgba(251, 191, 36, 0.50) !important;
     }
     html.dark .border-rose-200 {
-      border-color: rgba(251, 113, 133, 0.38) !important;
+      border-color: rgba(251, 113, 133, 0.50) !important;
     }
     html.dark .border-sky-200,
     html.dark .border-sky-200\/80 {
-      border-color: rgba(56, 189, 248, 0.35) !important;
+      border-color: rgba(56, 189, 248, 0.48) !important;
     }
     html.dark .border-purple-200,
     html.dark .border-purple-200\/80 {
-      border-color: rgba(192, 132, 252, 0.35) !important;
+      border-color: rgba(192, 132, 252, 0.48) !important;
     }
     html.dark .divide-slate-100 > :not([hidden]) ~ :not([hidden]),
     html.dark .divide-slate-200 > :not([hidden]) ~ :not([hidden]) {
-      border-color: #222f49 !important;
+      border-color: #26334a !important;
     }
 
-    /* Textes à contraste élevé en mode sombre (WCAG AA/AAA) */
+    /* 4. CONTRASTE MAXIMUM DES TEXTES (ZERO TEXTE TERNE OU ILLISIBLE) */
     html.dark .text-slate-900,
     html.dark .text-slate-800 {
-      color: #f8fafc !important;
+      color: #ffffff !important;
     }
     html.dark .text-slate-700 {
-      color: #e2e8f0 !important;
+      color: #f1f5f9 !important;
     }
     html.dark .text-slate-600 {
+      color: #e2e8f0 !important;
+    }
+    html.dark .text-slate-500 {
       color: #cbd5e1 !important;
     }
-    html.dark .text-slate-500,
     html.dark .text-slate-400 {
-      color: #94a3b8 !important;
+      color: #a8b8cf !important;
     }
     html.dark .text-indigo-950,
     html.dark .text-indigo-900,
     html.dark .text-indigo-800,
     html.dark .text-indigo-700,
     html.dark .text-indigo-600 {
-      color: #a5b4fc !important;
+      color: #c7d2fe !important;
     }
     html.dark .text-emerald-950,
     html.dark .text-emerald-900,
@@ -328,29 +346,29 @@
     html.dark .text-emerald-700,
     html.dark .text-emerald-700\/80,
     html.dark .text-emerald-600 {
-      color: #34d399 !important;
+      color: #6ee7b7 !important;
     }
     html.dark .text-amber-950,
     html.dark .text-amber-900,
     html.dark .text-amber-800,
     html.dark .text-amber-700,
     html.dark .text-amber-600 {
-      color: #fcd34d !important;
+      color: #fde68a !important;
     }
     html.dark .text-rose-700,
     html.dark .text-rose-600 {
-      color: #fda4af !important;
+      color: #fecdd3 !important;
     }
     html.dark .text-sky-700,
     html.dark .text-sky-800 {
-      color: #7dd3fc !important;
+      color: #bae6fd !important;
     }
     html.dark .text-purple-700,
     html.dark .text-purple-800 {
-      color: #d8b4fe !important;
+      color: #e9d5ff !important;
     }
 
-    /* Préserver les textes blancs sur boutons pleins colorés et cartes héros */
+    /* Préserver le texte blanc pur sur les boutons pleins et cartes héros */
     html.dark .bg-indigo-600,
     html.dark .bg-emerald-600,
     html.dark .bg-rose-600,
@@ -371,45 +389,46 @@
     }
     html.dark .bg-gradient-to-br.from-slate-900.to-indigo-950 {
       background-image: linear-gradient(to bottom right, #1e1b4b, #0f172a) !important;
-      border-color: rgba(129, 140, 248, 0.35) !important;
+      border-color: rgba(129, 140, 248, 0.45) !important;
     }
 
-    /* Champs de formulaire (inputs, selects, textareas) en mode sombre */
+    /* 5. CHAMPS DE SAISIE, LISTES DÉROULANTES & ÉCRAN DE CONNEXION */
     html.dark input:not([type="checkbox"]):not([type="radio"]):not([type="file"]),
     html.dark select,
     html.dark textarea {
-      background-color: #182236 !important;
-      border-color: #334155 !important;
-      color: #f8fafc !important;
+      background-color: #090e1a !important;
+      border: 1px solid #475569 !important;
+      color: #ffffff !important;
     }
     html.dark input::placeholder,
     html.dark textarea::placeholder {
-      color: #64748b !important;
+      color: #94a3b8 !important;
     }
     html.dark input:focus,
     html.dark select:focus,
     html.dark textarea:focus {
-      background-color: #1e293b !important;
+      background-color: #0f172a !important;
       border-color: #818cf8 !important;
+      box-shadow: 0 0 0 2px rgba(129, 140, 248, 0.25) !important;
     }
 
-    /* Survols de lignes et boutons secondaires en mode sombre */
+    /* 6. SURVOLS DE LIGNES ET BOUTONS SECONDAIRES */
     html.dark .hover\:bg-slate-50:hover,
     html.dark .hover\:bg-slate-50\/90:hover,
     html.dark .hover\:bg-slate-50\/80:hover,
     html.dark .hover\:bg-slate-100:hover {
-      background-color: #1e2a42 !important;
+      background-color: #23304a !important;
     }
     html.dark .hover\:bg-indigo-50:hover,
     html.dark .hover\:bg-indigo-100:hover {
-      background-color: rgba(99, 102, 241, 0.30) !important;
+      background-color: rgba(99, 102, 241, 0.36) !important;
     }
     html.dark .hover\:bg-emerald-50:hover,
     html.dark .hover\:bg-emerald-100:hover {
-      background-color: rgba(16, 185, 129, 0.28) !important;
+      background-color: rgba(16, 185, 129, 0.34) !important;
     }
     html.dark .hover\:bg-rose-50:hover {
-      background-color: rgba(244, 63, 94, 0.26) !important;
+      background-color: rgba(244, 63, 94, 0.32) !important;
     }
 
     @media print {
@@ -492,7 +511,7 @@
   </button>
 
   <!-- BULLE FLOTTANTE EN BAS À GAUCHE : CANAL DE CONVERSATION ÉQUIPE (3 POINTS) -->
-  <button id="btn-floating-chat-bubble" type="button" onclick="openTeamChatModal()" title="Ouvrir le canal de conversation ventes & équipe" class="fixed bottom-5 left-5 z-30 w-14 h-14 rounded-full bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white shadow-xl shadow-indigo-600/35 flex items-center justify-center transition no-print group">
+  <button id="btn-floating-chat-bubble" type="button" onclick="openTeamChatModal()" title="Ouvrir Korpo Top Earner 🏆" class="fixed bottom-5 left-5 z-30 w-14 h-14 rounded-full bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white shadow-xl shadow-indigo-600/35 flex items-center justify-center transition no-print group">
     <svg class="w-7 h-7 transition-transform group-hover:scale-105" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
       <path d="M12 3C6.477 3 2 6.805 2 11.5c0 2.31 1.084 4.404 2.845 5.936-.234 1.32-.833 2.573-1.456 3.553a.5.5 0 0 0 .485.764c2.01-.245 3.927-.968 5.29-1.716.905.298 1.855.463 2.836.463 5.523 0 10-3.805 10-8.5S17.523 3 12 3Zm-4 9.75a1.25 1.25 0 1 1 0-2.5 1.25 1.25 0 0 1 0 2.5Zm4 0a1.25 1.25 0 1 1 0-2.5 1.25 1.25 0 0 1 0 2.5Zm4 0a1.25 1.25 0 1 1 0-2.5 1.25 1.25 0 0 1 0 2.5Z"/>
     </svg>
@@ -510,7 +529,7 @@
           </div>
           <div class="min-w-0">
             <div class="flex items-center gap-2">
-              <h3 class="text-sm sm:text-base font-extrabold tracking-tight truncate"># ventes-et-equipe</h3>
+              <h3 class="text-sm sm:text-base font-extrabold tracking-tight truncate">🏆 Korpo Top Earner</h3>
               <span id="chat-live-pill" class="px-2 py-0.5 text-[10px] font-extrabold rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-400/30">● En direct</span>
             </div>
             <p class="text-[11px] text-slate-300 truncate">Ventes publiées automatiquement • Discussion d'équipe</p>
@@ -543,13 +562,25 @@
           <div id="chat-mention-autocomplete-list" class="max-h-52 overflow-y-auto divide-y divide-slate-100"></div>
         </div>
 
-        <form id="form-team-chat" class="p-3 sm:p-4 bg-white border-t border-slate-200 flex items-center gap-2">
+        <!-- SÉLECTEUR D'EMOJIS POPOVER -->
+        <div id="chat-emoji-picker" class="hidden absolute bottom-full left-3 right-3 sm:left-4 sm:right-auto sm:w-80 mb-1.5 bg-white border border-slate-200 rounded-2xl shadow-2xl p-3 z-50 space-y-2">
+          <div class="flex items-center justify-between px-1">
+            <span class="text-[10px] font-extrabold uppercase tracking-wider text-slate-400">Emojis rapides</span>
+            <button type="button" onclick="toggleChatEmojiPicker(false)" class="text-xs text-slate-400 hover:text-slate-700">✕</button>
+          </div>
+          <div id="chat-emoji-grid" class="grid grid-cols-8 gap-1 text-lg"></div>
+        </div>
+
+        <form id="form-team-chat" class="p-3 sm:p-4 bg-white border-t border-slate-200 flex items-center gap-1.5 sm:gap-2">
           <button type="button" onclick="insertAtSymbolInChat()" title="Identifier un représentant (@)" class="w-9 h-9 rounded-xl bg-slate-100 hover:bg-indigo-50 text-slate-600 hover:text-indigo-700 font-extrabold text-sm flex items-center justify-center transition shrink-0">
             @
           </button>
-          <input id="chat-message-input" type="text" maxlength="800" autocomplete="off" placeholder="Écrire un message (@Nom pour notifier)..." class="flex-1 px-4 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-600" />
-          <button id="btn-send-chat" type="submit" class="px-4 sm:px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white text-xs sm:text-sm font-extrabold rounded-xl shadow-sm transition shrink-0 flex items-center gap-1.5">
-            <span>Envoyer</span>
+          <button type="button" id="btn-toggle-chat-emoji" onclick="toggleChatEmojiPicker()" title="Ajouter un emoji" class="w-9 h-9 rounded-xl bg-slate-100 hover:bg-amber-50 text-base flex items-center justify-center transition shrink-0">
+            😀
+          </button>
+          <input id="chat-message-input" type="text" maxlength="800" autocomplete="off" placeholder="Écrire un message (@Nom pour notifier)..." class="flex-1 min-w-0 px-3.5 sm:px-4 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-600" />
+          <button id="btn-send-chat" type="submit" class="px-3.5 sm:px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white text-xs sm:text-sm font-extrabold rounded-xl shadow-sm transition shrink-0 flex items-center gap-1.5">
+            <span class="hidden xs:inline">Envoyer</span>
             <span>➤</span>
           </button>
         </form>
@@ -1297,12 +1328,12 @@
           </div>
         </div>
 
-        <div class="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
-          <!-- CLOCHE DE MENTIONS @ DANS LE CANAL DE CHAT (TOUS LES MEMBRES) -->
+        <div class="flex items-center gap-2 sm:gap-2.5 shrink-0">
+          <!-- CLOCHE DE MENTIONS @ DANS KORPO TOP EARNER -->
           <div id="chat-mention-notif-wrapper" class="relative">
-            <button id="btn-chat-mention-notif" type="button" title="Mentions (@) dans le canal d'équipe" class="relative p-2 text-slate-200 hover:text-white bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-xl transition">
-              <span class="text-xs sm:text-sm font-extrabold leading-none text-indigo-300">@</span>
-              <span id="chat-mention-notif-badge" class="hidden absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] px-1 rounded-full bg-indigo-500 text-white text-[10px] font-extrabold flex items-center justify-center shadow-sm">0</span>
+            <button id="btn-chat-mention-notif" type="button" title="Mentions (@) dans Korpo Top Earner" class="relative w-9 h-9 inline-flex items-center justify-center text-slate-200 hover:text-white bg-slate-800/95 hover:bg-slate-700 border border-slate-700/90 rounded-xl shadow-xs transition">
+              <span class="text-sm font-extrabold leading-none text-indigo-300">@</span>
+              <span id="chat-mention-notif-badge" class="hidden absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] px-1 rounded-full bg-indigo-500 text-white text-[10px] font-extrabold inline-flex items-center justify-center shadow-sm ring-2 ring-slate-900">0</span>
             </button>
 
             <!-- MENU DÉROULANT DES MENTIONS @ -->
@@ -1318,16 +1349,16 @@
               </div>
               <div id="chat-mention-notif-list" class="max-h-80 overflow-y-auto divide-y divide-slate-100"></div>
               <div class="px-4 py-2.5 bg-slate-50 border-t border-slate-100 flex items-center justify-between">
-                <button type="button" onclick="document.getElementById('chat-mention-notif-dropdown')?.classList.add('hidden'); openTeamChatModal();" class="text-xs font-bold text-indigo-600 hover:underline">Ouvrir le canal #ventes-et-equipe →</button>
+                <button type="button" onclick="document.getElementById('chat-mention-notif-dropdown')?.classList.add('hidden'); openTeamChatModal();" class="text-xs font-bold text-indigo-600 hover:underline">Ouvrir Korpo Top Earner 🏆 →</button>
               </div>
             </div>
           </div>
 
           <!-- CLOCHE DE NOTIFICATIONS ADMIN (VENTES À CONFIRMER) -->
           <div id="admin-notif-wrapper" class="hidden relative">
-            <button id="btn-admin-notif" title="Ventes en attente de confirmation" class="relative p-2 text-slate-200 hover:text-white bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-xl transition">
+            <button id="btn-admin-notif" type="button" title="Ventes en attente de confirmation" class="relative w-9 h-9 inline-flex items-center justify-center text-slate-200 hover:text-white bg-slate-800/95 hover:bg-slate-700 border border-slate-700/90 rounded-xl shadow-xs transition">
               <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0"/></svg>
-              <span id="admin-notif-badge" class="hidden absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] px-1 rounded-full bg-rose-500 text-white text-[10px] font-extrabold flex items-center justify-center shadow-sm">0</span>
+              <span id="admin-notif-badge" class="hidden absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] px-1 rounded-full bg-rose-500 text-white text-[10px] font-extrabold inline-flex items-center justify-center shadow-sm ring-2 ring-slate-900">0</span>
             </button>
 
             <!-- MENU DÉROULANT DES NOTIFICATIONS -->
@@ -1348,8 +1379,9 @@
             </div>
           </div>
 
-          <button id="btn-refresh" title="Actualiser les données" class="px-3 py-1.5 text-xs font-semibold text-slate-200 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-xl flex items-center gap-1.5 transition">
-            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99"/></svg>
+          <!-- BOUTON ACTUALISER UNIFORMISÉ -->
+          <button id="btn-refresh" type="button" title="Actualiser les données" class="w-9 sm:w-auto h-9 sm:px-3.5 text-xs font-semibold text-slate-200 hover:text-white bg-slate-800/95 hover:bg-slate-700 border border-slate-700/90 rounded-xl shadow-xs inline-flex items-center justify-center gap-1.5 transition">
+            <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99"/></svg>
             <span class="hidden sm:inline">Actualiser</span>
           </button>
 
@@ -7433,9 +7465,56 @@
       }
     }
 
+    const KORPO_CHAT_EMOJIS = [
+      '🔥', '💰', '💵', '🏆', '👏', '🎉', '🚀', '💪',
+      '👑', '⭐', '💯', '🤝', '📈', '💎', '⚡', '🎯',
+      '😀', '😂', '🥳', '😎', '🤩', '🙌', '👍', '❤️',
+      '✅', '📞', '📅', '🏠', '❄️', '☀️', '👀', '🙏'
+    ];
+
+    function initChatEmojiPicker() {
+      const grid = document.getElementById('chat-emoji-grid');
+      if (!grid || grid.dataset.ready) return;
+      grid.dataset.ready = '1';
+      grid.innerHTML = KORPO_CHAT_EMOJIS.map(em => `
+        <button type="button" onclick="insertEmojiInChat('${em}')" class="w-8 h-8 rounded-lg hover:bg-slate-100 active:scale-90 flex items-center justify-center transition">
+          ${em}
+        </button>
+      `).join('');
+    }
+
+    window.toggleChatEmojiPicker = (forceState) => {
+      const picker = document.getElementById('chat-emoji-picker');
+      if (!picker) return;
+      initChatEmojiPicker();
+      hideMentionAutocomplete();
+      const show = typeof forceState === 'boolean' ? forceState : picker.classList.contains('hidden');
+      picker.classList.toggle('hidden', !show);
+    };
+
+    window.insertEmojiInChat = (emoji) => {
+      const input = document.getElementById('chat-message-input');
+      if (!input) return;
+      const start = input.selectionStart ?? input.value.length;
+      const end = input.selectionEnd ?? input.value.length;
+      input.value = input.value.slice(0, start) + emoji + input.value.slice(end);
+      const nextPos = start + emoji.length;
+      input.focus();
+      input.setSelectionRange(nextPos, nextPos);
+    };
+
+    document.addEventListener('click', (e) => {
+      const picker = document.getElementById('chat-emoji-picker');
+      const btn = document.getElementById('btn-toggle-chat-emoji');
+      if (picker && !picker.classList.contains('hidden') && !picker.contains(e.target) && (!btn || !btn.contains(e.target))) {
+        picker.classList.add('hidden');
+      }
+    });
+
     document.getElementById('form-team-chat')?.addEventListener('submit', async (e) => {
       e.preventDefault();
       hideMentionAutocomplete();
+      toggleChatEmojiPicker(false);
       const input = document.getElementById('chat-message-input');
       if (!input) return;
       const val = input.value.trim();
