@@ -2526,11 +2526,29 @@
           _carriedOverFrom: isCarried ? origYm : null
         };
       };
+      const filterOutSupersededUnconfirmed = (rows) => {
+        if (!Array.isArray(rows)) return [];
+        const confirmedKeys = new Set();
+        rows.forEach(r => {
+          if (r.statut_depot === 'depot_recu') {
+            const cName = normClientKey(r.client_nom || state.clients.find(c => String(c.id) === String(r.client_id))?.nom || '');
+            if (cName) confirmedKeys.add(`${r.representant_id || ''}__${r.entreprise_id || ''}__${cName}`);
+          }
+        });
+        if (!confirmedKeys.size) return rows;
+        return rows.filter(r => {
+          if (r.statut_depot !== 'a_confirmer') return true;
+          const cName = normClientKey(r.client_nom || state.clients.find(c => String(c.id) === String(r.client_id))?.nom || '');
+          const k = `${r.representant_id || ''}__${r.entreprise_id || ''}__${cName}`;
+          return !confirmedKeys.has(k);
+        });
+      };
+
       if (Array.isArray(state.ventes)) {
-        state.ventes = state.ventes.map(applyMeta);
+        state.ventes = filterOutSupersededUnconfirmed(state.ventes.map(applyMeta));
       }
       if (Array.isArray(state.mesVentes)) {
-        state.mesVentes = state.mesVentes.map(applyMeta);
+        state.mesVentes = filterOutSupersededUnconfirmed(state.mesVentes.map(applyMeta));
       }
     }
 
@@ -3565,14 +3583,24 @@
       updateTargetClientDatalist();
     }
 
+    function uniqueClientsByName(list) {
+      const seen = new Set();
+      return (list || []).filter(c => {
+        const k = normClientKey(c.nom);
+        if (!k || seen.has(k)) return false;
+        seen.add(k);
+        return true;
+      });
+    }
+
     function updateTargetClientDatalist() {
       const entName = document.getElementById('target-ent-select')?.value;
       const dl = document.getElementById('target-clients-datalist');
       if (!dl) return;
       const entObj = state.entreprises.find(e => e.nom === entName);
-      const matchingClients = entObj
-        ? state.clients.filter(c => c.entreprise_id === entObj.id)
-        : state.clients;
+      const matchingClients = uniqueClientsByName(
+        entObj ? state.clients.filter(c => String(c.entreprise_id) === String(entObj.id)) : state.clients
+      );
       dl.innerHTML = matchingClients.map(c => `<option value="${esc(c.nom)}">`).join('');
     }
 
@@ -6408,6 +6436,11 @@
         document.getElementById('mes-ventes-subtitle').textContent = 'Vos ventes directes et vos commissions sur l’ensemble de l’équipe';
 
         mergeCloudAuditAndTrash();
+        const autoCleanedDups = await reconcilePreviousUnconfirmedDuplicateSales();
+        if (autoCleanedDups > 0) {
+          state.classement = await fetchAllRows(() => sb.from('vue_classement_ventes').select('*'));
+          toast(`🔗 ${autoCleanedDups} doublon(s) antérieur(s) non confirmé(s) fusionné(s) automatiquement`);
+        }
         await runMonthlyAutoRolloverAndCarryOver();
         syncSalesIntoKpi();
         syncGoogleAgendaIntoKpi();
@@ -7509,7 +7542,7 @@
 
     function updateClientDatalist() {
       const entId = document.getElementById('vente-entreprise').value;
-      const list = state.clients.filter(c => c.entreprise_id === entId);
+      const list = uniqueClientsByName(state.clients.filter(c => String(c.entreprise_id) === String(entId)));
       document.getElementById('clients-datalist').innerHTML = list.map(c => `<option value="${esc(c.nom)}">`).join('');
       updateDrawerCommissionPreview();
     }
@@ -8059,34 +8092,42 @@
       return v.client_nom || state.clients.find(c => String(c.id) === String(v.client_id))?.nom || '';
     }
 
-    async function reconcilePreviousUnconfirmedDuplicateSales(confirmedSaleIds) {
-      if (!sb || !Array.isArray(confirmedSaleIds) || !confirmedSaleIds.length) return 0;
-      const idSet = new Set(confirmedSaleIds.map(x => String(x)));
-      const confirmedRows = (state.ventes || []).filter(v => idSet.has(String(v.id)));
+    async function reconcilePreviousUnconfirmedDuplicateSales(confirmedSaleIds = null) {
+      if (!sb || !Array.isArray(state.ventes) || !state.ventes.length) return 0;
+      const isSpecific = Array.isArray(confirmedSaleIds) && confirmedSaleIds.length > 0;
+      const idSet = isSpecific ? new Set(confirmedSaleIds.map(x => String(x))) : null;
+
+      // Dossiers confirmés (ou ciblés) qui font foi
+      const confirmedRows = state.ventes.filter(v => {
+        if (idSet) return idSet.has(String(v.id));
+        return v.statut_depot === 'depot_recu';
+      });
       if (!confirmedRows.length) return 0;
 
       const duplicatesToRemove = [];
       const seenDupIds = new Set();
 
       confirmedRows.forEach(confV => {
+        const confId = String(confV.id);
         const confCli = normClientKey(getResolvedClientNameForSale(confV));
         if (!confCli) return;
         const confEnt = String(confV.entreprise_id || '');
         const confRep = String(confV.representant_id || '');
-        const confVal = Number(confV.valeur || 0);
 
         (state.ventes || []).forEach(cand => {
           const cid = String(cand.id);
-          if (idSet.has(cid) || seenDupIds.has(cid)) return;
+          if (cid === confId || seenDupIds.has(cid)) return;
+          if (idSet && idSet.has(cid)) return;
+          // Retirer tout dossier antérieur ou identique resté `a_confirmer` pour ce même client + entreprise + représentant
           if (cand.statut_depot !== 'a_confirmer') return;
           if (String(cand.entreprise_id || '') !== confEnt) return;
           if (String(cand.representant_id || '') !== confRep) return;
           const candCli = normClientKey(getResolvedClientNameForSale(cand));
           if (candCli !== confCli) return;
-          // Même client, même compagnie, même rep, même montant (ou dossier antérieur non confirmé)
-          const sameAmount = Math.abs(Number(cand.valeur || 0) - confVal) < 0.01;
-          const isEarlierOrSameMonth = (cand.date_vente || cand.mois_commission || '') <= (confV.date_vente || confV.mois_commission || '');
-          if (sameAmount && isEarlierOrSameMonth) {
+
+          const candDateKey = `${cand.date_vente || cand.mois_commission || ''}_${cand.created_at || ''}`;
+          const confDateKey = `${confV.date_vente || confV.mois_commission || ''}_${confV.created_at || ''}`;
+          if (candDateKey <= confDateKey) {
             seenDupIds.add(cid);
             duplicatesToRemove.push({ dup: cand, kept: confV });
           }
@@ -8107,6 +8148,8 @@
           '🔗'
         );
         await sb.from('ventes').delete().eq('id', dup.id);
+        state.ventes = state.ventes.filter(x => String(x.id) !== String(dup.id));
+        state.mesVentes = state.mesVentes.filter(x => String(x.id) !== String(dup.id));
       }
       return duplicatesToRemove.length;
     }
