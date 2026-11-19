@@ -1757,24 +1757,14 @@
           <div class="overflow-x-auto">
             <table class="w-full text-left border-collapse">
               <thead>
-                <tr class="border-b border-slate-200 text-[10px] font-extrabold uppercase tracking-widest">
-                  <th id="th-group-ventes" colspan="4" class="py-2 px-4 bg-indigo-50/70 text-indigo-800">
-                    📊 Zone Ventes — Dossiers & montants vendus
-                  </th>
-                  <th colspan="4" class="py-2 px-4 bg-emerald-50/70 text-emerald-800 border-l-2 border-emerald-400/70">
-                    💰 Zone Commissions — Gains, dépôts & paiements
-                  </th>
-                </tr>
-                <tr class="bg-slate-50/80 border-b border-slate-200 text-[11px] font-bold text-slate-500 uppercase tracking-wider select-none">
-                  <th onclick="toggleSortMesVentes('date_vente')" class="py-3.5 px-4 cursor-pointer hover:text-indigo-600 transition group">📅 Date & Mois <span id="sort-ind-mes-date_vente" class="ml-1 text-indigo-600">↓</span></th>
-                  <th onclick="toggleSortMesVentes('entreprise_nom')" class="py-3.5 px-4 cursor-pointer hover:text-indigo-600 transition group">🏢 Entreprise <span id="sort-ind-mes-entreprise_nom" class="ml-1 text-slate-300 group-hover:text-indigo-400">⇅</span></th>
-                  <th onclick="toggleSortMesVentes('client_nom')" class="py-3.5 px-4 cursor-pointer hover:text-indigo-600 transition group">👤 Client <span id="sort-ind-mes-client_nom" class="ml-1 text-slate-300 group-hover:text-indigo-400">⇅</span></th>
-                  <th id="th-rep-col" onclick="toggleSortMesVentes('rep_nom')" class="hidden py-3.5 px-4 cursor-pointer hover:text-indigo-600 transition group">🧑‍💼 Représentant <span id="sort-ind-mes-rep_nom" class="ml-1 text-slate-300 group-hover:text-indigo-400">⇅</span></th>
-                  <th onclick="toggleSortMesVentes('valeur')" class="py-3.5 px-4 text-right cursor-pointer hover:text-indigo-600 transition group">💵 Valeur vente <span id="sort-ind-mes-valeur" class="ml-1 text-slate-300 group-hover:text-indigo-400">⇅</span></th>
-                  <th onclick="toggleSortMesVentes('commission_rep')" class="py-3.5 px-4 text-right cursor-pointer hover:text-emerald-700 transition group border-l-2 border-emerald-400/70 bg-emerald-50/30">★ Ma commission <span id="sort-ind-mes-commission_rep" class="ml-1 text-slate-300 group-hover:text-emerald-500">⇅</span></th>
-                  <th onclick="toggleSortMesVentes('statut_depot')" class="py-3.5 px-4 cursor-pointer hover:text-indigo-600 transition group">🏦 Dépôt <span id="sort-ind-mes-statut_depot" class="ml-1 text-slate-300 group-hover:text-indigo-400">⇅</span></th>
-                  <th onclick="toggleSortMesVentes('statut_paiement')" class="py-3.5 px-4 cursor-pointer hover:text-indigo-600 transition group">💳 Paiement <span id="sort-ind-mes-statut_paiement" class="ml-1 text-slate-300 group-hover:text-indigo-400">⇅</span></th>
-                  <th class="py-3.5 px-4 text-right">Action</th>
+                <tr class="bg-slate-50/90 border-b border-slate-200 text-[11px] font-bold text-slate-500 uppercase tracking-wider select-none">
+                  <th onclick="toggleSortMesVentes('date_vente')" class="py-3.5 px-4 cursor-pointer hover:text-indigo-600 transition group">Date <span id="sort-ind-mes-date_vente" class="ml-1 text-indigo-600">↓</span></th>
+                  <th onclick="toggleSortMesVentes('client_nom')" class="py-3.5 px-4 cursor-pointer hover:text-indigo-600 transition group">Dossier & Client <span id="sort-ind-mes-client_nom" class="ml-1 text-slate-300 group-hover:text-indigo-400">⇅</span></th>
+                  <th id="th-rep-col" onclick="toggleSortMesVentes('rep_nom')" class="hidden py-3.5 px-4 cursor-pointer hover:text-indigo-600 transition group">Représentant <span id="sort-ind-mes-rep_nom" class="ml-1 text-slate-300 group-hover:text-indigo-400">⇅</span></th>
+                  <th onclick="toggleSortMesVentes('valeur')" class="py-3.5 px-4 text-right cursor-pointer hover:text-indigo-600 transition group">Vente <span id="sort-ind-mes-valeur" class="ml-1 text-slate-300 group-hover:text-indigo-400">⇅</span></th>
+                  <th onclick="toggleSortMesVentes('commission_rep')" class="py-3.5 px-4 text-right cursor-pointer hover:text-emerald-700 transition group">Ma commission <span id="sort-ind-mes-commission_rep" class="ml-1 text-slate-300 group-hover:text-emerald-500">⇅</span></th>
+                  <th onclick="toggleSortMesVentes('statut_depot')" class="py-3.5 px-4 cursor-pointer hover:text-indigo-600 transition group">Suivi & Paiement <span id="sort-ind-mes-statut_depot" class="ml-1 text-slate-300 group-hover:text-indigo-400">⇅</span></th>
+                  <th class="py-3.5 px-4 text-right">Actions</th>
                 </tr>
               </thead>
               <tbody id="tbody-mes-ventes" class="divide-y divide-slate-100 text-sm"></tbody>
@@ -2137,18 +2127,16 @@
           <div class="overflow-x-auto">
             <table class="w-full text-left border-collapse">
               <thead>
-                <tr class="bg-slate-50/80 border-b border-slate-200 text-[11px] font-bold text-slate-500 uppercase tracking-wider select-none">
+                <tr class="bg-slate-50/90 border-b border-slate-200 text-[11px] font-bold text-slate-500 uppercase tracking-wider select-none">
                   <th class="py-3.5 px-3 w-10 text-center">
                     <input id="select-all-ventes" type="checkbox" class="rounded border-slate-300 text-indigo-600 focus:ring-indigo-600" />
                   </th>
-                  <th onclick="toggleSortAdminVentes('date_vente')" class="py-3.5 px-3 cursor-pointer hover:text-indigo-600 transition group">Date / Mois <span id="sort-ind-adm-date_vente" class="ml-1 text-indigo-600">↓</span></th>
-                  <th onclick="toggleSortAdminVentes('rep_nom')" class="py-3.5 px-3 cursor-pointer hover:text-indigo-600 transition group">Représentant <span id="sort-ind-adm-rep_nom" class="ml-1 text-slate-300 group-hover:text-indigo-400">⇅</span></th>
-                  <th onclick="toggleSortAdminVentes('entreprise_client')" class="py-3.5 px-3 cursor-pointer hover:text-indigo-600 transition group">Entreprise & Client <span id="sort-ind-adm-entreprise_client" class="ml-1 text-slate-300 group-hover:text-indigo-400">⇅</span></th>
+                  <th onclick="toggleSortAdminVentes('date_vente')" class="py-3.5 px-3 cursor-pointer hover:text-indigo-600 transition group">Date <span id="sort-ind-adm-date_vente" class="ml-1 text-indigo-600">↓</span></th>
+                  <th onclick="toggleSortAdminVentes('entreprise_client')" class="py-3.5 px-3 cursor-pointer hover:text-indigo-600 transition group">Dossier & Représentant <span id="sort-ind-adm-entreprise_client" class="ml-1 text-slate-300 group-hover:text-indigo-400">⇅</span></th>
                   <th onclick="toggleSortAdminVentes('valeur')" class="py-3.5 px-3 text-right cursor-pointer hover:text-indigo-600 transition group">Vente <span id="sort-ind-adm-valeur" class="ml-1 text-slate-300 group-hover:text-indigo-400">⇅</span></th>
                   <th onclick="toggleSortAdminVentes('commission_rep')" class="py-3.5 px-3 text-right cursor-pointer hover:text-indigo-600 transition group">Comm. Rep <span id="sort-ind-adm-commission_rep" class="ml-1 text-slate-300 group-hover:text-indigo-400">⇅</span></th>
                   <th onclick="toggleSortAdminVentes('commission_olivier')" class="py-3.5 px-3 text-right cursor-pointer hover:text-indigo-600 transition group">Comm. Olivier <span id="sort-ind-adm-commission_olivier" class="ml-1 text-slate-300 group-hover:text-indigo-400">⇅</span></th>
-                  <th onclick="toggleSortAdminVentes('statut_depot')" class="py-3.5 px-3 cursor-pointer hover:text-indigo-600 transition group">Dépôt <span id="sort-ind-adm-statut_depot" class="ml-1 text-slate-300 group-hover:text-indigo-400">⇅</span></th>
-                  <th onclick="toggleSortAdminVentes('statut_paiement')" class="py-3.5 px-3 cursor-pointer hover:text-indigo-600 transition group">Paiement <span id="sort-ind-adm-statut_paiement" class="ml-1 text-slate-300 group-hover:text-indigo-400">⇅</span></th>
+                  <th onclick="toggleSortAdminVentes('statut_depot')" class="py-3.5 px-3 cursor-pointer hover:text-indigo-600 transition group">Suivi & Paiement <span id="sort-ind-adm-statut_depot" class="ml-1 text-slate-300 group-hover:text-indigo-400">⇅</span></th>
                   <th class="py-3.5 px-3 text-right">Actions</th>
                 </tr>
               </thead>
@@ -8372,7 +8360,7 @@
       const mobileCardsBox = document.getElementById('mobile-mes-ventes-cards');
       const mobileCommCardsBox = document.getElementById('mobile-mes-commissions-cards');
       if (!filtered.length) {
-        tbody.innerHTML = `<tr><td colspan="${isAdmin ? 9 : 8}" class="py-12 text-center text-sm text-slate-400">Aucune vente enregistrée pour cette période.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="${isAdmin ? 7 : 6}" class="py-12 text-center text-sm text-slate-400">Aucune vente enregistrée pour cette période.</td></tr>`;
         if (mobileCardsBox) {
           mobileCardsBox.innerHTML = `<div class="bg-white rounded-2xl border border-slate-200/80 p-8 text-center text-xs text-slate-400">Aucune vente enregistrée pour cette période.</div>`;
         }
@@ -8473,67 +8461,77 @@
       }
       applyMobilePersonalSplitLayout();
 
-      tbody.innerHTML = filtered.map(v => `
+      tbody.innerHTML = filtered.map(v => {
+        const isSuivi = (v.note || '').toUpperCase().includes('[SUIVI]');
+        const canToggleKpi = isAdmin || (v.statut_depot === 'a_confirmer' && v.statut_paiement !== 'paye');
+        const cleanNote = cleanDisplaySaleNote(v.note);
+        const proofSrc = getProofForSale(v);
+        const canDelete = v.statut_depot === 'a_confirmer' && v.statut_paiement !== 'paye';
+        const showMoisDiff = v.mois_commission && v.date_vente && !v.date_vente.startsWith(v.mois_commission);
+        return `
         <tr class="hover:bg-slate-50/90 transition">
-          <td class="py-3.5 px-4">
-            <div class="font-semibold text-slate-800">${v.date_vente}</div>
-            <div class="text-[11px] text-slate-400">${v.mois_commission}</div>
-            ${v._carriedOverFrom ? `<span class="mt-0.5 inline-block px-1.5 py-0.5 text-[10px] font-bold rounded-md bg-amber-50 text-amber-800 border border-amber-200" title="Transférée depuis ${v._carriedOverFrom} (comptabilisée dans ce mois)">↪ Transférée de ${v._carriedOverFrom}</span>` : ''}
+          <td class="py-3.5 px-4 whitespace-nowrap align-middle">
+            <div class="font-semibold text-slate-800 tabular-nums">${v.date_vente}</div>
+            ${showMoisDiff ? `<div class="text-[11px] text-slate-400">Paie ${v.mois_commission}</div>` : ''}
+            ${v._carriedOverFrom ? `<span class="mt-0.5 inline-block px-1.5 py-0.5 text-[10px] font-bold rounded-md bg-amber-50 text-amber-800 border border-amber-200" title="Reportée de ${v._carriedOverFrom}">↪ ${v._carriedOverFrom}</span>` : ''}
           </td>
-          <td class="py-3.5 px-4">${entBadge(v.entreprise_nom)}</td>
-          <td class="py-3.5 px-4">
-            <div class="font-semibold text-slate-900">${esc(v.client_nom)}</div>
-            <div class="flex items-center gap-1.5 mt-0.5">
-              ${(isAdmin || (v.statut_depot === 'a_confirmer' && v.statut_paiement !== 'paye'))
-                ? `<button type="button" onclick="toggleVenteKpiType('${v.id}')" title="Cliquer pour basculer entre OTS et SUIVI"
-                    class="px-1.5 py-0.5 text-[10px] font-extrabold rounded-md border transition ${(v.note || '').toUpperCase().includes('[SUIVI]') ? 'bg-purple-50 text-purple-700 border-purple-200 hover:bg-purple-100' : 'bg-sky-50 text-sky-700 border-sky-200 hover:bg-sky-100'}">
-                    ${(v.note || '').toUpperCase().includes('[SUIVI]') ? 'SUIVI' : 'OTS'}
+          <td class="py-3.5 px-4 align-middle">
+            <div class="flex items-center gap-2">
+              ${entBadge(v.entreprise_nom)}
+              <span class="font-bold text-slate-900">${esc(v.client_nom)}</span>
+            </div>
+            <div class="flex items-center flex-wrap gap-1.5 mt-1">
+              ${canToggleKpi
+                ? `<button type="button" onclick="toggleVenteKpiType('${v.id}')" title="Basculer OTS / SUIVI"
+                    class="px-1.5 py-0.2 text-[10px] font-extrabold rounded border transition ${isSuivi ? 'bg-purple-50 text-purple-700 border-purple-200 hover:bg-purple-100' : 'bg-sky-50 text-sky-700 border-sky-200 hover:bg-sky-100'}">
+                    ${isSuivi ? 'SUIVI' : 'OTS'}
                   </button>`
-                : `<span class="px-1.5 py-0.5 text-[10px] font-extrabold rounded-md border ${(v.note || '').toUpperCase().includes('[SUIVI]') ? 'bg-purple-50 text-purple-700 border-purple-200' : 'bg-sky-50 text-sky-700 border-sky-200'}">
-                    ${(v.note || '').toUpperCase().includes('[SUIVI]') ? 'SUIVI' : 'OTS'}
+                : `<span class="px-1.5 py-0.2 text-[10px] font-extrabold rounded border ${isSuivi ? 'bg-purple-50 text-purple-700 border-purple-200' : 'bg-sky-50 text-sky-700 border-sky-200'}">
+                    ${isSuivi ? 'SUIVI' : 'OTS'}
                   </span>`
               }
               ${hitBadgeHtml(v)}
-              ${cleanDisplaySaleNote(v.note) ? `<span class="text-[11px] text-slate-400">${esc(cleanDisplaySaleNote(v.note))}</span>` : ''}
+              ${cleanNote ? `<span class="text-[11px] text-slate-400 truncate max-w-[230px]">${esc(cleanNote)}</span>` : ''}
             </div>
           </td>
-          ${isAdmin ? `<td class="py-3.5 px-4 text-xs font-semibold text-slate-700">${esc(v.rep_nom || '—')}</td>` : ''}
-          <td class="py-3.5 px-4 text-right font-semibold text-slate-900 tabular-nums">${fmtMoney(v.valeur)}</td>
-          <td class="py-3.5 px-4 text-right font-extrabold ${Number(v.commission_rep) < 0 ? 'text-rose-600 bg-rose-50/30' : 'text-emerald-600 bg-emerald-50/20'} tabular-nums border-l-2 ${Number(v.commission_rep) < 0 ? 'border-rose-400/60' : 'border-emerald-400/50'}">
-            ${fmtMoney(v.commission_rep)}
+          ${isAdmin ? `<td class="py-3.5 px-4 text-xs font-semibold text-slate-700 whitespace-nowrap align-middle">${esc(v.rep_nom || '—')}</td>` : ''}
+          <td class="py-3.5 px-4 text-right font-bold text-slate-900 tabular-nums whitespace-nowrap align-middle">${fmtMoney(v.valeur)}</td>
+          <td class="py-3.5 px-4 text-right tabular-nums whitespace-nowrap align-middle">
+            <div class="font-extrabold ${Number(v.commission_rep) < 0 ? 'text-rose-600' : 'text-emerald-600'}">${fmtMoney(v.commission_rep)}</div>
             ${v._bonusApplied ? (() => {
               const baseR = getRateForSale(v.representant_id, v.entreprise_id, v.client_id);
               const diff = baseR ? Math.max(0, Number(v.taux_rep_applique) - Number(baseR.taux)) : 0.01;
-              return `<span class="ml-1 px-1.5 py-0.5 text-[10px] font-extrabold rounded bg-emerald-100 text-emerald-800">+${formatBonusPctShort(diff || 0.01)}</span>`;
+              return `<span class="inline-block mt-0.5 px-1.5 py-0.2 text-[10px] font-extrabold rounded bg-emerald-100 text-emerald-800">+${formatBonusPctShort(diff || 0.01)} bonus</span>`;
             })() : ''}
           </td>
-          <td class="py-3.5 px-4">
-            <div class="flex items-center flex-wrap gap-1">
+          <td class="py-3.5 px-4 whitespace-nowrap align-middle">
+            <div class="flex items-center gap-1.5">
               <span class="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded-full ${v.statut_depot === 'depot_recu' ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'}">
                 <span class="w-1.5 h-1.5 rounded-full ${v.statut_depot === 'depot_recu' ? 'bg-emerald-500' : 'bg-amber-500'}"></span>
                 ${v.statut_depot === 'depot_recu' ? 'Dépôt reçu' : 'À confirmer'}
               </span>
+              <span class="px-2 py-0.5 text-[11px] font-semibold rounded-full ${v.statut_paiement === 'paye' ? 'bg-indigo-50 text-indigo-700' : 'bg-slate-100 text-slate-500'}">
+                ${v.statut_paiement === 'paye' ? 'Payé' : 'À payer'}
+              </span>
               ${agingBadgeForDeposit(v)}
-              ${getProofForSale(v)
-                ? `<button type="button" onclick="openProofModal('${v.id}')" title="Voir la preuve photo" class="px-2 py-0.5 text-[10px] font-bold rounded-lg bg-indigo-50 text-indigo-700 hover:bg-indigo-100">📷 Preuve</button>`
-                : `<label class="cursor-pointer px-2 py-0.5 text-[10px] font-semibold rounded-lg bg-slate-100 text-slate-600 hover:bg-indigo-50 hover:text-indigo-700">+ 📷<input type="file" accept="image/*" class="sr-only" onchange="attachProofToExistingSale('${v.id}', this.files[0])" /></label>`
+            </div>
+          </td>
+          <td class="py-3.5 px-4 text-right whitespace-nowrap align-middle">
+            <div class="inline-flex items-center gap-1">
+              ${proofSrc
+                ? `<button type="button" onclick="openProofModal('${v.id}')" title="Voir la preuve photo" class="p-1.5 text-xs font-bold rounded-lg bg-indigo-50 text-indigo-700 hover:bg-indigo-100 transition">📷</button>`
+                : `<label title="Ajouter une preuve photo" class="cursor-pointer p-1.5 text-xs font-semibold rounded-lg text-slate-400 hover:bg-slate-100 hover:text-indigo-700 transition">+📷<input type="file" accept="image/*" class="sr-only" onchange="attachProofToExistingSale('${v.id}', this.files[0])" /></label>`
+              }
+              <button type="button" onclick="openSaleAuditModal('${v.id}')" title="Historique du dossier" class="p-1.5 text-xs rounded-lg text-slate-400 hover:text-indigo-700 hover:bg-slate-100 transition">🕒</button>
+              ${canDelete
+                ? `<button type="button" onclick="deleteVente('${v.id}')" title="Supprimer" class="p-1.5 text-xs rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition">🗑️</button>`
+                : ''
               }
             </div>
           </td>
-          <td class="py-3.5 px-4">
-            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded-full ${v.statut_paiement === 'paye' ? 'bg-indigo-50 text-indigo-700' : 'bg-slate-100 text-slate-600'}">
-              ${v.statut_paiement === 'paye' ? 'Payé' : 'Non payé'}
-            </span>
-          </td>
-          <td class="py-3.5 px-4 text-right whitespace-nowrap space-x-1.5">
-            <button type="button" onclick="openSaleAuditModal('${v.id}')" title="Journal d'audit du dossier" class="px-2 py-1 text-xs font-semibold text-slate-600 hover:text-indigo-700 hover:bg-indigo-50 rounded-lg transition">🕒 Audit</button>
-            ${(v.statut_depot === 'a_confirmer' && v.statut_paiement !== 'paye')
-              ? `<button type="button" onclick="deleteVente('${v.id}')" class="px-2.5 py-1 text-xs font-semibold text-rose-600 hover:bg-rose-50 rounded-lg transition">Supprimer</button>`
-              : `<span class="text-[11px] text-slate-400" title="Dossier verrouillé après confirmation du dépôt">Verrouillé</span>`
-            }
-          </td>
         </tr>
-      `).join('');
+      `;
+      }).join('');
     }
 
     function renderClassement() {
@@ -9141,7 +9139,7 @@
       const tbody = document.getElementById('tbody-admin-ventes');
       const mobileAdminBox = document.getElementById('mobile-admin-ventes-cards');
       if (!list.length) {
-        tbody.innerHTML = `<tr><td colspan="10" class="py-12 text-center text-sm text-slate-400">Aucune vente ne correspond à ces critères.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="8" class="py-12 text-center text-sm text-slate-400">Aucune vente ne correspond à ces critères.</td></tr>`;
         if (mobileAdminBox) {
           mobileAdminBox.innerHTML = `<div class="bg-white rounded-2xl border border-slate-200/80 p-8 text-center text-xs text-slate-400">Aucune vente ne correspond à ces critères.</div>`;
         }
@@ -9210,40 +9208,41 @@
         const ent = state.entreprises.find(e => e.id === v.entreprise_id)?.nom || '—';
         const cli = state.clients.find(c => c.id === v.client_id)?.nom || '—';
         const isChecked = selectedSaleIds.has(v.id);
+        const isSuivi = (v.note || '').toUpperCase().includes('[SUIVI]');
+        const cleanNote = cleanDisplaySaleNote(v.note);
+        const proofSrc = getProofForSale(v);
+        const showMoisDiff = v.mois_commission && v.date_vente && !v.date_vente.startsWith(v.mois_commission);
         return `
           <tr class="hover:bg-slate-50/90 transition ${isChecked ? 'bg-indigo-50/40' : ''}">
-            <td class="py-3 px-3 text-center">
+            <td class="py-3 px-3 text-center align-middle">
               <input type="checkbox" class="sale-row-cb rounded border-slate-300 text-indigo-600" ${isChecked ? 'checked' : ''} onchange="toggleSelectSale('${v.id}', this.checked)" />
             </td>
-            <td class="py-3 px-3 text-xs">
-              <div class="font-semibold text-slate-900">${v.date_vente}</div>
-              <div class="text-slate-400">${v.mois_commission}</div>
-              ${v._carriedOverFrom ? `<span class="mt-0.5 inline-block px-1.5 py-0.5 text-[10px] font-bold rounded-md bg-amber-50 text-amber-800 border border-amber-200" title="Transférée depuis ${v._carriedOverFrom} (comptabilisée dans ce mois)">↪ Transférée de ${v._carriedOverFrom}</span>` : ''}
+            <td class="py-3 px-3 text-xs whitespace-nowrap align-middle">
+              <div class="font-semibold text-slate-900 tabular-nums">${v.date_vente}</div>
+              ${showMoisDiff ? `<div class="text-[11px] text-slate-400">Paie ${v.mois_commission}</div>` : ''}
+              ${v._carriedOverFrom ? `<span class="mt-0.5 inline-block px-1.5 py-0.5 text-[10px] font-bold rounded-md bg-amber-50 text-amber-800 border border-amber-200" title="Reportée de ${v._carriedOverFrom}">↪ ${v._carriedOverFrom}</span>` : ''}
             </td>
-            <td class="py-3 px-3 font-semibold text-slate-800">${esc(rep)}</td>
-            <td class="py-3 px-3">
+            <td class="py-3 px-3 align-middle">
               <div class="flex items-center gap-2">
                 ${entBadge(ent)}
-                <span class="font-semibold text-slate-900">${esc(cli)}</span>
+                <span class="font-bold text-slate-900">${esc(cli)}</span>
               </div>
-              <div class="flex items-center gap-1.5 mt-0.5">
-                <button type="button" onclick="toggleVenteKpiType('${v.id}')" title="Cliquer pour basculer entre OTS et SUIVI"
-                  class="px-1.5 py-0.5 text-[10px] font-extrabold rounded-md border transition ${(v.note || '').toUpperCase().includes('[SUIVI]') ? 'bg-purple-50 text-purple-700 border-purple-200 hover:bg-purple-100' : 'bg-sky-50 text-sky-700 border-sky-200 hover:bg-sky-100'}">
-                  ${(v.note || '').toUpperCase().includes('[SUIVI]') ? 'SUIVI' : 'OTS'}
+              <div class="flex items-center flex-wrap gap-1.5 mt-1">
+                <span class="text-xs font-semibold text-indigo-600">${esc(rep)}</span>
+                <span class="text-slate-300">•</span>
+                <button type="button" onclick="toggleVenteKpiType('${v.id}')" title="Basculer entre OTS et SUIVI"
+                  class="px-1.5 py-0.2 text-[10px] font-extrabold rounded border transition ${isSuivi ? 'bg-purple-50 text-purple-700 border-purple-200 hover:bg-purple-100' : 'bg-sky-50 text-sky-700 border-sky-200 hover:bg-sky-100'}">
+                  ${isSuivi ? 'SUIVI' : 'OTS'}
                 </button>
-                ${(window._kpiCountedFirstSaleIds && !window._kpiCountedFirstSaleIds.has(String(v.id)))
-                  ? `<span title="Doublon client ce mois-ci (seul le montant $ s'ajoute)" class="px-1.5 py-0.5 text-[10px] font-semibold rounded-md bg-slate-100 text-slate-500">2e ligne</span>`
-                  : ''
-                }
                 ${hitBadgeHtml(v)}
-                ${cleanDisplaySaleNote(v.note) ? `<span class="text-[11px] text-slate-400">${esc(cleanDisplaySaleNote(v.note))}</span>` : ''}
+                ${cleanNote ? `<span class="text-[11px] text-slate-400 truncate max-w-[210px]">${esc(cleanNote)}</span>` : ''}
               </div>
             </td>
-            <td class="py-3 px-3 text-right font-bold text-slate-900 tabular-nums">${fmtMoney(v.valeur)}</td>
-            <td class="py-3 px-3 text-right tabular-nums">
+            <td class="py-3 px-3 text-right font-bold text-slate-900 tabular-nums whitespace-nowrap align-middle">${fmtMoney(v.valeur)}</td>
+            <td class="py-3 px-3 text-right tabular-nums whitespace-nowrap align-middle">
               <div class="font-semibold ${Number(v.commission_rep) < 0 ? 'text-rose-600' : 'text-slate-900'}">${fmtMoney(v.commission_rep)}</div>
-              <div class="text-[11px] text-slate-400 flex items-center justify-end gap-1">
-                <button type="button" onclick="openRateAdjustModal('${v.id}')" title="Cliquer pour ajuster le taux de commission de cette vente" class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md hover:bg-indigo-50 hover:text-indigo-700 font-semibold transition">
+              <div class="text-[11px] text-slate-400 inline-flex items-center justify-end gap-1">
+                <button type="button" onclick="openRateAdjustModal('${v.id}')" title="Ajuster le taux de commission" class="inline-flex items-center gap-0.5 hover:text-indigo-700 font-medium transition">
                   <span>${fmtPct(v.taux_rep_applique)}</span>
                   <span class="text-[10px]">✎</span>
                 </button>
@@ -9251,51 +9250,43 @@
                   const baseR = getRateForSale(v.representant_id, v.entreprise_id, v.client_id);
                   const diff = baseR ? (Number(v.taux_rep_applique) - Number(baseR.taux)) : 0;
                   const ov = saleBonusOverridesStore[String(v.id)];
-                  if (ov?.noBonus) {
-                    return '<span class="px-1 py-0.2 text-[9px] font-extrabold rounded bg-amber-100 text-amber-800">Base</span>';
-                  }
-                  if (ov?.customManual) {
-                    return '<span class="px-1 py-0.2 text-[9px] font-extrabold rounded bg-indigo-100 text-indigo-800">Ajusté</span>';
-                  }
-                  return (baseR && diff > 0.0001)
-                    ? `<span class="px-1 py-0.2 text-[9px] font-extrabold rounded bg-emerald-100 text-emerald-800">+${formatBonusPctShort(diff)}</span>`
-                    : '';
+                  if (ov?.noBonus) return '<span class="px-1 text-[9px] font-extrabold rounded bg-amber-100 text-amber-800">Base</span>';
+                  if (ov?.customManual) return '<span class="px-1 text-[9px] font-extrabold rounded bg-indigo-100 text-indigo-800">Ajusté</span>';
+                  return (baseR && diff > 0.0001) ? `<span class="px-1 text-[9px] font-extrabold rounded bg-emerald-100 text-emerald-800">+${formatBonusPctShort(diff)}</span>` : '';
                 })()}
               </div>
             </td>
-            <td class="py-3 px-3 text-right tabular-nums">
+            <td class="py-3 px-3 text-right tabular-nums whitespace-nowrap align-middle">
               <div class="font-bold ${Number(v.commission_olivier) < 0 ? 'text-rose-600' : 'text-emerald-600'}">${fmtMoney(v.commission_olivier)}</div>
-              <div class="text-[11px] text-slate-400">
-                <button type="button" onclick="openRateAdjustModal('${v.id}')" title="Cliquer pour ajuster le taux de commission de cette vente" class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md hover:bg-emerald-50 hover:text-emerald-700 font-semibold transition">
-                  <span>${fmtPct(v.taux_olivier_applique)}</span>
-                  <span class="text-[10px]">✎</span>
-                </button>
-              </div>
+              <button type="button" onclick="openRateAdjustModal('${v.id}')" title="Ajuster le taux de commission" class="text-[11px] text-slate-400 inline-flex items-center gap-0.5 hover:text-emerald-700 font-medium transition">
+                <span>${fmtPct(v.taux_olivier_applique)}</span>
+                <span class="text-[10px]">✎</span>
+              </button>
             </td>
-            <td class="py-3 px-3">
-              <div class="flex items-center flex-wrap gap-1">
+            <td class="py-3 px-3 whitespace-nowrap align-middle">
+              <div class="flex items-center gap-1.5">
                 <button onclick="toggleVenteStatut('${v.id}', 'statut_depot', '${v.statut_depot === 'depot_recu' ? 'a_confirmer' : 'depot_recu'}')"
                   class="px-2.5 py-1 text-xs font-semibold rounded-full transition ${v.statut_depot === 'depot_recu' ? 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100' : 'bg-amber-50 text-amber-700 hover:bg-amber-100'}">
                   ${v.statut_depot === 'depot_recu' ? 'Dépôt reçu' : 'À confirmer'}
                 </button>
+                <button onclick="toggleVenteStatut('${v.id}', 'statut_paiement', '${v.statut_paiement === 'paye' ? 'non_paye' : 'paye'}')"
+                  class="px-2.5 py-1 text-xs font-semibold rounded-full transition ${v.statut_paiement === 'paye' ? 'bg-indigo-50 text-indigo-700 hover:bg-indigo-100' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}">
+                  ${v.statut_paiement === 'paye' ? 'Payé' : 'Non payé'}
+                </button>
                 ${agingBadgeForDeposit(v)}
-                ${getProofForSale(v)
-                  ? `<button type="button" onclick="openProofModal('${v.id}')" title="Voir la photo jointe" class="px-2 py-0.5 text-[10px] font-bold rounded-lg bg-indigo-50 text-indigo-700 hover:bg-indigo-100">📷</button>`
-                  : `<label title="Ajouter une photo de preuve" class="cursor-pointer px-2 py-0.5 text-[10px] font-semibold rounded-lg bg-slate-100 text-slate-600 hover:bg-indigo-50 hover:text-indigo-700">+ 📷<input type="file" accept="image/*" class="sr-only" onchange="attachProofToExistingSale('${v.id}', this.files[0])" /></label>`
-                }
               </div>
             </td>
-            <td class="py-3 px-3">
-              <button onclick="toggleVenteStatut('${v.id}', 'statut_paiement', '${v.statut_paiement === 'paye' ? 'non_paye' : 'paye'}')"
-                class="px-2.5 py-1 text-xs font-semibold rounded-full transition ${v.statut_paiement === 'paye' ? 'bg-indigo-50 text-indigo-700 hover:bg-indigo-100' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}">
-                ${v.statut_paiement === 'paye' ? 'Payé' : 'Non payé'}
-              </button>
-            </td>
-            <td class="py-3 px-3 text-right whitespace-nowrap space-x-2">
-              <button onclick="openSaleAuditModal('${v.id}')" title="Voir l'historique complet" class="text-xs font-semibold text-slate-600 hover:text-indigo-700 hover:underline">🕒 Audit</button>
-              <button onclick="openEditVenteDrawer('${v.id}', false)" class="text-xs font-semibold text-indigo-600 hover:underline">Modifier</button>
-              <button onclick="openEditVenteDrawer('${v.id}', true)" class="text-xs font-semibold text-slate-500 hover:text-slate-800 hover:underline">Copier</button>
-              <button onclick="deleteVente('${v.id}')" class="text-xs font-semibold text-rose-600 hover:underline">Supprimer</button>
+            <td class="py-3 px-3 text-right whitespace-nowrap align-middle">
+              <div class="inline-flex items-center gap-1">
+                ${proofSrc
+                  ? `<button type="button" onclick="openProofModal('${v.id}')" title="Voir la preuve photo" class="p-1.5 text-xs font-bold rounded-lg bg-indigo-50 text-indigo-700 hover:bg-indigo-100 transition">📷</button>`
+                  : `<label title="Ajouter une preuve photo" class="cursor-pointer p-1.5 text-xs font-semibold rounded-lg text-slate-400 hover:bg-slate-100 hover:text-indigo-700 transition">+📷<input type="file" accept="image/*" class="sr-only" onchange="attachProofToExistingSale('${v.id}', this.files[0])" /></label>`
+                }
+                <button onclick="openSaleAuditModal('${v.id}')" title="Journal d'audit" class="p-1.5 text-xs rounded-lg text-slate-400 hover:text-indigo-700 hover:bg-slate-100 transition">🕒</button>
+                <button onclick="openEditVenteDrawer('${v.id}', false)" title="Modifier" class="px-2 py-1 text-xs font-semibold text-indigo-600 hover:bg-indigo-50 rounded-lg transition">Modifier</button>
+                <button onclick="openEditVenteDrawer('${v.id}', true)" title="Dupliquer" class="p-1.5 text-xs rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition">📋</button>
+                <button onclick="deleteVente('${v.id}')" title="Supprimer" class="p-1.5 text-xs rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition">🗑️</button>
+              </div>
             </td>
           </tr>
         `;
