@@ -669,12 +669,15 @@
   <!-- MODALE APERÇU PREUVE DE DÉPÔT / CONTRAT -->
   <div id="proof-modal" class="hidden fixed inset-0 z-50 bg-slate-950/75 backdrop-blur-sm flex items-center justify-center p-4 no-print">
     <div class="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-2xl w-full max-h-[90vh] flex flex-col overflow-hidden">
-      <div class="px-5 py-3.5 bg-slate-900 text-white flex items-center justify-between">
-        <div>
-          <h3 id="proof-modal-title" class="text-sm font-bold">Preuve de dépôt / Contrat</h3>
-          <p id="proof-modal-subtitle" class="text-[11px] text-slate-400"></p>
+      <div class="px-5 py-3.5 bg-slate-900 text-white flex items-center justify-between gap-2">
+        <div class="min-w-0">
+          <h3 id="proof-modal-title" class="text-sm font-bold truncate">Preuve de dépôt / Contrat</h3>
+          <p id="proof-modal-subtitle" class="text-[11px] text-slate-400 truncate"></p>
         </div>
-        <button id="btn-close-proof" class="w-8 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 flex items-center justify-center">✕</button>
+        <div class="flex items-center gap-2 shrink-0">
+          <button id="btn-delete-proof-modal" type="button" class="hidden px-3 py-1.5 text-xs font-bold bg-rose-600 hover:bg-rose-500 text-white rounded-lg transition">🗑️ Supprimer la preuve</button>
+          <button id="btn-close-proof" type="button" class="w-8 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 flex items-center justify-center">✕</button>
+        </div>
       </div>
       <div id="proof-modal-body" class="p-5 overflow-y-auto flex items-center justify-center bg-slate-100 min-h-[260px]"></div>
     </div>
@@ -1182,6 +1185,37 @@
                   <label class="block text-[10px] font-bold text-emerald-800 mb-1">Taux Olivier (%)</label>
                   <input id="vente-custom-taux-oli" type="number" step="0.01" min="0" max="100" placeholder="4.00" class="w-full px-3 py-1.5 text-xs font-extrabold bg-white border border-emerald-200 rounded-lg tabular-nums" />
                 </div>
+              </div>
+            </div>
+
+            <!-- CASE HIT : REMBOURSEMENT / REPRISE DE COMMISSION -->
+            <div class="pt-2.5 border-t border-slate-200/80 space-y-2.5">
+              <label class="flex items-center justify-between gap-2 cursor-pointer select-none">
+                <span class="flex items-center gap-2">
+                  <input id="vente-is-hit" type="checkbox" class="w-4 h-4 rounded border-rose-300 text-rose-600 focus:ring-rose-500" />
+                  <span class="text-xs font-extrabold text-rose-700">🚨 HIT — Remboursement / Reprise de commission</span>
+                </span>
+                <span class="px-2 py-0.5 text-[10px] font-extrabold uppercase rounded-md bg-rose-50 text-rose-700 border border-rose-200">Déduction</span>
+              </label>
+
+              <div id="vente-hit-details" class="hidden bg-rose-50/75 border border-rose-200 rounded-xl p-3 space-y-2.5">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                  <div>
+                    <label class="block text-[10px] font-extrabold text-rose-900 mb-1">Qui assume la perte (HIT) ? *</label>
+                    <select id="vente-hit-bearer" class="w-full px-2.5 py-1.5 text-xs font-bold bg-white border border-rose-200 rounded-lg text-slate-800 focus:outline-none focus:ring-2 focus:ring-rose-500">
+                      <option value="both">Les deux (Rep + Olivier)</option>
+                      <option value="rep">Représentant uniquement</option>
+                      <option value="olivier">Olivier uniquement (Moi)</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label class="block text-[10px] font-extrabold text-rose-900 mb-1">Montant remboursé ($ CAD)</label>
+                    <input id="vente-hit-amount" type="number" step="0.01" min="0" placeholder="Auto = commission complète" class="w-full px-2.5 py-1.5 text-xs font-extrabold bg-white border border-rose-200 rounded-lg tabular-nums focus:outline-none focus:ring-2 focus:ring-rose-500" />
+                  </div>
+                </div>
+                <p id="vente-hit-help" class="text-[10px] text-rose-800 leading-relaxed">
+                  Laissez le montant vide pour déduire 100 % de la commission calculée, ou indiquez un montant précis à rembourser.
+                </p>
               </div>
             </div>
           </div>
@@ -2815,8 +2849,10 @@
           taux_olivier_applique: Number(ov.tOli),
           commission_rep: isMesVentesForAdmin ? Number(ov.cOli) : Number(ov.cRep),
           commission_olivier: Number(ov.cOli),
-          _bonusApplied: Boolean(isBonusHigher && !ov.noBonus),
-          _customRateApplied: Boolean(ov.customManual || ov.noBonus)
+          _isHit: Boolean(ov.isHit || Number(ov.cRep) < 0 || Number(ov.cOli) < 0),
+          _hitBearer: ov.hitBearer || null,
+          _bonusApplied: Boolean(!ov.isHit && isBonusHigher && !ov.noBonus),
+          _customRateApplied: Boolean(!ov.isHit && (ov.customManual || ov.noBonus))
         };
         return updated;
       };
@@ -3274,6 +3310,9 @@
     });
     document.getElementById('vente-custom-taux-rep')?.addEventListener('input', updateDrawerCommissionPreview);
     document.getElementById('vente-custom-taux-oli')?.addEventListener('input', updateDrawerCommissionPreview);
+    document.getElementById('vente-is-hit')?.addEventListener('change', updateDrawerCommissionPreview);
+    document.getElementById('vente-hit-bearer')?.addEventListener('change', updateDrawerCommissionPreview);
+    document.getElementById('vente-hit-amount')?.addEventListener('input', updateDrawerCommissionPreview);
 
     function updateRateAdjustModalPreview() {
       const sid = document.getElementById('rate-adjust-sale-id')?.value;
@@ -4729,6 +4768,32 @@
       return Math.max(0, Math.floor((now - d) / (1000 * 60 * 60 * 24)));
     }
 
+    function isHitSale(v) {
+      if (!v) return false;
+      if (v._isHit) return true;
+      if (Number(v.commission_rep) < 0 || Number(v.commission_olivier) < 0) return true;
+      return /\[HIT(?::(?:REP|OLIVIER|BOTH))?\]/i.test(String(v.note || ''));
+    }
+
+    function hitBadgeHtml(v) {
+      if (!isHitSale(v)) return '';
+      const rawN = String(v.note || '');
+      const m = rawN.match(/\[HIT:(REP|OLIVIER|BOTH)\]/i);
+      const bearer = v._hitBearer || (m ? m[1].toLowerCase() : (
+        Number(v.commission_rep) < 0 && Number(v.commission_olivier) >= 0 ? 'rep' :
+        (Number(v.commission_olivier) < 0 && Number(v.commission_rep) >= 0 ? 'olivier' : 'both')
+      ));
+      const lbl = bearer === 'rep' ? 'HIT Rep' : (bearer === 'olivier' ? 'HIT Olivier' : 'HIT Rep+Oli');
+      return `<span class="px-1.5 py-0.5 text-[10px] font-extrabold rounded-md bg-rose-100 text-rose-700 border border-rose-200" title="Remboursement / reprise de commission">🚨 ${lbl}</span>`;
+    }
+
+    function cleanDisplaySaleNote(noteStr) {
+      return String(noteStr || '')
+        .replace(/^\[(OTS|SUIVI)\]\s*/i, '')
+        .replace(/\[HIT(?::(?:REP|OLIVIER|BOTH))?\]\s*/ig, '')
+        .trim();
+    }
+
     function agingBadgeForDeposit(v) {
       if (v.statut_depot === 'depot_recu') return '';
       const days = getDaysSince(v.date_vente);
@@ -4749,6 +4814,30 @@
       return saleProofsStore[compositeKey] || '';
     }
 
+    window.removeProofFromSale = async (saleId) => {
+      const sid = String(saleId);
+      const v = state.ventes.find(x => String(x.id) === sid) || state.mesVentes.find(x => String(x.id) === sid);
+      if (!v) return;
+      const ok = await askConfirm('Supprimer cette preuve ?', 'La photo de preuve sera retirée de cette vente.');
+      if (!ok) return;
+
+      delete saleProofsStore[sid];
+      const cliNom = v.client_nom || state.clients.find(c => String(c.id) === String(v.client_id))?.nom || '';
+      const compositeKey = `${v.date_vente}_${cliNom}_${v.valeur}`;
+      delete saleProofsStore[compositeKey];
+      saveSaleProofsStore();
+
+      if (sb && currentProfile) {
+        try {
+          await sb.from('ventes').update({ preuve_url: null }).eq('id', v.id);
+        } catch (e) {}
+      }
+      await recordSaleAudit(sid, 'Preuve photo supprimée', `Retirée par ${currentProfile?.nom || 'Utilisateur'}`, '🗑️');
+      document.getElementById('proof-modal')?.classList.add('hidden');
+      toast('Preuve photo supprimée ✓');
+      await loadAllData();
+    };
+
     window.openProofModal = (saleId) => {
       const v = state.ventes.find(x => String(x.id) === String(saleId)) || state.mesVentes.find(x => String(x.id) === String(saleId));
       if (!v) return;
@@ -4758,6 +4847,15 @@
       document.getElementById('proof-modal-title').textContent = `Preuve de dépôt — ${cli}`;
       document.getElementById('proof-modal-subtitle').textContent = `${ent} • ${v.date_vente} • ${fmtMoney(v.valeur)}`;
       const body = document.getElementById('proof-modal-body');
+      const delBtn = document.getElementById('btn-delete-proof-modal');
+      const canRemoveProof = Boolean(proofSrc) && (
+        currentProfile?.role === 'admin' ||
+        (String(v.representant_id) === String(currentProfile?.id) && v.statut_paiement !== 'paye')
+      );
+      if (delBtn) {
+        delBtn.classList.toggle('hidden', !canRemoveProof);
+        delBtn.onclick = canRemoveProof ? () => removeProofFromSale(v.id) : null;
+      }
       if (proofSrc) {
         body.innerHTML = `<img src="${esc(proofSrc)}" alt="Preuve de dépôt" class="max-h-[70vh] rounded-xl shadow-md object-contain" />`;
       } else {
@@ -8286,13 +8384,15 @@
           const canToggleKpi = isAdmin || (v.statut_depot === 'a_confirmer' && v.statut_paiement !== 'paye');
           const canDelete = v.statut_depot === 'a_confirmer' && v.statut_paiement !== 'paye';
           const proofSrc = getProofForSale(v);
-          const cleanNote = v.note ? v.note.replace(/^\[(OTS|SUIVI)\]\s*/i, '') : '';
+          const cleanNote = cleanDisplaySaleNote(v.note);
+          const hitRow = isHitSale(v);
           return `
-            <div class="bg-white rounded-2xl border border-slate-200/80 p-4 shadow-xs space-y-3">
+            <div class="bg-white rounded-2xl border ${hitRow ? 'border-rose-300 bg-rose-50/20' : 'border-slate-200/80'} p-4 shadow-xs space-y-3">
               <div class="flex items-start justify-between gap-2">
                 <div class="space-y-1 min-w-0">
                   <div class="flex items-center flex-wrap gap-1.5">
                     ${entBadge(v.entreprise_nom)}
+                    ${hitBadgeHtml(v)}
                     ${canToggleKpi
                       ? `<button type="button" onclick="toggleVenteKpiType('${v.id}')" class="px-1.5 py-0.5 text-[10px] font-extrabold rounded-md border ${isSuivi ? 'bg-purple-50 text-purple-700 border-purple-200' : 'bg-sky-50 text-sky-700 border-sky-200'}">${isSuivi ? 'SUIVI' : 'OTS'}</button>`
                       : `<span class="px-1.5 py-0.5 text-[10px] font-extrabold rounded-md border ${isSuivi ? 'bg-purple-50 text-purple-700 border-purple-200' : 'bg-sky-50 text-sky-700 border-sky-200'}">${isSuivi ? 'SUIVI' : 'OTS'}</span>`
@@ -8347,8 +8447,8 @@
                   <div class="text-[11px] text-slate-500 tabular-nums">Vente : <strong>${fmtMoney(v.valeur)}</strong></div>
                 </div>
                 <div class="text-right shrink-0 tabular-nums">
-                  <div class="text-base font-extrabold text-emerald-600">+ ${fmtMoney(v.commission_rep)}</div>
-                  ${v._bonusApplied ? `<span class="inline-block px-1.5 py-0.5 text-[10px] font-extrabold rounded bg-emerald-100 text-emerald-800">+${formatBonusPctShort(diff || 0.01)} bonus</span>` : '<span class="text-[10px] font-semibold text-slate-400">Commission</span>'}
+                  <div class="text-base font-extrabold ${Number(v.commission_rep) < 0 ? 'text-rose-600' : 'text-emerald-600'}">${Number(v.commission_rep) < 0 ? fmtMoney(v.commission_rep) : `+ ${fmtMoney(v.commission_rep)}`}</div>
+                  ${isHitSale(v) ? hitBadgeHtml(v) : (v._bonusApplied ? `<span class="inline-block px-1.5 py-0.5 text-[10px] font-extrabold rounded bg-emerald-100 text-emerald-800">+${formatBonusPctShort(diff || 0.01)} bonus</span>` : '<span class="text-[10px] font-semibold text-slate-400">Commission</span>')}
                 </div>
               </div>
               <div class="flex items-center justify-between gap-2 pt-2 border-t border-slate-100">
@@ -8388,12 +8488,13 @@
                     ${(v.note || '').toUpperCase().includes('[SUIVI]') ? 'SUIVI' : 'OTS'}
                   </span>`
               }
-              ${v.note ? `<span class="text-[11px] text-slate-400">${esc(v.note.replace(/^\[(OTS|SUIVI)\]\s*/i, ''))}</span>` : ''}
+              ${hitBadgeHtml(v)}
+              ${cleanDisplaySaleNote(v.note) ? `<span class="text-[11px] text-slate-400">${esc(cleanDisplaySaleNote(v.note))}</span>` : ''}
             </div>
           </td>
           ${isAdmin ? `<td class="py-3.5 px-4 text-xs font-semibold text-slate-700">${esc(v.rep_nom || '—')}</td>` : ''}
           <td class="py-3.5 px-4 text-right font-semibold text-slate-900 tabular-nums">${fmtMoney(v.valeur)}</td>
-          <td class="py-3.5 px-4 text-right font-extrabold text-emerald-600 tabular-nums border-l-2 border-emerald-400/50 bg-emerald-50/20">
+          <td class="py-3.5 px-4 text-right font-extrabold ${Number(v.commission_rep) < 0 ? 'text-rose-600 bg-rose-50/30' : 'text-emerald-600 bg-emerald-50/20'} tabular-nums border-l-2 ${Number(v.commission_rep) < 0 ? 'border-rose-400/60' : 'border-emerald-400/50'}">
             ${fmtMoney(v.commission_rep)}
             ${v._bonusApplied ? (() => {
               const baseR = getRateForSale(v.representant_id, v.entreprise_id, v.client_id);
@@ -8592,6 +8693,51 @@
       };
     }
 
+    function computeDrawerCommissions(valeur) {
+      const eff = getDrawerComputedRates();
+      const isHit = Boolean(document.getElementById('vente-is-hit')?.checked);
+      const hitBearer = document.getElementById('vente-hit-bearer')?.value || 'both';
+      const rawHitAmt = parseFloat(document.getElementById('vente-hit-amount')?.value);
+      const hasCustomHitAmt = !isNaN(rawHitAmt) && rawHitAmt > 0;
+
+      let cRep = Math.round(valeur * eff.tRep * 100) / 100;
+      let cOli = Math.round(valeur * eff.tOli * 100) / 100;
+
+      if (isHit) {
+        if (hitBearer === 'rep') {
+          cRep = -Math.abs(hasCustomHitAmt ? rawHitAmt : cRep);
+          cOli = 0;
+        } else if (hitBearer === 'olivier') {
+          cRep = 0;
+          cOli = -Math.abs(hasCustomHitAmt ? rawHitAmt : cOli);
+        } else {
+          if (hasCustomHitAmt) {
+            const totalBase = Math.abs(cRep) + Math.abs(cOli);
+            if (totalBase > 0) {
+              const ratioRep = Math.abs(cRep) / totalBase;
+              cRep = -Math.round(rawHitAmt * ratioRep * 100) / 100;
+              cOli = -Math.round((rawHitAmt - Math.abs(cRep)) * 100) / 100;
+            } else {
+              cRep = -Math.round((rawHitAmt / 2) * 100) / 100;
+              cOli = -Math.round((rawHitAmt - Math.abs(cRep)) * 100) / 100;
+            }
+          } else {
+            cRep = -Math.abs(cRep);
+            cOli = -Math.abs(cOli);
+          }
+        }
+      }
+
+      return {
+        ...eff,
+        cRep,
+        cOli,
+        isHit,
+        hitBearer,
+        hitAmount: hasCustomHitAmt ? Math.abs(rawHitAmt) : 0
+      };
+    }
+
     function getDrawerComputedRates() {
       const editId = document.getElementById('vente-edit-id')?.value || null;
       const repId = document.getElementById('vente-rep').value;
@@ -8641,11 +8787,38 @@
       const customRow = document.getElementById('vente-custom-rates-row');
       if (customRow) customRow.classList.toggle('hidden', rateMode !== 'custom');
 
-      const eff = getDrawerComputedRates();
-      const { hasRule, tRep, tOli, bonusActive, bonusDelta } = eff;
+      const isHitChecked = Boolean(document.getElementById('vente-is-hit')?.checked);
+      const hitDetailsBox = document.getElementById('vente-hit-details');
+      if (hitDetailsBox) hitDetailsBox.classList.toggle('hidden', !isHitChecked);
+
+      const bearerSel = document.getElementById('vente-hit-bearer');
+      if (bearerSel) {
+        const oliOpt = bearerSel.querySelector('option[value="olivier"]');
+        if (oliOpt) oliOpt.disabled = !isAdmin;
+        if (!isAdmin && bearerSel.value === 'olivier') bearerSel.value = 'rep';
+      }
+
+      const comp = computeDrawerCommissions(val);
+      const { hasRule, tRep, tOli, bonusActive, bonusDelta, cRep, cOli, isHit, hitBearer } = comp;
       const bStr = formatBonusPctShort(bonusDelta);
 
+      const repEl = document.getElementById('preview-comm-rep');
       const oliEl = document.getElementById('preview-comm-olivier');
+      const hitBadge = isHit
+        ? ` <span class="inline-block ml-1 px-1.5 py-0.5 text-[10px] font-extrabold rounded-md bg-rose-100 text-rose-700">🚨 HIT (${hitBearer === 'rep' ? 'Rep' : (hitBearer === 'olivier' ? 'Olivier' : 'Rep + Oli')})</span>`
+        : '';
+
+      if (repEl) {
+        repEl.className = cRep < 0
+          ? 'text-sm font-extrabold text-rose-600 tabular-nums'
+          : 'text-sm font-extrabold text-slate-900 tabular-nums';
+      }
+      if (oliEl) {
+        oliEl.className = cOli < 0
+          ? 'text-xs font-extrabold text-rose-600 tabular-nums'
+          : 'text-xs font-bold text-emerald-600 tabular-nums';
+      }
+
       if (isAdmin) {
         let tagHtml = '';
         if (rateMode === 'no_bonus') {
@@ -8656,16 +8829,16 @@
           tagHtml = ` <span class="inline-block ml-1 px-1.5 py-0.5 text-[10px] font-extrabold rounded-md bg-emerald-100 text-emerald-800">🔥 +${bStr} Rep / -${bStr} Oli</span>`;
         }
         document.getElementById('preview-taux-label').innerHTML = hasRule
-          ? `Règle : <strong>${fmtPct(tRep)}</strong> Rep / <strong>${fmtPct(tOli)}</strong> Olivier${tagHtml}`
-          : 'Aucun taux configuré (0 % par défaut)';
-        document.getElementById('preview-comm-rep').textContent = `Rep : ${fmtMoney(val * tRep)}`;
-        oliEl.textContent = `Olivier : ${fmtMoney(val * tOli)}`;
+          ? `Règle : <strong>${fmtPct(tRep)}</strong> Rep / <strong>${fmtPct(tOli)}</strong> Olivier${tagHtml}${hitBadge}`
+          : `Aucun taux configuré (0 % par défaut)${hitBadge}`;
+        repEl.textContent = `Rep : ${fmtMoney(cRep)}`;
+        oliEl.textContent = `Olivier : ${fmtMoney(cOli)}`;
         oliEl.classList.remove('hidden');
       } else {
         document.getElementById('preview-taux-label').innerHTML = hasRule
-          ? `Votre taux applicable : <strong>${fmtPct(tRep)}</strong>${bonusActive ? ` <span class="inline-block ml-1 px-1.5 py-0.5 text-[10px] font-extrabold rounded-md bg-emerald-100 text-emerald-800">🔥 Bonus +${bStr} actif</span>` : ''}`
-          : 'Taux calculé automatiquement à l’enregistrement';
-        document.getElementById('preview-comm-rep').textContent = `Ma commission : ${fmtMoney(val * tRep)}`;
+          ? `Votre taux applicable : <strong>${fmtPct(tRep)}</strong>${bonusActive ? ` <span class="inline-block ml-1 px-1.5 py-0.5 text-[10px] font-extrabold rounded-md bg-emerald-100 text-emerald-800">🔥 Bonus +${bStr} actif</span>` : ''}${hitBadge}`
+          : `Taux calculé automatiquement à l’enregistrement${hitBadge}`;
+        repEl.textContent = `Ma commission : ${fmtMoney(cRep)}`;
         oliEl.classList.add('hidden');
       }
     }
@@ -8689,8 +8862,34 @@
       document.getElementById('vente-statut-depot').value = duplicate ? 'a_confirmer' : v.statut_depot;
       document.getElementById('vente-statut-paiement').value = duplicate ? 'non_paye' : v.statut_paiement;
       const rawN = v.note || '';
+      const hasHitTag = /\[HIT(?::(REP|OLIVIER|BOTH))?\]/i.test(rawN) || Number(v.commission_rep) < 0 || Number(v.commission_olivier) < 0;
+      const ovHit = !duplicate ? saleBonusOverridesStore[String(v.id)] : null;
       document.getElementById('vente-type-kpi').value = rawN.toUpperCase().includes('[SUIVI]') ? 'SUIVI' : 'OTS';
-      document.getElementById('vente-note').value = rawN.replace(/^\[(OTS|SUIVI)\]\s*/i, '');
+      document.getElementById('vente-note').value = rawN
+        .replace(/^\[(OTS|SUIVI)\]\s*/i, '')
+        .replace(/\[HIT(?::(?:REP|OLIVIER|BOTH))?\]\s*/ig, '')
+        .trim();
+
+      const hitCb = document.getElementById('vente-is-hit');
+      const hitBearerSel = document.getElementById('vente-hit-bearer');
+      const hitAmtIn = document.getElementById('vente-hit-amount');
+      if (hitCb && hitBearerSel && hitAmtIn) {
+        hitCb.checked = !duplicate && hasHitTag;
+        if (!duplicate && hasHitTag) {
+          const tagMatch = rawN.match(/\[HIT:(REP|OLIVIER|BOTH)\]/i);
+          let bearer = ovHit?.hitBearer || (tagMatch ? tagMatch[1].toLowerCase() : null);
+          if (!bearer) {
+            if (Number(v.commission_rep) < 0 && Number(v.commission_olivier) >= 0) bearer = 'rep';
+            else if (Number(v.commission_olivier) < 0 && Number(v.commission_rep) >= 0) bearer = 'olivier';
+            else bearer = 'both';
+          }
+          hitBearerSel.value = bearer;
+          hitAmtIn.value = ovHit?.hitAmount > 0 ? ovHit.hitAmount : '';
+        } else {
+          hitBearerSel.value = 'both';
+          hitAmtIn.value = '';
+        }
+      }
 
       const modeSel = document.getElementById('vente-rate-mode');
       const customRepIn = document.getElementById('vente-custom-taux-rep');
@@ -8708,6 +8907,32 @@
           customRepIn.value = Math.round(Number(v.taux_rep_applique || 0) * 10000) / 100;
           customOliIn.value = Math.round(Number(v.taux_olivier_applique || 0) * 10000) / 100;
         }
+      }
+
+      const existingProof = !duplicate ? getProofForSale(v) : '';
+      pendingProofDataUrl = existingProof || '';
+      window._editingOriginalHadProof = Boolean(existingProof);
+      const pfIn = document.getElementById('vente-proof-file');
+      if (pfIn) pfIn.value = '';
+      const cmIn = document.getElementById('vente-camera-input');
+      if (cmIn) cmIn.value = '';
+      const prevBox = document.getElementById('vente-proof-preview-box');
+      const prevImg = document.getElementById('vente-proof-preview-img');
+      const btnClear = document.getElementById('btn-clear-proof');
+      const statusBox = document.getElementById('vente-proof-status');
+      if (existingProof) {
+        if (prevImg) prevImg.src = existingProof;
+        prevBox?.classList.remove('hidden');
+        btnClear?.classList.remove('hidden');
+        if (statusBox) {
+          statusBox.textContent = '✓ Preuve actuelle attachée (cliquez sur « Retirer » pour la supprimer)';
+          statusBox.classList.remove('hidden');
+        }
+      } else {
+        if (prevImg) prevImg.src = '';
+        prevBox?.classList.add('hidden');
+        btnClear?.classList.add('hidden');
+        statusBox?.classList.add('hidden');
       }
 
       updateDrawerCommissionPreview();
@@ -8919,13 +9144,15 @@
           const cli = state.clients.find(c => c.id === v.client_id)?.nom || '—';
           const isSuivi = (v.note || '').toUpperCase().includes('[SUIVI]');
           const proofSrc = getProofForSale(v);
-          const cleanNote = v.note ? v.note.replace(/^\[(OTS|SUIVI)\]\s*/i, '') : '';
+          const cleanNote = cleanDisplaySaleNote(v.note);
+          const hitRow = isHitSale(v);
           return `
-            <div class="bg-white rounded-2xl border border-slate-200/80 p-4 shadow-xs space-y-3">
+            <div class="bg-white rounded-2xl border ${hitRow ? 'border-rose-300 bg-rose-50/20' : 'border-slate-200/80'} p-4 shadow-xs space-y-3">
               <div class="flex items-start justify-between gap-2">
                 <div class="min-w-0">
                   <div class="flex items-center flex-wrap gap-1.5">
                     ${entBadge(ent)}
+                    ${hitBadgeHtml(v)}
                     <span class="text-xs font-bold text-indigo-700">${esc(rep)}</span>
                     <span class="text-[11px] text-slate-400">• ${v.date_vente}</span>
                     ${v._carriedOverFrom ? `<span class="px-1.5 py-0.5 text-[10px] font-bold rounded-md bg-amber-50 text-amber-800 border border-amber-200">↪ Transférée de ${v._carriedOverFrom}</span>` : ''}
@@ -8997,12 +9224,13 @@
                   ? `<span title="Doublon client ce mois-ci (seul le montant $ s'ajoute)" class="px-1.5 py-0.5 text-[10px] font-semibold rounded-md bg-slate-100 text-slate-500">2e ligne</span>`
                   : ''
                 }
-                ${v.note ? `<span class="text-[11px] text-slate-400">${esc(v.note.replace(/^\[(OTS|SUIVI)\]\s*/i, ''))}</span>` : ''}
+                ${hitBadgeHtml(v)}
+                ${cleanDisplaySaleNote(v.note) ? `<span class="text-[11px] text-slate-400">${esc(cleanDisplaySaleNote(v.note))}</span>` : ''}
               </div>
             </td>
             <td class="py-3 px-3 text-right font-bold text-slate-900 tabular-nums">${fmtMoney(v.valeur)}</td>
             <td class="py-3 px-3 text-right tabular-nums">
-              <div class="font-semibold text-slate-900">${fmtMoney(v.commission_rep)}</div>
+              <div class="font-semibold ${Number(v.commission_rep) < 0 ? 'text-rose-600' : 'text-slate-900'}">${fmtMoney(v.commission_rep)}</div>
               <div class="text-[11px] text-slate-400 flex items-center justify-end gap-1">
                 <button type="button" onclick="openRateAdjustModal('${v.id}')" title="Cliquer pour ajuster le taux de commission de cette vente" class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md hover:bg-indigo-50 hover:text-indigo-700 font-semibold transition">
                   <span>${fmtPct(v.taux_rep_applique)}</span>
@@ -9025,7 +9253,7 @@
               </div>
             </td>
             <td class="py-3 px-3 text-right tabular-nums">
-              <div class="font-bold text-emerald-600">${fmtMoney(v.commission_olivier)}</div>
+              <div class="font-bold ${Number(v.commission_olivier) < 0 ? 'text-rose-600' : 'text-emerald-600'}">${fmtMoney(v.commission_olivier)}</div>
               <div class="text-[11px] text-slate-400">
                 <button type="button" onclick="openRateAdjustModal('${v.id}')" title="Cliquer pour ajuster le taux de commission de cette vente" class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md hover:bg-emerald-50 hover:text-emerald-700 font-semibold transition">
                   <span>${fmtPct(v.taux_olivier_applique)}</span>
@@ -9917,6 +10145,13 @@
       document.getElementById('vente-note').value = '';
       document.getElementById('vente-statut-depot').value = 'a_confirmer';
       document.getElementById('vente-statut-paiement').value = 'non_paye';
+      window._editingOriginalHadProof = false;
+      const hitCb = document.getElementById('vente-is-hit');
+      if (hitCb) hitCb.checked = false;
+      const hitBearerSel = document.getElementById('vente-hit-bearer');
+      if (hitBearerSel) hitBearerSel.value = 'both';
+      const hitAmtIn = document.getElementById('vente-hit-amount');
+      if (hitAmtIn) hitAmtIn.value = '';
       pendingProofDataUrl = '';
       const pfIn = document.getElementById('vente-proof-file');
       if (pfIn) pfIn.value = '';
@@ -10518,26 +10753,55 @@
           statut_depot: document.getElementById('vente-statut-depot').value,
           statut_paiement: document.getElementById('vente-statut-paiement').value,
           note: (() => {
-            const rawNote = document.getElementById('vente-note').value.trim().replace(/^\[(OTS|SUIVI)\]\s*/i, '');
+            const rawNote = document.getElementById('vente-note').value
+              .trim()
+              .replace(/^\[(OTS|SUIVI)\]\s*/i, '')
+              .replace(/\[HIT(?::(?:REP|OLIVIER|BOTH))?\]\s*/ig, '')
+              .trim();
             const typeKpi = document.getElementById('vente-type-kpi').value;
-            return rawNote ? `[${typeKpi}] ${rawNote}` : `[${typeKpi}]`;
+            const isHit = Boolean(document.getElementById('vente-is-hit')?.checked);
+            const hitBearer = (document.getElementById('vente-hit-bearer')?.value || 'both').toUpperCase();
+            const hitPrefix = isHit ? `[HIT:${hitBearer}] ` : '';
+            return rawNote ? `[${typeKpi}] ${hitPrefix}${rawNote}` : `[${typeKpi}]${isHit ? ` [HIT:${hitBearer}]` : ''}`;
           })()
         };
 
         if (editId) {
-          const eff = getDrawerComputedRates();
-          const { tRep, tOli, bonusActive, rateMode } = eff;
-          const cRep = Math.round(valeur * tRep * 100) / 100;
-          const cOli = Math.round(valeur * tOli * 100) / 100;
+          const eff = computeDrawerCommissions(valeur);
+          const { tRep, tOli, cRep, cOli, bonusActive, rateMode, isHit, hitBearer, hitAmount } = eff;
           payload.taux_rep_applique = tRep;
           payload.taux_olivier_applique = tOli;
           payload.commission_rep = cRep;
           payload.commission_olivier = cOli;
+          if (pendingProofDataUrl) {
+            payload.preuve_url = pendingProofDataUrl;
+          } else if (window._editingOriginalHadProof) {
+            payload.preuve_url = null;
+          }
 
-          const { error } = await sb.from('ventes').update(payload).eq('id', editId);
+          let { error } = await sb.from('ventes').update(payload).eq('id', editId);
+          if (error && 'preuve_url' in payload && (error.message || '').includes('preuve_url')) {
+            delete payload.preuve_url;
+            const retryUp = await sb.from('ventes').update(payload).eq('id', editId);
+            error = retryUp.error;
+          }
           if (error) throw error;
 
-          if (bonusActive || rateMode === 'no_bonus' || rateMode === 'custom') {
+          if (pendingProofDataUrl) {
+            saleProofsStore[String(editId)] = pendingProofDataUrl;
+            saveSaleProofsStore();
+          } else if (window._editingOriginalHadProof) {
+            delete saleProofsStore[String(editId)];
+            const oldV = state.ventes.find(x => String(x.id) === String(editId));
+            if (oldV) {
+              const oldCli = oldV.client_nom || state.clients.find(c => String(c.id) === String(oldV.client_id))?.nom || '';
+              delete saleProofsStore[`${oldV.date_vente}_${oldCli}_${oldV.valeur}`];
+            }
+            saveSaleProofsStore();
+            await recordSaleAudit(editId, 'Preuve photo supprimée', 'Retirée lors de la modification du dossier', '🗑️');
+          }
+
+          if (isHit || bonusActive || rateMode === 'no_bonus' || rateMode === 'custom') {
             await sb.from('ventes').update({
               taux_rep_applique: tRep,
               taux_olivier_applique: tOli,
@@ -10549,6 +10813,9 @@
               tOli,
               cRep,
               cOli,
+              isHit,
+              hitBearer,
+              hitAmount,
               noBonus: rateMode === 'no_bonus',
               customManual: rateMode === 'custom'
             });
@@ -10556,18 +10823,19 @@
             await saveSaleBonusOverride(editId, null);
           }
 
+          const hitAuditTag = isHit
+            ? ` • 🚨 HIT (${hitBearer === 'rep' ? 'Rep' : (hitBearer === 'olivier' ? 'Olivier' : 'Rep + Oli')}) : Rep ${fmtMoney(cRep)} / Oli ${fmtMoney(cOli)}`
+            : '';
           const rateAuditTag = rateMode === 'no_bonus'
             ? ` • Bypass bonus (${fmtPct(tRep)} / ${fmtPct(tOli)})`
             : (rateMode === 'custom'
               ? ` • Taux manuel (${fmtPct(tRep)} / ${fmtPct(tOli)})`
               : (bonusActive ? ` • Bonus Target +${formatBonusPctShort(eff.bonusDelta)} Rep / -${formatBonusPctShort(eff.bonusDelta)} Olivier` : ''));
-          await recordSaleAudit(editId, 'Dossier modifié', `Montant : ${fmtMoney(valeur)}${rateAuditTag} • Dépôt : ${payload.statut_depot === 'depot_recu' ? 'Reçu' : 'À confirmer'} • Paiement : ${payload.statut_paiement === 'paye' ? 'Payé' : 'Non payé'}`, '✏️');
-          toast('Vente mise à jour');
+          await recordSaleAudit(editId, isHit ? 'Dossier modifié (HIT)' : 'Dossier modifié', `Montant : ${fmtMoney(valeur)}${hitAuditTag}${rateAuditTag} • Dépôt : ${payload.statut_depot === 'depot_recu' ? 'Reçu' : 'À confirmer'} • Paiement : ${payload.statut_paiement === 'paye' ? 'Payé' : 'Non payé'}`, isHit ? '🚨' : '✏️');
+          toast(isHit ? 'Dossier HIT mis à jour 🚨' : 'Vente mise à jour');
         } else {
-          const eff = getDrawerComputedRates();
-          const { tRep, tOli, bonusActive, rateMode } = eff;
-          const cRep = Math.round(valeur * tRep * 100) / 100;
-          const cOli = Math.round(valeur * tOli * 100) / 100;
+          const eff = computeDrawerCommissions(valeur);
+          const { tRep, tOli, cRep, cOli, bonusActive, rateMode, isHit, hitBearer, hitAmount } = eff;
           payload.taux_rep_applique = tRep;
           payload.taux_olivier_applique = tOli;
           payload.commission_rep = cRep;
@@ -10584,7 +10852,7 @@
           }
           if (error) throw error;
 
-          if (insertedRow?.id && (bonusActive || rateMode === 'no_bonus' || rateMode === 'custom')) {
+          if (insertedRow?.id && (isHit || bonusActive || rateMode === 'no_bonus' || rateMode === 'custom')) {
             await sb.from('ventes').update({
               taux_rep_applique: tRep,
               taux_olivier_applique: tOli,
@@ -10596,6 +10864,9 @@
               tOli,
               cRep,
               cOli,
+              isHit,
+              hitBearer,
+              hitAmount,
               noBonus: rateMode === 'no_bonus',
               customManual: rateMode === 'custom'
             });
