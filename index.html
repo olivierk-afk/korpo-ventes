@@ -2375,7 +2375,7 @@
                 <span class="px-2.5 py-0.5 text-[10px] font-extrabold uppercase tracking-wider rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200">Pipeline futur</span>
                 <h3 class="text-base font-extrabold text-slate-900">📅 Ventes & commissions planifiées (Mois ultérieurs)</h3>
               </div>
-              <p class="text-xs text-slate-500 mt-0.5">Uniquement les ventes ayant une date de vente future (postérieure à aujourd'hui), ventilées par représentant et par mois</p>
+              <p class="text-xs text-slate-500 mt-0.5">Contrats vendus maintenant dont le mois de commission / réalisation est futur (ex. vendu en nov. 2026 pour janv. 2027), ventilés par représentant et par mois</p>
             </div>
             <div class="flex flex-wrap items-center gap-2 shrink-0">
               <select id="dash-future-month-filter" class="px-3 py-1.5 text-xs font-bold bg-indigo-50/70 text-indigo-950 border border-indigo-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-600 cursor-pointer">
@@ -2406,6 +2406,9 @@
               <tbody id="tbody-dash-future-reps" class="divide-y divide-slate-100"></tbody>
             </table>
           </div>
+
+          <!-- DÉTAIL LIGNE PAR LIGNE DES CONTRATS FUTURS -->
+          <div id="dash-future-contracts-list-box" class="space-y-2 pt-1"></div>
         </div>
 
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -9676,8 +9679,12 @@
     function getSaleTargetFutureMonth(v) {
       if (!v) return '';
       const dStr = (v.date_vente || '').trim().slice(0, 10);
-      if (!dStr || dStr.length < 10 || dStr <= currentDateStr) return '';
-      return dStr.slice(0, 7);
+      const commYm = (v.mois_commission || '').trim().slice(0, 7);
+      const dateYm = dStr.length >= 7 ? dStr.slice(0, 7) : '';
+      if (isValidYearMonth(commYm) && commYm > currentMonthStr) return commYm;
+      if (isValidYearMonth(dateYm) && dateYm > currentMonthStr) return dateYm;
+      if (dStr && dStr.length === 10 && dStr > currentDateStr) return dateYm || currentMonthStr;
+      return '';
     }
 
     function renderFutureMonthsBreakdown() {
@@ -9817,6 +9824,64 @@
           </div>
         </div>
       `).join('');
+
+      const contractsBox = document.getElementById('dash-future-contracts-list-box');
+      if (contractsBox) {
+        const sortedContracts = [...scopedFutureSales].sort((a, b) => {
+          const mA = getSaleTargetFutureMonth(a);
+          const mB = getSaleTargetFutureMonth(b);
+          if (mA !== mB) return mA.localeCompare(mB);
+          return String(a.date_vente || '').localeCompare(String(b.date_vente || ''));
+        });
+
+        contractsBox.innerHTML = `
+          <div class="flex items-center justify-between px-1 pt-2">
+            <span class="text-xs font-extrabold uppercase tracking-wider text-slate-600">📋 Liste détaillée des contrats prévus (${sortedContracts.length})</span>
+            <span class="text-[11px] text-slate-400">Vendus maintenant • Réalisation future</span>
+          </div>
+          <div class="overflow-x-auto border border-slate-200/80 rounded-xl">
+            <table class="w-full text-left border-collapse text-xs">
+              <thead>
+                <tr class="bg-slate-50/90 border-b border-slate-200 text-[10px] font-bold uppercase text-slate-500">
+                  <th class="py-2.5 px-3">Mois prévu</th>
+                  <th class="py-2.5 px-3">Vendu le</th>
+                  <th class="py-2.5 px-3">Représentant</th>
+                  <th class="py-2.5 px-3">Entreprise & Client</th>
+                  <th class="py-2.5 px-3 text-right">Montant</th>
+                  <th class="py-2.5 px-3 text-right text-amber-700">Comm. Rep</th>
+                  <th class="py-2.5 px-3 text-right text-emerald-700">Comm. Olivier</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-slate-100">
+                ${sortedContracts.map(v => {
+                  const fYm = getSaleTargetFutureMonth(v);
+                  const repN = state.representants.find(r => String(r.id) === String(v.representant_id))?.nom || v.rep_nom || '—';
+                  const entN = state.entreprises.find(e => String(e.id) === String(v.entreprise_id))?.nom || v.entreprise_nom || '—';
+                  const cliN = state.clients.find(c => String(c.id) === String(v.client_id))?.nom || v.client_nom || '—';
+                  return `
+                    <tr class="hover:bg-slate-50/80 transition">
+                      <td class="py-2.5 px-3 whitespace-nowrap">
+                        <span class="px-2 py-0.5 rounded-md bg-indigo-50 text-indigo-800 border border-indigo-200 font-extrabold">${esc(formatYearMonthLabelFr(fYm, true))}</span>
+                      </td>
+                      <td class="py-2.5 px-3 text-slate-500 tabular-nums whitespace-nowrap">${esc(v.date_vente || '—')}</td>
+                      <td class="py-2.5 px-3 font-bold text-slate-900 whitespace-nowrap">${esc(repN)}</td>
+                      <td class="py-2.5 px-3">
+                        <div class="flex items-center gap-1.5 flex-wrap">
+                          ${entBadge(entN)}
+                          <span class="font-semibold text-slate-800">${esc(cliN)}</span>
+                        </div>
+                      </td>
+                      <td class="py-2.5 px-3 text-right font-extrabold text-slate-900 tabular-nums whitespace-nowrap">${fmtMoney(v.valeur)}</td>
+                      <td class="py-2.5 px-3 text-right font-bold text-amber-700 tabular-nums whitespace-nowrap">${fmtMoney(v.commission_rep)}</td>
+                      <td class="py-2.5 px-3 text-right font-extrabold text-emerald-700 tabular-nums whitespace-nowrap">${fmtMoney(v.commission_olivier)}</td>
+                    </tr>
+                  `;
+                }).join('')}
+              </tbody>
+            </table>
+          </div>
+        `;
+      }
     }
 
     window.openPayslipModal = (repId) => {
@@ -11370,10 +11435,14 @@
         return (ym || '').startsWith(currentYear);
       }
       if (mode === 'future') {
-        return Boolean(dStr && dStr.length === 10 && dStr > currentDateStr);
+        return Boolean(getSaleTargetFutureMonth(v));
       }
       if (mode === 'specific_month') {
-        return !monthVal || ym === monthVal;
+        if (!monthVal) return true;
+        if (monthVal > currentMonthStr) {
+          return getSaleTargetFutureMonth(v) === monthVal || commYm === monthVal || saleDateYm === monthVal;
+        }
+        return ym === monthVal;
       }
       if (mode === 'specific_date') {
         return !dateVal || dStr === dateVal;
