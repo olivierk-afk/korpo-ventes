@@ -938,12 +938,18 @@
           </div>
 
           <div class="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-indigo-200/70 text-xs">
-            <label class="inline-flex items-center gap-2 font-semibold text-slate-700 cursor-pointer">
-              <input id="auto-email-confirmed-only" type="checkbox" class="rounded border-slate-300 text-indigo-600" />
-              <span>Inclure uniquement les ventes avec dépôt reçu (confirmées)</span>
-            </label>
+            <div class="flex flex-col gap-1.5">
+              <label class="inline-flex items-center gap-2 font-semibold text-slate-700 cursor-pointer">
+                <input id="auto-email-confirmed-only" type="checkbox" class="rounded border-slate-300 text-indigo-600" />
+                <span>Inclure uniquement les ventes avec dépôt reçu (confirmées)</span>
+              </label>
+              <label class="inline-flex items-center gap-2 font-bold text-indigo-950 cursor-pointer">
+                <input id="auto-email-auto-close-month" type="checkbox" checked class="rounded border-slate-300 text-indigo-600" />
+                <span>🔒 Clôturer automatiquement le mois après l'envoi (fige les montants et ventes à l'identique du courriel)</span>
+              </label>
+            </div>
             <button type="button" id="btn-toggle-edge-guide" class="text-xs font-bold text-indigo-700 hover:underline">
-              Voir le code serveur (envoi automatique le dernier jour du mois) ▾
+              Voir le code serveur (envoi automatique le 1er du mois) ▾
             </button>
           </div>
 
@@ -10967,13 +10973,34 @@
       await saveWaveCompanySeqMap(finalSeqMap);
       renderAutoEmailCompanySeqInputs();
 
+      const shouldAutoClose = Boolean(document.getElementById('auto-email-auto-close-month')?.checked);
+      const finalizeAutoCloseIfNeeded = async () => {
+        if (!shouldAutoClose || !isValidYearMonth(ym)) return false;
+        if (typeof isMonthClosed === 'function' && isMonthClosed(ym)) return true;
+        try {
+          const { error: clErr } = await sb.from('mois_clotures').insert({
+            ym,
+            closed_by_nom: currentProfile?.nom || 'Admin',
+            note: 'Clôturé automatiquement après envoi des relevés par courriel'
+          });
+          if (!clErr && typeof closedMonths !== 'undefined') {
+            closedMonths.add(ym);
+            return true;
+          }
+        } catch (e) {}
+        return false;
+      };
+
       // 1. Tenter d'abord l'envoi automatique côté serveur via Supabase Edge Function (`send-monthly-statements`)
       try {
         const { data, error } = await sb.functions.invoke('send-monthly-statements', {
-          body: { month: ym, confirmedOnly, companySeqMap: startingSeqMap, statements }
+          body: { month: ym, confirmedOnly, autoCloseMonth: shouldAutoClose, companySeqMap: startingSeqMap, statements }
         });
         if (!error && data && data.ok) {
-          toast(`✉️ ${data.sentCount || statements.length} relevé(s) envoyé(s) automatiquement par courriel ✓`);
+          const lockedNow = await finalizeAutoCloseIfNeeded();
+          toast(lockedNow
+            ? `✉️ ${data.sentCount || statements.length} relevé(s) envoyé(s) et mois ${ym} clôturé 🔒`
+            : `✉️ ${data.sentCount || statements.length} relevé(s) envoyé(s) automatiquement par courriel ✓`);
           return true;
         }
       } catch (e) {}
@@ -10988,7 +11015,10 @@
           window.open(mailtoUrl, idx === 0 ? '_self' : '_blank');
         }, idx * 450);
       });
-      toast(`✉️ Brouillon(s) préparé(s) et fichier(s) CSV Wave téléchargé(s) pour ${statements.length} représentant(s) ✓`);
+      const lockedAfterDraft = await finalizeAutoCloseIfNeeded();
+      toast(lockedAfterDraft
+        ? `✉️ Relevé(s) préparé(s) et mois ${ym} clôturé 🔒 (chiffres figés à l'identique)`
+        : `✉️ Brouillon(s) préparé(s) et fichier(s) CSV Wave téléchargé(s) pour ${statements.length} représentant(s) ✓`);
       return false;
     }
 
