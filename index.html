@@ -510,6 +510,56 @@
       background-color: rgba(244, 63, 94, 0.32) !important;
     }
 
+    /* ===================================================================== */
+    /* CLASSEMENT D'ÉQUIPE : HARMONIE DES COULEURS, FLUIDITÉ & MODE SOMBRE     */
+    /* ===================================================================== */
+    @keyframes rankCardReveal {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .rank-card-smooth {
+      animation: rankCardReveal 0.28s cubic-bezier(0.22, 1, 0.36, 1) both;
+      transition: transform 0.22s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.22s ease, border-color 0.22s ease;
+      will-change: transform;
+    }
+    .rank-card-smooth:hover {
+      transform: translateY(-2px);
+    }
+    .rank-podium-gold {
+      background: linear-gradient(180deg, rgba(254, 243, 199, 0.72) 0%, rgba(255, 255, 255, 0.98) 58%, #ffffff 100%);
+      border-color: rgba(245, 158, 11, 0.55) !important;
+      box-shadow: 0 10px 26px -10px rgba(217, 119, 6, 0.22), 0 2px 6px rgba(15, 23, 42, 0.04);
+    }
+    .rank-podium-silver {
+      background: linear-gradient(180deg, rgba(241, 245, 249, 0.85) 0%, #ffffff 65%);
+      border-color: rgba(148, 163, 184, 0.55) !important;
+    }
+    .rank-podium-bronze {
+      background: linear-gradient(180deg, rgba(255, 237, 213, 0.65) 0%, #ffffff 65%);
+      border-color: rgba(251, 146, 60, 0.45) !important;
+    }
+    html.dark .rank-podium-gold {
+      background: linear-gradient(180deg, rgba(245, 158, 11, 0.20) 0%, rgba(30, 27, 75, 0.55) 55%, #111827 100%) !important;
+      border-color: rgba(251, 191, 36, 0.55) !important;
+      box-shadow: 0 12px 28px -8px rgba(245, 158, 11, 0.20) !important;
+    }
+    html.dark .rank-podium-silver {
+      background: linear-gradient(180deg, rgba(148, 163, 184, 0.16) 0%, #111827 65%) !important;
+      border-color: rgba(148, 163, 184, 0.42) !important;
+    }
+    html.dark .rank-podium-bronze {
+      background: linear-gradient(180deg, rgba(249, 115, 22, 0.16) 0%, #111827 65%) !important;
+      border-color: rgba(251, 146, 60, 0.42) !important;
+    }
+    html.dark .rank-hero-banner {
+      background-image: linear-gradient(135deg, #0b1120 0%, #1e1b4b 52%, #0f172a 100%) !important;
+      border-color: rgba(129, 140, 248, 0.40) !important;
+    }
+    html.dark .rank-stat-tile {
+      background-color: #162033 !important;
+      border-color: #283652 !important;
+    }
+
     @media print {
       body > *:not(#payslip-modal) { display: none !important; }
       #payslip-modal {
@@ -2134,27 +2184,63 @@
       </section>
 
       <section id="tab-classement" class="hidden space-y-6">
-        <div class="max-w-4xl mx-auto flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div>
-            <h2 class="text-xl font-extrabold text-slate-900 tracking-tight flex items-center gap-2"><span class="w-8 h-8 rounded-xl bg-amber-50 text-amber-600 border border-amber-200/80 flex items-center justify-center text-base">🏆</span><span>Classement de l'équipe</span></h2>
-            <p class="text-xs text-slate-500 mt-0.5">Comparatif des volumes de ventes (les commissions demeurent strictement privées)</p>
+        <div class="max-w-5xl mx-auto space-y-5">
+          <!-- EN-TÊTE ET FILTRES RAPIDES EN 1 CLIC -->
+          <div class="bg-white rounded-3xl border border-slate-200/80 p-5 shadow-xs space-y-4">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div>
+                <div class="flex flex-wrap items-center gap-2.5">
+                  <span class="w-10 h-10 rounded-2xl bg-gradient-to-br from-amber-400 via-amber-500 to-orange-500 text-slate-950 shadow-sm flex items-center justify-center text-lg shrink-0">🏆</span>
+                  <div>
+                    <div class="flex flex-wrap items-center gap-2">
+                      <h2 class="text-lg sm:text-xl font-extrabold text-slate-900 tracking-tight">Classement & Performance de l'équipe</h2>
+                      <span id="classement-period-pill" class="px-2.5 py-0.5 text-[11px] font-extrabold rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200">Ce mois-ci</span>
+                    </div>
+                    <p class="text-xs text-slate-500 mt-0.5">Volumes signés, progression vers les targets et parts d'équipe (commissions strictement privées)</p>
+                  </div>
+                </div>
+              </div>
+
+              <div class="flex flex-wrap items-center gap-2 shrink-0">
+                <select id="filter-rank-period" class="px-3 py-2 text-xs font-bold bg-slate-50 text-slate-800 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-600 cursor-pointer">
+                  <option value="this_month" selected>📅 Ce mois-ci</option>
+                  <option value="this_week">📆 Cette semaine</option>
+                  <option value="this_quarter">📊 Ce trimestre</option>
+                  <option value="this_year">🗓️ Cette année</option>
+                  <option value="all">∞ Cumul global</option>
+                  <option value="specific_month">🎯 Mois précis...</option>
+                  <option value="specific_date">📌 Date précise...</option>
+                </select>
+                <input id="filter-rank-month" type="month" title="Choisir un mois précis" class="hidden px-3 py-2 text-xs font-semibold bg-white border border-indigo-300 rounded-xl cursor-pointer" />
+                <input id="filter-rank-date" type="date" title="Choisir une date précise" class="hidden px-3 py-2 text-xs font-semibold bg-white border border-indigo-300 rounded-xl cursor-pointer" />
+              </div>
+            </div>
+
+            <!-- PILULES RAPIDES DE PÉRIODE (NAVIGATION INSTANTANÉE) -->
+            <div id="rank-quick-pills" class="flex items-center gap-1.5 overflow-x-auto no-scrollbar pt-1 border-t border-slate-100">
+              <button type="button" data-rank-mode="this_month" onclick="setRankPeriodQuick('this_month')" class="rank-pill-btn px-3 py-1.5 text-xs font-extrabold rounded-xl bg-indigo-600 text-white shadow-2xs transition whitespace-nowrap">📅 Ce mois-ci</button>
+              <button type="button" data-rank-mode="this_week" onclick="setRankPeriodQuick('this_week')" class="rank-pill-btn px-3 py-1.5 text-xs font-bold rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200 transition whitespace-nowrap">📆 Cette semaine</button>
+              <button type="button" data-rank-mode="this_quarter" onclick="setRankPeriodQuick('this_quarter')" class="rank-pill-btn px-3 py-1.5 text-xs font-bold rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200 transition whitespace-nowrap">📊 Trimestre</button>
+              <button type="button" data-rank-mode="this_year" onclick="setRankPeriodQuick('this_year')" class="rank-pill-btn px-3 py-1.5 text-xs font-bold rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200 transition whitespace-nowrap">🗓️ Année</button>
+              <button type="button" data-rank-mode="all" onclick="setRankPeriodQuick('all')" class="rank-pill-btn px-3 py-1.5 text-xs font-bold rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200 transition whitespace-nowrap">∞ Cumul global</button>
+            </div>
           </div>
-          <div class="flex flex-wrap items-center justify-center sm:justify-end gap-2">
-            <select id="filter-rank-period" class="px-3.5 py-2 text-xs font-bold bg-indigo-50/70 text-indigo-950 border border-indigo-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-600 cursor-pointer">
-              <option value="this_month" selected>📅 Ce mois-ci</option>
-              <option value="this_week">📆 Cette semaine</option>
-              <option value="this_quarter">📊 Ce trimestre</option>
-              <option value="this_year">🗓️ Cette année</option>
-              <option value="all">∞ Cumul global</option>
-              <option value="specific_month">🎯 Choisir un mois précis...</option>
-              <option value="specific_date">📌 Choisir une date précise...</option>
-            </select>
-            <input id="filter-rank-month" type="month" title="Choisir un mois précis" class="hidden px-3 py-2 text-xs font-semibold bg-white border border-indigo-300 rounded-xl cursor-pointer" />
-            <input id="filter-rank-date" type="date" title="Choisir une date précise" class="hidden px-3 py-2 text-xs font-semibold bg-white border border-indigo-300 rounded-xl cursor-pointer" />
+
+          <!-- BANDEAU OBJECTIF COLLECTIF DE L'ÉQUIPE & 4 CARTES KPI -->
+          <div id="classement-team-hero" class="rank-hero-banner bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 rounded-3xl border border-indigo-500/30 p-5 sm:p-6 text-white shadow-lg space-y-5"></div>
+
+          <!-- PODIUM TOP 3 -->
+          <div id="classement-podium" class="grid grid-cols-1 md:grid-cols-3 gap-4 items-end"></div>
+
+          <!-- CLASSEMENT DÉTAILLÉ COMPLET (CARTES ENRICHIES) -->
+          <div class="space-y-3">
+            <div class="flex items-center justify-between px-1">
+              <h3 class="text-xs font-extrabold uppercase tracking-wider text-slate-600">📊 Détail complet par représentant</h3>
+              <span class="text-[11px] text-slate-400">Classé par volume total signé</span>
+            </div>
+            <div id="classement-cards" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
           </div>
         </div>
-
-        <div id="classement-cards" class="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-4xl mx-auto"></div>
       </section>
 
 
@@ -2432,15 +2518,19 @@
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">
           <div class="bg-white rounded-2xl border border-slate-200/80 p-5 sm:p-6 shadow-xs flex flex-col justify-between">
             <div>
-              <h3 class="text-sm font-bold text-slate-900 mb-4">Répartition & relevés de paie par représentant</h3>
+              <div class="flex items-center justify-between gap-2 mb-4">
+                <h3 class="text-sm font-bold text-slate-900">🏆 Rentabilité & paie par représentant</h3>
+                <span class="px-2 py-0.5 text-[10px] font-extrabold rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">Du + au − rentable</span>
+              </div>
               <div class="overflow-x-auto">
                 <table class="w-full text-left text-xs sm:text-sm border-collapse">
                   <thead>
                     <tr class="border-b border-slate-200 text-[11px] font-bold uppercase text-slate-400">
-                      <th class="py-2.5 pr-2 whitespace-nowrap">Représentant</th>
+                      <th class="py-2.5 pr-2 whitespace-nowrap">Rang & Rep</th>
                       <th class="py-2.5 px-2 text-right whitespace-nowrap">Ventes</th>
                       <th class="py-2.5 px-2 text-right whitespace-nowrap">Comm. Rep</th>
                       <th class="py-2.5 px-2 text-right whitespace-nowrap">Comm. Olivier</th>
+                      <th class="py-2.5 px-2 text-right whitespace-nowrap">Marge %</th>
                       <th class="py-2.5 pl-2 text-right whitespace-nowrap">Paie</th>
                     </tr>
                   </thead>
@@ -2452,15 +2542,19 @@
 
           <div class="bg-white rounded-2xl border border-slate-200/80 p-5 sm:p-6 shadow-xs flex flex-col justify-between">
             <div>
-              <h3 class="text-sm font-bold text-slate-900 mb-4">Répartition par entreprise partenaire</h3>
+              <div class="flex items-center justify-between gap-2 mb-4">
+                <h3 class="text-sm font-bold text-slate-900">🏆 Rentabilité par entreprise partenaire</h3>
+                <span class="px-2 py-0.5 text-[10px] font-extrabold rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">Du + au − rentable</span>
+              </div>
               <div class="overflow-x-auto">
                 <table class="w-full text-left text-xs sm:text-sm border-collapse">
                   <thead>
                     <tr class="border-b border-slate-200 text-[11px] font-bold uppercase text-slate-400">
-                      <th class="py-2.5 pr-2 whitespace-nowrap">Entreprise</th>
+                      <th class="py-2.5 pr-2 whitespace-nowrap">Rang & Entreprise</th>
                       <th class="py-2.5 px-2 text-right whitespace-nowrap">Ventes</th>
                       <th class="py-2.5 px-2 text-right whitespace-nowrap">Comm. Rep</th>
-                      <th class="py-2.5 pl-2 text-right whitespace-nowrap">Comm. Olivier</th>
+                      <th class="py-2.5 px-2 text-right whitespace-nowrap">Comm. Olivier</th>
+                      <th class="py-2.5 pl-2 text-right whitespace-nowrap">Marge %</th>
                     </tr>
                   </thead>
                   <tbody id="tbody-dash-ent" class="divide-y divide-slate-100"></tbody>
@@ -2765,6 +2859,71 @@
       if (await hydrateKv()) { try { await loadAllData(); } catch (e) {} }
     });
     window.addEventListener('online', () => { kvState.dirty.forEach(k => kvPush(k, localStorage.getItem(k) || '{}')); });
+
+    // =========================================================================
+    // PREUVES PHOTO : stockées dans Supabase Storage (bucket privé « preuves-ventes »).
+    // ventes.preuve_url contient le chemin du fichier ; l'affichage passe par des URL signées (1 h).
+    // Les anciennes preuves en base64 restent lisibles et sont migrées automatiquement vers Storage.
+    // =========================================================================
+    const PROOF_BUCKET = 'preuves-ventes';
+    const proofUrlCache = new Map();          // chemin Storage -> { url, exp }
+    const proofMigrationTried = new Set();    // ventes déjà tentées pendant cette session
+    const isProofPath = (r) => typeof r === 'string' && r !== '' && !/^(data:|https?:|blob:)/i.test(r);
+    function dataUrlToBlob(dataUrl) {
+      const [head, b64] = String(dataUrl).split(',');
+      const mime = (head.match(/data:([^;]+)/) || [])[1] || 'image/jpeg';
+      const bin = atob(b64 || ''), u8 = new Uint8Array(bin.length);
+      for (let i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i);
+      return new Blob([u8], { type: mime });
+    }
+    // Retourne le chemin Storage ; si Storage est indisponible, retourne le base64 d'origine (ancien mode)
+    async function uploadProofDataUrl(dataUrl) {
+      try {
+        const path = `${currentUser?.id || 'anon'}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.jpg`;
+        const { error } = await sb.storage.from(PROOF_BUCKET).upload(path, dataUrlToBlob(dataUrl), { contentType: 'image/jpeg', upsert: false });
+        if (error) throw error;
+        return path;
+      } catch (e) { console.warn('Storage indisponible, preuve conservée en base64 :', e && e.message); return dataUrl; }
+    }
+    async function refreshProofUrls(rows) {
+      const now = Date.now();
+      const need = [...new Set((rows || []).map(v => v && v.preuve_url).filter(isProofPath))]
+        .filter(p => !(proofUrlCache.get(p)?.exp > now + 60000));
+      for (let i = 0; i < need.length; i += 100) {
+        try {
+          const { data, error } = await sb.storage.from(PROOF_BUCKET).createSignedUrls(need.slice(i, i + 100), 3600);
+          if (error) throw error;
+          (data || []).forEach(d => { if (d.signedUrl) proofUrlCache.set(d.path, { url: d.signedUrl, exp: now + 3600 * 1000 }); });
+        } catch (e) { console.warn('URL signées indisponibles :', e && e.message); }
+      }
+    }
+    // Valeur à écrire dans preuve_url : chemin (nouvelle photo), undefined (inchangée) ou null (supprimée)
+    async function resolveProofForSave(hadProof) {
+      const p = pendingProofDataUrl;
+      if (p && p.startsWith('data:')) return await uploadProofDataUrl(p);
+      if (p) return undefined;
+      return hadProof ? null : undefined;
+    }
+    // Migration en arrière-plan des anciennes preuves (base64 en base ou dans le navigateur) vers Storage
+    async function migrateLegacyProofs(rows) {
+      let done = 0;
+      const seen = new Set();
+      for (const v of rows || []) {
+        if (!v || seen.has(String(v.id)) || done >= 15) continue;
+        seen.add(String(v.id));
+        const sid = String(v.id);
+        const legacy = (typeof v.preuve_url === 'string' && v.preuve_url.startsWith('data:')) ? v.preuve_url
+          : (!v.preuve_url && typeof saleProofsStore[sid] === 'string' && saleProofsStore[sid].startsWith('data:') ? saleProofsStore[sid] : '');
+        if (!legacy || proofMigrationTried.has(sid)) continue;
+        proofMigrationTried.add(sid);
+        const path = await uploadProofDataUrl(legacy);
+        if (path === legacy) continue; // Storage indisponible
+        const { error } = await sb.from('ventes').update({ preuve_url: path }).eq('id', v.id);
+        if (error) { try { await sb.storage.from(PROOF_BUCKET).remove([path]); } catch (e) {} continue; }
+        delete saleProofsStore[sid]; v.preuve_url = path; done++;
+      }
+      if (done) { saveSaleProofsStore(); try { await loadAllData(); } catch (e) {} }
+    }
 
     // Date locale AAAA-MM-JJ (toISOString() donne la date UTC : le soir, au Québec, c'est déjà « demain »)
     function localYmd(d = new Date()) {
@@ -3348,7 +3507,7 @@
           repNom,
           entNom,
           cliNom,
-          proof: getProofForSale(v) || '',
+          proof: getProofRef(v) || '',
           audit: saleAuditStore[sid] || [],
           sale: {
             id: v.id,
@@ -3537,10 +3696,6 @@
       if (error) return toast('Erreur de restauration : ' + error.message, 'error');
 
       const newId = String(restoredRow.id);
-      if (item.proof) {
-        saleProofsStore[newId] = item.proof;
-        saveSaleProofsStore();
-      }
       saleAuditStore[newId] = [...(item.audit || [])];
       await recordSaleAudit(newId, 'Restaurée depuis la corbeille', `Restaurée par ${currentProfile?.nom || 'Utilisateur'}`, '♻️');
 
@@ -5104,6 +5259,12 @@
     }
 
     function getProofForSale(sale) {
+      const r = getProofRef(sale);
+      return isProofPath(r) ? (proofUrlCache.get(r)?.url || '') : r;
+    }
+
+    // Valeur brute stockée (chemin Storage, base64 ancien format ou cache local)
+    function getProofRef(sale) {
       if (sale.preuve_url) return sale.preuve_url;
       const keyById = sale.id ? String(sale.id) : '';
       if (keyById && saleProofsStore[keyById]) return saleProofsStore[keyById];
@@ -5118,6 +5279,7 @@
       const ok = await askConfirm('Supprimer cette preuve ?', 'La photo de preuve sera retirée de cette vente.');
       if (!ok) return;
 
+      const oldProofRef = getProofRef(v);
       delete saleProofsStore[sid];
       const cliNom = v.client_nom || state.clients.find(c => String(c.id) === String(v.client_id))?.nom || '';
       const compositeKey = `${v.date_vente}_${cliNom}_${v.valeur}`;
@@ -5127,6 +5289,7 @@
       if (sb && currentProfile) {
         try {
           await sb.from('ventes').update({ preuve_url: null }).eq('id', v.id);
+          if (isProofPath(oldProofRef)) await sb.storage.from(PROOF_BUCKET).remove([oldProofRef]);
         } catch (e) {}
       }
       await recordSaleAudit(sid, 'Preuve photo supprimée', `Retirée par ${currentProfile?.nom || 'Utilisateur'}`, '🗑️');
@@ -5165,10 +5328,9 @@
       if (!file) return;
       try {
         toast('Compression de la photo...');
-        const dataUrl = await compressImageToDataUrl(file, 640, 0.62);
-        saleProofsStore[String(saleId)] = dataUrl;
-        saveSaleProofsStore();
-        const { error } = await sb.from('ventes').update({ preuve_url: dataUrl }).eq('id', saleId);
+        const dataUrl = await compressImageToDataUrl(file, 1280, 0.72);
+        const proofRef = await uploadProofDataUrl(dataUrl);
+        const { error } = await sb.from('ventes').update({ preuve_url: proofRef }).eq('id', saleId);
         await recordSaleAudit(saleId, 'Preuve photo ajoutée', 'Capture / reçu téléversé sur le dossier', '📷');
         if (error) {
           toast('Photo enregistrée localement (vérifiez la colonne preuve_url dans Supabase)', 'error');
@@ -5202,7 +5364,7 @@
           statusBox.classList.remove('hidden');
         }
         try {
-          pendingProofDataUrl = await compressImageToDataUrl(file, 640, 0.62);
+          pendingProofDataUrl = await compressImageToDataUrl(file, 1280, 0.72);
           const kb = Math.round((pendingProofDataUrl.length * 3) / 4 / 1024);
           prevImg.src = pendingProofDataUrl;
           prevBox.classList.remove('hidden');
@@ -8158,6 +8320,8 @@
         syncSalesIntoKpi();
         syncGoogleAgendaIntoKpi();
         populateAdminSelects();
+        await refreshProofUrls(state.ventes);
+        migrateLegacyProofs(state.ventes);
         renderAdminVentes();
         renderAdminDashboard();
         renderAdminTaux();
@@ -8215,6 +8379,8 @@
         populateDrawerSelects();
       }
 
+      await refreshProofUrls([...(state.mesVentes || []), ...(state.ventes || [])]);
+      migrateLegacyProofs(state.mesVentes);
       renderMesVentes();
       renderClassement();
       renderKpiDashboard();
@@ -9008,95 +9174,356 @@
       }).join('');
     }
 
+    window.setRankPeriodQuick = (mode) => {
+      const sel = document.getElementById('filter-rank-period');
+      if (!sel) return;
+      sel.value = mode;
+      syncPeriodInputsVisibility('filter-rank', false);
+      renderClassement();
+    };
+
+    const REP_AVATAR_GRADIENTS = [
+      'from-indigo-600 to-blue-600',
+      'from-emerald-600 to-teal-600',
+      'from-violet-600 to-purple-600',
+      'from-sky-600 to-cyan-600',
+      'from-rose-600 to-pink-600',
+      'from-amber-600 to-orange-600'
+    ];
+
+    function getRepAvatarGradient(name) {
+      let h = 0;
+      const s = String(name || '');
+      for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0;
+      return REP_AVATAR_GRADIENTS[Math.abs(h) % REP_AVATAR_GRADIENTS.length];
+    }
+
     function renderClassement() {
       const rankPeriod = readPeriodFilterState('filter-rank');
-      const totalsByRep = new Map();
-      const isSubMonthMode = rankPeriod.mode === 'this_week' || rankPeriod.mode === 'specific_date';
+      const pillEl = document.getElementById('classement-period-pill');
+      if (pillEl) pillEl.textContent = rankPeriod.label || 'Ce mois-ci';
 
-      if ((isSubMonthMode || (state.ventes && state.ventes.length && currentProfile?.role === 'admin'))) {
-        state.representants.forEach(r => {
-          totalsByRep.set(r.id, { nom: r.nom, total: 0, monthsCount: new Set() });
-        });
+      document.querySelectorAll('.rank-pill-btn').forEach(btn => {
+        const isAct = btn.dataset.rankMode === rankPeriod.mode;
+        btn.className = isAct
+          ? 'rank-pill-btn px-3 py-1.5 text-xs font-extrabold rounded-xl bg-indigo-600 text-white shadow-2xs transition whitespace-nowrap'
+          : 'rank-pill-btn px-3 py-1.5 text-xs font-bold rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200 transition whitespace-nowrap';
+      });
+
+      const totalsByRep = new Map();
+      const ensureRepEntry = (id, nom) => {
+        const key = String(id || nom);
+        if (!totalsByRep.has(key)) {
+          totalsByRep.set(key, {
+            id: key,
+            nom,
+            total: 0,
+            confirmedTotal: 0,
+            dealsCount: 0,
+            otsCount: 0,
+            suiviCount: 0,
+            bestSale: 0,
+            byEnt: new Map(),
+            monthsCount: new Set()
+          });
+        }
+        return totalsByRep.get(key);
+      };
+
+      const isSubMonthMode = rankPeriod.mode === 'this_week' || rankPeriod.mode === 'specific_date';
+      const hasFullVentesAccess = isSubMonthMode || (state.ventes && state.ventes.length && currentProfile?.role === 'admin');
+
+      if (hasFullVentesAccess) {
+        state.representants.forEach(r => ensureRepEntry(r.id, r.nom));
         state.ventes.forEach(v => {
           const repObj = state.representants.find(r => String(r.id) === String(v.representant_id));
           if (!repObj) return;
-          if (!totalsByRep.has(repObj.id)) {
-            totalsByRep.set(repObj.id, { nom: repObj.nom, total: 0, monthsCount: new Set() });
-          }
-          const sYm = getSaleStatsMonth(v);
-          const entry = totalsByRep.get(repObj.id);
+          const entry = ensureRepEntry(repObj.id, repObj.nom);
           if (matchesSalePeriod(v, rankPeriod, true)) {
-            entry.total += Number(v.valeur || 0);
+            const val = Number(v.valeur || 0);
+            const sYm = getSaleStatsMonth(v);
+            entry.total += val;
+            if (v.statut_depot === 'depot_recu') entry.confirmedTotal += val;
+            entry.dealsCount += 1;
+            if (val > entry.bestSale) entry.bestSale = val;
+            if ((v.note || '').toUpperCase().includes('[SUIVI]')) entry.suiviCount += 1;
+            else entry.otsCount += 1;
+            const entName = state.entreprises.find(e => String(e.id) === String(v.entreprise_id))?.nom || v.entreprise_nom || '';
+            if (entName) entry.byEnt.set(entName, (entry.byEnt.get(entName) || 0) + val);
             if (sYm) entry.monthsCount.add(sYm);
           }
         });
       } else {
+        // Pour un représentant : combiner ses propres ventes détaillées (`state.mesVentes`) + vue classement + KPI store pour les collègues
+        const knownReps = state.representants.length
+          ? state.representants
+          : ALL_KPI_REPS.map((n, i) => ({ id: `kpi_${i}`, nom: n }));
+        knownReps.forEach(r => ensureRepEntry(r.id, r.nom));
+
         state.classement.forEach(row => {
-          if (!totalsByRep.has(row.representant_id)) {
-            totalsByRep.set(row.representant_id, { nom: row.representant_nom, total: 0, monthsCount: new Set() });
-          }
-          const entry = totalsByRep.get(row.representant_id);
+          const entry = ensureRepEntry(row.representant_id, row.representant_nom);
           const fakeRow = { mois_commission: row.mois_commission, date_vente: `${row.mois_commission}-01` };
           if (matchesSalePeriod(fakeRow, rankPeriod, false)) {
-            const adjTotal = Number(row.total_ventes || 0);
-            entry.total += Math.max(0, adjTotal);
+            const adjTotal = Math.max(0, Number(row.total_ventes || 0));
+            entry.total += adjTotal;
+            entry.dealsCount += Number(row.nb_ventes || row.nombre_ventes || 0);
             if (row.mois_commission) entry.monthsCount.add(row.mois_commission);
           }
         });
+
+        // Enrichir avec les données détaillées disponibles sur ses propres ventes (`state.mesVentes`)
+        const myEntry = Array.from(totalsByRep.values()).find(e => e.nom === currentProfile?.nom);
+        if (myEntry && Array.isArray(state.mesVentes)) {
+          let myConf = 0, myBest = 0, myOts = 0, mySui = 0, myCnt = 0;
+          const myEntMap = new Map();
+          state.mesVentes.forEach(v => {
+            if (!matchesSalePeriod(v, rankPeriod, true)) return;
+            const val = Number(v.valeur || 0);
+            myCnt += 1;
+            if (v.statut_depot === 'depot_recu') myConf += val;
+            if (val > myBest) myBest = val;
+            if ((v.note || '').toUpperCase().includes('[SUIVI]')) mySui += 1;
+            else myOts += 1;
+            const entN = v.entreprise_nom || state.entreprises.find(e => String(e.id) === String(v.entreprise_id))?.nom || '';
+            if (entN) myEntMap.set(entN, (myEntMap.get(entN) || 0) + val);
+          });
+          if (myCnt > 0) {
+            myEntry.confirmedTotal = myConf;
+            myEntry.bestSale = myBest;
+            myEntry.otsCount = myOts;
+            myEntry.suiviCount = mySui;
+            myEntry.dealsCount = Math.max(myEntry.dealsCount, myCnt);
+            myEntry.byEnt = myEntMap;
+          }
+        }
       }
 
-      const ranked = Array.from(totalsByRep.values()).sort((a, b) => b.total - a.total);
-      const medals = ['🥇', '🥈', '🥉'];
+      const activeYm = rankPeriod.singleMonth || currentMonthStr;
+      const bizDaysM = Math.max(1, countBusinessDaysInMonth(activeYm));
+      const mult = rankPeriod.mode === 'this_week'
+        ? (5 / bizDaysM)
+        : (rankPeriod.mode === 'specific_date'
+          ? (1 / bizDaysM)
+          : (rankPeriod.mode === 'this_quarter'
+            ? 3
+            : (rankPeriod.mode === 'this_year'
+              ? 12
+              : (rankPeriod.mode === 'all' ? Math.max(1, Object.keys(kpiStore).length || 1) : 1))));
 
-      document.getElementById('classement-cards').innerHTML = ranked.map((r, idx) => {
-        const activeYm = rankPeriod.singleMonth || currentMonthStr;
+      const enriched = Array.from(totalsByRep.values()).map(r => {
         const unitTarget = getSalesTargetForRep(r.nom, activeYm);
-        const bizDaysM = Math.max(1, countBusinessDaysInMonth(activeYm));
-        const mult = rankPeriod.mode === 'this_week'
-          ? (5 / bizDaysM)
-          : (rankPeriod.mode === 'specific_date'
-            ? (1 / bizDaysM)
-            : (rankPeriod.mode === 'this_quarter'
-              ? 3
-              : (rankPeriod.mode === 'this_year'
-                ? 12
-                : (rankPeriod.mode === 'all' ? Math.max(1, r.monthsCount.size || Object.keys(kpiStore).length || 1) : 1))));
         const repTarget = Math.round(unitTarget * mult);
         const targetPct = repTarget > 0 ? Math.round((r.total / repTarget) * 100) : 0;
-        const barWidth = Math.min(100, Math.max(r.total > 0 ? 4 : 0, targetPct));
+        const remaining = Math.max(0, repTarget - r.total);
+        const avgTicket = r.dealsCount > 0 ? (r.total / r.dealsCount) : 0;
+        const topEntEntry = Array.from(r.byEnt.entries()).sort((a, b) => b[1] - a[1])[0];
+        return {
+          ...r,
+          repTarget,
+          targetPct,
+          remaining,
+          avgTicket,
+          topEntName: topEntEntry ? topEntEntry[0] : '',
+          topEntVal: topEntEntry ? topEntEntry[1] : 0
+        };
+      }).sort((a, b) => b.total - a.total);
+
+      const teamTotalVol = enriched.reduce((s, r) => s + r.total, 0);
+      const teamTotalTarget = enriched.reduce((s, r) => s + r.repTarget, 0);
+      const teamTotalDeals = enriched.reduce((s, r) => s + r.dealsCount, 0);
+      const teamAvgTicket = teamTotalDeals > 0 ? (teamTotalVol / teamTotalDeals) : 0;
+      const teamPct = teamTotalTarget > 0 ? Math.round((teamTotalVol / teamTotalTarget) * 100) : 0;
+      const unlockedRepsCount = enriched.filter(r => r.targetPct >= 100).length;
+
+      // 1. BANDEAU OBJECTIF COLLECTIF DE L'ÉQUIPE
+      const heroBox = document.getElementById('classement-team-hero');
+      if (heroBox) {
+        heroBox.innerHTML = `
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+              <div class="flex items-center gap-2">
+                <span class="px-2.5 py-0.5 text-[10px] font-extrabold uppercase tracking-wider rounded-full bg-amber-400/20 text-amber-300 border border-amber-300/30">Objectif Collectif</span>
+                <span class="text-xs font-semibold text-indigo-200">${esc(rankPeriod.label || 'Période active')}</span>
+              </div>
+              <div class="text-2xl sm:text-3xl font-extrabold text-white mt-1.5 tabular-nums">
+                ${fmtMoney(teamTotalVol)}
+                <span class="text-sm font-semibold text-indigo-300">/ ${fmtMoney0(teamTotalTarget)}</span>
+              </div>
+            </div>
+            <div class="sm:text-right">
+              <span class="inline-block px-3 py-1 rounded-xl text-sm font-extrabold tabular-nums ${teamPct >= 100 ? 'bg-emerald-500/25 text-emerald-300 border border-emerald-400/40' : 'bg-white/10 text-amber-300 border border-white/15'}">
+                ${teamPct >= 100 ? `🔥 ${teamPct} % — Objectif équipe atteint !` : `${teamPct} % de l'objectif équipe`}
+              </span>
+            </div>
+          </div>
+
+          <div class="w-full h-3 bg-white/10 rounded-full overflow-hidden p-0.5 border border-white/15">
+            <div class="h-full rounded-full transition-all duration-700 ${teamPct >= 100 ? 'bg-gradient-to-r from-emerald-400 to-teal-300' : 'bg-gradient-to-r from-indigo-400 via-sky-400 to-emerald-400'}" style="width: ${Math.min(100, teamPct)}%"></div>
+          </div>
+
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-1">
+            <div class="bg-white/10 rounded-2xl p-3 border border-white/10">
+              <div class="text-[11px] text-indigo-200 font-semibold">Volume équipe</div>
+              <div class="text-base sm:text-lg font-extrabold text-emerald-300 tabular-nums mt-0.5">${fmtMoney0(teamTotalVol)}</div>
+            </div>
+            <div class="bg-white/10 rounded-2xl p-3 border border-white/10">
+              <div class="text-[11px] text-indigo-200 font-semibold">Contrats signés</div>
+              <div class="text-base sm:text-lg font-extrabold text-white tabular-nums mt-0.5">${teamTotalDeals > 0 ? `${teamTotalDeals} dossier${teamTotalDeals > 1 ? 's' : ''}` : '—'}</div>
+            </div>
+            <div class="bg-white/10 rounded-2xl p-3 border border-white/10">
+              <div class="text-[11px] text-indigo-200 font-semibold">Panier moyen</div>
+              <div class="text-base sm:text-lg font-extrabold text-sky-300 tabular-nums mt-0.5">${teamAvgTicket > 0 ? fmtMoney0(teamAvgTicket) : '—'}</div>
+            </div>
+            <div class="bg-white/10 rounded-2xl p-3 border border-white/10">
+              <div class="text-[11px] text-indigo-200 font-semibold">Targets atteints</div>
+              <div class="text-base sm:text-lg font-extrabold text-amber-300 tabular-nums mt-0.5">${unlockedRepsCount} / ${enriched.length} reps</div>
+            </div>
+          </div>
+        `;
+      }
+
+      // 2. PODIUM TOP 3 (Sur mobile : #1 en haut, #2 puis #3 ; sur desktop : #2 à gauche, #1 au centre surélevé, #3 à droite)
+      const podiumBox = document.getElementById('classement-podium');
+      if (podiumBox) {
+        const top3 = enriched.slice(0, 3);
+        const podiumOrder = top3.length === 3
+          ? [
+              { r: top3[1], rank: 2, orderCls: 'order-2 md:order-1' },
+              { r: top3[0], rank: 1, orderCls: 'order-1 md:order-2' },
+              { r: top3[2], rank: 3, orderCls: 'order-3 md:order-3' }
+            ]
+          : top3.map((r, i) => ({ r, rank: i + 1, orderCls: `order-${i + 1}` }));
+
+        podiumBox.innerHTML = podiumOrder.map(({ r, rank, orderCls }, pIdx) => {
+          const isFirst = rank === 1;
+          const isSecond = rank === 2;
+          const isMe = r.nom === currentProfile.nom;
+          const sharePct = teamTotalVol > 0 ? Math.round((r.total / teamTotalVol) * 100) : 0;
+          const crownOrMedal = isFirst ? '👑' : (isSecond ? '🥈' : '🥉');
+          const podiumCls = isFirst
+            ? 'rank-podium-gold border-2 md:pb-7'
+            : (isSecond ? 'rank-podium-silver border' : 'rank-podium-bronze border');
+          const badgeStyle = isFirst
+            ? 'bg-amber-400 text-slate-950 shadow-2xs'
+            : (isSecond ? 'bg-slate-200 text-slate-800' : 'bg-orange-100 text-orange-900');
+          const avatarBg = isFirst
+            ? 'bg-gradient-to-br from-amber-400 via-amber-500 to-orange-500 text-slate-950 shadow-md'
+            : `bg-gradient-to-br ${getRepAvatarGradient(r.nom)} text-white shadow-sm`;
+          const barGradient = r.targetPct >= 100
+            ? 'bg-gradient-to-r from-emerald-500 to-teal-400'
+            : (isFirst ? 'bg-gradient-to-r from-amber-500 to-orange-400' : 'bg-gradient-to-r from-indigo-600 to-sky-500');
+
+          return `
+            <div style="animation-delay: ${(rank - 1) * 55}ms" class="${orderCls} rank-card-smooth rounded-3xl p-5 text-center space-y-3 ${podiumCls} ${isMe ? 'ring-2 ring-indigo-500/45' : ''}">
+              <div class="flex items-center justify-center gap-2">
+                <span class="px-3 py-0.5 text-[11px] font-extrabold rounded-full ${badgeStyle}">${crownOrMedal} #${rank}</span>
+                ${isMe ? '<span class="px-2 py-0.5 text-[10px] font-extrabold uppercase rounded-full bg-indigo-600 text-white">Vous</span>' : ''}
+              </div>
+              <div class="w-13 h-13 w-12 h-12 mx-auto rounded-2xl ${avatarBg} font-extrabold text-base flex items-center justify-center">
+                ${esc(r.nom.slice(0, 2).toUpperCase())}
+              </div>
+              <div>
+                <div class="font-extrabold text-base text-slate-900 truncate">${esc(r.nom)}</div>
+                <div class="text-[11px] font-semibold text-slate-500 mt-0.5">${sharePct} % du volume équipe</div>
+              </div>
+              <div class="text-xl sm:text-2xl font-extrabold ${isFirst ? 'text-amber-700' : 'text-slate-900'} tabular-nums">
+                ${fmtMoney(r.total)}
+              </div>
+              <div class="space-y-1.5 pt-1">
+                <div class="flex items-center justify-between text-[11px] font-bold tabular-nums">
+                  <span class="text-slate-500">Target : ${fmtMoney0(r.repTarget)}</span>
+                  <span class="${r.targetPct >= 100 ? 'text-emerald-600' : 'text-indigo-700'}">${r.targetPct} %</span>
+                </div>
+                <div class="w-full h-2.5 bg-slate-100 rounded-full overflow-hidden">
+                  <div class="h-full rounded-full transition-all duration-700 ease-out ${barGradient}" style="width: ${Math.min(100, r.targetPct)}%"></div>
+                </div>
+              </div>
+            </div>
+          `;
+        }).join('');
+      }
+
+      // 3. CARTES DÉTAILLÉES POUR TOUS LES REPRÉSENTANTS
+      const medals = ['🥇', '🥈', '🥉'];
+      const leaderVol = enriched[0]?.total || 0;
+
+      document.getElementById('classement-cards').innerHTML = enriched.map((r, idx) => {
+        const barWidth = Math.min(100, Math.max(r.total > 0 ? 4 : 0, r.targetPct));
         const isMe = r.nom === currentProfile.nom;
-        const reached = targetPct >= 100;
+        const reached = r.targetPct >= 100;
+        const sharePct = teamTotalVol > 0 ? Math.round((r.total / teamTotalVol) * 100) : 0;
+        const gapToLeader = idx === 0 ? 0 : Math.max(0, leaderVol - r.total);
+        const rankPillCls = idx === 0
+          ? 'bg-amber-100 text-amber-900 border border-amber-300'
+          : (idx === 1
+            ? 'bg-slate-200/80 text-slate-800 border border-slate-300'
+            : (idx === 2 ? 'bg-orange-100 text-orange-900 border border-orange-200' : 'bg-slate-100 text-slate-700 border border-slate-200'));
+        const progressGradient = reached
+          ? 'bg-gradient-to-r from-emerald-500 to-teal-400'
+          : (r.targetPct >= 65
+            ? 'bg-gradient-to-r from-indigo-600 via-sky-500 to-emerald-400'
+            : 'bg-gradient-to-r from-indigo-600 to-sky-500');
 
         return `
-          <div class="bg-white p-5 rounded-2xl border ${isMe ? 'border-indigo-400 ring-2 ring-indigo-600/10' : 'border-slate-200/80'} shadow-xs space-y-3">
-            <div class="flex items-center justify-between gap-2">
+          <div style="animation-delay: ${Math.min(idx * 45, 250)}ms" class="rank-card-smooth bg-white p-5 rounded-2xl border ${isMe ? 'border-indigo-400 ring-2 ring-indigo-600/20' : 'border-slate-200/80'} shadow-xs space-y-3.5">
+            <div class="flex items-start justify-between gap-3">
               <div class="flex items-center gap-3 min-w-0">
-                <span class="w-9 h-9 shrink-0 rounded-xl ${reached ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-800'} flex items-center justify-center text-base font-bold">${medals[idx] || `#${idx + 1}`}</span>
-                <div class="min-w-0">
-                  <div class="font-bold text-slate-900 flex items-center gap-2 truncate">
-                    <span>${esc(r.nom)}</span>
-                    ${isMe ? '<span class="text-[10px] font-bold uppercase px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-600">Vous</span>' : ''}
+                <div class="relative shrink-0">
+                  <div class="w-11 h-11 rounded-2xl bg-gradient-to-br ${getRepAvatarGradient(r.nom)} text-white font-extrabold text-sm flex items-center justify-center shadow-xs">
+                    ${esc(r.nom.slice(0, 2).toUpperCase())}
                   </div>
-                  <div class="text-xs text-slate-400 flex items-center gap-1"><span>${idx === 0 ? '👑 Leader • ' : ''}Position #${idx + 1}</span></div>
+                  <span class="absolute -bottom-1.5 -right-1.5 px-1.5 py-0.2 rounded-full text-[10px] font-extrabold ${rankPillCls} shadow-2xs">
+                    ${medals[idx] || `#${idx + 1}`}
+                  </span>
+                </div>
+                <div class="min-w-0">
+                  <div class="font-extrabold text-slate-900 flex items-center gap-2 truncate">
+                    <span>${esc(r.nom)}</span>
+                    ${isMe ? '<span class="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200">Vous</span>' : ''}
+                  </div>
+                  <div class="text-[11px] text-slate-500 flex flex-wrap items-center gap-1.5 mt-0.5">
+                    <span class="font-semibold">${idx === 0 ? '👑 Leader' : `Rang #${idx + 1}`}</span>
+                    <span>•</span>
+                    <span class="font-bold text-indigo-600">${sharePct} % de l'équipe</span>
+                  </div>
                 </div>
               </div>
               <div class="text-right shrink-0 tabular-nums">
-                <div class="text-lg font-extrabold text-slate-900">💰 ${fmtMoney(r.total)}</div>
-                <div class="text-[11px] font-semibold text-slate-400">🎯 Target : ${fmtMoney0(repTarget)}</div>
+                <div class="text-lg font-extrabold text-slate-900">${fmtMoney(r.total)}</div>
+                <div class="text-[11px] font-semibold text-slate-400">🎯 Target : ${fmtMoney0(r.repTarget)}</div>
+              </div>
+            </div>
+
+            <!-- MINI INDICATEURS DE PERFORMANCE -->
+            <div class="grid grid-cols-3 gap-2">
+              <div class="rank-stat-tile bg-slate-50/90 rounded-xl p-2.5 border border-slate-100 text-center text-[11px] tabular-nums">
+                <span class="text-slate-400 block text-[10px]">Dossiers</span>
+                <strong class="text-slate-800">${r.dealsCount > 0 ? r.dealsCount : '—'}</strong>
+                ${(r.otsCount > 0 || r.suiviCount > 0) ? `<span class="text-[9px] text-slate-400 block">${r.otsCount} OTS • ${r.suiviCount} Suivi</span>` : ''}
+              </div>
+              <div class="rank-stat-tile bg-slate-50/90 rounded-xl p-2.5 border border-slate-100 text-center text-[11px] tabular-nums">
+                <span class="text-slate-400 block text-[10px]">Panier moyen</span>
+                <strong class="text-slate-800">${r.avgTicket > 0 ? fmtMoney0(r.avgTicket) : '—'}</strong>
+                ${r.bestSale > 0 ? `<span class="text-[9px] text-emerald-700 font-semibold block">Max : ${fmtMoney0(r.bestSale)}</span>` : ''}
+              </div>
+              <div class="rank-stat-tile bg-slate-50/90 rounded-xl p-2.5 border border-slate-100 text-center text-[11px] tabular-nums">
+                <span class="text-slate-400 block text-[10px]">${r.topEntName ? 'Top partenaire' : 'Écart #1'}</span>
+                <strong class="text-slate-800 truncate block px-1">${r.topEntName ? esc(r.topEntName) : (idx === 0 ? '👑 En tête' : `- ${fmtMoney0(gapToLeader)}`)}</strong>
+                ${r.topEntVal > 0 ? `<span class="text-[9px] text-indigo-600 font-semibold block">${fmtMoney0(r.topEntVal)}</span>` : ''}
               </div>
             </div>
 
             <div class="space-y-1.5">
               <div class="flex items-center justify-between text-[11px] tabular-nums">
                 <span class="font-bold ${reached ? 'text-emerald-600' : 'text-slate-600'}">
-                  ${reached ? '🔥 Target atteint !' : `Progression vers le target (${esc(rankPeriod.label || 'Cumul')})`}
+                  ${reached ? '🔥 Target atteint !' : `Reste ${fmtMoney0(r.remaining)} avant target`}
                 </span>
-                <span class="px-2 py-0.5 rounded-full font-extrabold ${reached ? 'bg-emerald-100 text-emerald-800' : (targetPct >= 65 ? 'bg-amber-100 text-amber-800' : 'bg-indigo-50 text-indigo-700')}">
-                  ${targetPct} %
+                <span class="px-2 py-0.5 rounded-full font-extrabold ${reached ? 'bg-emerald-100 text-emerald-800' : (r.targetPct >= 65 ? 'bg-amber-100 text-amber-800' : 'bg-indigo-50 text-indigo-700')}">
+                  ${r.targetPct} %
                 </span>
               </div>
               <div class="w-full h-2.5 bg-slate-100 rounded-full overflow-hidden">
-                <div class="h-full rounded-full transition-all duration-700 ${reached ? 'bg-gradient-to-r from-emerald-500 to-teal-400' : (targetPct >= 65 ? 'bg-gradient-to-r from-indigo-600 to-amber-400' : 'bg-indigo-600')}" style="width: ${barWidth}%"></div>
+                <div class="h-full rounded-full transition-all duration-700 ease-out ${progressGradient}" style="width: ${barWidth}%"></div>
               </div>
             </div>
           </div>
@@ -9873,31 +10300,85 @@
           }).join('')
         : `<p class="col-span-full text-xs text-slate-400">Aucune donnée mensuelle disponible.</p>`;
 
-      document.getElementById('tbody-dash-rep').innerHTML = state.representants.map(r => {
+      const rankedReps = state.representants.map(r => {
         const subAll = statsList.filter(v => v.representant_id === r.id);
         const subComm = activeCommList.filter(v => v.representant_id === r.id);
+        const ventesVol = subAll.reduce((s, v) => s + Number(v.valeur || 0), 0);
+        const commRepVol = subComm.reduce((s, v) => s + Number(v.commission_rep || 0), 0);
+        const commOliVol = subComm.reduce((s, v) => s + Number(v.commission_olivier || 0), 0);
+        const commBaseVol = subComm.reduce((s, v) => s + Number(v.valeur || 0), 0);
+        const margePct = commBaseVol > 0 ? ((commOliVol / commBaseVol) * 100) : 0;
+        return { r, ventesVol, commRepVol, commOliVol, margePct };
+      }).sort((a, b) => {
+        if (Math.abs(b.commOliVol - a.commOliVol) > 0.005) return b.commOliVol - a.commOliVol;
+        if (Math.abs(b.margePct - a.margePct) > 0.005) return b.margePct - a.margePct;
+        return b.ventesVol - a.ventesVol;
+      });
+
+      const repMedals = ['🥇', '🥈', '🥉'];
+      document.getElementById('tbody-dash-rep').innerHTML = rankedReps.map((item, idx) => {
+        const rankTag = item.commOliVol > 0 && idx < 3
+          ? `<span class="text-sm leading-none">${repMedals[idx]}</span>`
+          : `<span class="text-[11px] font-bold text-slate-400 w-4 text-center">#${idx + 1}</span>`;
         return `
-          <tr class="h-11">
-            <td class="py-2.5 pr-2 font-semibold text-slate-900 whitespace-nowrap align-middle">${esc(r.nom)}</td>
-            <td class="py-2.5 px-2 text-right tabular-nums font-medium whitespace-nowrap align-middle">${fmtMoney(subAll.reduce((s, v) => s + Number(v.valeur), 0))}</td>
-            <td class="py-2.5 px-2 text-right tabular-nums text-amber-600 font-semibold whitespace-nowrap align-middle">${fmtMoney(subComm.reduce((s, v) => s + Number(v.commission_rep), 0))}</td>
-            <td class="py-2.5 px-2 text-right tabular-nums text-emerald-600 font-bold whitespace-nowrap align-middle">${fmtMoney(subComm.reduce((s, v) => s + Number(v.commission_olivier), 0))}</td>
+          <tr class="h-11 ${idx === 0 && item.commOliVol > 0 ? 'bg-emerald-50/40' : ''}">
+            <td class="py-2.5 pr-2 font-semibold text-slate-900 whitespace-nowrap align-middle">
+              <div class="inline-flex items-center gap-1.5">
+                ${rankTag}
+                <span>${esc(item.r.nom)}</span>
+              </div>
+            </td>
+            <td class="py-2.5 px-2 text-right tabular-nums font-medium whitespace-nowrap align-middle">${fmtMoney(item.ventesVol)}</td>
+            <td class="py-2.5 px-2 text-right tabular-nums text-amber-600 font-semibold whitespace-nowrap align-middle">${fmtMoney(item.commRepVol)}</td>
+            <td class="py-2.5 px-2 text-right tabular-nums text-emerald-600 font-extrabold whitespace-nowrap align-middle">${fmtMoney(item.commOliVol)}</td>
+            <td class="py-2.5 px-2 text-right tabular-nums whitespace-nowrap align-middle">
+              <span class="px-1.5 py-0.5 text-[11px] font-bold rounded-md ${item.margePct > 0 ? 'bg-emerald-50 text-emerald-700 border border-emerald-200/80' : 'text-slate-400'}">
+                ${item.margePct > 0 ? `${item.margePct.toFixed(2)} %` : '—'}
+              </span>
+            </td>
             <td class="py-2.5 pl-2 text-right whitespace-nowrap align-middle">
-              <button onclick="openPayslipModal('${r.id}')" class="px-2.5 py-1 text-[11px] font-semibold bg-slate-100 hover:bg-indigo-600 hover:text-white text-slate-700 rounded-lg transition">Relevé</button>
+              <button onclick="openPayslipModal('${item.r.id}')" class="px-2.5 py-1 text-[11px] font-semibold bg-slate-100 hover:bg-indigo-600 hover:text-white text-slate-700 rounded-lg transition">Relevé</button>
             </td>
           </tr>
         `;
       }).join('');
 
-      document.getElementById('tbody-dash-ent').innerHTML = state.entreprises.map(e => {
+      const rankedEntreprises = state.entreprises.map(e => {
         const subAll = statsList.filter(v => v.entreprise_id === e.id);
         const subComm = activeCommList.filter(v => v.entreprise_id === e.id);
+        const ventesVol = subAll.reduce((s, v) => s + Number(v.valeur || 0), 0);
+        const commRepVol = subComm.reduce((s, v) => s + Number(v.commission_rep || 0), 0);
+        const commOliVol = subComm.reduce((s, v) => s + Number(v.commission_olivier || 0), 0);
+        const commBaseVol = subComm.reduce((s, v) => s + Number(v.valeur || 0), 0);
+        const margePct = commBaseVol > 0 ? ((commOliVol / commBaseVol) * 100) : 0;
+        return { e, ventesVol, commRepVol, commOliVol, margePct };
+      }).sort((a, b) => {
+        if (Math.abs(b.commOliVol - a.commOliVol) > 0.005) return b.commOliVol - a.commOliVol;
+        if (Math.abs(b.margePct - a.margePct) > 0.005) return b.margePct - a.margePct;
+        return b.ventesVol - a.ventesVol;
+      });
+
+      const entMedals = ['🥇', '🥈', '🥉'];
+      document.getElementById('tbody-dash-ent').innerHTML = rankedEntreprises.map((item, idx) => {
+        const rankTag = item.commOliVol > 0 && idx < 3
+          ? `<span class="text-sm leading-none">${entMedals[idx]}</span>`
+          : `<span class="text-[11px] font-bold text-slate-400 w-4 text-center">#${idx + 1}</span>`;
         return `
-          <tr class="h-11">
-            <td class="py-2.5 pr-2 whitespace-nowrap align-middle">${entBadge(e.nom)}</td>
-            <td class="py-2.5 px-2 text-right tabular-nums font-medium whitespace-nowrap align-middle">${fmtMoney(subAll.reduce((s, v) => s + Number(v.valeur), 0))}</td>
-            <td class="py-2.5 px-2 text-right tabular-nums text-amber-600 font-semibold whitespace-nowrap align-middle">${fmtMoney(subComm.reduce((s, v) => s + Number(v.commission_rep), 0))}</td>
-            <td class="py-2.5 pl-2 text-right tabular-nums text-emerald-600 font-bold whitespace-nowrap align-middle">${fmtMoney(subComm.reduce((s, v) => s + Number(v.commission_olivier), 0))}</td>
+          <tr class="h-11 ${idx === 0 && item.commOliVol > 0 ? 'bg-emerald-50/40' : ''}">
+            <td class="py-2.5 pr-2 whitespace-nowrap align-middle">
+              <div class="inline-flex items-center gap-1.5">
+                ${rankTag}
+                ${entBadge(item.e.nom)}
+              </div>
+            </td>
+            <td class="py-2.5 px-2 text-right tabular-nums font-medium whitespace-nowrap align-middle">${fmtMoney(item.ventesVol)}</td>
+            <td class="py-2.5 px-2 text-right tabular-nums text-amber-600 font-semibold whitespace-nowrap align-middle">${fmtMoney(item.commRepVol)}</td>
+            <td class="py-2.5 px-2 text-right tabular-nums text-emerald-600 font-extrabold whitespace-nowrap align-middle">${fmtMoney(item.commOliVol)}</td>
+            <td class="py-2.5 pl-2 text-right tabular-nums whitespace-nowrap align-middle">
+              <span class="px-1.5 py-0.5 text-[11px] font-bold rounded-md ${item.margePct > 0 ? 'bg-emerald-50 text-emerald-700 border border-emerald-200/80' : 'text-slate-400'}">
+                ${item.margePct > 0 ? `${item.margePct.toFixed(2)} %` : '—'}
+              </span>
+            </td>
           </tr>
         `;
       }).join('');
@@ -11993,7 +12474,8 @@
           })()
         };
 
-        let insertedRow = null; // portée de toute la soumission (utilisé plus bas pour la réconciliation des doublons)
+        let insertedRow = null; // portée de toute la soumission (réconciliation des doublons plus bas)
+        let proofRefSaved;      // valeur de preuve_url écrite : chemin Storage, null (supprimée) ou undefined (inchangée)
         if (editId) {
           const eff = computeDrawerCommissions(valeur);
           const { tRep, tOli, cRep, cOli, bonusActive, rateMode, isHit, hitBearer, hitAmount, hitAmountRep, hitAmountOli } = eff;
@@ -12001,11 +12483,8 @@
           payload.taux_olivier_applique = tOli;
           payload.commission_rep = cRep;
           payload.commission_olivier = cOli;
-          if (pendingProofDataUrl) {
-            payload.preuve_url = pendingProofDataUrl;
-          } else if (window._editingOriginalHadProof) {
-            payload.preuve_url = null;
-          }
+          proofRefSaved = await resolveProofForSave(window._editingOriginalHadProof);
+          if (proofRefSaved !== undefined) payload.preuve_url = proofRefSaved;
 
           let { error } = await sb.from('ventes').update(payload).eq('id', editId);
           if (error && 'preuve_url' in payload && (error.message || '').includes('preuve_url')) {
@@ -12015,10 +12494,7 @@
           }
           if (error) throw error;
 
-          if (pendingProofDataUrl) {
-            saleProofsStore[String(editId)] = pendingProofDataUrl;
-            saveSaleProofsStore();
-          } else if (window._editingOriginalHadProof) {
+          if (proofRefSaved === null) {
             delete saleProofsStore[String(editId)];
             const oldV = state.ventes.find(x => String(x.id) === String(editId));
             if (oldV) {
@@ -12072,7 +12548,8 @@
           payload.commission_olivier = cOli;
 
           window._justCreatedSaleClientSide = true;
-          if (pendingProofDataUrl) payload.preuve_url = pendingProofDataUrl;
+          proofRefSaved = await resolveProofForSave(false);
+          if (proofRefSaved) payload.preuve_url = proofRefSaved;
           let error;
           ({ data: insertedRow, error } = await sb.from('ventes').insert(payload).select().single());
           if (error && pendingProofDataUrl && (error.message || '').includes('preuve_url')) {
@@ -12105,11 +12582,6 @@
             });
           }
 
-          if (pendingProofDataUrl) {
-            if (insertedRow?.id) saleProofsStore[String(insertedRow.id)] = pendingProofDataUrl;
-            saleProofsStore[`${payload.date_vente}_${clientNom.trim()}_${valeur}`] = pendingProofDataUrl;
-            saveSaleProofsStore();
-          }
           if (insertedRow?.id) {
             const entN = state.entreprises.find(en => String(en.id) === String(entId))?.nom || '';
             const bonusNote = eff.bonusActive ? ` • 🔥 Bonus Target +${formatBonusPctShort(eff.bonusDelta)} Rep / -${formatBonusPctShort(eff.bonusDelta)} Olivier` : '';
@@ -12138,12 +12610,6 @@
             valeur,
             shownComm
           );
-        }
-
-        if (editId && pendingProofDataUrl) {
-          saleProofsStore[String(editId)] = pendingProofDataUrl;
-          saveSaleProofsStore();
-          await sb.from('ventes').update({ preuve_url: pendingProofDataUrl }).eq('id', editId);
         }
 
         if (editId) {
