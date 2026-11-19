@@ -2216,9 +2216,6 @@
             <button id="btn-open-auto-email-modal" type="button" class="px-3.5 py-2 text-xs font-bold text-indigo-800 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 rounded-xl transition flex items-center gap-1.5">
               <span>✉️</span> Envoyer les relevés par courriel
             </button>
-            <button id="btn-export-payroll-batch" class="px-3.5 py-2 text-xs font-bold text-emerald-800 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-xl transition">
-              💸 Exporter fichier de paie (CSV)
-            </button>
             <select id="dash-filter-period" class="px-3.5 py-2 text-xs font-bold bg-indigo-50/70 text-indigo-950 border border-indigo-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-600 cursor-pointer">
               <option value="all" selected>🗓️ Toute l'année / Tout</option>
               <option value="this_week">📆 Cette semaine</option>
@@ -9708,6 +9705,14 @@
       const nbOts = dossiers.filter(d => d.typeKpi === 'OTS').length;
       const nbSuivi = dossiers.filter(d => d.typeKpi === 'SUIVI').length;
 
+      // Format prêt à coller directement dans Wave Accounting (Description [TAB] Quantité [TAB] Prix unitaire)
+      const waveLines = dossiers.map(d => {
+        const desc = `Commission ${d.entreprise} - ${d.client} (${d.date})${d.note ? ' [' + d.note + ']' : ''}`.replace(/[\t\r\n]+/g, ' ');
+        const unitPrice = Number(d.commission || 0).toFixed(2);
+        return `${desc}\t1\t${unitPrice}`;
+      });
+      const waveCopyPasteBlock = waveLines.join('\n');
+
       const lines = [
         `Bonjour ${rep.nom},`,
         ``,
@@ -9719,6 +9724,13 @@
         `• Total des commissions : ${fmtMoney(totalComm)} (Confirmées : ${fmtMoney(totalCommConfirme)})`,
         `• Déjà payé : ${fmtMoney(totalPaye)}`,
         `• Solde à verser : ${fmtMoney(soldeAVerser)} (Dont confirmé : ${fmtMoney(soldeConfirmeAVerser)})`,
+        ``,
+        `====================================================`,
+        `⚡ COPIER-COLLER RAPIDE POUR FACTURE WAVE`,
+        `(Sélectionnez les lignes ci-dessous, copiez et collez dans la 1re ligne d'article de votre facture Wave) :`,
+        `====================================================`,
+        ...(waveLines.length ? waveLines : ['(Aucune commission sur cette période)']),
+        `====================================================`,
         ``,
         `Répartition par entreprise :`,
         ...parEntreprise.map(e => `- ${e.entreprise} (${e.count} dossier(s)) : Ventes ${fmtMoney(e.ventes)} | Comm. ${fmtMoney(e.comm)}`),
@@ -9751,6 +9763,7 @@
         targetPct,
         parEntreprise,
         dossiers,
+        waveCopyPasteBlock,
         subject: `Relevé complet ventes & commissions — ${ym} | Korpo Solutions`,
         bodyText: lines.join('\n')
       };
@@ -9806,13 +9819,33 @@
                 </div>
               </div>
             </div>
-            <button type="button" onclick="event.preventDefault(); sendSingleRepStatementById('${esc(st.repId)}')" class="self-end sm:self-center px-3 py-1.5 text-[11px] font-bold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 rounded-xl transition shrink-0">
-              ✉️ Envoyer seul
-            </button>
+            <div class="self-end sm:self-center flex items-center gap-1.5 shrink-0">
+              <button type="button" onclick="event.preventDefault(); copyWaveLinesForRep('${esc(st.repId)}')" title="Copier les lignes formatées pour coller directement dans Wave" class="px-2.5 py-1.5 text-[11px] font-bold text-emerald-800 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-xl transition">
+                📋 Copier Wave
+              </button>
+              <button type="button" onclick="event.preventDefault(); sendSingleRepStatementById('${esc(st.repId)}')" class="px-3 py-1.5 text-[11px] font-bold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 rounded-xl transition">
+                ✉️ Envoyer seul
+              </button>
+            </div>
           </label>
         `;
       }).join('');
     }
+
+    window.copyWaveLinesForRep = async (repId) => {
+      const rep = state.representants.find(r => String(r.id) === String(repId));
+      if (!rep) return;
+      const ym = document.getElementById('auto-email-month')?.value || currentMonthStr;
+      const confirmedOnly = Boolean(document.getElementById('auto-email-confirmed-only')?.checked);
+      const st = buildStatementForRep(rep, ym, confirmedOnly);
+      if (!st.waveCopyPasteBlock) return toast('Aucune ligne de commission à copier pour ce mois.', 'error');
+      try {
+        await navigator.clipboard.writeText(st.waveCopyPasteBlock);
+        toast(`📋 ${st.dossiers.length} ligne(s) Wave copiée(s) pour ${rep.nom} — collez dans la 1re ligne d'article Wave !`);
+      } catch (e) {
+        toast('Impossible de copier automatiquement.', 'error');
+      }
+    };
 
     window.sendSingleRepStatementById = async (repId) => {
       const rep = state.representants.find(r => String(r.id) === String(repId));
