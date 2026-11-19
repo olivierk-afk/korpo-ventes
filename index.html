@@ -73,16 +73,34 @@
     }
 
     /* ===================================================================== */
-    /* HARMONISATION & LISIBILITÉ — MODE CLAIR (LIGHT MODE)                  */
+    /* HARMONISATION & CONFORT VISUEL — MODE CLAIR ADOUCI (ANTI-ÉBLOUISSEMENT)*/
     /* ===================================================================== */
     html:not(.dark) body {
-      background-color: #eef2f7 !important;
-      color: #0f172a !important;
+      background-color: #dde3ec !important;
+      color: #1e293b !important;
     }
-    html:not(.dark) main .bg-white {
-      background-color: #ffffff !important;
-      border-color: #d5dde8 !important;
-      box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05), 0 1px 2px rgba(15, 23, 42, 0.03) !important;
+    html:not(.dark) main .bg-white,
+    html:not(.dark) #sale-drawer-backdrop .bg-white,
+    html:not(.dark) #global-client-search-modal .bg-white,
+    html:not(.dark) #chat-modal-backdrop > div,
+    html:not(.dark) #confirm-modal .bg-white,
+    html:not(.dark) #pwd-modal .bg-white,
+    html:not(.dark) #rate-adjust-modal .bg-white,
+    html:not(.dark) #audit-modal .bg-white,
+    html:not(.dark) #dedup-modal .bg-white,
+    html:not(.dark) #trash-modal .bg-white,
+    html:not(.dark) #auto-email-modal .bg-white,
+    html:not(.dark) #payslip-modal .bg-white,
+    html:not(.dark) #wa-modal .bg-white,
+    html:not(.dark) #kpi-import-modal .bg-white {
+      background-color: #eef2f6 !important;
+      border-color: #c2ccd9 !important;
+      box-shadow: 0 2px 6px rgba(15, 23, 42, 0.06), 0 1px 2px rgba(15, 23, 42, 0.04) !important;
+    }
+    html:not(.dark) #screen-login .bg-white,
+    html:not(.dark) #screen-config .bg-white {
+      background-color: #eef2f6 !important;
+      border: 1px solid #c2ccd9 !important;
     }
     html:not(.dark) main .text-slate-400 {
       color: #475569 !important;
@@ -91,24 +109,47 @@
       color: #334155 !important;
     }
     html:not(.dark) main .border-slate-100 {
-      border-color: #e2e8f0 !important;
+      border-color: #d2dae6 !important;
     }
     html:not(.dark) main .border-slate-200,
     html:not(.dark) main .border-slate-200\/80,
     html:not(.dark) main .border-slate-200\/90 {
-      border-color: #cbd5e1 !important;
+      border-color: #bcc7d6 !important;
     }
     html:not(.dark) main .bg-slate-50,
     html:not(.dark) main .bg-slate-50\/80,
     html:not(.dark) main .bg-slate-50\/90,
-    html:not(.dark) main .bg-slate-50\/40 {
-      background-color: #f8fafc !important;
+    html:not(.dark) main .bg-slate-50\/40,
+    html:not(.dark) #chat-messages-feed,
+    html:not(.dark) #form-team-chat {
+      background-color: #e4e9f0 !important;
+    }
+    html:not(.dark) main table thead tr {
+      background-color: #dfe6ef !important;
+    }
+    html:not(.dark) main table tbody tr:hover {
+      background-color: #e6ebf2 !important;
+    }
+    html:not(.dark) main .bg-indigo-50\/30,
+    html:not(.dark) main .bg-indigo-50\/50,
+    html:not(.dark) main .bg-indigo-50\/70,
+    html:not(.dark) main .bg-indigo-50\/80 {
+      background-color: #e2e7f5 !important;
+    }
+    html:not(.dark) main .bg-emerald-50\/30,
+    html:not(.dark) main .bg-emerald-50\/50,
+    html:not(.dark) main .bg-emerald-50\/70,
+    html:not(.dark) main .bg-emerald-50\/80 {
+      background-color: #dfeee9 !important;
     }
     html:not(.dark) main input:not([type="checkbox"]):not([type="radio"]):not([type="file"]),
     html:not(.dark) main select,
-    html:not(.dark) main textarea {
-      background-color: #ffffff !important;
-      border-color: #cbd5e1 !important;
+    html:not(.dark) main textarea,
+    html:not(.dark) #sale-drawer-backdrop input:not([type="checkbox"]):not([type="radio"]):not([type="file"]),
+    html:not(.dark) #sale-drawer-backdrop select,
+    html:not(.dark) #sale-drawer-backdrop textarea {
+      background-color: #f4f6f9 !important;
+      border-color: #b4c0d0 !important;
       color: #0f172a !important;
     }
 
@@ -1421,9 +1462,9 @@
         <div class="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
           <!-- RECHERCHE GLOBALE RAPIDE PAR CLIENT (BULLE LOUPE DANS L'EN-TÊTE) -->
           <div id="global-search-wrapper" class="relative">
-            <button id="btn-global-search-open" type="button" onclick="openGlobalClientSearch()" title="Rechercher un client dans toute l'application" class="h-9 px-2.5 sm:px-3.5 inline-flex items-center gap-1.5 text-slate-200 hover:text-white bg-slate-800/95 hover:bg-slate-700 border border-slate-700/90 rounded-full shadow-xs transition active:scale-95">
+            <button id="btn-global-search-open" type="button" onclick="openGlobalClientSearch()" title="Rechercher un client dans toute l'application" style="touch-action: manipulation; -webkit-tap-highlight-color: transparent;" class="h-9 px-3 sm:px-3.5 inline-flex items-center gap-1.5 text-slate-200 hover:text-white bg-slate-800/95 hover:bg-slate-700 border border-slate-700/90 rounded-full shadow-xs transition active:scale-95 cursor-pointer">
               <svg class="w-4 h-4 text-emerald-400 shrink-0" fill="none" stroke="currentColor" stroke-width="2.4" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35m1.85-5.15a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
-              <span class="text-xs font-semibold text-slate-300 hidden xs:inline sm:inline">Client...</span>
+              <span class="text-xs font-semibold text-slate-200">Client...</span>
             </button>
           </div>
 
@@ -10912,7 +10953,7 @@
         const isSuivi = (v.note || '').toUpperCase().includes('[SUIVI]');
         const cleanNote = cleanDisplaySaleNote(v.note);
         return `
-          <button type="button" onclick="navigateToSaleRecord('${v.id}')" class="w-full text-left p-3.5 sm:px-5 hover:bg-indigo-50/70 active:bg-indigo-100/70 transition flex items-center justify-between gap-3">
+          <button type="button" data-nav-sale-id="${v.id}" onclick="navigateToSaleRecord('${v.id}')" style="touch-action: manipulation; -webkit-tap-highlight-color: transparent;" class="w-full text-left p-3.5 sm:px-5 hover:bg-indigo-50/70 active:bg-indigo-100/70 transition flex items-center justify-between gap-3 cursor-pointer">
             <div class="min-w-0 space-y-1">
               <div class="flex items-center flex-wrap gap-1.5">
                 ${entBadge(v._ent)}
@@ -10968,7 +11009,9 @@
       }
 
       const isAdmin = currentProfile?.role === 'admin';
-      const v = (isAdmin ? state.ventes : state.mesVentes).find(x => String(x.id) === sid);
+      const v = (isAdmin ? state.ventes : state.mesVentes).find(x => String(x.id) === sid)
+        || (state.mesVentes || []).find(x => String(x.id) === sid)
+        || (state.ventes || []).find(x => String(x.id) === sid);
       if (!v) return;
 
       const cliNom = v.client_nom || state.clients.find(c => String(c.id) === String(v.client_id))?.nom || '';
@@ -10986,7 +11029,7 @@
         if (eIn) eIn.value = '';
         if (pIn) pIn.value = 'all';
         if (stIn) stIn.value = '';
-        syncPeriodFilterVisibility('admin-filter');
+        if (typeof syncPeriodInputsVisibility === 'function') syncPeriodInputsVisibility('admin-filter', false);
         renderAdminVentes();
       } else {
         switchTab('tab-mes-ventes');
@@ -10994,11 +11037,11 @@
         const pIn = document.getElementById('filter-rep-period');
         if (stIn) stIn.value = '';
         if (pIn) pIn.value = 'all';
-        syncPeriodFilterVisibility('filter-rep');
+        if (typeof syncPeriodInputsVisibility === 'function') syncPeriodInputsVisibility('filter-rep', false);
         renderMesVentes();
       }
 
-      // Défiler jusqu'à la fiche exacte du client et l'illuminer
+      // Défiler jusqu'à la fiche exacte du client et l'illuminer (Desktop & Mobile)
       const scrollToExactCard = () => {
         const isMobile = window.innerWidth < 768;
         const containerSel = isAdmin
@@ -11009,26 +11052,53 @@
         if (!exactEl) return;
 
         const headerEl = document.querySelector('#screen-app header');
-        const headerOffset = (headerEl ? headerEl.offsetHeight : 104) + 14;
-        exactEl.style.scrollMarginTop = `${headerOffset}px`;
+        const headerOffset = (headerEl ? headerEl.offsetHeight : 112) + 16;
+        const rect = exactEl.getBoundingClientRect();
+        const targetY = window.scrollY + rect.top - headerOffset;
         try {
-          exactEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          window.scrollTo({ top: Math.max(0, targetY), behavior: 'smooth' });
         } catch (e) {
-          exactEl.scrollIntoView(true);
+          window.scrollTo(0, Math.max(0, targetY));
         }
 
         exactEl.classList.add('ring-2', 'ring-emerald-500', 'bg-emerald-50/60');
         setTimeout(() => {
           exactEl.classList.remove('ring-2', 'ring-emerald-500', 'bg-emerald-50/60');
-        }, 2400);
+        }, 2600);
       };
 
-      setTimeout(scrollToExactCard, 120);
-      setTimeout(scrollToExactCard, 420);
+      setTimeout(scrollToExactCard, 150);
+      setTimeout(scrollToExactCard, 500);
     };
 
     document.getElementById('global-client-search-input')?.addEventListener('input', (e) => {
       renderGlobalClientSearchResults(e.target.value);
+    });
+    document.getElementById('global-client-search-input')?.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.keyCode === 13) {
+        e.preventDefault();
+        const firstBtn = document.querySelector('#global-client-search-results [data-nav-sale-id]');
+        if (firstBtn) {
+          navigateToSaleRecord(firstBtn.getAttribute('data-nav-sale-id'));
+        }
+      }
+    });
+    document.getElementById('global-client-search-results')?.addEventListener('pointerdown', (e) => {
+      const btn = e.target.closest('[data-nav-sale-id]');
+      if (btn && e.pointerType === 'touch') {
+        window._touchNavSaleId = btn.getAttribute('data-nav-sale-id');
+        window._touchNavStartY = e.clientY;
+      }
+    });
+    document.getElementById('global-client-search-results')?.addEventListener('pointerup', (e) => {
+      const btn = e.target.closest('[data-nav-sale-id]');
+      if (btn && e.pointerType === 'touch' && window._touchNavSaleId === btn.getAttribute('data-nav-sale-id')) {
+        if (Math.abs(e.clientY - (window._touchNavStartY || 0)) < 12) {
+          e.preventDefault();
+          navigateToSaleRecord(window._touchNavSaleId);
+        }
+        window._touchNavSaleId = null;
+      }
     });
     document.getElementById('global-client-search-modal')?.addEventListener('click', (e) => {
       if (e.target.id === 'global-client-search-modal') closeGlobalClientSearch();
