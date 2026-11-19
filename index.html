@@ -874,8 +874,10 @@
               </div>
               <p class="text-[11px] text-slate-600 mt-0.5">Une fois la fonction <code>send-monthly-statements</code> déployée sur Supabase, les relevés partent automatiquement ou en 1 clic ci-dessous.</p>
             </div>
-            <div class="flex items-center gap-2 shrink-0">
-              <label class="text-xs font-bold text-slate-700">Mois :</label>
+            <div class="flex flex-wrap items-center gap-2 shrink-0">
+              <label class="text-xs font-bold text-slate-700">Dernier n° Wave :</label>
+              <input id="auto-email-last-inv" type="text" placeholder="105" title="Dernier numéro de facture déjà utilisé dans Wave (les nouvelles suivront +1, +2, +3...)" class="w-24 px-2.5 py-1.5 text-xs font-extrabold text-indigo-950 bg-white border border-indigo-200 rounded-xl tabular-nums" />
+              <label class="text-xs font-bold text-slate-700 ml-1">Mois :</label>
               <input id="auto-email-month" type="month" class="px-3 py-1.5 text-xs font-bold bg-white border border-indigo-200 rounded-xl" />
             </div>
           </div>
@@ -2816,6 +2818,13 @@
               }
             }
           } catch (e) {}
+        } else if (sIdx === -12 && r.mois_commission === 'wave_last_inv_num' && r.representant_nom) {
+          const cloudInv = String(r.representant_nom).trim();
+          if (cloudInv) {
+            lsSet('korpo_wave_last_inv_num', cloudInv);
+            const invIn = document.getElementById('auto-email-last-inv');
+            if (invIn && !invIn.value) invIn.value = cloudInv;
+          }
         } else if (sIdx === -11 && r.mois_commission && r.representant_nom) {
           try {
             const snapData = JSON.parse(r.representant_nom);
@@ -9710,7 +9719,15 @@
 
       // Génération du fichier CSV au format exact Wave Connect (1 facture séquentielle par entreprise partenaire, 1 ligne par client)
       const invDate = localYmd();
-      const lastSavedInv = parseInt(localStorage.getItem('korpo_wave_last_inv_num') || '105', 10) || 105;
+      const modalInvInput = document.getElementById('auto-email-last-inv');
+      const rawLastInv = (modalInvInput && modalInvInput.value.trim())
+        ? modalInvInput.value.trim()
+        : (localStorage.getItem('korpo_wave_last_inv_num') || '105');
+      const numMatch = String(rawLastInv).match(/(\d+)$/);
+      const invPrefix = numMatch ? String(rawLastInv).slice(0, -numMatch[1].length) : '';
+      const invPad = numMatch ? numMatch[1].length : 0;
+      let nextSeqCounter = numMatch ? parseInt(numMatch[1], 10) : (parseInt(rawLastInv, 10) || 105);
+
       const waveCsvHeaders = [
         'Customer Name',
         'Customer Account Number',
@@ -9730,12 +9747,12 @@
         String(a.date || '').localeCompare(String(b.date || ''))
       );
       const companySeqMap = new Map();
-      let nextSeqCounter = lastSavedInv;
       const waveCsvRows = sortedDossiersForWave.map(d => {
         const customerCompany = d.entreprise || 'Korpo Solutions';
         if (!companySeqMap.has(customerCompany)) {
           nextSeqCounter += 1;
-          companySeqMap.set(customerCompany, String(nextSeqCounter));
+          const formattedNum = invPad > 0 ? String(nextSeqCounter).padStart(invPad, '0') : String(nextSeqCounter);
+          companySeqMap.set(customerCompany, `${invPrefix}${formattedNum}`);
         }
         const invNumber = companySeqMap.get(customerCompany);
         const clientDesc = `${d.client}${d.note ? ' (' + d.note + ')' : ''}`.replace(/[\t\r\n]+/g, ' ');
@@ -9756,6 +9773,7 @@
         ].join(',');
       });
       const waveCsvContent = [waveCsvHeaders.join(','), ...waveCsvRows].join('\n');
+      const highestWaveInvUsed = `${invPrefix}${invPad > 0 ? String(nextSeqCounter).padStart(invPad, '0') : String(nextSeqCounter)}`;
 
       const lines = [
         `Bonjour ${rep.nom},`,
@@ -9802,6 +9820,7 @@
         targetPct,
         parEntreprise,
         dossiers,
+        highestWaveInvUsed,
         waveCsvContent,
         waveCsvFilename: `facture-wave-${String(rep.nom || 'rep').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-')}-${ym}.csv`,
         subject: `Relevé complet ventes & commissions — ${ym} | Korpo Solutions`,
@@ -9809,14 +9828,48 @@
       };
     }
 
+    async function saveLastWaveInvoiceNumber(valStr) {
+      const cleanVal = String(valStr || '').trim();
+      if (!cleanVal) return;
+      lsSet('korpo_wave_last_inv_num', cleanVal);
+      const modalInvEl = document.getElementById('auto-email-last-inv');
+      if (modalInvEl) modalInvEl.value = cleanVal;
+      if (sb && currentProfile) {
+        try {
+          await safeUpsertKpiHebdoRow({
+            mois_commission: 'wave_last_inv_num',
+            semaine_index: -12,
+            representant_nom: cleanVal,
+            booke: 0,
+            rdv_realise: 0,
+            updated_at: new Date().toISOString()
+          });
+        } catch (e) {}
+      }
+    }
+
     async function sendStatementsForReps(repsList, ym, confirmedOnly = false) {
       if (!repsList || !repsList.length) return toast('Aucun représentant sélectionné.', 'error');
-      const statements = repsList.map(r => buildStatementForRep(r, ym, confirmedOnly));
+      const modalInvEl = document.getElementById('auto-email-last-inv');
+      let runningLastInv = (modalInvEl && modalInvEl.value.trim())
+        ? modalInvEl.value.trim()
+        : (localStorage.getItem('korpo_wave_last_inv_num') || '105');
+
+      const statements = [];
+      for (const r of repsList) {
+        if (modalInvEl) modalInvEl.value = runningLastInv;
+        const st = buildStatementForRep(r, ym, confirmedOnly);
+        if (st.dossiers && st.dossiers.length > 0 && st.highestWaveInvUsed) {
+          runningLastInv = st.highestWaveInvUsed;
+        }
+        statements.push(st);
+      }
+      await saveLastWaveInvoiceNumber(runningLastInv);
 
       // 1. Tenter d'abord l'envoi automatique côté serveur via Supabase Edge Function (`send-monthly-statements`)
       try {
         const { data, error } = await sb.functions.invoke('send-monthly-statements', {
-          body: { month: ym, confirmedOnly, statements }
+          body: { month: ym, confirmedOnly, lastInvoiceNumber: runningLastInv, statements }
         });
         if (!error && data && data.ok) {
           toast(`✉️ ${data.sentCount || statements.length} relevé(s) envoyé(s) automatiquement par courriel ✓`);
@@ -9979,7 +10032,7 @@
         ].join(',');
       });
       const finalSavedStr = `${prefixPart}${padLen > 0 ? String(seqNum).padStart(padLen, '0') : String(seqNum)}`;
-      lsSet('korpo_wave_last_inv_num', finalSavedStr);
+      saveLastWaveInvoiceNumber(finalSavedStr);
 
       const slug = currentProfile.nom.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-');
       triggerWaveCsvDownload([headers.join(','), ...rows].join('\n'), `facture-wave-${slug}-${periodState.singleMonth || localYmd()}.csv`);
@@ -9998,10 +10051,21 @@
       const dashPeriod = readPeriodFilterState('dash-filter');
       const mIn = document.getElementById('auto-email-month');
       if (mIn) mIn.value = dashPeriod.singleMonth || currentMonthStr;
+      const invIn = document.getElementById('auto-email-last-inv');
+      if (invIn) invIn.value = localStorage.getItem('korpo_wave_last_inv_num') || '105';
       const confIn = document.getElementById('auto-email-confirmed-only');
       if (confIn) confIn.checked = commDisplayMode === 'confirme';
       renderAutoEmailPreviewList();
       document.getElementById('auto-email-modal').classList.remove('hidden');
+    });
+    document.getElementById('auto-email-last-inv')?.addEventListener('input', (e) => {
+      const val = String(e.target.value || '').trim();
+      if (val) lsSet('korpo_wave_last_inv_num', val);
+      renderAutoEmailPreviewList();
+    });
+    document.getElementById('auto-email-last-inv')?.addEventListener('change', (e) => {
+      const val = String(e.target.value || '').trim();
+      if (val) saveLastWaveInvoiceNumber(val);
     });
 
     document.getElementById('auto-email-month')?.addEventListener('change', renderAutoEmailPreviewList);
