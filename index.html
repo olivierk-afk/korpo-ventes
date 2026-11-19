@@ -1831,39 +1831,52 @@
         </div>
 
 
-        <!-- PRÉVISIONS FIN DE MOIS & PIPELINE (CHANTIER 5) -->
-        <div class="bg-gradient-to-br from-slate-900 via-slate-900 to-indigo-950 rounded-2xl border border-indigo-500/30 p-6 text-white shadow-lg space-y-5">
+        <!-- CADENCE DU MOIS, TARGETS & BONUS ÉQUIPE -->
+        <div class="bg-gradient-to-br from-slate-900 via-slate-900 to-indigo-950 rounded-2xl border border-indigo-500/30 p-5 sm:p-6 text-white shadow-lg space-y-5">
           <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
             <div>
-              <div class="flex items-center gap-2">
-                <span class="px-2.5 py-0.5 text-[10px] font-extrabold uppercase tracking-wider rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-400/30">Prévisions & Pipeline</span>
-                <h3 id="forecast-title" class="text-base font-extrabold text-white">Projection de fin de mois</h3>
+              <div class="flex flex-wrap items-center gap-2">
+                <span class="px-2.5 py-0.5 text-[10px] font-extrabold uppercase tracking-wider rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-400/30">Cadence & Targets</span>
+                <h3 id="forecast-title" class="text-base font-extrabold text-white">Rythme quotidien & Suivi des bonus</h3>
               </div>
-              <p class="text-xs text-slate-300 mt-1">Estimation dynamique basée sur le volume déjà signé, les rendez-vous bookés à l'agenda et le taux de closing historique de chaque représentant.</p>
+              <p class="text-xs text-slate-300 mt-1">Cadence par jour ouvrable écoulé, comparatif au même jour du mois précédent et progression exacte vers les bonus de chaque représentant.</p>
             </div>
-            <div class="text-right">
-              <div class="text-[11px] uppercase tracking-wider text-indigo-300 font-semibold">Atterrissage projeté</div>
+            <div class="sm:text-right shrink-0">
+              <div id="forecast-cadence-badge-label" class="text-[11px] uppercase tracking-wider text-indigo-300 font-semibold">Cadence actuelle / jour</div>
               <div id="forecast-total-projected" class="text-2xl sm:text-3xl font-extrabold text-emerald-400 tabular-nums">0 $</div>
             </div>
           </div>
 
+          <!-- 4 CARTES : RYTHME QUOTIDIEN, RYTHME REQUIS, COMPARATIF M-1, BONUS DÉBLOQUÉS -->
           <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5" id="forecast-kpi-cards"></div>
 
-          <div class="overflow-x-auto bg-white/5 rounded-xl border border-white/10">
-            <table class="w-full text-left border-collapse text-xs">
-              <thead>
-                <tr class="border-b border-white/10 text-[11px] font-bold uppercase text-indigo-200">
-                  <th class="py-2.5 px-4">Représentant</th>
-                  <th class="py-2.5 px-3 text-right">Signé actuel</th>
-                  <th class="py-2.5 px-3 text-center">RDV à venir (Bookés - Réa)</th>
-                  <th class="py-2.5 px-3 text-center">% Close moy.</th>
-                  <th class="py-2.5 px-3 text-right">Panier moyen</th>
-                  <th class="py-2.5 px-3 text-right text-emerald-300">Pipeline pondéré</th>
-                  <th class="py-2.5 px-4 text-right text-white">Total projeté</th>
-                </tr>
-              </thead>
-              <tbody id="tbody-forecast-reps" class="divide-y divide-white/10"></tbody>
-            </table>
+          <!-- TABLEAU SUIVI DES TARGETS & BONUS PAR REPRÉSENTANT -->
+          <div class="space-y-2">
+            <div class="flex items-center justify-between text-xs px-1">
+              <span class="font-extrabold text-indigo-200 uppercase tracking-wider text-[11px]">🎯 Suivi des targets & bonus par représentant</span>
+              <span id="forecast-month-progress-label" class="text-[11px] text-slate-400 tabular-nums"></span>
+            </div>
+
+            <!-- CARTES MOBILES (< 768px) -->
+            <div id="mobile-forecast-reps" class="md:hidden space-y-2.5"></div>
+
+            <!-- TABLEAU DESKTOP (>= 768px) -->
+            <div class="hidden md:block overflow-x-auto bg-white/5 rounded-xl border border-white/10">
+              <table class="w-full text-left border-collapse text-xs">
+                <thead>
+                  <tr class="border-b border-white/10 text-[11px] font-bold uppercase text-indigo-200">
+                    <th class="py-2.5 px-4">Représentant</th>
+                    <th class="py-2.5 px-3 text-right">Volume signé</th>
+                    <th class="py-2.5 px-3 text-right">Target ventes</th>
+                    <th class="py-2.5 px-3 text-center">Atteinte</th>
+                    <th class="py-2.5 px-3 text-right">Reste avant bonus</th>
+                    <th class="py-2.5 px-3 text-center">Statut Bonus</th>
+                    <th class="py-2.5 px-4 text-right text-emerald-300">Comm. cumulée</th>
+                  </tr>
+                </thead>
+                <tbody id="tbody-forecast-reps" class="divide-y divide-white/10"></tbody>
+              </table>
+            </div>
           </div>
         </div>
 
@@ -4326,104 +4339,219 @@
     }
 
     // =========================================================================
-    // PRÉVISIONS FIN DE MOIS & PIPELINE (CHANTIER 5)
+    // CADENCE QUOTIDIENNE & SUIVI DES TARGETS / BONUS ÉQUIPE
     // =========================================================================
+    function countBusinessDaysInMonth(ym, maxDay = null) {
+      const [yStr, mStr] = ym.split('-');
+      const y = parseInt(yStr, 10);
+      const m = parseInt(mStr, 10) - 1;
+      const daysInMonth = new Date(y, m + 1, 0).getDate();
+      const limitDay = maxDay !== null ? Math.min(Math.max(1, maxDay), daysInMonth) : daysInMonth;
+      let count = 0;
+      for (let d = 1; d <= limitDay; d++) {
+        const dow = new Date(y, m, d).getDay();
+        if (dow !== 0 && dow !== 6) count++;
+      }
+      return count;
+    }
+
+    function getPreviousYearMonth(ym) {
+      const [yStr, mStr] = ym.split('-');
+      let y = parseInt(yStr, 10);
+      let m = parseInt(mStr, 10) - 1;
+      if (m < 1) { m = 12; y -= 1; }
+      return `${y}-${String(m).padStart(2, '0')}`;
+    }
+
     function renderExecutiveForecast() {
       const mFilter = document.getElementById('dash-filter-month')?.value;
       const targetYm = mFilter || currentMonthStr;
       const mObj = ensureKpiMonthStructure(targetYm);
+      const isCurrentMonth = targetYm === currentMonthStr;
+
       const titleEl = document.getElementById('forecast-title');
-      if (titleEl) titleEl.textContent = `Projection de fin de mois — ${mObj.label || targetYm}`;
+      if (titleEl) titleEl.textContent = `Rythme quotidien & Suivi des bonus — ${mObj.label || targetYm}`;
 
-      const histStats = {};
+      const [yStr, mStr] = targetYm.split('-');
+      const totalDaysInMonth = new Date(parseInt(yStr, 10), parseInt(mStr, 10), 0).getDate();
+      const currentDayOfMonth = isCurrentMonth ? Math.min(today.getDate(), totalDaysInMonth) : totalDaysInMonth;
+
+      const totalBizDays = Math.max(1, countBusinessDaysInMonth(targetYm));
+      const elapsedBizDays = Math.max(1, countBusinessDaysInMonth(targetYm, currentDayOfMonth));
+      const remainingBizDays = isCurrentMonth ? Math.max(0, totalBizDays - elapsedBizDays) : 0;
+
+      // Volume total signé ce mois-ci (équipe)
+      const monthSales = (state.ventes || []).filter(v => getSaleStatsMonth(v) === targetYm);
+      const kpiTeamSigned = Number(mObj.team?.['VENTE $']?.cumul || 0);
+      const rawSalesSigned = monthSales.reduce((s, v) => s + Number(v.valeur || 0), 0);
+      const totSigned = Math.max(kpiTeamSigned, rawSalesSigned);
+
+      // Objectif global = somme des targets individuels des représentants actifs
+      const repTargetsMap = {};
       ALL_KPI_REPS.forEach(rn => {
-        let sumRdv = 0, sumVentes = 0, sumDol = 0;
-        Object.entries(kpiStore).forEach(([ym, mo]) => {
-          if (ym === targetYm) return;
-          const r = mo.reps?.[rn];
-          if (!r) return;
-          sumRdv += Number(r['RDV Réalisé']?.cumul || 0);
-          sumVentes += Number(r['Ventes OTS']?.cumul || 0) + Number(r['Ventes SUIVI']?.cumul || 0);
-          sumDol += Number(r['Vente $']?.cumul || 0);
-        });
-        const curR = mObj.reps?.[rn] || {};
-        const curRdv = Number(curR['RDV Réalisé']?.cumul || 0);
-        const curV = Number(curR['Ventes OTS']?.cumul || 0) + Number(curR['Ventes SUIVI']?.cumul || 0);
-        const curDol = Number(curR['Vente $']?.cumul || 0);
-
-        const totalRdv = sumRdv + curRdv;
-        const totalV = sumVentes + curV;
-        const totalDol = sumDol + curDol;
-
-        const targetClosePct = Number(curR['% Close']?.objectif || 35) / 100;
-        const closeRate = totalRdv >= 5 ? (totalV / totalRdv) : targetClosePct;
-        const avgTicket = totalV >= 3 ? (totalDol / totalV) : 7500;
-
-        histStats[rn] = { closeRate, avgTicket };
+        repTargetsMap[rn] = getSalesTargetForRep(rn, targetYm);
       });
+      const totObjective = ALL_KPI_REPS.reduce((s, rn) => s + (repTargetsMap[rn] || 0), 0);
 
-      let totSigned = 0, totRemainingRdv = 0, totPipelineWeighted = 0, totObjective = Number(mObj.team?.['VENTE $']?.objectif || 0);
+      // Cadence par jour ouvrable
+      const dailyPace = Math.round(totSigned / elapsedBizDays);
+      const remainingToTarget = Math.max(0, totObjective - totSigned);
+      const requiredPace = remainingBizDays > 0
+        ? Math.round(remainingToTarget / remainingBizDays)
+        : (remainingToTarget > 0 ? remainingToTarget : 0);
 
-      const rowsHtml = ALL_KPI_REPS.map(rn => {
-        const curR = mObj.reps?.[rn] || {};
-        const signed = Number(curR['Vente $']?.cumul || 0);
-        const bookes = Number(curR['Booké']?.cumul || 0);
-        const rea = Number(curR['RDV Réalisé']?.cumul || 0);
-        const remainingRdv = Math.max(0, bookes - rea);
+      // Comparatif au même jour du mois précédent (M-1)
+      const prevYm = getPreviousYearMonth(targetYm);
+      const prevMonthObj = kpiStore[prevYm];
+      const prevSalesSameCutoff = (state.ventes || [])
+        .filter(v => {
+          if (getSaleStatsMonth(v) !== prevYm) return false;
+          if (!isCurrentMonth) return true;
+          const dayNum = v.date_vente && v.date_vente.length >= 10 ? parseInt(v.date_vente.slice(8, 10), 10) : 1;
+          return dayNum <= currentDayOfMonth;
+        })
+        .reduce((s, v) => s + Number(v.valeur || 0), 0);
+      const prevTotalFallback = !isCurrentMonth ? Number(prevMonthObj?.team?.['VENTE $']?.cumul || 0) : 0;
+      const prevComparable = Math.max(prevSalesSameCutoff, prevTotalFallback);
+      const diffVsPrev = totSigned - prevComparable;
+      const diffVsPrevPct = prevComparable > 0 ? Math.round((diffVsPrev / prevComparable) * 100) : null;
 
-        const { closeRate, avgTicket } = histStats[rn];
-        const weightedPipeline = Math.round(remainingRdv * closeRate * avgTicket);
-        const projected = signed + weightedPipeline;
+      // Construction des lignes par représentant (Targets & Bonus)
+      let unlockedCount = 0;
+      const repRowsData = ALL_KPI_REPS.map(rn => {
+        const repObj = state.representants.find(r => r.nom === rn);
+        const repSalesList = monthSales.filter(v => {
+          if (repObj && String(v.representant_id) === String(repObj.id)) return true;
+          const rN = state.representants.find(r => String(r.id) === String(v.representant_id))?.nom || v.rep_nom || '';
+          return resolveKpiRepName(rN) === rn;
+        });
+        const signedFromSales = repSalesList.reduce((s, v) => s + Number(v.valeur || 0), 0);
+        const signedFromKpi = Number(mObj.reps?.[rn]?.['Vente $']?.cumul || 0);
+        const signed = Math.max(signedFromSales, signedFromKpi);
 
-        totSigned += signed;
-        totRemainingRdv += remainingRdv;
-        totPipelineWeighted += weightedPipeline;
+        const target = repTargetsMap[rn] || 150000;
+        const pct = target > 0 ? Math.round((signed / target) * 100) : 0;
+        const gap = Math.max(0, target - signed);
+        const bonusDec = getBonusPctForRep(rn, targetYm);
+        const bonusStr = formatBonusPctShort(bonusDec);
+        const isAdminRep = repObj?.role === 'admin';
+        const unlocked = !isAdminRep && target > 0 && signed >= target;
+        if (unlocked) unlockedCount++;
 
-        return `
-          <tr class="hover:bg-white/5 transition">
-            <td class="py-2.5 px-4 font-bold text-white">${esc(rn)}</td>
-            <td class="py-2.5 px-3 text-right tabular-nums text-slate-200">${fmtMoney0(signed)}</td>
-            <td class="py-2.5 px-3 text-center tabular-nums">
-              <span class="px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-200 font-bold">${remainingRdv}</span>
-            </td>
-            <td class="py-2.5 px-3 text-center tabular-nums text-slate-300">${(closeRate * 100).toFixed(1)} %</td>
-            <td class="py-2.5 px-3 text-right tabular-nums text-slate-300">${fmtMoney0(avgTicket)}</td>
-            <td class="py-2.5 px-3 text-right tabular-nums font-bold text-emerald-300">+ ${fmtMoney0(weightedPipeline)}</td>
-            <td class="py-2.5 px-4 text-right tabular-nums font-extrabold text-white">${fmtMoney0(projected)}</td>
-          </tr>
-        `;
-      }).join('');
+        const commEarned = isAdminRep
+          ? monthSales.reduce((s, v) => s + Number(v.commission_olivier || 0), 0)
+          : repSalesList.reduce((s, v) => s + Number(v.commission_rep || 0), 0);
 
-      const grandProjected = totSigned + totPipelineWeighted;
-      const pctTarget = totObjective > 0 ? Math.round((grandProjected / totObjective) * 100) : 0;
+        return { rn, signed, target, pct, gap, bonusStr, isAdminRep, unlocked, commEarned };
+      }).sort((a, b) => b.pct - a.pct);
 
+      const topBadgeLabel = document.getElementById('forecast-cadence-badge-label');
+      if (topBadgeLabel) {
+        topBadgeLabel.textContent = isCurrentMonth
+          ? `Cadence (${elapsedBizDays}j / ${totalBizDays}j ouvrables)`
+          : `Cadence moyenne (${totalBizDays}j ouvrables)`;
+      }
       const projEl = document.getElementById('forecast-total-projected');
-      if (projEl) projEl.textContent = fmtMoney0(grandProjected);
+      if (projEl) projEl.textContent = `${fmtMoney0(dailyPace)} / jour`;
+
+      const progLbl = document.getElementById('forecast-month-progress-label');
+      if (progLbl) {
+        progLbl.textContent = isCurrentMonth
+          ? `Jour ${currentDayOfMonth}/${totalDaysInMonth} • ${remainingBizDays} jour(s) ouvrable(s) restant(s)`
+          : `Mois complété (${totalBizDays} jours ouvrables)`;
+      }
 
       const cardsEl = document.getElementById('forecast-kpi-cards');
       if (cardsEl) {
+        const diffSign = diffVsPrev >= 0 ? '+' : '';
+        const diffColor = diffVsPrev >= 0 ? 'text-emerald-300' : 'text-rose-300';
         cardsEl.innerHTML = `
-          <div class="bg-white/10 rounded-xl p-3.5 border border-white/10">
-            <div class="text-[11px] text-indigo-200 font-semibold">Déjà signé (${targetYm})</div>
-            <div class="text-xl font-extrabold text-white mt-1 tabular-nums">${fmtMoney0(totSigned)}</div>
+          <div class="bg-white/10 rounded-xl p-3.5 border border-white/10 space-y-1">
+            <div class="text-[11px] text-indigo-200 font-semibold">1. Cadence actuelle</div>
+            <div class="text-xl font-extrabold text-white tabular-nums">${fmtMoney0(dailyPace)} <span class="text-xs font-normal text-slate-300">/ jour</span></div>
+            <div class="text-[11px] text-slate-300 tabular-nums">${fmtMoney0(totSigned)} sur ${elapsedBizDays}j ouvrable(s)</div>
           </div>
-          <div class="bg-white/10 rounded-xl p-3.5 border border-white/10">
-            <div class="text-[11px] text-indigo-200 font-semibold">RDV bookés à venir</div>
-            <div class="text-xl font-extrabold text-amber-300 mt-1 tabular-nums">${totRemainingRdv} RDV</div>
+          <div class="bg-white/10 rounded-xl p-3.5 border border-white/10 space-y-1">
+            <div class="text-[11px] text-indigo-200 font-semibold">2. Cadence requise (Target)</div>
+            <div class="text-xl font-extrabold ${remainingToTarget === 0 ? 'text-emerald-400' : 'text-amber-300'} tabular-nums">
+              ${remainingToTarget === 0 ? 'Objectif atteint !' : `${fmtMoney0(requiredPace)} / jour`}
+            </div>
+            <div class="text-[11px] text-slate-300 tabular-nums">
+              ${remainingToTarget === 0 ? `Surplus : + ${fmtMoney0(totSigned - totObjective)}` : `Reste ${fmtMoney0(remainingToTarget)} (${remainingBizDays}j rest.)`}
+            </div>
           </div>
-          <div class="bg-white/10 rounded-xl p-3.5 border border-white/10">
-            <div class="text-[11px] text-indigo-200 font-semibold">Pipeline pondéré attendu</div>
-            <div class="text-xl font-extrabold text-emerald-300 mt-1 tabular-nums">+ ${fmtMoney0(totPipelineWeighted)}</div>
+          <div class="bg-white/10 rounded-xl p-3.5 border border-white/10 space-y-1">
+            <div class="text-[11px] text-indigo-200 font-semibold">3. Vs mois dernier (${prevYm})</div>
+            <div class="text-xl font-extrabold ${diffColor} tabular-nums">${diffSign}${fmtMoney0(diffVsPrev)}</div>
+            <div class="text-[11px] text-slate-300 tabular-nums">
+              ${prevComparable > 0 ? `${diffSign}${diffVsPrevPct}% (M-1 au J${currentDayOfMonth} : ${fmtMoney0(prevComparable)})` : 'Aucune donnée M-1'}
+            </div>
           </div>
-          <div class="bg-white/10 rounded-xl p-3.5 border border-white/10">
-            <div class="text-[11px] text-indigo-200 font-semibold">Atteinte objectif projetée</div>
-            <div class="text-xl font-extrabold ${pctTarget >= 100 ? 'text-emerald-400' : 'text-white'} mt-1 tabular-nums">${totObjective > 0 ? pctTarget + ' %' : '—'}</div>
+          <div class="bg-white/10 rounded-xl p-3.5 border border-white/10 space-y-1">
+            <div class="text-[11px] text-indigo-200 font-semibold">4. Bonus débloqués</div>
+            <div class="text-xl font-extrabold text-emerald-400 tabular-nums">${unlockedCount} / ${ALL_KPI_REPS.filter(n => n !== 'Olivier').length} reps</div>
+            <div class="text-[11px] text-slate-300">Bonus actif dès 100 % du target</div>
           </div>
         `;
       }
 
       const tbodyEl = document.getElementById('tbody-forecast-reps');
-      if (tbodyEl) tbodyEl.innerHTML = rowsHtml;
+      if (tbodyEl) {
+        tbodyEl.innerHTML = repRowsData.map(r => {
+          const statusBadgeHtml = r.isAdminRep
+            ? `<span class="px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-200 font-bold text-[10px]">Direction</span>`
+            : (r.unlocked
+              ? `<span class="px-2.5 py-0.5 rounded-full bg-emerald-500/25 text-emerald-300 border border-emerald-400/40 font-extrabold text-[10px]">🔥 +${esc(r.bonusStr)} ACTIF</span>`
+              : `<span class="px-2 py-0.5 rounded-full bg-white/10 text-slate-300 font-semibold text-[10px]">+${esc(r.bonusStr)} à débloquer</span>`);
+
+          return `
+            <tr class="hover:bg-white/5 transition">
+              <td class="py-2.5 px-4 font-bold text-white">${esc(r.rn)}</td>
+              <td class="py-2.5 px-3 text-right tabular-nums font-bold text-slate-100">${fmtMoney0(r.signed)}</td>
+              <td class="py-2.5 px-3 text-right tabular-nums text-slate-300">${fmtMoney0(r.target)}</td>
+              <td class="py-2.5 px-3 text-center tabular-nums">
+                <span class="font-extrabold ${r.pct >= 100 ? 'text-emerald-400' : (r.pct >= 65 ? 'text-amber-300' : 'text-slate-200')}">${r.pct} %</span>
+              </td>
+              <td class="py-2.5 px-3 text-right tabular-nums ${r.gap === 0 ? 'text-emerald-300 font-bold' : 'text-slate-300'}">
+                ${r.gap === 0 ? '✓ Atteint' : fmtMoney0(r.gap)}
+              </td>
+              <td class="py-2.5 px-3 text-center">${statusBadgeHtml}</td>
+              <td class="py-2.5 px-4 text-right tabular-nums font-extrabold text-emerald-300">${fmtMoney(r.commEarned)}</td>
+            </tr>
+          `;
+        }).join('');
+      }
+
+      const mobileBox = document.getElementById('mobile-forecast-reps');
+      if (mobileBox) {
+        mobileBox.innerHTML = repRowsData.map(r => {
+          const statusTag = r.isAdminRep
+            ? `<span class="px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-200 font-bold text-[10px]">Direction</span>`
+            : (r.unlocked
+              ? `<span class="px-2 py-0.5 rounded-full bg-emerald-500/25 text-emerald-300 border border-emerald-400/40 font-extrabold text-[10px]">🔥 +${esc(r.bonusStr)} ACTIF</span>`
+              : `<span class="px-2 py-0.5 rounded-full bg-white/10 text-slate-300 font-semibold text-[10px]">Reste ${fmtMoney0(r.gap)}</span>`);
+
+          return `
+            <div class="bg-white/10 rounded-xl border border-white/10 p-3.5 space-y-2">
+              <div class="flex items-center justify-between gap-2">
+                <div class="font-extrabold text-sm text-white">${esc(r.rn)}</div>
+                ${statusTag}
+              </div>
+              <div class="flex items-center justify-between text-xs tabular-nums">
+                <span class="text-slate-300">${fmtMoney0(r.signed)} / ${fmtMoney0(r.target)}</span>
+                <span class="font-extrabold ${r.pct >= 100 ? 'text-emerald-400' : 'text-amber-300'}">${r.pct} %</span>
+              </div>
+              <div class="w-full h-1.5 bg-white/10 rounded-full overflow-hidden">
+                <div class="h-full ${r.pct >= 100 ? 'bg-emerald-400' : 'bg-indigo-400'} rounded-full" style="width: ${Math.min(100, r.pct)}%"></div>
+              </div>
+              <div class="flex items-center justify-between text-[11px] text-slate-300 pt-0.5 tabular-nums">
+                <span>Commission cumulée :</span>
+                <strong class="text-emerald-300">${fmtMoney(r.commEarned)}</strong>
+              </div>
+            </div>
+          `;
+        }).join('');
+      }
     }
 
     function initKpiControls() {
