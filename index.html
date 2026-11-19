@@ -2429,36 +2429,44 @@
           <div id="dash-future-contracts-list-box" class="space-y-2 pt-1"></div>
         </div>
 
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div class="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-xs">
-            <h3 class="text-sm font-bold text-slate-900 mb-4">Répartition & relevés de paie par représentant</h3>
-            <table class="w-full text-left text-sm">
-              <thead>
-                <tr class="border-b border-slate-200 text-[11px] font-bold uppercase text-slate-400">
-                  <th class="py-2.5">Représentant</th>
-                  <th class="py-2.5 text-right">Ventes</th>
-                  <th class="py-2.5 text-right">Comm. Rep</th>
-                  <th class="py-2.5 text-right">Comm. Olivier</th>
-                  <th class="py-2.5 text-right">Paie</th>
-                </tr>
-              </thead>
-              <tbody id="tbody-dash-rep" class="divide-y divide-slate-100"></tbody>
-            </table>
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">
+          <div class="bg-white rounded-2xl border border-slate-200/80 p-5 sm:p-6 shadow-xs flex flex-col justify-between">
+            <div>
+              <h3 class="text-sm font-bold text-slate-900 mb-4">Répartition & relevés de paie par représentant</h3>
+              <div class="overflow-x-auto">
+                <table class="w-full text-left text-xs sm:text-sm border-collapse">
+                  <thead>
+                    <tr class="border-b border-slate-200 text-[11px] font-bold uppercase text-slate-400">
+                      <th class="py-2.5 pr-2 whitespace-nowrap">Représentant</th>
+                      <th class="py-2.5 px-2 text-right whitespace-nowrap">Ventes</th>
+                      <th class="py-2.5 px-2 text-right whitespace-nowrap">Comm. Rep</th>
+                      <th class="py-2.5 px-2 text-right whitespace-nowrap">Comm. Olivier</th>
+                      <th class="py-2.5 pl-2 text-right whitespace-nowrap">Paie</th>
+                    </tr>
+                  </thead>
+                  <tbody id="tbody-dash-rep" class="divide-y divide-slate-100"></tbody>
+                </table>
+              </div>
+            </div>
           </div>
 
-          <div class="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-xs">
-            <h3 class="text-sm font-bold text-slate-900 mb-4">Répartition par entreprise partenaire</h3>
-            <table class="w-full text-left text-sm">
-              <thead>
-                <tr class="border-b border-slate-200 text-[11px] font-bold uppercase text-slate-400">
-                  <th class="py-2.5">Entreprise</th>
-                  <th class="py-2.5 text-right">Ventes</th>
-                  <th class="py-2.5 text-right">Comm. Rep</th>
-                  <th class="py-2.5 text-right">Comm. Olivier</th>
-                </tr>
-              </thead>
-              <tbody id="tbody-dash-ent" class="divide-y divide-slate-100"></tbody>
-            </table>
+          <div class="bg-white rounded-2xl border border-slate-200/80 p-5 sm:p-6 shadow-xs flex flex-col justify-between">
+            <div>
+              <h3 class="text-sm font-bold text-slate-900 mb-4">Répartition par entreprise partenaire</h3>
+              <div class="overflow-x-auto">
+                <table class="w-full text-left text-xs sm:text-sm border-collapse">
+                  <thead>
+                    <tr class="border-b border-slate-200 text-[11px] font-bold uppercase text-slate-400">
+                      <th class="py-2.5 pr-2 whitespace-nowrap">Entreprise</th>
+                      <th class="py-2.5 px-2 text-right whitespace-nowrap">Ventes</th>
+                      <th class="py-2.5 px-2 text-right whitespace-nowrap">Comm. Rep</th>
+                      <th class="py-2.5 pl-2 text-right whitespace-nowrap">Comm. Olivier</th>
+                    </tr>
+                  </thead>
+                  <tbody id="tbody-dash-ent" class="divide-y divide-slate-100"></tbody>
+                </table>
+              </div>
+            </div>
           </div>
         </div>
       </section>
@@ -9727,12 +9735,12 @@
         const subAll = statsList.filter(v => v.representant_id === r.id);
         const subComm = activeCommList.filter(v => v.representant_id === r.id);
         return `
-          <tr>
-            <td class="py-2.5 font-semibold text-slate-900">${esc(r.nom)}</td>
-            <td class="py-2.5 text-right tabular-nums font-medium">${fmtMoney(subAll.reduce((s, v) => s + Number(v.valeur), 0))}</td>
-            <td class="py-2.5 text-right tabular-nums text-amber-600 font-semibold">${fmtMoney(subComm.reduce((s, v) => s + Number(v.commission_rep), 0))}</td>
-            <td class="py-2.5 text-right tabular-nums text-emerald-600 font-bold">${fmtMoney(subComm.reduce((s, v) => s + Number(v.commission_olivier), 0))}</td>
-            <td class="py-2.5 text-right">
+          <tr class="h-11">
+            <td class="py-2.5 pr-2 font-semibold text-slate-900 whitespace-nowrap align-middle">${esc(r.nom)}</td>
+            <td class="py-2.5 px-2 text-right tabular-nums font-medium whitespace-nowrap align-middle">${fmtMoney(subAll.reduce((s, v) => s + Number(v.valeur), 0))}</td>
+            <td class="py-2.5 px-2 text-right tabular-nums text-amber-600 font-semibold whitespace-nowrap align-middle">${fmtMoney(subComm.reduce((s, v) => s + Number(v.commission_rep), 0))}</td>
+            <td class="py-2.5 px-2 text-right tabular-nums text-emerald-600 font-bold whitespace-nowrap align-middle">${fmtMoney(subComm.reduce((s, v) => s + Number(v.commission_olivier), 0))}</td>
+            <td class="py-2.5 pl-2 text-right whitespace-nowrap align-middle">
               <button onclick="openPayslipModal('${r.id}')" class="px-2.5 py-1 text-[11px] font-semibold bg-slate-100 hover:bg-indigo-600 hover:text-white text-slate-700 rounded-lg transition">Relevé</button>
             </td>
           </tr>
@@ -9743,11 +9751,11 @@
         const subAll = statsList.filter(v => v.entreprise_id === e.id);
         const subComm = activeCommList.filter(v => v.entreprise_id === e.id);
         return `
-          <tr>
-            <td class="py-2.5">${entBadge(e.nom)}</td>
-            <td class="py-2.5 text-right tabular-nums font-medium">${fmtMoney(subAll.reduce((s, v) => s + Number(v.valeur), 0))}</td>
-            <td class="py-2.5 text-right tabular-nums text-amber-600 font-semibold">${fmtMoney(subComm.reduce((s, v) => s + Number(v.commission_rep), 0))}</td>
-            <td class="py-2.5 text-right tabular-nums text-emerald-600 font-bold">${fmtMoney(subComm.reduce((s, v) => s + Number(v.commission_olivier), 0))}</td>
+          <tr class="h-11">
+            <td class="py-2.5 pr-2 whitespace-nowrap align-middle">${entBadge(e.nom)}</td>
+            <td class="py-2.5 px-2 text-right tabular-nums font-medium whitespace-nowrap align-middle">${fmtMoney(subAll.reduce((s, v) => s + Number(v.valeur), 0))}</td>
+            <td class="py-2.5 px-2 text-right tabular-nums text-amber-600 font-semibold whitespace-nowrap align-middle">${fmtMoney(subComm.reduce((s, v) => s + Number(v.commission_rep), 0))}</td>
+            <td class="py-2.5 pl-2 text-right tabular-nums text-emerald-600 font-bold whitespace-nowrap align-middle">${fmtMoney(subComm.reduce((s, v) => s + Number(v.commission_olivier), 0))}</td>
           </tr>
         `;
       }).join('');
@@ -11495,11 +11503,13 @@
       const dStr = (v.date_vente || '').trim().slice(0, 10);
       const saleDateYm = dStr.length >= 7 ? dStr.slice(0, 7) : '';
       const commYm = (v.mois_commission || '').trim().slice(0, 7);
+      const futureYm = getSaleTargetFutureMonth(v);
       const ym = useStatsMonth
-        ? (saleDateYm || getSaleStatsMonth(v) || commYm)
+        ? (getSaleStatsMonth(v) || saleDateYm || commYm)
         : (commYm || saleDateYm);
 
       if (mode === 'this_week') {
+        if (futureYm && futureYm > currentMonthStr) return false;
         return Boolean(dStr && dStr >= weekBounds.start && dStr <= weekBounds.end);
       }
       if (mode === 'this_month') {
