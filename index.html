@@ -584,6 +584,31 @@
     </div>
   </div>
 
+  <!-- MODALE AUDIT & MÉNAGE DES DOUBLONS HISTORIQUES (ADMIN) -->
+  <div id="dedup-modal" class="hidden fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm flex items-center justify-center p-4 no-print">
+    <div class="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-4xl w-full max-h-[90vh] flex flex-col overflow-hidden">
+      <div class="px-6 py-4 bg-slate-900 text-white flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <span class="w-9 h-9 rounded-xl bg-amber-500/20 text-amber-300 border border-amber-400/30 flex items-center justify-center text-base">🧹</span>
+          <div>
+            <h3 class="text-base font-extrabold">Ménage des doublons historiques</h3>
+            <p class="text-xs text-slate-400">Détecte les clients en double sur différents mois ou avec le même montant pour assainir vos statistiques</p>
+          </div>
+        </div>
+        <button id="btn-close-dedup" type="button" class="w-8 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 flex items-center justify-center">✕</button>
+      </div>
+      <div class="px-6 py-3 bg-indigo-50/80 border-b border-indigo-200/80 flex flex-wrap items-center justify-between gap-2 text-xs">
+        <span id="dedup-count-summary" class="font-bold text-indigo-950">Analyse en cours...</span>
+        <div class="flex items-center gap-2">
+          <button id="btn-dedup-clean-selected" type="button" class="px-4 py-1.5 text-xs font-extrabold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl shadow-xs transition">
+            🧹 Nettoyer les doublons sélectionnés
+          </button>
+        </div>
+      </div>
+      <div id="dedup-modal-body" class="p-5 overflow-y-auto space-y-3 flex-1 bg-slate-50/50"></div>
+    </div>
+  </div>
+
   <!-- MODALE CORBEILLE DES VENTES (RESTAURATION 30 JOURS) -->
   <div id="trash-modal" class="hidden fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm flex items-center justify-center p-4 no-print">
     <div class="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-4xl w-full max-h-[90vh] flex flex-col overflow-hidden">
@@ -1733,6 +1758,10 @@
               <input id="csv-import-input" type="file" accept=".csv" class="hidden" />
             </label>
             <button id="btn-csv-export" class="px-3 py-2.5 text-xs font-semibold text-slate-700 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 transition text-center">Exporter CSV</button>
+            <button type="button" onclick="openDedupAuditModal()" class="px-3 py-2.5 text-xs font-bold text-amber-900 bg-amber-50 hover:bg-amber-100 border border-amber-200 rounded-xl transition text-center flex items-center justify-center gap-1.5">
+              <span>🧹 Ménage doublons</span>
+              <span id="dedup-badge-count" class="px-1.5 py-0.2 text-[10px] font-extrabold rounded-full bg-amber-200/80 text-amber-950">0</span>
+            </button>
             <button type="button" onclick="openTrashModal()" class="px-3 py-2.5 text-xs font-bold text-slate-700 bg-white hover:bg-rose-50 hover:text-rose-700 border border-slate-200 hover:border-rose-200 rounded-xl transition text-center flex items-center justify-center gap-1.5">
               <span>🗑️ Corbeille</span>
               <span class="trash-badge-count px-1.5 py-0.2 text-[10px] font-extrabold rounded-full bg-slate-100 text-slate-700">0</span>
@@ -7676,6 +7705,7 @@
       const sumVal = list.reduce((s, v) => s + Number(v.valeur), 0);
       document.getElementById('admin-filter-summary').textContent = `${list.length} vente(s) affichée(s) • Total : ${fmtMoney(sumVal)}`;
 
+      updateDedupBadge();
       const tbody = document.getElementById('tbody-admin-ventes');
       const mobileAdminBox = document.getElementById('mobile-admin-ventes-cards');
       if (!list.length) {
@@ -8120,54 +8150,194 @@
       return false;
     }
 
-    async function reconcilePreviousUnconfirmedDuplicateSales(confirmedSaleIds = null) {
-      if (!sb || !Array.isArray(state.ventes) || !state.ventes.length) return 0;
-      const isSpecific = Array.isArray(confirmedSaleIds) && confirmedSaleIds.length > 0;
-      const idSet = isSpecific ? new Set(confirmedSaleIds.map(x => String(x))) : null;
-
-      const confirmedRows = state.ventes.filter(v => {
-        if (idSet) return idSet.has(String(v.id));
-        return v.statut_depot === 'depot_recu';
-      });
-      if (!confirmedRows.length) return 0;
-
-      const duplicatesToRemove = [];
+    function findAllHistoricalDuplicates() {
+      const sales = Array.isArray(state.ventes) ? state.ventes : [];
+      const candidates = []; // [{ dup, kept, reason, defaultChecked }]
       const seenDupIds = new Set();
 
-      confirmedRows.forEach(confV => {
-        const confId = String(confV.id);
-        (state.ventes || []).forEach(cand => {
-          const cid = String(cand.id);
-          if (cid === confId || seenDupIds.has(cid)) return;
-          if (idSet && idSet.has(cid)) return;
-          if (cand.statut_depot !== 'a_confirmer') return;
-          if (!areSameClientSales(confV, cand)) return;
+      const confirmedRows = sales.filter(v => v.statut_depot === 'depot_recu');
+      const unconfirmedRows = sales.filter(v => v.statut_depot === 'a_confirmer');
 
-          // Si un dossier est confirmé (`depot_recu`), toute autre entrée restée `a_confirmer` pour le même client/entreprise/rep est un report non confirmé à fusionner
+      // 1. Toute entrée `a_confirmer` qui a un dossier `depot_recu` pour le même client + entreprise + rep
+      confirmedRows.forEach(confV => {
+        unconfirmedRows.forEach(cand => {
+          const cid = String(cand.id);
+          if (cid === String(confV.id) || seenDupIds.has(cid)) return;
+          if (!areSameClientSales(confV, cand)) return;
           seenDupIds.add(cid);
-          duplicatesToRemove.push({ dup: cand, kept: confV });
+          candidates.push({
+            dup: cand,
+            kept: confV,
+            reason: 'Déjà confirmé (Dépôt reçu) sur un autre dossier',
+            defaultChecked: true
+          });
         });
       });
 
-      if (!duplicatesToRemove.length) return 0;
+      // 2. Plusieurs entrées `a_confirmer` pour le même client + entreprise + rep + montant (ex. reporté/ressaisi sur plusieurs mois)
+      unconfirmedRows.forEach(newerV => {
+        const nKey = `${newerV.date_vente || newerV.mois_commission || ''}_${newerV.created_at || ''}_${newerV.id || ''}`;
+        unconfirmedRows.forEach(olderV => {
+          const oid = String(olderV.id);
+          if (oid === String(newerV.id) || seenDupIds.has(oid)) return;
+          if (!areSameClientSales(newerV, olderV)) return;
+          if (Math.abs(Number(newerV.valeur || 0) - Number(olderV.valeur || 0)) >= 0.01) return;
+          const oKey = `${olderV.date_vente || olderV.mois_commission || ''}_${olderV.created_at || ''}_${olderV.id || ''}`;
+          if (nKey > oKey) {
+            seenDupIds.add(oid);
+            candidates.push({
+              dup: olderV,
+              kept: newerV,
+              reason: 'Ancienne copie non confirmée (remplacée par une entrée plus récente)',
+              defaultChecked: true
+            });
+          }
+        });
+      });
 
-      const dupsOnly = duplicatesToRemove.map(x => x.dup);
+      // 3. Doublons exacts déjà marqués `depot_recu` (même client + entreprise + rep + exactement le même montant, sur des mois différents ou la même date)
+      for (let i = 0; i < confirmedRows.length; i++) {
+        for (let j = i + 1; j < confirmedRows.length; j++) {
+          const a = confirmedRows[i];
+          const b = confirmedRows[j];
+          if (!areSameClientSales(a, b)) continue;
+          if (Math.abs(Number(a.valeur || 0) - Number(b.valeur || 0)) >= 0.01) continue;
+          const aKey = `${a.date_vente || a.mois_commission || ''}_${a.created_at || ''}_${a.id || ''}`;
+          const bKey = `${b.date_vente || b.mois_commission || ''}_${b.created_at || ''}_${b.id || ''}`;
+          const [kept, dup] = aKey >= bKey ? [a, b] : [b, a];
+          const did = String(dup.id);
+          if (seenDupIds.has(did)) continue;
+          seenDupIds.add(did);
+          candidates.push({
+            dup,
+            kept,
+            reason: 'Doublon confirmé avec exactement le même montant (vérifiez s’il s’agit d’un 2e contrat distinct)',
+            defaultChecked: a.date_vente === b.date_vente
+          });
+        }
+      }
+
+      return candidates;
+    }
+
+    function updateDedupBadge() {
+      const badge = document.getElementById('dedup-badge-count');
+      if (!badge) return;
+      const list = findAllHistoricalDuplicates();
+      badge.textContent = String(list.length);
+      badge.className = list.length > 0
+        ? 'px-1.5 py-0.2 text-[10px] font-extrabold rounded-full bg-rose-600 text-white'
+        : 'px-1.5 py-0.2 text-[10px] font-extrabold rounded-full bg-amber-200/80 text-amber-950';
+    }
+
+    async function executeDuplicateCleanup(pairsToClean) {
+      if (!sb || !Array.isArray(pairsToClean) || !pairsToClean.length) return 0;
+      const dupsOnly = pairsToClean.map(x => x.dup);
       await moveSalesToTrash(dupsOnly);
-      for (const { dup, kept } of duplicatesToRemove) {
+      for (const { dup, kept } of pairsToClean) {
         const dupYm = dup.date_vente ? dup.date_vente.slice(0, 7) : dup.mois_commission;
         const keptYm = kept.mois_commission || (kept.date_vente ? kept.date_vente.slice(0, 7) : '');
         await recordSaleAudit(
           String(kept.id),
           'Doublon précédent fusionné automatiquement',
-          `L'entrée non confirmée de ${dupYm} (${fmtMoney(dup.valeur)}) a été retirée pour ne compter ce dossier qu'une seule fois en ${keptYm}`,
+          `L'entrée de ${dupYm} (${fmtMoney(dup.valeur)}) a été retirée pour ne compter ce dossier qu'une seule fois en ${keptYm}`,
           '🔗'
         );
         await sb.from('ventes').delete().eq('id', dup.id);
         state.ventes = state.ventes.filter(x => String(x.id) !== String(dup.id));
         state.mesVentes = state.mesVentes.filter(x => String(x.id) !== String(dup.id));
       }
-      return duplicatesToRemove.length;
+      updateDedupBadge();
+      return pairsToClean.length;
     }
+
+    async function reconcilePreviousUnconfirmedDuplicateSales(confirmedSaleIds = null) {
+      if (!sb || !Array.isArray(state.ventes) || !state.ventes.length) return 0;
+      const isSpecific = Array.isArray(confirmedSaleIds) && confirmedSaleIds.length > 0;
+      const idSet = isSpecific ? new Set(confirmedSaleIds.map(x => String(x))) : null;
+
+      const allDups = findAllHistoricalDuplicates().filter(item => {
+        if (item.dup.statut_depot !== 'a_confirmer') return false;
+        if (idSet) return idSet.has(String(item.kept.id));
+        return true;
+      });
+      if (!allDups.length) return 0;
+      return await executeDuplicateCleanup(allDups);
+    }
+
+    window.openDedupAuditModal = () => {
+      if (currentProfile?.role !== 'admin') return;
+      const list = findAllHistoricalDuplicates();
+      window._currentDedupCandidates = list;
+
+      const sumEl = document.getElementById('dedup-count-summary');
+      const btnClean = document.getElementById('btn-dedup-clean-selected');
+      const body = document.getElementById('dedup-modal-body');
+
+      sumEl.textContent = list.length > 0
+        ? `${list.length} doublon(s) potentiel(s) détecté(s) dans l'historique`
+        : 'Aucun doublon détecté : votre base est 100 % propre !';
+      if (btnClean) btnClean.classList.toggle('hidden', list.length === 0);
+
+      if (!list.length) {
+        body.innerHTML = `<div class="py-12 text-center text-xs text-slate-500">✅ Aucun client en double détecté dans vos ventes historiques.</div>`;
+      } else {
+        body.innerHTML = list.map((item, idx) => {
+          const { dup, kept, reason, defaultChecked } = item;
+          const repN = state.representants.find(r => String(r.id) === String(dup.representant_id))?.nom || '—';
+          const entN = state.entreprises.find(e => String(e.id) === String(dup.entreprise_id))?.nom || '—';
+          const cliN = getResolvedClientNameForSale(dup) || 'Client';
+          return `
+            <label class="block bg-white rounded-2xl border border-slate-200/90 p-4 shadow-2xs cursor-pointer hover:border-indigo-300 transition">
+              <div class="flex items-start gap-3">
+                <input type="checkbox" data-dedup-idx="${idx}" ${defaultChecked ? 'checked' : ''} class="mt-1 rounded border-slate-300 text-indigo-600 focus:ring-indigo-600" />
+                <div class="flex-1 min-w-0 space-y-2">
+                  <div class="flex flex-wrap items-center justify-between gap-2">
+                    <div class="flex items-center flex-wrap gap-2">
+                      ${entBadge(entN)}
+                      <span class="font-extrabold text-sm text-slate-900">${esc(cliN)}</span>
+                      <span class="text-xs font-bold text-indigo-600">(${esc(repN)})</span>
+                    </div>
+                    <span class="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-amber-50 text-amber-800 border border-amber-200">${esc(reason)}</span>
+                  </div>
+
+                  <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-xs">
+                    <div class="rounded-xl bg-rose-50/70 border border-rose-200 p-2.5">
+                      <div class="text-[10px] font-extrabold uppercase text-rose-700">🗑️ Entrée à retirer (mise en corbeille)</div>
+                      <div class="font-bold text-slate-900 mt-0.5 tabular-nums">${dup.date_vente} (Mois : ${dup.mois_commission}) — ${fmtMoney(dup.valeur)}</div>
+                      <div class="text-[11px] text-slate-600">Statut : ${dup.statut_depot === 'depot_recu' ? 'Dépôt reçu' : 'À confirmer'} • ${dup.statut_paiement === 'paye' ? 'Payé' : 'Non payé'}</div>
+                    </div>
+                    <div class="rounded-xl bg-emerald-50/70 border border-emerald-200 p-2.5">
+                      <div class="text-[10px] font-extrabold uppercase text-emerald-700">✅ Dossier conservé dans les stats</div>
+                      <div class="font-bold text-slate-900 mt-0.5 tabular-nums">${kept.date_vente} (Mois : ${kept.mois_commission}) — ${fmtMoney(kept.valeur)}</div>
+                      <div class="text-[11px] text-slate-600">Statut : ${kept.statut_depot === 'depot_recu' ? 'Dépôt reçu' : 'À confirmer'} • ${kept.statut_paiement === 'paye' ? 'Payé' : 'Non payé'}</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </label>
+          `;
+        }).join('');
+      }
+      document.getElementById('dedup-modal').classList.remove('hidden');
+    };
+
+    document.getElementById('btn-close-dedup')?.addEventListener('click', () => {
+      document.getElementById('dedup-modal').classList.add('hidden');
+    });
+    document.getElementById('dedup-modal')?.addEventListener('click', (e) => {
+      if (e.target.id === 'dedup-modal') document.getElementById('dedup-modal').classList.add('hidden');
+    });
+    document.getElementById('btn-dedup-clean-selected')?.addEventListener('click', async () => {
+      const list = window._currentDedupCandidates || [];
+      const checkedBoxes = Array.from(document.querySelectorAll('#dedup-modal-body input[data-dedup-idx]:checked'));
+      if (!checkedBoxes.length) return toast('Sélectionnez au moins un doublon à nettoyer.', 'error');
+      const selectedPairs = checkedBoxes.map(cb => list[Number(cb.dataset.dedupIdx)]).filter(Boolean);
+      const count = await executeDuplicateCleanup(selectedPairs);
+      document.getElementById('dedup-modal').classList.add('hidden');
+      toast(`🧹 ${count} doublon(s) retiré(s) et déplacé(s) dans la corbeille ! Statistiques mises à jour ✓`);
+      await loadAllData();
+    });
 
     window.toggleVenteStatut = async (id, field, newVal) => {
       const { error } = await sb.from('ventes').update({ [field]: newVal }).eq('id', id);
