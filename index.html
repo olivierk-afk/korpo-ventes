@@ -1250,11 +1250,17 @@
               <option value="non_paye">Commission à recevoir</option>
               <option value="paye">Commission payée</option>
             </select>
-            <div class="month-picker-wrap w-full sm:w-auto">
-              <input id="filter-rep-month" type="month" title="Choisir un mois précis" class="w-full sm:w-auto px-3 py-2 text-xs font-medium bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-600 cursor-pointer" />
-              <span id="filter-rep-month-placeholder" class="month-empty-label hidden">📅 Choisir un mois</span>
-            </div>
-            <button id="btn-rep-all-months" type="button" class="w-full sm:w-auto px-3 py-2 text-xs font-semibold text-slate-700 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 transition text-center">Tout voir</button>
+            <select id="filter-rep-period" class="w-full sm:w-auto px-3 py-2 text-xs font-bold bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-600 cursor-pointer">
+              <option value="this_month" selected>📅 Ce mois-ci</option>
+              <option value="this_week">📆 Cette semaine</option>
+              <option value="this_quarter">📊 Ce trimestre</option>
+              <option value="this_year">🗓️ Cette année</option>
+              <option value="all">∞ Tout l'historique</option>
+              <option value="specific_month">🎯 Choisir un mois précis...</option>
+              <option value="specific_date">📌 Choisir une date précise...</option>
+            </select>
+            <input id="filter-rep-month" type="month" title="Choisir un mois précis" class="hidden w-full sm:w-auto px-3 py-2 text-xs font-semibold bg-white border border-indigo-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-600 cursor-pointer" />
+            <input id="filter-rep-date" type="date" title="Choisir une date précise" class="hidden w-full sm:w-auto px-3 py-2 text-xs font-semibold bg-white border border-indigo-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-600 cursor-pointer" />
             <button type="button" data-mobile-group="ventes" onclick="openTrashModal()" class="col-span-2 sm:col-span-1 w-full sm:w-auto px-3 py-2 text-xs font-semibold text-slate-700 bg-white border border-slate-200 rounded-xl hover:bg-rose-50 hover:text-rose-700 hover:border-rose-200 transition text-center flex items-center justify-center gap-1.5">
               <span>🗑️ Corbeille</span>
               <span class="trash-badge-count px-1.5 py-0.2 text-[10px] font-extrabold rounded-full bg-slate-100 text-slate-600">0</span>
@@ -1725,12 +1731,18 @@
             <h2 class="text-xl font-extrabold text-slate-900 tracking-tight flex items-center gap-2"><span class="w-8 h-8 rounded-xl bg-amber-50 text-amber-600 border border-amber-200/80 flex items-center justify-center text-base">🏆</span><span>Classement de l'équipe</span></h2>
             <p class="text-xs text-slate-500 mt-0.5">Comparatif des volumes de ventes (les commissions demeurent strictement privées)</p>
           </div>
-          <div class="flex items-center gap-2">
-            <div class="month-picker-wrap">
-              <input id="filter-rank-month" type="month" title="Choisir un mois précis" class="px-3 py-2 text-xs font-medium bg-white border border-slate-200 rounded-xl cursor-pointer" />
-              <span id="filter-rank-month-placeholder" class="month-empty-label hidden">📅 Choisir un mois</span>
-            </div>
-            <button id="btn-rank-all-months" type="button" class="px-3 py-2 text-xs font-semibold text-slate-700 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 transition">Cumul global</button>
+          <div class="flex flex-wrap items-center gap-2">
+            <select id="filter-rank-period" class="px-3 py-2 text-xs font-bold bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-600 cursor-pointer">
+              <option value="this_month" selected>📅 Ce mois-ci</option>
+              <option value="this_week">📆 Cette semaine</option>
+              <option value="this_quarter">📊 Ce trimestre</option>
+              <option value="this_year">🗓️ Cette année</option>
+              <option value="all">∞ Cumul global</option>
+              <option value="specific_month">🎯 Choisir un mois précis...</option>
+              <option value="specific_date">📌 Choisir une date précise...</option>
+            </select>
+            <input id="filter-rank-month" type="month" title="Choisir un mois précis" class="hidden px-3 py-2 text-xs font-semibold bg-white border border-indigo-300 rounded-xl cursor-pointer" />
+            <input id="filter-rank-date" type="date" title="Choisir une date précise" class="hidden px-3 py-2 text-xs font-semibold bg-white border border-indigo-300 rounded-xl cursor-pointer" />
           </div>
         </div>
 
@@ -1776,7 +1788,19 @@
             <input id="admin-search" type="text" placeholder="Rechercher client, note..." class="px-3.5 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-600" />
             <select id="admin-filter-rep" class="px-3 py-2 text-xs font-medium bg-slate-50 border border-slate-200 rounded-xl"></select>
             <select id="admin-filter-ent" class="px-3 py-2 text-xs font-medium bg-slate-50 border border-slate-200 rounded-xl"></select>
-            <input id="admin-filter-month" type="month" class="px-3 py-2 text-xs font-medium bg-slate-50 border border-slate-200 rounded-xl" />
+            <div class="flex flex-wrap sm:flex-nowrap items-center gap-1.5">
+              <select id="admin-filter-period" class="w-full px-3 py-2 text-xs font-bold bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-600 cursor-pointer">
+                <option value="all" selected>∞ Toutes les dates</option>
+                <option value="this_week">📆 Cette semaine</option>
+                <option value="this_month">📅 Ce mois-ci</option>
+                <option value="this_quarter">📊 Ce trimestre</option>
+                <option value="this_year">🗓️ Cette année</option>
+                <option value="specific_month">🎯 Mois précis...</option>
+                <option value="specific_date">📌 Date précise...</option>
+              </select>
+              <input id="admin-filter-month" type="month" class="hidden px-2.5 py-2 text-xs font-semibold bg-white border border-indigo-300 rounded-xl cursor-pointer" />
+              <input id="admin-filter-date" type="date" class="hidden px-2.5 py-2 text-xs font-semibold bg-white border border-indigo-300 rounded-xl cursor-pointer" />
+            </div>
             <select id="admin-filter-statut" class="px-3 py-2 text-xs font-medium bg-slate-50 border border-slate-200 rounded-xl">
               <option value="">Tous les statuts</option>
               <option value="depot_attente">Dépôt à confirmer</option>
@@ -1832,11 +1856,17 @@
             <button id="btn-export-payroll-batch" class="px-3.5 py-2 text-xs font-bold text-emerald-800 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-xl transition">
               💸 Exporter fichier de paie (CSV)
             </button>
-            <div class="month-picker-wrap">
-              <input id="dash-filter-month" type="month" title="Choisir un mois précis" class="px-3 py-2 text-xs font-medium bg-white border border-slate-200 rounded-xl cursor-pointer" />
-              <span id="dash-filter-month-placeholder" class="month-empty-label hidden">📅 Choisir un mois</span>
-            </div>
-            <button id="btn-dash-all" type="button" class="px-3 py-2 text-xs font-semibold text-slate-700 bg-white border border-slate-200 rounded-xl hover:bg-slate-50">Toute l'année</button>
+            <select id="dash-filter-period" class="px-3 py-2 text-xs font-bold bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-600 cursor-pointer">
+              <option value="all" selected>🗓️ Toute l'année / Tout</option>
+              <option value="this_week">📆 Cette semaine</option>
+              <option value="this_month">📅 Ce mois-ci</option>
+              <option value="this_quarter">📊 Ce trimestre</option>
+              <option value="this_year">🗓️ Cette année (2026)</option>
+              <option value="specific_month">🎯 Choisir un mois précis...</option>
+              <option value="specific_date">📌 Choisir une date précise...</option>
+            </select>
+            <input id="dash-filter-month" type="month" title="Choisir un mois précis" class="hidden px-3 py-2 text-xs font-semibold bg-white border border-indigo-300 rounded-xl cursor-pointer" />
+            <input id="dash-filter-date" type="date" title="Choisir une date précise" class="hidden px-3 py-2 text-xs font-semibold bg-white border border-indigo-300 rounded-xl cursor-pointer" />
           </div>
         </div>
 
@@ -3488,10 +3518,17 @@
       normalizeKpiStoreReps();
       const months = Object.keys(kpiStore).filter(isValidYearMonth).sort().reverse();
       const years = Array.from(new Set(months.map(m => m.slice(0, 4)))).sort().reverse();
-      const yearOptions = years.map(y => `<option value="YEAR_${y}">📅 Toute l'année ${y} (Vue d'ensemble)</option>`).join('');
-      const monthOptions = months.map(ym => `<option value="${ym}">${esc(kpiStore[ym].label)}</option>`).join('');
-      selMonth.innerHTML = yearOptions + monthOptions;
-      if (keepSelection && curSel && (curSel.startsWith('YEAR_') || months.includes(curSel))) {
+      const quarters = Array.from(new Set(months.map(m => getQuarterForMonth(m)).filter(Boolean))).sort().reverse();
+      const curQ = getQuarterForMonth(currentMonthStr);
+      const yearOptions = years.map(y => `<option value="YEAR_${y}">🗓️ ${y === String(today.getFullYear()) ? `Cette année (${y})` : `Toute l'année ${y}`}</option>`).join('');
+      const quarterOptions = quarters.map(q => {
+        const [qy, qn] = q.split('-Q');
+        const isCurQ = q === curQ;
+        return `<option value="QUARTER_${q}">📊 ${isCurQ ? `Ce trimestre (T${qn} ${qy})` : `Trimestre T${qn} ${qy}`}</option>`;
+      }).join('');
+      const monthOptions = months.map(ym => `<option value="${ym}">${ym === currentMonthStr ? `📅 Ce mois-ci (${esc(kpiStore[ym].label)})` : esc(kpiStore[ym].label)}</option>`).join('');
+      selMonth.innerHTML = yearOptions + quarterOptions + monthOptions;
+      if (keepSelection && curSel && (curSel.startsWith('YEAR_') || curSel.startsWith('QUARTER_') || months.includes(curSel))) {
         selMonth.value = curSel;
       } else if (typeof currentMonthStr !== 'undefined' && months.includes(currentMonthStr)) {
         selMonth.value = currentMonthStr;
@@ -3930,11 +3967,13 @@
       if (!grid || !badge) return;
 
       const isYear = selVal && selVal.startsWith('YEAR_');
+      const isQuarter = selVal && selVal.startsWith('QUARTER_');
       const yearPrefix = isYear ? selVal.replace('YEAR_', '') : null;
+      const quarterTarget = isQuarter ? selVal.replace('QUARTER_', '') : null;
       const activeTargets = clientTargetsStore.filter(t => {
         if (t.active === false) return false;
         if (repFilter !== 'ALL' && t.repNom !== 'ALL' && t.repNom !== repFilter) return false;
-        if (!isYear && t.monthScope !== 'ALL' && t.monthScope !== selVal) return false;
+        if (!isYear && !isQuarter && t.monthScope !== 'ALL' && t.monthScope !== selVal) return false;
         return true;
       });
 
@@ -3952,7 +3991,7 @@
 
       const monthsCount = isYear
         ? Object.keys(kpiStore).filter(ym => ym.startsWith(yearPrefix)).length || 1
-        : 1;
+        : (isQuarter ? Object.keys(kpiStore).filter(ym => getQuarterForMonth(ym) === quarterTarget).length || 1 : 1);
 
       grid.innerHTML = activeTargets.map(t => {
         const targetAmount = t.monthScope === 'ALL' ? (t.objectif * monthsCount) : t.objectif;
@@ -3966,6 +4005,7 @@
           if (repFilter !== 'ALL' && rep !== repFilter) return false;
           const ym = getSaleStatsMonth(v);
           if (isYear) return ym.startsWith(yearPrefix);
+          if (isQuarter) return getQuarterForMonth(ym) === quarterTarget;
           return ym === selVal;
         });
 
@@ -4486,8 +4526,8 @@
     }
 
     function renderExecutiveForecast() {
-      const mFilter = document.getElementById('dash-filter-month')?.value;
-      const targetYm = mFilter || currentMonthStr;
+      const dashPeriod = readPeriodFilterState('dash-filter');
+      const targetYm = dashPeriod.singleMonth || currentMonthStr;
       const mObj = ensureKpiMonthStructure(targetYm);
       const isCurrentMonth = targetYm === currentMonthStr;
 
@@ -5195,12 +5235,15 @@
     }
 
     function getAggregatedKpiForSelection(selVal) {
-      if (!selVal || !selVal.startsWith('YEAR_')) {
+      const isYearSel = selVal && selVal.startsWith('YEAR_');
+      const isQuarterSel = selVal && selVal.startsWith('QUARTER_');
+      if (!isYearSel && !isQuarterSel) {
         return { isYear: false, data: kpiStore[selVal], monthsIncluded: [selVal] };
       }
-      const yearPrefix = selVal.replace('YEAR_', '');
+      const yearPrefix = isYearSel ? selVal.replace('YEAR_', '') : selVal.replace('QUARTER_', '').slice(0, 4);
+      const quarterTarget = isQuarterSel ? selVal.replace('QUARTER_', '') : null;
       const matchingMonths = Object.keys(kpiStore)
-        .filter(ym => ym.startsWith(yearPrefix))
+        .filter(ym => isYearSel ? ym.startsWith(yearPrefix) : getQuarterForMonth(ym) === quarterTarget)
         .sort();
 
       const allReps = ALL_KPI_REPS;
@@ -5208,7 +5251,9 @@
       const teamMetrics = ['Booké', 'RDV RÉA', 'VENTE OTS', 'VENTE SUIVI', 'VENTE TOTAL', 'VENTE $'];
 
       const agg = {
-        label: `Année ${yearPrefix} (${matchingMonths.length} mois)`,
+        label: isQuarterSel
+          ? `Trimestre ${quarterTarget.replace('-Q', ' T')} (${matchingMonths.length} mois)`
+          : `Année ${yearPrefix} (${matchingMonths.length} mois)`,
         num_weeks: matchingMonths.length,
         monthLabels: matchingMonths.map(ym => kpiStore[ym].label.replace(` ${yearPrefix}`, '')),
         reps: {},
@@ -6692,7 +6737,7 @@
       }
     }
 
-    function updatePersonalGoalProgressBar(monthFilter, scopeFilter) {
+    function updatePersonalGoalProgressBar(periodState, scopeFilter) {
       if (!currentProfile) return;
       const isAdmin = currentProfile.role === 'admin';
       const isInspectingRep = isAdmin && typeof scopeFilter === 'string' && scopeFilter.startsWith('rep:');
@@ -6700,8 +6745,9 @@
       const inspectedRepObj = isInspectingRep
         ? state.representants.find(r => String(r.id) === inspectedRepId)
         : currentProfile;
-      const isAllTime = !monthFilter;
-      const activeYm = monthFilter || currentMonthStr;
+      const pMode = periodState?.mode || 'this_month';
+      const isMultiMonth = pMode === 'all' || pMode === 'this_year' || pMode === 'this_quarter';
+      const activeYm = periodState?.singleMonth || currentMonthStr;
       const inspectedRepName = inspectedRepObj?.nom || currentProfile.nom;
 
       const sourceRows = isInspectingRep
@@ -6712,26 +6758,26 @@
         if (!isInspectingRep && isAdmin && scopeFilter === 'direct') {
           if (String(v.representant_id) !== String(currentProfile.id)) return false;
         }
-        if (monthFilter) return getSaleStatsMonth(v) === monthFilter;
-        return true;
+        return matchesSalePeriod(v, periodState, true);
       });
 
-      // L'objectif de volume de ventes personnel ne prend en compte QUE les ventes personnelles du représentant ciblé (jamais celles de toute l'équipe)
       const myOwnDirectSales = myPeriodSales.filter(v => String(v.representant_id) === inspectedRepId);
 
       let salesTarget = getSalesTargetForRep(inspectedRepName, activeYm);
       let commTarget = getCommissionTargetForRep(inspectedRepName, activeYm);
 
-      if (isAllTime) {
-        const distinctSalesMonths = new Set(
-          myOwnDirectSales.map(v => getSaleStatsMonth(v)).filter(Boolean)
-        );
+      if (pMode === 'this_quarter') {
+        salesTarget = salesTarget * 3;
+        commTarget = commTarget * 3;
+      } else if (pMode === 'this_year') {
+        salesTarget = salesTarget * 12;
+        commTarget = commTarget * 12;
+      } else if (pMode === 'all') {
+        const distinctSalesMonths = new Set(myOwnDirectSales.map(v => getSaleStatsMonth(v)).filter(Boolean));
         const salesMonthsList = distinctSalesMonths.size > 0 ? Array.from(distinctSalesMonths) : [currentMonthStr];
         salesTarget = salesMonthsList.reduce((sum, ym) => sum + getSalesTargetForRep(inspectedRepName, ym), 0);
 
-        const distinctCommMonths = new Set(
-          myPeriodSales.map(v => getSaleStatsMonth(v)).filter(Boolean)
-        );
+        const distinctCommMonths = new Set(myPeriodSales.map(v => getSaleStatsMonth(v)).filter(Boolean));
         const commMonthsList = distinctCommMonths.size > 0 ? Array.from(distinctCommMonths) : [currentMonthStr];
         commTarget = commMonthsList.reduce((sum, ym) => sum + getCommissionTargetForRep(inspectedRepName, ym), 0);
       }
@@ -6741,9 +6787,10 @@
 
       const headerTitleEl = document.getElementById('goal-card-header-title');
       if (headerTitleEl) {
+        const periodTag = periodState?.label || activeYm;
         headerTitleEl.textContent = isInspectingRep
-          ? (isAllTime ? `Objectifs cumulés de ${inspectedRepName} (Depuis le début)` : `Objectifs du mois de ${inspectedRepName} (${activeYm})`)
-          : (isAllTime ? `Mes objectifs cumulés (Depuis le début)` : `Mes objectifs du mois (${activeYm})`);
+          ? `Objectifs de ${inspectedRepName} — ${periodTag}`
+          : (isMultiMonth ? `Mes objectifs — ${periodTag}` : `Mes objectifs — ${periodTag}`);
       }
 
       // 1. Mise à jour de la barre TARGET COMMISSION ($)
@@ -6954,7 +7001,7 @@
     function renderMesVentes() {
       syncCommDisplayModeButtons();
       const isAdmin = currentProfile.role === 'admin';
-      const monthFilter = document.getElementById('filter-rep-month').value;
+      const periodState = readPeriodFilterState('filter-rep');
       const statutFilter = document.getElementById('filter-rep-statut')?.value || '';
       const scopeSelEl = document.getElementById('filter-admin-scope');
       if (scopeSelEl && !isAdmin) scopeSelEl.classList.add('hidden');
@@ -6996,7 +7043,7 @@
           });
 
       const filtered = scopeFilteredAll.filter(v => {
-        if (monthFilter && v.mois_commission !== monthFilter) return false;
+        if (!matchesSalePeriod(v, periodState, true)) return false;
         if (statutFilter === 'en_attente' && v.statut_depot === 'depot_recu' && v.statut_paiement === 'paye') return false;
         if (statutFilter === 'depot_attente' && v.statut_depot !== 'a_confirmer') return false;
         if (statutFilter === 'non_paye' && v.statut_paiement !== 'non_paye') return false;
@@ -7025,10 +7072,8 @@
       const yearSales = scopeFilteredAll.filter(v => getSaleStatsMonth(v).startsWith(currentYear));
       const isConfirmedOnly = commDisplayMode === 'confirme';
 
-      // Comptabiliser chaque dossier uniquement dans son mois actif (`getSaleStatsMonth` : mois d'origine ou mois de transfert si non confirmé)
-      const statsPeriodSales = monthFilter
-        ? filtered.filter(v => getSaleStatsMonth(v) === monthFilter)
-        : filtered;
+      // Comptabiliser chaque dossier uniquement dans sa période active
+      const statsPeriodSales = filtered;
       const carriedInPeriodCount = statsPeriodSales.filter(v => v._carriedOverFrom).length;
 
       const filteredConfirmed = filtered.filter(v => v.statut_depot === 'depot_recu');
@@ -7054,7 +7099,7 @@
       const elMoisConf = document.getElementById('kpi-rep-ventes-mois-confirme');
       if (elMoisConf) elMoisConf.textContent = fmtMoney(periodConfirmedTotal);
 
-      updatePersonalGoalProgressBar(monthFilter, scopeFilter);
+      updatePersonalGoalProgressBar(periodState, scopeFilter);
 
       document.getElementById('kpi-rep-comm-mois').textContent = fmtMoney(commPeriod);
       const elSubMois = document.getElementById('kpi-rep-comm-mois-sublabel');
@@ -7244,11 +7289,11 @@
     }
 
     function renderClassement() {
-      const monthFilter = document.getElementById('filter-rank-month').value;
+      const rankPeriod = readPeriodFilterState('filter-rank');
       const totalsByRep = new Map();
+      const isSubMonthMode = rankPeriod.mode === 'this_week' || rankPeriod.mode === 'specific_date';
 
-      const hasCarriedOverRows = Object.keys(carriedOverSalesStore).length > 0;
-      if (hasCarriedOverRows && state.ventes && state.ventes.length && currentProfile?.role === 'admin') {
+      if ((isSubMonthMode || (state.ventes && state.ventes.length && currentProfile?.role === 'admin'))) {
         state.representants.forEach(r => {
           totalsByRep.set(r.id, { nom: r.nom, total: 0, monthsCount: new Set() });
         });
@@ -7260,19 +7305,19 @@
           }
           const sYm = getSaleStatsMonth(v);
           const entry = totalsByRep.get(repObj.id);
-          if (!monthFilter || sYm === monthFilter) {
+          if (matchesSalePeriod(v, rankPeriod, true)) {
             entry.total += Number(v.valeur || 0);
             if (sYm) entry.monthsCount.add(sYm);
           }
         });
       } else {
-        // `vue_classement_ventes` regroupe par `mois_commission` : les ventes non confirmées transférées comptent donc uniquement dans le mois de transfert
         state.classement.forEach(row => {
           if (!totalsByRep.has(row.representant_id)) {
             totalsByRep.set(row.representant_id, { nom: row.representant_nom, total: 0, monthsCount: new Set() });
           }
           const entry = totalsByRep.get(row.representant_id);
-          if (!monthFilter || row.mois_commission === monthFilter) {
+          const fakeRow = { mois_commission: row.mois_commission, date_vente: `${row.mois_commission}-01` };
+          if (matchesSalePeriod(fakeRow, rankPeriod, false)) {
             const adjTotal = Number(row.total_ventes || 0);
             entry.total += Math.max(0, adjTotal);
             if (row.mois_commission) entry.monthsCount.add(row.mois_commission);
@@ -7284,9 +7329,13 @@
       const medals = ['🥇', '🥈', '🥉'];
 
       document.getElementById('classement-cards').innerHTML = ranked.map((r, idx) => {
-        const activeYm = monthFilter || currentMonthStr;
+        const activeYm = rankPeriod.singleMonth || currentMonthStr;
         const unitTarget = getSalesTargetForRep(r.nom, activeYm);
-        const mult = monthFilter ? 1 : Math.max(1, r.monthsCount.size || Object.keys(kpiStore).length || 1);
+        const mult = rankPeriod.mode === 'this_quarter'
+          ? 3
+          : (rankPeriod.mode === 'this_year'
+            ? 12
+            : (rankPeriod.mode === 'all' ? Math.max(1, r.monthsCount.size || Object.keys(kpiStore).length || 1) : 1));
         const repTarget = unitTarget * mult;
         const targetPct = repTarget > 0 ? Math.round((r.total / repTarget) * 100) : 0;
         const barWidth = Math.min(100, Math.max(r.total > 0 ? 4 : 0, targetPct));
@@ -7652,13 +7701,13 @@
       const q = document.getElementById('admin-search').value.trim().toLowerCase();
       const fRep = document.getElementById('admin-filter-rep').value;
       const fEnt = document.getElementById('admin-filter-ent').value;
-      const fMonth = document.getElementById('admin-filter-month').value;
+      const adminPeriod = readPeriodFilterState('admin-filter');
       const fStat = document.getElementById('admin-filter-statut').value;
 
       const list = state.ventes.filter(v => {
         if (fRep && v.representant_id !== fRep) return false;
         if (fEnt && v.entreprise_id !== fEnt) return false;
-        if (fMonth && v.mois_commission !== fMonth) return false;
+        if (!matchesSalePeriod(v, adminPeriod, true)) return false;
         if (fStat === 'depot_attente' && v.statut_depot !== 'a_confirmer') return false;
         if (fStat === 'non_paye' && v.statut_paiement !== 'non_paye') return false;
         if (fStat === 'paye' && v.statut_paiement !== 'paye') return false;
@@ -7869,10 +7918,10 @@
 
     function renderAdminDashboard() {
       syncCommDisplayModeButtons();
-      const m = document.getElementById('dash-filter-month').value;
-      // Pour les statistiques de ventes du mois `m`, on utilise `getSaleStatsMonth(v)` afin de ne pas recomptabiliser les ventes reportées du mois d'avant
-      const statsList = m ? state.ventes.filter(v => getSaleStatsMonth(v) === m) : state.ventes;
-      const list = m ? state.ventes.filter(v => v.mois_commission === m) : state.ventes;
+      const dashPeriod = readPeriodFilterState('dash-filter');
+      const m = dashPeriod.singleMonth;
+      const statsList = state.ventes.filter(v => matchesSalePeriod(v, dashPeriod, true));
+      const list = statsList;
       const confirmedList = list.filter(v => v.statut_depot === 'depot_recu');
       const statsConfirmedList = statsList.filter(v => v.statut_depot === 'depot_recu');
       const isConfirmedOnly = commDisplayMode === 'confirme';
@@ -7962,10 +8011,11 @@
     window.openPayslipModal = (repId) => {
       const rep = state.representants.find(r => r.id === repId);
       if (!rep) return;
-      const m = document.getElementById('dash-filter-month').value;
+      const dashPeriod = readPeriodFilterState('dash-filter');
+      const m = dashPeriod.label;
       const isOlivier = rep.role === 'admin';
       const isConfirmedOnly = commDisplayMode === 'confirme';
-      const sales = state.ventes.filter(v => (isOlivier ? true : v.representant_id === repId) && (!m || v.mois_commission === m) && (!isConfirmedOnly || v.statut_depot === 'depot_recu'));
+      const sales = state.ventes.filter(v => (isOlivier ? true : v.representant_id === repId) && matchesSalePeriod(v, dashPeriod, true) && (!isConfirmedOnly || v.statut_depot === 'depot_recu'));
 
       const totalVentes = sales.reduce((s, v) => s + Number(v.valeur), 0);
       const totalComm = sales.reduce((s, v) => s + Number(isOlivier ? v.commission_olivier : v.commission_rep), 0);
@@ -8049,8 +8099,16 @@
     };
 
     window.selectDashMonth = (ym) => {
+      const perSel = document.getElementById('dash-filter-period');
       const input = document.getElementById('dash-filter-month');
-      input.value = input.value === ym ? '' : ym;
+      if (perSel && input) {
+        if (perSel.value === 'specific_month' && input.value === ym) {
+          perSel.value = 'all';
+        } else {
+          perSel.value = 'specific_month';
+          input.value = ym;
+        }
+      }
       syncAllMonthPickers();
       renderAdminDashboard();
     };
@@ -8911,76 +8969,124 @@
 
     const today = new Date();
     const currentMonthStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
+    const currentDateStr = localYmd(today);
     document.getElementById('filter-rep-month').value = currentMonthStr;
-    document.getElementById('vente-date').value = localYmd(today);
+    document.getElementById('filter-rep-date').value = currentDateStr;
+    document.getElementById('vente-date').value = currentDateStr;
     document.getElementById('vente-mois-comm').value = currentMonthStr;
 
-    function syncMonthPickerState(inputId, placeholderId, btnId, allLabel, currentLabel) {
-      const inp = document.getElementById(inputId);
-      const ph = document.getElementById(placeholderId);
-      const btn = document.getElementById(btnId);
-      if (!inp) return;
-      const isEmpty = !inp.value;
-      inp.classList.toggle('is-all-months', isEmpty);
-      if (ph) ph.classList.toggle('hidden', !isEmpty);
-      if (btn) {
-        btn.textContent = isEmpty ? currentLabel : allLabel;
-        btn.classList.toggle('bg-indigo-600', isEmpty);
-        btn.classList.toggle('text-white', isEmpty);
-        btn.classList.toggle('border-indigo-600', isEmpty);
-        btn.classList.toggle('bg-white', !isEmpty);
-        btn.classList.toggle('text-slate-700', !isEmpty);
+    function getCurrentWeekBounds(refDate = new Date()) {
+      const d = new Date(refDate.getFullYear(), refDate.getMonth(), refDate.getDate());
+      const dayOfWeek = d.getDay(); // 0 = dimanche, 1 = lundi
+      const diffToMonday = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+      const monday = new Date(d);
+      monday.setDate(d.getDate() + diffToMonday);
+      const sunday = new Date(monday);
+      sunday.setDate(monday.getDate() + 6);
+      return { start: localYmd(monday), end: localYmd(sunday) };
+    }
+
+    function getQuarterForMonth(ym) {
+      if (!ym || ym.length < 7) return null;
+      const y = ym.slice(0, 4);
+      const m = parseInt(ym.slice(5, 7), 10);
+      if (isNaN(m)) return null;
+      return `${y}-Q${Math.ceil(m / 3)}`;
+    }
+
+    function readPeriodFilterState(prefix) {
+      const mode = document.getElementById(`${prefix}-period`)?.value || 'all';
+      const monthVal = document.getElementById(`${prefix}-month`)?.value || currentMonthStr;
+      const dateVal = document.getElementById(`${prefix}-date`)?.value || currentDateStr;
+      const weekBounds = getCurrentWeekBounds(today);
+      const currentQuarter = getQuarterForMonth(currentMonthStr);
+      const currentYear = String(today.getFullYear());
+
+      let label = 'Toutes les périodes';
+      let singleMonth = '';
+      if (mode === 'this_week') label = `Cette semaine (${weekBounds.start} → ${weekBounds.end})`;
+      else if (mode === 'this_month') { label = `Ce mois-ci (${currentMonthStr})`; singleMonth = currentMonthStr; }
+      else if (mode === 'this_quarter') label = `Ce trimestre (${currentQuarter.replace('-Q', ' • T')})`;
+      else if (mode === 'this_year') label = `Cette année (${currentYear})`;
+      else if (mode === 'specific_month') { label = `Mois : ${monthVal}`; singleMonth = monthVal; }
+      else if (mode === 'specific_date') label = `Date précise : ${dateVal}`;
+
+      return { mode, monthVal, dateVal, weekBounds, currentQuarter, currentYear, label, singleMonth };
+    }
+
+    function matchesSalePeriod(v, periodState, useStatsMonth = true) {
+      if (!periodState || periodState.mode === 'all') return true;
+      const { mode, monthVal, dateVal, weekBounds, currentQuarter, currentYear } = periodState;
+      const dStr = (v.date_vente || '').slice(0, 10);
+      const ym = useStatsMonth ? getSaleStatsMonth(v) : (v.mois_commission || dStr.slice(0, 7));
+
+      if (mode === 'this_week') {
+        return Boolean(dStr && dStr >= weekBounds.start && dStr <= weekBounds.end);
+      }
+      if (mode === 'this_month') {
+        return ym === currentMonthStr;
+      }
+      if (mode === 'this_quarter') {
+        return getQuarterForMonth(ym) === currentQuarter;
+      }
+      if (mode === 'this_year') {
+        return (ym || '').startsWith(currentYear);
+      }
+      if (mode === 'specific_month') {
+        return !monthVal || ym === monthVal;
+      }
+      if (mode === 'specific_date') {
+        return !dateVal || dStr === dateVal;
+      }
+      return true;
+    }
+
+    function syncPeriodInputsVisibility(prefix, autoOpenPicker = false) {
+      const mode = document.getElementById(`${prefix}-period`)?.value || 'all';
+      const monthInp = document.getElementById(`${prefix}-month`);
+      const dateInp = document.getElementById(`${prefix}-date`);
+      if (monthInp) {
+        const showM = mode === 'specific_month';
+        monthInp.classList.toggle('hidden', !showM);
+        if (showM && !monthInp.value) monthInp.value = currentMonthStr;
+        if (showM && autoOpenPicker && typeof monthInp.showPicker === 'function') {
+          try { monthInp.showPicker(); } catch (e) {}
+        }
+      }
+      if (dateInp) {
+        const showD = mode === 'specific_date';
+        dateInp.classList.toggle('hidden', !showD);
+        if (showD && !dateInp.value) dateInp.value = currentDateStr;
+        if (showD && autoOpenPicker && typeof dateInp.showPicker === 'function') {
+          try { dateInp.showPicker(); } catch (e) {}
+        }
       }
     }
 
     function syncAllMonthPickers() {
-      syncMonthPickerState('filter-rep-month', 'filter-rep-month-placeholder', 'btn-rep-all-months', 'Tout voir', 'Ce mois-ci');
-      syncMonthPickerState('filter-rank-month', 'filter-rank-month-placeholder', 'btn-rank-all-months', 'Cumul global', 'Ce mois-ci');
-      syncMonthPickerState('dash-filter-month', 'dash-filter-month-placeholder', 'btn-dash-all', "Toute l'année", 'Ce mois-ci');
+      ['filter-rep', 'filter-rank', 'admin-filter', 'dash-filter'].forEach(p => syncPeriodInputsVisibility(p, false));
     }
 
-    ['filter-rep-month', 'filter-rank-month', 'dash-filter-month'].forEach(id => {
-      const el = document.getElementById(id);
-      if (!el) return;
-      el.addEventListener('click', () => {
-        if (!el.value && typeof el.showPicker === 'function') {
-          try { el.showPicker(); } catch (e) {}
-        }
+    function bindPeriodSelectorGroup(prefix, renderFn) {
+      const sel = document.getElementById(`${prefix}-period`);
+      const mInp = document.getElementById(`${prefix}-month`);
+      const dInp = document.getElementById(`${prefix}-date`);
+      sel?.addEventListener('change', () => {
+        syncPeriodInputsVisibility(prefix, true);
+        renderFn();
       });
-    });
+      mInp?.addEventListener('change', renderFn);
+      dInp?.addEventListener('change', renderFn);
+    }
 
-    document.getElementById('filter-rep-month').addEventListener('change', () => {
-      syncAllMonthPickers();
-      renderMesVentes();
-    });
+    bindPeriodSelectorGroup('filter-rep', renderMesVentes);
+    bindPeriodSelectorGroup('filter-rank', renderClassement);
+    bindPeriodSelectorGroup('admin-filter', renderAdminVentes);
+    bindPeriodSelectorGroup('dash-filter', renderAdminDashboard);
+
     document.getElementById('filter-rep-statut')?.addEventListener('change', renderMesVentes);
     document.getElementById('filter-admin-scope').addEventListener('change', renderMesVentes);
     document.getElementById('search-rep-ventes').addEventListener('input', renderMesVentes);
-    document.getElementById('btn-rep-all-months').addEventListener('click', () => {
-      const monthEl = document.getElementById('filter-rep-month');
-      if (!monthEl.value) {
-        monthEl.value = currentMonthStr;
-      } else {
-        monthEl.value = '';
-        if (document.getElementById('filter-rep-statut')) document.getElementById('filter-rep-statut').value = '';
-        document.getElementById('search-rep-ventes').value = '';
-        document.getElementById('filter-admin-scope').value = 'all';
-      }
-      syncAllMonthPickers();
-      renderMesVentes();
-    });
-
-    document.getElementById('filter-rank-month').value = currentMonthStr;
-    document.getElementById('filter-rank-month').addEventListener('change', () => {
-      syncAllMonthPickers();
-      renderClassement();
-    });
-    document.getElementById('btn-rank-all-months').addEventListener('click', () => {
-      const rankEl = document.getElementById('filter-rank-month');
-      rankEl.value = rankEl.value ? '' : currentMonthStr;
-      syncAllMonthPickers();
-      renderClassement();
-    });
 
     document.getElementById('vente-entreprise').addEventListener('change', updateClientDatalist);
     document.getElementById('taux-ent').addEventListener('change', updateTauxClientSelect);
@@ -9154,7 +9260,7 @@
       }
     });
 
-    ['admin-search', 'admin-filter-rep', 'admin-filter-ent', 'admin-filter-month', 'admin-filter-statut'].forEach(id => {
+    ['admin-search', 'admin-filter-rep', 'admin-filter-ent', 'admin-filter-statut'].forEach(id => {
       document.getElementById(id).addEventListener('input', renderAdminVentes);
       document.getElementById(id).addEventListener('change', renderAdminVentes);
     });
@@ -9162,24 +9268,18 @@
       document.getElementById('admin-search').value = '';
       document.getElementById('admin-filter-rep').value = '';
       document.getElementById('admin-filter-ent').value = '';
+      document.getElementById('admin-filter-period').value = 'all';
       document.getElementById('admin-filter-month').value = '';
+      document.getElementById('admin-filter-date').value = '';
       document.getElementById('admin-filter-statut').value = '';
+      syncAllMonthPickers();
       renderAdminVentes();
-    });
-    document.getElementById('dash-filter-month').addEventListener('change', () => {
-      syncAllMonthPickers();
-      renderAdminDashboard();
-    });
-    document.getElementById('btn-dash-all').addEventListener('click', () => {
-      const dashEl = document.getElementById('dash-filter-month');
-      dashEl.value = dashEl.value ? '' : currentMonthStr;
-      syncAllMonthPickers();
-      renderAdminDashboard();
     });
     syncAllMonthPickers();
     document.getElementById('btn-export-payroll-batch')?.addEventListener('click', () => {
-      const m = document.getElementById('dash-filter-month').value;
-      const list = m ? state.ventes.filter(v => v.mois_commission === m) : state.ventes;
+      const dashPeriod = readPeriodFilterState('dash-filter');
+      const m = dashPeriod.singleMonth;
+      const list = state.ventes.filter(v => matchesSalePeriod(v, dashPeriod, true));
       const headers = ['Representant', 'Courriel', 'Dossiers_Total', 'Dossiers_Depot_Recu', 'Volume_Ventes_CAD', 'Commission_Totale_CAD', 'Deja_Paye_CAD', 'Solde_A_Verser_CAD'];
       const rows = state.representants.map(r => {
         const isOli = r.role === 'admin';
