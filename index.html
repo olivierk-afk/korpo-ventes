@@ -19,6 +19,28 @@
     .tabular-nums { font-variant-numeric: tabular-nums; }
     .no-scrollbar::-webkit-scrollbar { display: none; }
     .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    .month-picker-wrap { position: relative; display: inline-flex; align-items: center; }
+    .month-picker-wrap input[type="month"].is-all-months {
+      color: transparent !important;
+    }
+    .month-picker-wrap input[type="month"].is-all-months::-webkit-datetime-edit {
+      color: transparent !important;
+    }
+    .month-picker-wrap .month-empty-label {
+      pointer-events: none;
+      position: absolute;
+      left: 0.75rem;
+      right: 2rem;
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: #4f46e5;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    html.dark .month-picker-wrap .month-empty-label {
+      color: #a5b4fc !important;
+    }
     @media (max-width: 639px) {
       input:not([type="checkbox"]):not([type="radio"]):not([type="file"]),
       select,
@@ -1203,8 +1225,11 @@
               <option value="non_paye">Commission à recevoir</option>
               <option value="paye">Commission payée</option>
             </select>
-            <input id="filter-rep-month" type="month" class="w-full sm:w-auto px-3 py-2 text-xs font-medium bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-600" />
-            <button id="btn-rep-all-months" class="w-full sm:w-auto px-3 py-2 text-xs font-semibold text-slate-700 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 transition text-center">Tout voir</button>
+            <div class="month-picker-wrap w-full sm:w-auto">
+              <input id="filter-rep-month" type="month" title="Choisir un mois précis" class="w-full sm:w-auto px-3 py-2 text-xs font-medium bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-600 cursor-pointer" />
+              <span id="filter-rep-month-placeholder" class="month-empty-label hidden">📅 Choisir un mois</span>
+            </div>
+            <button id="btn-rep-all-months" type="button" class="w-full sm:w-auto px-3 py-2 text-xs font-semibold text-slate-700 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 transition text-center">Tout voir</button>
             <button type="button" data-mobile-group="ventes" onclick="openTrashModal()" class="col-span-2 sm:col-span-1 w-full sm:w-auto px-3 py-2 text-xs font-semibold text-slate-700 bg-white border border-slate-200 rounded-xl hover:bg-rose-50 hover:text-rose-700 hover:border-rose-200 transition text-center flex items-center justify-center gap-1.5">
               <span>🗑️ Corbeille</span>
               <span class="trash-badge-count px-1.5 py-0.2 text-[10px] font-extrabold rounded-full bg-slate-100 text-slate-600">0</span>
@@ -1676,8 +1701,11 @@
             <p class="text-xs text-slate-500 mt-0.5">Comparatif des volumes de ventes (les commissions demeurent strictement privées)</p>
           </div>
           <div class="flex items-center gap-2">
-            <input id="filter-rank-month" type="month" class="px-3 py-2 text-xs font-medium bg-white border border-slate-200 rounded-xl" />
-            <button id="btn-rank-all-months" class="px-3 py-2 text-xs font-semibold text-slate-700 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 transition">Cumul global</button>
+            <div class="month-picker-wrap">
+              <input id="filter-rank-month" type="month" title="Choisir un mois précis" class="px-3 py-2 text-xs font-medium bg-white border border-slate-200 rounded-xl cursor-pointer" />
+              <span id="filter-rank-month-placeholder" class="month-empty-label hidden">📅 Choisir un mois</span>
+            </div>
+            <button id="btn-rank-all-months" type="button" class="px-3 py-2 text-xs font-semibold text-slate-700 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 transition">Cumul global</button>
           </div>
         </div>
 
@@ -1775,8 +1803,11 @@
             <button id="btn-export-payroll-batch" class="px-3.5 py-2 text-xs font-bold text-emerald-800 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-xl transition">
               💸 Exporter fichier de paie (CSV)
             </button>
-            <input id="dash-filter-month" type="month" class="px-3 py-2 text-xs font-medium bg-white border border-slate-200 rounded-xl" />
-            <button id="btn-dash-all" class="px-3 py-2 text-xs font-semibold text-slate-700 bg-white border border-slate-200 rounded-xl hover:bg-slate-50">Toute l'année</button>
+            <div class="month-picker-wrap">
+              <input id="dash-filter-month" type="month" title="Choisir un mois précis" class="px-3 py-2 text-xs font-medium bg-white border border-slate-200 rounded-xl cursor-pointer" />
+              <span id="dash-filter-month-placeholder" class="month-empty-label hidden">📅 Choisir un mois</span>
+            </div>
+            <button id="btn-dash-all" type="button" class="px-3 py-2 text-xs font-semibold text-slate-700 bg-white border border-slate-200 rounded-xl hover:bg-slate-50">Toute l'année</button>
           </div>
         </div>
 
@@ -3226,8 +3257,8 @@
         document.getElementById('kpi-targets-panel')?.classList.add('hidden');
         document.getElementById('kpi-import-modal')?.classList.add('hidden');
         const repSel = document.getElementById('kpi-select-rep');
-        if (repSel && ['Olivier', 'Jean-Sébastien', 'Gabryel', 'Samuel', 'Alexandre'].includes(profile.nom)) {
-          repSel.value = profile.nom;
+        if (repSel) {
+          repSel.value = 'ALL';
         }
       }
 
@@ -4778,6 +4809,9 @@
         const ym = getSaleStatsMonth(v);
         if (isValidYearMonth(ym)) validMonths.add(ym);
       });
+      (state.classement || []).forEach(row => {
+        if (isValidYearMonth(row.mois_commission)) validMonths.add(row.mois_commission);
+      });
       Object.keys(monthlyRdvOverrides || {}).forEach(k => {
         const ym = k.split('_')[0];
         if (isValidYearMonth(ym)) validMonths.add(ym);
@@ -4885,6 +4919,32 @@
             mObj.entreprises[entName].reps[repName] = { weeks: Array(nw).fill(0), cumul: 0, objectif: 0 };
           }
           mObj.entreprises[entName].reps[repName].weeks[wIdx] = Math.round(((mObj.entreprises[entName].reps[repName].weeks[wIdx] || 0) + val) * 100) / 100;
+        }
+      });
+
+      // 5b. Compléter les stats des collègues depuis `vue_classement_ventes` si RLS masque leurs lignes individuelles dans `ventes`
+      const repsWithDirectSalesInState = new Set(
+        allVentes.map(v => {
+          const rObj = state.representants.find(r => String(r.id) === String(v.representant_id));
+          return resolveKpiRepName(rObj?.nom || v.rep_nom || '');
+        }).filter(Boolean)
+      );
+      (state.classement || []).forEach(row => {
+        const ym = row.mois_commission;
+        const repName = resolveKpiRepName(row.representant_nom || '');
+        if (!isValidYearMonth(ym) || !repName || !freshStore[ym]?.reps?.[repName]) return;
+        if (repsWithDirectSalesInState.has(repName)) return;
+
+        const mObj = freshStore[ym];
+        const dol = Math.round(Number(row.total_ventes || 0) * 100) / 100;
+        const cntRaw = Number(row.nb_ventes ?? row.nombre_ventes ?? row.total_ventes_count ?? row.count ?? 0);
+        const cnt = cntRaw > 0 ? cntRaw : (dol > 0 ? Math.max(1, Math.round(dol / 7500)) : 0);
+
+        if (dol > 0) {
+          mObj.reps[repName]['Vente $'].weeks[0] = Math.round(((mObj.reps[repName]['Vente $'].weeks[0] || 0) + dol) * 100) / 100;
+        }
+        if (cnt > 0) {
+          mObj.reps[repName]['Ventes OTS'].weeks[0] = (mObj.reps[repName]['Ventes OTS'].weeks[0] || 0) + cnt;
         }
       });
 
@@ -5391,9 +5451,11 @@
         const appDol = repMonthSales.reduce((s, v) => s + Number(v.valeur || 0), 0);
         const rData = mObj.reps[repFilter];
 
+        const hideOtherRepClientNames = currentProfile?.role !== 'admin' && resolveKpiRepName(currentProfile?.nom || '') !== repFilter;
         const salesListHtml = repMonthSales.length
           ? repMonthSales.map(v => {
-              const cli = v.client_nom || state.clients.find(c => String(c.id) === String(v.client_id))?.nom || '—';
+              const rawCli = v.client_nom || state.clients.find(c => String(c.id) === String(v.client_id))?.nom || '—';
+              const cli = hideOtherRepClientNames ? 'Dossier confidentiel' : rawCli;
               const ent = v.entreprise_nom || state.entreprises.find(e => String(e.id) === String(v.entreprise_id))?.nom || '—';
               const isSui = (v.note || '').toUpperCase().includes('[SUIVI]');
               return `
@@ -5412,7 +5474,8 @@
 
         const mobileSalesCardsHtml = repMonthSales.length
           ? repMonthSales.map(v => {
-              const cli = v.client_nom || state.clients.find(c => String(c.id) === String(v.client_id))?.nom || '—';
+              const rawCli = v.client_nom || state.clients.find(c => String(c.id) === String(v.client_id))?.nom || '—';
+              const cli = hideOtherRepClientNames ? 'Dossier confidentiel' : rawCli;
               const ent = v.entreprise_nom || state.entreprises.find(e => String(e.id) === String(v.entreprise_id))?.nom || '—';
               const isSui = (v.note || '').toUpperCase().includes('[SUIVI]');
               return `
@@ -6243,25 +6306,42 @@
         renderAdminNotifications();
         subscribeToNewSalesRealtime();
       } else {
-        const [mesVentesRows, myTauxRows, rawNotesRows] = await Promise.all([
+        const [mesVentesRows, myTauxRows, teamVentesPublicRows, allRepsPublicRows] = await Promise.all([
           fetchAllRows(() => sb.from('vue_ventes_representant').select('*').eq('representant_id', currentProfile.id).order('date_vente', { ascending: false }).order('created_at', { ascending: false })),
           fetchAllRows(() => sb.from('taux_commission').select('*').eq('representant_id', currentProfile.id)),
-          fetchAllRows(() => sb.from('ventes').select('id,note').eq('representant_id', currentProfile.id)).catch(() => [])
+          fetchAllRows(() => sb.from('ventes').select('id,representant_id,entreprise_id,valeur,date_vente,mois_commission,note,created_at').order('date_vente', { ascending: false })).catch(() => []),
+          fetchAllRows(() => sb.from('representants').select('id,nom,role').order('nom')).catch(() => [])
         ]);
-        const noteByIdMap = new Map((rawNotesRows || []).map(r => [String(r.id), r.note]));
+        const noteByIdMap = new Map((teamVentesPublicRows || []).map(r => [String(r.id), r.note]));
         mesVentesRows.forEach(r => {
           if (r.note === undefined && noteByIdMap.has(String(r.id))) {
             r.note = noteByIdMap.get(String(r.id));
           }
         });
-        state.representants = [currentProfile];
+        state.representants = (allRepsPublicRows && allRepsPublicRows.length) ? allRepsPublicRows : [currentProfile];
         state.mesVentes = mesVentesRows;
-        state.ventes = state.mesVentes.map(v => ({
+
+        const ownSalesNormalized = state.mesVentes.map(v => ({
           ...v,
           representant_id: v.representant_id || currentProfile.id,
+          rep_nom: currentProfile.nom,
           entreprise_id: v.entreprise_id || state.entreprises.find(e => e.nom === v.entreprise_nom)?.id,
           client_id: v.client_id || state.clients.find(c => c.nom === v.client_nom)?.id
         }));
+        const ownIds = new Set(ownSalesNormalized.map(v => String(v.id)));
+        const otherRepsPublicSales = (teamVentesPublicRows || [])
+          .filter(v => String(v.representant_id) !== String(currentProfile.id) && !ownIds.has(String(v.id)))
+          .map(v => {
+            const rObj = state.representants.find(r => String(r.id) === String(v.representant_id));
+            const cRow = (state.classement || []).find(c => String(c.representant_id) === String(v.representant_id));
+            return {
+              ...v,
+              rep_nom: rObj?.nom || cRow?.representant_nom || '',
+              entreprise_nom: state.entreprises.find(e => String(e.id) === String(v.entreprise_id))?.nom || '—',
+              client_nom: 'Client confidentiel'
+            };
+          });
+        state.ventes = [...ownSalesNormalized, ...otherRepsPublicSales];
         state.taux = myTauxRows;
         if (!state.taux.length) {
           const { data: rpcTaux } = await sb.rpc('get_mes_taux_commission');
@@ -7803,6 +7883,7 @@
     window.selectDashMonth = (ym) => {
       const input = document.getElementById('dash-filter-month');
       input.value = input.value === ym ? '' : ym;
+      syncAllMonthPickers();
       renderAdminDashboard();
     };
 
@@ -8438,22 +8519,70 @@
     document.getElementById('vente-date').value = localYmd(today);
     document.getElementById('vente-mois-comm').value = currentMonthStr;
 
-    document.getElementById('filter-rep-month').addEventListener('change', renderMesVentes);
+    function syncMonthPickerState(inputId, placeholderId, btnId, allLabel, currentLabel) {
+      const inp = document.getElementById(inputId);
+      const ph = document.getElementById(placeholderId);
+      const btn = document.getElementById(btnId);
+      if (!inp) return;
+      const isEmpty = !inp.value;
+      inp.classList.toggle('is-all-months', isEmpty);
+      if (ph) ph.classList.toggle('hidden', !isEmpty);
+      if (btn) {
+        btn.textContent = isEmpty ? currentLabel : allLabel;
+        btn.classList.toggle('bg-indigo-600', isEmpty);
+        btn.classList.toggle('text-white', isEmpty);
+        btn.classList.toggle('border-indigo-600', isEmpty);
+        btn.classList.toggle('bg-white', !isEmpty);
+        btn.classList.toggle('text-slate-700', !isEmpty);
+      }
+    }
+
+    function syncAllMonthPickers() {
+      syncMonthPickerState('filter-rep-month', 'filter-rep-month-placeholder', 'btn-rep-all-months', 'Tout voir', 'Ce mois-ci');
+      syncMonthPickerState('filter-rank-month', 'filter-rank-month-placeholder', 'btn-rank-all-months', 'Cumul global', 'Ce mois-ci');
+      syncMonthPickerState('dash-filter-month', 'dash-filter-month-placeholder', 'btn-dash-all', "Toute l'année", 'Ce mois-ci');
+    }
+
+    ['filter-rep-month', 'filter-rank-month', 'dash-filter-month'].forEach(id => {
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.addEventListener('click', () => {
+        if (!el.value && typeof el.showPicker === 'function') {
+          try { el.showPicker(); } catch (e) {}
+        }
+      });
+    });
+
+    document.getElementById('filter-rep-month').addEventListener('change', () => {
+      syncAllMonthPickers();
+      renderMesVentes();
+    });
     document.getElementById('filter-rep-statut')?.addEventListener('change', renderMesVentes);
     document.getElementById('filter-admin-scope').addEventListener('change', renderMesVentes);
     document.getElementById('search-rep-ventes').addEventListener('input', renderMesVentes);
     document.getElementById('btn-rep-all-months').addEventListener('click', () => {
-      document.getElementById('filter-rep-month').value = '';
-      if (document.getElementById('filter-rep-statut')) document.getElementById('filter-rep-statut').value = '';
-      document.getElementById('search-rep-ventes').value = '';
-      document.getElementById('filter-admin-scope').value = 'all';
+      const monthEl = document.getElementById('filter-rep-month');
+      if (!monthEl.value) {
+        monthEl.value = currentMonthStr;
+      } else {
+        monthEl.value = '';
+        if (document.getElementById('filter-rep-statut')) document.getElementById('filter-rep-statut').value = '';
+        document.getElementById('search-rep-ventes').value = '';
+        document.getElementById('filter-admin-scope').value = 'all';
+      }
+      syncAllMonthPickers();
       renderMesVentes();
     });
 
     document.getElementById('filter-rank-month').value = currentMonthStr;
-    document.getElementById('filter-rank-month').addEventListener('change', renderClassement);
+    document.getElementById('filter-rank-month').addEventListener('change', () => {
+      syncAllMonthPickers();
+      renderClassement();
+    });
     document.getElementById('btn-rank-all-months').addEventListener('click', () => {
-      document.getElementById('filter-rank-month').value = '';
+      const rankEl = document.getElementById('filter-rank-month');
+      rankEl.value = rankEl.value ? '' : currentMonthStr;
+      syncAllMonthPickers();
       renderClassement();
     });
 
@@ -8628,11 +8757,17 @@
       document.getElementById('admin-filter-statut').value = '';
       renderAdminVentes();
     });
-    document.getElementById('dash-filter-month').addEventListener('change', renderAdminDashboard);
-    document.getElementById('btn-dash-all').addEventListener('click', () => {
-      document.getElementById('dash-filter-month').value = '';
+    document.getElementById('dash-filter-month').addEventListener('change', () => {
+      syncAllMonthPickers();
       renderAdminDashboard();
     });
+    document.getElementById('btn-dash-all').addEventListener('click', () => {
+      const dashEl = document.getElementById('dash-filter-month');
+      dashEl.value = dashEl.value ? '' : currentMonthStr;
+      syncAllMonthPickers();
+      renderAdminDashboard();
+    });
+    syncAllMonthPickers();
     document.getElementById('btn-export-payroll-batch')?.addEventListener('click', () => {
       const m = document.getElementById('dash-filter-month').value;
       const list = m ? state.ventes.filter(v => v.mois_commission === m) : state.ventes;
