@@ -2167,6 +2167,9 @@
     let kpiHebdoRows = [];
     let condensedBaselineStore = lsGetJson('korpo_kpi_condensed_v1', '{}');
     let monthlyRdvOverrides = lsGetJson('korpo_kpi_monthly_rdv_v1', '{}');
+    let teamKpiSnapshotStore = lsGetJson('korpo_kpi_team_snapshot_v1', '{}');
+    let lastSyncedKpiSnapshotHashes = {};
+    let kpiSnapshotSyncTimer = null;
 
     function saveCondensedBaselineStore() {
       lsSet('korpo_kpi_condensed_v1', JSON.stringify(condensedBaselineStore));
@@ -2391,6 +2394,14 @@
               }
             }
           } catch (e) {}
+        } else if (sIdx === -11 && r.mois_commission && r.representant_nom) {
+          try {
+            const snapData = JSON.parse(r.representant_nom);
+            const ym = String(r.mois_commission);
+            if (isValidYearMonth(ym) && snapData && typeof snapData === 'object') {
+              teamKpiSnapshotStore[ym] = snapData;
+            }
+          } catch (e) {}
         } else if (sIdx === -3 && r.mois_commission && r.representant_nom) {
           try {
             const trashItem = JSON.parse(r.representant_nom);
@@ -2411,6 +2422,7 @@
       lsSet('korpo_carried_over_sales_v1', JSON.stringify(carriedOverSalesStore));
       saveCondensedBaselineStore();
       saveMonthlyRdvOverrides();
+      lsSet('korpo_kpi_team_snapshot_v1', JSON.stringify(teamKpiSnapshotStore));
       applySaleBonusOverridesToState();
       applyCarryOverMetadataToState();
       updateTrashBadges();
@@ -4922,31 +4934,59 @@
         }
       });
 
-      // 5b. Compléter les stats des collègues depuis `vue_classement_ventes` si RLS masque leurs lignes individuelles dans `ventes`
-      const repsWithDirectSalesInState = new Set(
-        allVentes.map(v => {
-          const rObj = state.representants.find(r => String(r.id) === String(v.representant_id));
-          return resolveKpiRepName(rObj?.nom || v.rep_nom || '');
-        }).filter(Boolean)
-      );
+      // 5b. Pour un représentant connecté : synchroniser avec précision les statistiques des collègues
+      const isAdminUser = currentProfile?.role === 'admin';
+      const myRepName = resolveKpiRepName(currentProfile?.nom || '');
+      const classementByYmAndRep = new Map();
       (state.classement || []).forEach(row => {
         const ym = row.mois_commission;
         const repName = resolveKpiRepName(row.representant_nom || '');
-        if (!isValidYearMonth(ym) || !repName || !freshStore[ym]?.reps?.[repName]) return;
-        if (repsWithDirectSalesInState.has(repName)) return;
-
-        const mObj = freshStore[ym];
-        const dol = Math.round(Number(row.total_ventes || 0) * 100) / 100;
-        const cntRaw = Number(row.nb_ventes ?? row.nombre_ventes ?? row.total_ventes_count ?? row.count ?? 0);
-        const cnt = cntRaw > 0 ? cntRaw : (dol > 0 ? Math.max(1, Math.round(dol / 7500)) : 0);
-
-        if (dol > 0) {
-          mObj.reps[repName]['Vente $'].weeks[0] = Math.round(((mObj.reps[repName]['Vente $'].weeks[0] || 0) + dol) * 100) / 100;
-        }
-        if (cnt > 0) {
-          mObj.reps[repName]['Ventes OTS'].weeks[0] = (mObj.reps[repName]['Ventes OTS'].weeks[0] || 0) + cnt;
-        }
+        if (!isValidYearMonth(ym) || !repName) return;
+        const k = `${ym}__${repName}`;
+        classementByYmAndRep.set(k, (classementByYmAndRep.get(k) || 0) + Number(row.total_ventes || 0));
       });
+
+      if (!isAdminUser) {
+        const repsWithDirectSalesByMonth = new Set(
+          allVentes.map(v => {
+            const ym = getSaleStatsMonth(v);
+            const rObj = state.representants.find(r => String(r.id) === String(v.representant_id));
+            const rn = resolveKpiRepName(rObj?.nom || v.rep_nom || '');
+            return (ym && rn) ? `${ym}__${rn}` : '';
+          }).filter(Boolean)
+        );
+
+        Object.entries(freshStore).forEach(([ym, mObj]) => {
+          ALL_KPI_REPS.forEach(rn => {
+            if (rn === myRepName) return;
+            const k = `${ym}__${rn}`;
+            if (repsWithDirectSalesByMonth.has(k)) return;
+
+            const snap = teamKpiSnapshotStore[ym]?.[rn];
+            const liveClDol = Math.round((classementByYmAndRep.get(k) || 0) * 100) / 100;
+
+            if (snap && typeof snap === 'object') {
+              const snapDol = Math.round(Number(snap.dol || 0) * 100) / 100;
+              const snapClDol = Math.round(Number(snap.clDol || 0) * 100) / 100;
+              const liveDeltaDol = liveClDol > snapClDol + 0.01 ? Math.round((liveClDol - snapClDol) * 100) / 100 : 0;
+
+              mObj.reps[rn]['Booké'].weeks = [Number(snap.booke || 0), 0, 0, 0];
+              mObj.reps[rn]['RDV Réalisé'].weeks = [Number(snap.rdv || 0), 0, 0, 0];
+              mObj.reps[rn]['Ventes OTS'].weeks = [Number(snap.ots || 0) + (liveDeltaDol > 0 ? 1 : 0), 0, 0, 0];
+              mObj.reps[rn]['Ventes SUIVI'].weeks = [Number(snap.suivi || 0), 0, 0, 0];
+              mObj.reps[rn]['Vente $'].weeks = [Math.round((snapDol + liveDeltaDol) * 100) / 100, 0, 0, 0];
+
+              if (Number(snap.objDol) > 0) mObj.reps[rn]['Vente $'].objectif = Number(snap.objDol);
+              if (Number(snap.objClose) > 0) mObj.reps[rn]['% Close'].objectif = Number(snap.objClose);
+              if (Number(snap.objBooke) > 0) mObj.reps[rn]['Booké'].objectif = Number(snap.objBooke);
+              if (Number(snap.objRdv) > 0) mObj.reps[rn]['RDV Réalisé'].objectif = Number(snap.objRdv);
+            } else if (liveClDol > 0) {
+              mObj.reps[rn]['Vente $'].weeks[0] = Math.round(((mObj.reps[rn]['Vente $'].weeks[0] || 0) + liveClDol) * 100) / 100;
+              mObj.reps[rn]['Ventes OTS'].weeks[0] = (mObj.reps[rn]['Ventes OTS'].weeks[0] || 0) + 1;
+            }
+          });
+        });
+      }
 
       // 6. Calculer tous les cumuls, % Close, totaux entreprises et totaux équipe
       Object.values(freshStore).forEach(mObj => {
@@ -4996,6 +5036,60 @@
       applyCompanyTargetsMetaToStore();
       updateKpiSourceBadge();
       populateKpiMonthSelect(true);
+
+      if (currentProfile?.role === 'admin' && sb) {
+        scheduleAdminKpiSnapshotSync();
+      }
+    }
+
+    function scheduleAdminKpiSnapshotSync() {
+      clearTimeout(kpiSnapshotSyncTimer);
+      kpiSnapshotSyncTimer = setTimeout(async () => {
+        if (!sb || currentProfile?.role !== 'admin') return;
+        const classementByYmAndRep = new Map();
+        (state.classement || []).forEach(row => {
+          const ym = row.mois_commission;
+          const rn = resolveKpiRepName(row.representant_nom || '');
+          if (isValidYearMonth(ym) && rn) {
+            const k = `${ym}__${rn}`;
+            classementByYmAndRep.set(k, (classementByYmAndRep.get(k) || 0) + Number(row.total_ventes || 0));
+          }
+        });
+
+        for (const [ym, mObj] of Object.entries(kpiStore)) {
+          if (!isValidYearMonth(ym) || !mObj?.reps) continue;
+          const snapPayload = {};
+          ALL_KPI_REPS.forEach(rn => {
+            const r = mObj.reps[rn];
+            if (!r) return;
+            snapPayload[rn] = {
+              booke: Number(r['Booké']?.cumul || 0),
+              rdv: Number(r['RDV Réalisé']?.cumul || 0),
+              ots: Number(r['Ventes OTS']?.cumul || 0),
+              suivi: Number(r['Ventes SUIVI']?.cumul || 0),
+              dol: Math.round(Number(r['Vente $']?.cumul || 0) * 100) / 100,
+              objDol: Number(r['Vente $']?.objectif || 0),
+              objClose: Number(r['% Close']?.objectif || 35),
+              objBooke: Number(r['Booké']?.objectif || 80),
+              objRdv: Number(r['RDV Réalisé']?.objectif || 60),
+              clDol: Math.round((classementByYmAndRep.get(`${ym}__${rn}`) || 0) * 100) / 100
+            };
+          });
+          const serialized = JSON.stringify(snapPayload);
+          if (lastSyncedKpiSnapshotHashes[ym] === serialized) continue;
+          lastSyncedKpiSnapshotHashes[ym] = serialized;
+          teamKpiSnapshotStore[ym] = snapPayload;
+          await safeUpsertKpiHebdoRow({
+            mois_commission: ym,
+            semaine_index: -11,
+            representant_nom: serialized,
+            booke: 0,
+            rdv_realise: 0,
+            updated_at: new Date().toISOString()
+          });
+        }
+        lsSet('korpo_kpi_team_snapshot_v1', JSON.stringify(teamKpiSnapshotStore));
+      }, 600);
     }
 
     function updateKpiSourceBadge() {
