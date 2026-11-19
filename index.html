@@ -1884,18 +1884,6 @@
           </div>
         </div>
 
-        <!-- RÉPARTITION PAR MOIS FUTUR (QUAND « COMMISSIONS FUTURES » EST ACTIF) -->
-        <div id="rep-future-months-breakdown" class="hidden bg-gradient-to-r from-emerald-50/90 via-white to-indigo-50/70 rounded-2xl border border-emerald-200 p-4 shadow-xs space-y-2.5">
-          <div class="flex flex-wrap items-center justify-between gap-2">
-            <div class="text-xs font-extrabold text-emerald-950 flex items-center gap-1.5">
-              <span>🔮</span>
-              <span>Vos commissions prévues par mois à venir</span>
-            </div>
-            <button type="button" onclick="toggleRepFutureCommQuickView()" class="text-[11px] font-bold text-slate-500 hover:text-slate-800">← Revenir au mois en cours</button>
-          </div>
-          <div id="rep-future-months-pills" class="flex flex-wrap gap-2"></div>
-        </div>
-
         <!-- CARTES MOBILES DES VENTES (< 768px : ONGLET MES VENTES) -->
         <div data-mobile-group="ventes" class="block md:hidden space-y-3">
           <div class="flex items-center justify-between px-3 py-2 rounded-xl bg-indigo-50/80 border border-indigo-200/80">
@@ -1967,7 +1955,7 @@
       <!-- ============================================================ -->
       <section id="tab-kpi" class="hidden space-y-6">
         <!-- BARRE SUPÉRIEURE : TITRE + FILTRES CLAIRS -->
-        <div class="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-xs flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+        <div class="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-xs flex flex-col lg:flex-row lg:flex-wrap lg:items-center justify-between gap-4">
           <div>
             <div class="flex flex-wrap items-center gap-2.5">
               <h2 class="text-xl font-extrabold text-slate-900 tracking-tight flex items-center gap-2"><span class="w-8 h-8 rounded-xl bg-indigo-50 text-indigo-600 border border-indigo-200/80 flex items-center justify-center text-base">📊</span><span>Performance & Objectifs (KPI)</span></h2>
@@ -1998,6 +1986,26 @@
             <button id="btn-kpi-export-csv" class="hidden col-span-2 sm:col-span-1 w-full sm:w-auto px-3 py-2.5 text-xs font-semibold text-slate-700 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 transition text-center">
               Exporter CSV
             </button>
+          </div>
+
+          <!-- BALISES RAPIDES EN ORDRE DE PÉRIODE + DATE SUR MESURE (KPI) -->
+          <div class="w-full pt-3 mt-1 border-t border-slate-100 flex flex-col gap-2.5">
+            <input type="hidden" id="kpi-period-mode" value="this_month" />
+            <div id="kpi-quick-pills" class="flex flex-wrap items-center gap-1.5">
+              <button type="button" data-kpi-mode="this_week" onclick="setKpiPeriodQuick('this_week')" class="kpi-pill-btn px-3 py-1.5 text-xs font-bold rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200 transition whitespace-nowrap">📆 Cette semaine</button>
+              <button type="button" data-kpi-mode="this_month" onclick="setKpiPeriodQuick('this_month')" class="kpi-pill-btn px-3 py-1.5 text-xs font-extrabold rounded-xl bg-indigo-600 text-white shadow-2xs transition whitespace-nowrap">📅 Ce mois-ci</button>
+              <button type="button" data-kpi-mode="this_quarter" onclick="setKpiPeriodQuick('this_quarter')" class="kpi-pill-btn px-3 py-1.5 text-xs font-bold rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200 transition whitespace-nowrap">📊 Ce trimestre</button>
+              <button type="button" data-kpi-mode="this_year" onclick="setKpiPeriodQuick('this_year')" class="kpi-pill-btn px-3 py-1.5 text-xs font-bold rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200 transition whitespace-nowrap">🗓️ Cette année</button>
+              <button type="button" data-kpi-mode="all" onclick="setKpiPeriodQuick('all')" class="kpi-pill-btn px-3 py-1.5 text-xs font-bold rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200 transition whitespace-nowrap">∞ Cumul global</button>
+              <button type="button" data-kpi-mode="custom_range" onclick="setKpiPeriodQuick('custom_range')" class="kpi-pill-btn px-3 py-1.5 text-xs font-bold rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200 transition whitespace-nowrap">🎯 Date sur mesure</button>
+            </div>
+
+            <div id="kpi-custom-range-box" class="hidden flex flex-wrap items-center gap-2 text-xs">
+              <span class="font-bold text-slate-600">Du :</span>
+              <input id="kpi-custom-start" type="date" onchange="renderKpiDashboard()" class="px-3 py-1.5 text-xs font-semibold bg-slate-50 border border-indigo-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-600 cursor-pointer" />
+              <span class="font-bold text-slate-600">Au :</span>
+              <input id="kpi-custom-end" type="date" onchange="renderKpiDashboard()" class="px-3 py-1.5 text-xs font-semibold bg-slate-50 border border-indigo-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-600 cursor-pointer" />
+            </div>
           </div>
         </div>
 
@@ -2239,13 +2247,22 @@
               <input type="hidden" id="filter-rank-period" value="this_month" />
             </div>
 
-            <!-- PILULES RAPIDES DE PÉRIODE (NAVIGATION INSTANTANÉE) -->
-            <div id="rank-quick-pills" class="flex items-center gap-1.5 overflow-x-auto no-scrollbar pt-1 border-t border-slate-100">
-              <button type="button" data-rank-mode="this_month" onclick="setRankPeriodQuick('this_month')" class="rank-pill-btn px-3 py-1.5 text-xs font-extrabold rounded-xl bg-indigo-600 text-white shadow-2xs transition whitespace-nowrap">📅 Ce mois-ci</button>
+            <!-- BALISES RAPIDES EN ORDRE DE PÉRIODE + DATE SUR MESURE -->
+            <div id="rank-quick-pills" class="flex flex-wrap items-center gap-1.5 pt-2 border-t border-slate-100">
               <button type="button" data-rank-mode="this_week" onclick="setRankPeriodQuick('this_week')" class="rank-pill-btn px-3 py-1.5 text-xs font-bold rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200 transition whitespace-nowrap">📆 Cette semaine</button>
-              <button type="button" data-rank-mode="this_quarter" onclick="setRankPeriodQuick('this_quarter')" class="rank-pill-btn px-3 py-1.5 text-xs font-bold rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200 transition whitespace-nowrap">📊 Trimestre</button>
-              <button type="button" data-rank-mode="this_year" onclick="setRankPeriodQuick('this_year')" class="rank-pill-btn px-3 py-1.5 text-xs font-bold rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200 transition whitespace-nowrap">🗓️ Année</button>
+              <button type="button" data-rank-mode="this_month" onclick="setRankPeriodQuick('this_month')" class="rank-pill-btn px-3 py-1.5 text-xs font-extrabold rounded-xl bg-indigo-600 text-white shadow-2xs transition whitespace-nowrap">📅 Ce mois-ci</button>
+              <button type="button" data-rank-mode="this_quarter" onclick="setRankPeriodQuick('this_quarter')" class="rank-pill-btn px-3 py-1.5 text-xs font-bold rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200 transition whitespace-nowrap">📊 Ce trimestre</button>
+              <button type="button" data-rank-mode="this_year" onclick="setRankPeriodQuick('this_year')" class="rank-pill-btn px-3 py-1.5 text-xs font-bold rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200 transition whitespace-nowrap">🗓️ Cette année</button>
               <button type="button" data-rank-mode="all" onclick="setRankPeriodQuick('all')" class="rank-pill-btn px-3 py-1.5 text-xs font-bold rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200 transition whitespace-nowrap">∞ Cumul global</button>
+              <button type="button" data-rank-mode="custom_range" onclick="setRankPeriodQuick('custom_range')" class="rank-pill-btn px-3 py-1.5 text-xs font-bold rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200 transition whitespace-nowrap">🎯 Date sur mesure</button>
+            </div>
+
+            <!-- PLAGE DE DATES SUR MESURE (CLASSEMENT) -->
+            <div id="filter-rank-custom-box" class="hidden flex flex-wrap items-center gap-2 pt-2 border-t border-slate-100 text-xs">
+              <span class="font-bold text-slate-600">Du :</span>
+              <input id="filter-rank-start" type="date" onchange="renderClassement()" class="px-3 py-1.5 text-xs font-semibold bg-slate-50 border border-indigo-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-600 cursor-pointer" />
+              <span class="font-bold text-slate-600">Au :</span>
+              <input id="filter-rank-end" type="date" onchange="renderClassement()" class="px-3 py-1.5 text-xs font-semibold bg-slate-50 border border-indigo-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-600 cursor-pointer" />
             </div>
           </div>
 
@@ -4820,14 +4837,18 @@
       const badge = document.getElementById('kpi-client-obj-badge');
       if (!grid || !badge) return;
 
-      const isYear = selVal && selVal.startsWith('YEAR_');
-      const isQuarter = selVal && selVal.startsWith('QUARTER_');
+      const kpiMode = document.getElementById('kpi-period-mode')?.value || '';
+      const isAll = kpiMode === 'all';
+      const isWeek = kpiMode === 'this_week';
+      const isCustomRange = kpiMode === 'custom_range';
+      const isYear = !isWeek && !isCustomRange && selVal && selVal.startsWith('YEAR_');
+      const isQuarter = !isWeek && !isCustomRange && selVal && selVal.startsWith('QUARTER_');
       const yearPrefix = isYear ? selVal.replace('YEAR_', '') : null;
       const quarterTarget = isQuarter ? selVal.replace('QUARTER_', '') : null;
       const activeTargets = clientTargetsStore.filter(t => {
         if (t.active === false) return false;
         if (repFilter !== 'ALL' && t.repNom !== 'ALL' && t.repNom !== repFilter) return false;
-        if (!isYear && !isQuarter && t.monthScope !== 'ALL' && t.monthScope !== selVal) return false;
+        if (!isAll && !isYear && !isQuarter && !isWeek && !isCustomRange && t.monthScope !== 'ALL' && t.monthScope !== selVal) return false;
         return true;
       });
 
@@ -4843,9 +4864,11 @@
         return;
       }
 
-      const monthsCount = isYear
-        ? Object.keys(kpiStore).filter(ym => ym.startsWith(yearPrefix)).length || 1
-        : (isQuarter ? Object.keys(kpiStore).filter(ym => getQuarterForMonth(ym) === quarterTarget).length || 1 : 1);
+      const monthsCount = isAll
+        ? Object.keys(kpiStore).filter(isValidYearMonth).length || 1
+        : (isYear
+          ? Object.keys(kpiStore).filter(ym => ym.startsWith(yearPrefix)).length || 1
+          : (isQuarter ? Object.keys(kpiStore).filter(ym => getQuarterForMonth(ym) === quarterTarget).length || 1 : 1));
 
       grid.innerHTML = activeTargets.map(t => {
         const targetAmount = t.monthScope === 'ALL' ? (t.objectif * monthsCount) : t.objectif;
@@ -4857,6 +4880,13 @@
           if (cli.toLowerCase() !== t.clientNom.toLowerCase()) return false;
           if (t.repNom !== 'ALL' && rep !== t.repNom) return false;
           if (repFilter !== 'ALL' && rep !== repFilter) return false;
+          if (isWeek) return matchesSalePeriod(v, { mode: 'this_week', weekBounds: getCurrentWeekBounds(today) }, true);
+          if (isCustomRange) {
+            const sVal = document.getElementById('kpi-custom-start')?.value || '';
+            const eVal = document.getElementById('kpi-custom-end')?.value || '';
+            return matchesSalePeriod(v, { mode: 'custom_range', startVal: sVal, endVal: eVal }, true);
+          }
+          if (isAll) return true;
           const ym = getSaleStatsMonth(v);
           if (isYear) return ym.startsWith(yearPrefix);
           if (isQuarter) return getQuarterForMonth(ym) === quarterTarget;
@@ -5759,7 +5789,16 @@
       const selMonth = document.getElementById('kpi-select-month');
 
       selMonth.addEventListener('change', () => {
-        if (selMonth.value.startsWith('YEAR_')) {
+        const v = selMonth.value || '';
+        const modeEl = document.getElementById('kpi-period-mode');
+        if (modeEl) {
+          if (v === currentMonthStr) modeEl.value = 'this_month';
+          else if (v === `QUARTER_${getQuarterForMonth(currentMonthStr)}`) modeEl.value = 'this_quarter';
+          else if (v === `YEAR_${today.getFullYear()}`) modeEl.value = 'this_year';
+          else modeEl.value = 'select_dropdown';
+        }
+        document.getElementById('kpi-custom-range-box')?.classList.add('hidden');
+        if (v.startsWith('YEAR_') || v.startsWith('QUARTER_')) {
           document.getElementById('kpi-editor-panel').classList.add('hidden');
         } else {
           syncKpiEditorInputs();
@@ -6268,16 +6307,150 @@
       return 'bg-rose-500';
     }
 
+    window.setKpiPeriodQuick = (mode) => {
+      const modeEl = document.getElementById('kpi-period-mode');
+      const selMonth = document.getElementById('kpi-select-month');
+      const customBox = document.getElementById('kpi-custom-range-box');
+      if (modeEl) modeEl.value = mode;
+      if (customBox) {
+        const isCustom = mode === 'custom_range';
+        customBox.classList.toggle('hidden', !isCustom);
+        if (isCustom) {
+          const sIn = document.getElementById('kpi-custom-start');
+          const eIn = document.getElementById('kpi-custom-end');
+          if (sIn && !sIn.value) sIn.value = `${currentMonthStr}-01`;
+          if (eIn && !eIn.value) eIn.value = currentDateStr;
+        }
+      }
+      if (selMonth) {
+        if (mode === 'this_month' && Array.from(selMonth.options).some(o => o.value === currentMonthStr)) {
+          selMonth.value = currentMonthStr;
+        } else if (mode === 'this_quarter') {
+          const qVal = `QUARTER_${getQuarterForMonth(currentMonthStr)}`;
+          if (Array.from(selMonth.options).some(o => o.value === qVal)) selMonth.value = qVal;
+        } else if (mode === 'this_year') {
+          const yVal = `YEAR_${today.getFullYear()}`;
+          if (Array.from(selMonth.options).some(o => o.value === yVal)) selMonth.value = yVal;
+        }
+      }
+      renderKpiDashboard();
+    };
+
+    function buildSubMonthKpiObject(label, fakePeriodState) {
+      const nw = 4;
+      const makeRep = (rn) => {
+        const refMonth = kpiStore[currentMonthStr]?.reps?.[rn];
+        return {
+          'Booké': { weeks: [0, 0, 0, 0], cumul: 0, objectif: refMonth?.['Booké']?.objectif || 80 },
+          'RDV Réalisé': { weeks: [0, 0, 0, 0], cumul: 0, objectif: refMonth?.['RDV Réalisé']?.objectif || 60 },
+          'Ventes OTS': { weeks: [0, 0, 0, 0], cumul: 0, objectif: refMonth?.['Ventes OTS']?.objectif || 10 },
+          'Ventes SUIVI': { weeks: [0, 0, 0, 0], cumul: 0, objectif: refMonth?.['Ventes SUIVI']?.objectif || 20 },
+          'Vente $': { weeks: [0, 0, 0, 0], cumul: 0, objectif: refMonth?.['Vente $']?.objectif || 150000 },
+          '% Close': { weeks: [0, 0, 0, 0], cumul: 0, objectif: refMonth?.['% Close']?.objectif || 35 }
+        };
+      };
+      const obj = {
+        label,
+        num_weeks: nw,
+        monthLabels: [label],
+        reps: Object.fromEntries(ALL_KPI_REPS.map(rn => [rn, makeRep(rn)])),
+        team: {
+          'Booké': { weeks: [0, 0, 0, 0], cumul: 0, objectif: 0 },
+          'RDV RÉA': { weeks: [0, 0, 0, 0], cumul: 0, objectif: 0 },
+          'VENTE OTS': { weeks: [0, 0, 0, 0], cumul: 0, objectif: 0 },
+          'VENTE SUIVI': { weeks: [0, 0, 0, 0], cumul: 0, objectif: 0 },
+          'VENTE TOTAL': { weeks: [0, 0, 0, 0], cumul: 0, objectif: 0 },
+          'VENTE $': { weeks: [0, 0, 0, 0], cumul: 0, objectif: 0 }
+        },
+        entreprises: {}
+      };
+      const entNames = new Set(['Toitex', 'MonSpray', 'VerreVDM', 'Groupe Diamant Pro', 'MaClim', ...(state.entreprises || []).map(e => e.nom)]);
+      entNames.forEach(en => {
+        obj.entreprises[en] = {
+          reps: Object.fromEntries(ALL_KPI_REPS.map(rn => [rn, { weeks: [0, 0, 0, 0], cumul: 0, objectif: 0 }])),
+          total: { weeks: [0, 0, 0, 0], cumul: 0, objectif: 0 }
+        };
+      });
+
+      (state.ventes || []).forEach(v => {
+        if (!matchesSalePeriod(v, fakePeriodState, true)) return;
+        const repObj = state.representants.find(r => String(r.id) === String(v.representant_id));
+        const entObj = state.entreprises.find(e => String(e.id) === String(v.entreprise_id));
+        const rn = resolveKpiRepName(repObj?.nom || v.rep_nom || '');
+        const en = (entObj?.nom || v.entreprise_nom || '').trim();
+        const val = Number(v.valeur || 0);
+        const isSui = (v.note || '').toUpperCase().includes('[SUIVI]');
+        if (rn && obj.reps[rn]) {
+          obj.reps[rn]['Vente $'].cumul = Math.round((obj.reps[rn]['Vente $'].cumul + val) * 100) / 100;
+          obj.reps[rn]['Vente $'].weeks[0] = obj.reps[rn]['Vente $'].cumul;
+          if (isSui) {
+            obj.reps[rn]['Ventes SUIVI'].cumul += 1;
+            obj.reps[rn]['Ventes SUIVI'].weeks[0] += 1;
+          } else {
+            obj.reps[rn]['Ventes OTS'].cumul += 1;
+            obj.reps[rn]['Ventes OTS'].weeks[0] += 1;
+          }
+        }
+        if (en) {
+          if (!obj.entreprises[en]) {
+            obj.entreprises[en] = {
+              reps: Object.fromEntries(ALL_KPI_REPS.map(r => [r, { weeks: [0, 0, 0, 0], cumul: 0, objectif: 0 }])),
+              total: { weeks: [0, 0, 0, 0], cumul: 0, objectif: 0 }
+            };
+          }
+          if (rn && obj.entreprises[en].reps[rn]) {
+            obj.entreprises[en].reps[rn].cumul = Math.round((obj.entreprises[en].reps[rn].cumul + val) * 100) / 100;
+            obj.entreprises[en].reps[rn].weeks[0] = obj.entreprises[en].reps[rn].cumul;
+          }
+          obj.entreprises[en].total.cumul = Math.round((obj.entreprises[en].total.cumul + val) * 100) / 100;
+          obj.entreprises[en].total.weeks[0] = obj.entreprises[en].total.cumul;
+        }
+      });
+
+      recalcTeamObjectivesForMonth(obj);
+      obj.team['VENTE OTS'].cumul = ALL_KPI_REPS.reduce((s, rn) => s + obj.reps[rn]['Ventes OTS'].cumul, 0);
+      obj.team['VENTE SUIVI'].cumul = ALL_KPI_REPS.reduce((s, rn) => s + obj.reps[rn]['Ventes SUIVI'].cumul, 0);
+      obj.team['VENTE TOTAL'].cumul = obj.team['VENTE OTS'].cumul + obj.team['VENTE SUIVI'].cumul;
+      obj.team['VENTE $'].cumul = Math.round(ALL_KPI_REPS.reduce((s, rn) => s + obj.reps[rn]['Vente $'].cumul, 0) * 100) / 100;
+      return obj;
+    }
+
     function getAggregatedKpiForSelection(selVal) {
+      const kpiMode = document.getElementById('kpi-period-mode')?.value || '';
+      if (kpiMode === 'this_week') {
+        const wb = getCurrentWeekBounds(today);
+        const lbl = `Cette semaine (${formatDateLabelFr(wb.start)} → ${formatDateLabelFr(wb.end)})`;
+        return {
+          isYear: false,
+          isCustomSubMonth: true,
+          data: buildSubMonthKpiObject(lbl, { mode: 'this_week', weekBounds: wb }),
+          monthsIncluded: [currentMonthStr]
+        };
+      }
+      if (kpiMode === 'custom_range') {
+        const sVal = document.getElementById('kpi-custom-start')?.value || `${currentMonthStr}-01`;
+        const eVal = document.getElementById('kpi-custom-end')?.value || currentDateStr;
+        const s = sVal <= eVal ? sVal : eVal;
+        const e = sVal <= eVal ? eVal : sVal;
+        const lbl = `Du ${formatDateLabelFr(s)} au ${formatDateLabelFr(e)}`;
+        return {
+          isYear: false,
+          isCustomSubMonth: true,
+          data: buildSubMonthKpiObject(lbl, { mode: 'custom_range', startVal: s, endVal: e }),
+          monthsIncluded: [s.slice(0, 7)]
+        };
+      }
+
+      const isAllSel = kpiMode === 'all' || selVal === 'ALL';
       const isYearSel = selVal && selVal.startsWith('YEAR_');
       const isQuarterSel = selVal && selVal.startsWith('QUARTER_');
-      if (!isYearSel && !isQuarterSel) {
+      if (!isAllSel && !isYearSel && !isQuarterSel) {
         return { isYear: false, data: kpiStore[selVal], monthsIncluded: [selVal] };
       }
-      const yearPrefix = isYearSel ? selVal.replace('YEAR_', '') : selVal.replace('QUARTER_', '').slice(0, 4);
+      const yearPrefix = isYearSel ? selVal.replace('YEAR_', '') : (isQuarterSel ? selVal.replace('QUARTER_', '').slice(0, 4) : '');
       const quarterTarget = isQuarterSel ? selVal.replace('QUARTER_', '') : null;
       const matchingMonths = Object.keys(kpiStore)
-        .filter(ym => isYearSel ? ym.startsWith(yearPrefix) : getQuarterForMonth(ym) === quarterTarget)
+        .filter(ym => isAllSel ? isValidYearMonth(ym) : (isYearSel ? ym.startsWith(yearPrefix) : getQuarterForMonth(ym) === quarterTarget))
         .sort();
 
       const allReps = ALL_KPI_REPS;
@@ -6285,11 +6458,13 @@
       const teamMetrics = ['Booké', 'RDV RÉA', 'VENTE OTS', 'VENTE SUIVI', 'VENTE TOTAL', 'VENTE $'];
 
       const agg = {
-        label: isQuarterSel
-          ? `Trimestre ${quarterTarget.replace('-Q', ' T')} (${matchingMonths.length} mois)`
-          : `Année ${yearPrefix} (${matchingMonths.length} mois)`,
+        label: isAllSel
+          ? `Cumul global (${matchingMonths.length} mois)`
+          : (isQuarterSel
+            ? `Trimestre ${quarterTarget.replace('-Q', ' T')} (${matchingMonths.length} mois)`
+            : `Année ${yearPrefix} (${matchingMonths.length} mois)`),
         num_weeks: matchingMonths.length,
-        monthLabels: matchingMonths.map(ym => kpiStore[ym].label.replace(` ${yearPrefix}`, '')),
+        monthLabels: matchingMonths.map(ym => yearPrefix ? kpiStore[ym].label.replace(` ${yearPrefix}`, '') : formatYearMonthLabelFr(ym, true)),
         reps: {},
         team: {},
         entreprises: {}
@@ -6393,6 +6568,13 @@
 
     function renderKpiDashboard() {
       rebuildKpiStore();
+      const activeKpiMode = document.getElementById('kpi-period-mode')?.value || 'this_month';
+      document.querySelectorAll('.kpi-pill-btn').forEach(btn => {
+        const isAct = btn.dataset.kpiMode === activeKpiMode;
+        btn.className = isAct
+          ? 'kpi-pill-btn px-3 py-1.5 text-xs font-extrabold rounded-xl bg-indigo-600 text-white shadow-2xs transition whitespace-nowrap'
+          : 'kpi-pill-btn px-3 py-1.5 text-xs font-bold rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200 transition whitespace-nowrap';
+      });
       const selMonthEl = document.getElementById('kpi-select-month');
       if (!selMonthEl.value) populateKpiMonthSelect(false);
       const selVal = selMonthEl.value || currentMonthStr;
@@ -8848,11 +9030,11 @@
       if (!sel) return;
       sel.value = sel.value === 'future' ? 'this_month' : 'future';
       syncPeriodInputsVisibility('filter-rep', false);
-      renderMesVentes();
       if (sel.value === 'future') {
-        if (window.innerWidth < 768) switchTab('tab-mes-commissions');
+        switchTab('tab-mes-commissions');
         toast('🔮 Affichage de vos commissions prévues dans les prochains mois');
       }
+      renderMesVentes();
     };
 
     function renderMesVentes() {
@@ -8917,35 +9099,6 @@
           repFutureBadge.className = isRepFuture
             ? 'px-1.5 py-0.2 text-[10px] font-extrabold rounded-full bg-white text-emerald-800 tabular-nums'
             : 'px-1.5 py-0.2 text-[10px] font-extrabold rounded-full bg-emerald-600 text-white tabular-nums';
-        }
-      }
-
-      const futureBreakdownBox = document.getElementById('rep-future-months-breakdown');
-      const futurePillsEl = document.getElementById('rep-future-months-pills');
-      if (futureBreakdownBox && futurePillsEl) {
-        if (periodState.mode === 'future') {
-          futureBreakdownBox.classList.remove('hidden');
-          const byFutureYm = new Map();
-          allFutureRepSales.forEach(v => {
-            const fYm = getSaleTargetFutureMonth(v);
-            if (!fYm) return;
-            const cur = byFutureYm.get(fYm) || { count: 0, val: 0, comm: 0 };
-            cur.count += 1;
-            cur.val += Number(v.valeur || 0);
-            cur.comm += Number(v.commission_rep || 0);
-            byFutureYm.set(fYm, cur);
-          });
-          const sortedYms = Array.from(byFutureYm.entries()).sort((a, b) => a[0].localeCompare(b[0]));
-          futurePillsEl.innerHTML = sortedYms.length
-            ? sortedYms.map(([ym, info]) => `
-                <button type="button" onclick="document.getElementById('filter-rep-period').value='specific_month'; document.getElementById('filter-rep-month').value='${ym}'; syncPeriodInputsVisibility('filter-rep', false); renderMesVentes();" class="px-3 py-2 rounded-xl bg-white hover:bg-emerald-50 border border-emerald-200 text-left shadow-2xs transition tabular-nums">
-                  <div class="text-xs font-extrabold text-slate-900">${esc(formatYearMonthLabelFr(ym))} <span class="text-[10px] font-bold text-indigo-600">(${info.count} vente${info.count > 1 ? 's' : ''})</span></div>
-                  <div class="text-[11px] text-slate-500">Ventes : <strong>${fmtMoney0(info.val)}</strong> • Comm. : <strong class="text-emerald-700">${fmtMoney(info.comm)}</strong></div>
-                </button>
-              `).join('')
-            : `<span class="text-xs text-slate-500 italic">Aucune commission planifiée dans les prochains mois pour le moment.</span>`;
-        } else {
-          futureBreakdownBox.classList.add('hidden');
         }
       }
 
@@ -9309,7 +9462,7 @@
         return totalsByRep.get(key);
       };
 
-      const isSubMonthMode = rankPeriod.mode === 'this_week' || rankPeriod.mode === 'specific_date';
+      const isSubMonthMode = rankPeriod.mode === 'this_week' || rankPeriod.mode === 'specific_date' || rankPeriod.mode === 'custom_range';
       const hasFullVentesAccess = isSubMonthMode || (state.ventes && state.ventes.length && currentProfile?.role === 'admin');
 
       if (hasFullVentesAccess) {
@@ -12209,11 +12362,13 @@
       const mode = document.getElementById(`${prefix}-period`)?.value || 'all';
       const monthVal = document.getElementById(`${prefix}-month`)?.value || currentMonthStr;
       const dateVal = document.getElementById(`${prefix}-date`)?.value || currentDateStr;
+      const startVal = document.getElementById(`${prefix}-start`)?.value || `${currentMonthStr}-01`;
+      const endVal = document.getElementById(`${prefix}-end`)?.value || currentDateStr;
       const weekBounds = getCurrentWeekBounds(today);
       const currentQuarter = getQuarterForMonth(currentMonthStr);
       const currentYear = String(today.getFullYear());
 
-      let label = 'Toutes les périodes';
+      let label = 'Cumul global (Toutes les périodes)';
       let singleMonth = '';
       if (mode === 'this_week') label = `Cette semaine (${formatDateLabelFr(weekBounds.start)} → ${formatDateLabelFr(weekBounds.end)})`;
       else if (mode === 'this_month') { label = `Ce mois-ci (${formatYearMonthLabelFr(currentMonthStr)})`; singleMonth = currentMonthStr; }
@@ -12222,8 +12377,14 @@
       else if (mode === 'future') label = `Vue Futur (Dates à venir > ${formatDateLabelFr(currentDateStr)})`;
       else if (mode === 'specific_month') { label = formatYearMonthLabelFr(monthVal); singleMonth = monthVal; }
       else if (mode === 'specific_date') { label = formatDateLabelFr(dateVal); singleMonth = dateVal ? dateVal.slice(0, 7) : ''; }
+      else if (mode === 'custom_range') {
+        const s = startVal <= endVal ? startVal : endVal;
+        const e = startVal <= endVal ? endVal : startVal;
+        label = `Du ${formatDateLabelFr(s)} au ${formatDateLabelFr(e)}`;
+        if (s && e && s.slice(0, 7) === e.slice(0, 7)) singleMonth = s.slice(0, 7);
+      }
 
-      return { mode, monthVal, dateVal, weekBounds, currentQuarter, currentYear, label, singleMonth };
+      return { mode, monthVal, dateVal, startVal, endVal, weekBounds, currentQuarter, currentYear, label, singleMonth };
     }
 
     function matchesSalePeriod(v, periodState, useStatsMonth = true) {
@@ -12263,6 +12424,15 @@
       if (mode === 'specific_date') {
         return !dateVal || dStr === dateVal;
       }
+      if (mode === 'custom_range') {
+        const rawS = periodState.startVal || '';
+        const rawE = periodState.endVal || '';
+        const s = (rawS && rawE && rawS > rawE) ? rawE : rawS;
+        const e = (rawS && rawE && rawS > rawE) ? rawS : rawE;
+        if (s && dStr && dStr < s) return false;
+        if (e && dStr && dStr > e) return false;
+        return Boolean(dStr);
+      }
       return true;
     }
 
@@ -12270,6 +12440,9 @@
       const mode = document.getElementById(`${prefix}-period`)?.value || 'all';
       const monthInp = document.getElementById(`${prefix}-month`);
       const dateInp = document.getElementById(`${prefix}-date`);
+      const customBox = document.getElementById(`${prefix}-custom-box`);
+      const startInp = document.getElementById(`${prefix}-start`);
+      const endInp = document.getElementById(`${prefix}-end`);
       if (monthInp) {
         const showM = mode === 'specific_month';
         monthInp.classList.toggle('hidden', !showM);
@@ -12284,6 +12457,14 @@
         if (showD && !dateInp.value) dateInp.value = currentDateStr;
         if (showD && autoOpenPicker && typeof dateInp.showPicker === 'function') {
           try { dateInp.showPicker(); } catch (e) {}
+        }
+      }
+      if (customBox) {
+        const showC = mode === 'custom_range';
+        customBox.classList.toggle('hidden', !showC);
+        if (showC) {
+          if (startInp && !startInp.value) startInp.value = `${currentMonthStr}-01`;
+          if (endInp && !endInp.value) endInp.value = currentDateStr;
         }
       }
     }
