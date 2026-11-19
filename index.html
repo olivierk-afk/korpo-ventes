@@ -201,12 +201,33 @@
       background-color: rgba(192, 132, 252, 0.18) !important;
     }
     html.dark .from-emerald-50,
-    html.dark .from-emerald-50\/70 {
+    html.dark .from-emerald-50\/70,
+    html.dark .from-emerald-50\/90 {
       --tw-gradient-from: rgba(16, 185, 129, 0.16) var(--tw-gradient-from-position) !important;
+      --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to) !important;
+    }
+    html.dark .via-white {
+      --tw-gradient-stops: var(--tw-gradient-from), #162136, var(--tw-gradient-to) !important;
     }
     html.dark .to-teal-50,
     html.dark .to-teal-50\/40 {
       --tw-gradient-to: rgba(20, 184, 166, 0.09) var(--tw-gradient-to-position) !important;
+    }
+    html.dark .to-indigo-50\/70,
+    html.dark .to-indigo-50\/60 {
+      --tw-gradient-to: rgba(99, 102, 241, 0.16) var(--tw-gradient-to-position) !important;
+    }
+    html.dark #chat-messages-feed {
+      background-color: #0e1626 !important;
+    }
+    html.dark #chat-messages-feed .chat-sale-card {
+      background-image: linear-gradient(135deg, rgba(16, 185, 129, 0.14), #162238 55%, rgba(99, 102, 241, 0.16)) !important;
+      border-color: rgba(52, 211, 153, 0.32) !important;
+    }
+    html.dark #chat-messages-feed .chat-msg-bubble-other {
+      background-color: #19243b !important;
+      border-color: #2c3c5c !important;
+      color: #f1f5f9 !important;
     }
 
     /* En-têtes de modales et barre supérieure bien distincts des cartes */
@@ -222,6 +243,7 @@
     html.dark #trash-modal .bg-slate-900,
     html.dark #payslip-modal .bg-slate-900,
     html.dark #kpi-import-modal .bg-slate-900,
+    html.dark #chat-mention-notif-dropdown .bg-slate-900,
     html.dark #admin-notif-dropdown .bg-slate-900,
     html.dark #user-menu-dropdown .bg-slate-900 {
       background-color: #0b1120 !important;
@@ -468,6 +490,72 @@
   <button id="btn-mobile-fab-sale" title="Déclarer une vente" class="sm:hidden fixed bottom-5 right-5 z-30 w-14 h-14 rounded-full bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white shadow-xl shadow-emerald-600/35 flex items-center justify-center text-2xl font-bold transition no-print">
     💵
   </button>
+
+  <!-- BULLE FLOTTANTE EN BAS À GAUCHE : CANAL DE CONVERSATION ÉQUIPE (3 POINTS) -->
+  <button id="btn-floating-chat-bubble" type="button" onclick="openTeamChatModal()" title="Ouvrir le canal de conversation ventes & équipe" class="fixed bottom-5 left-5 z-30 w-14 h-14 rounded-full bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white shadow-xl shadow-indigo-600/35 flex items-center justify-center transition no-print group">
+    <svg class="w-7 h-7 transition-transform group-hover:scale-105" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+      <path d="M12 3C6.477 3 2 6.805 2 11.5c0 2.31 1.084 4.404 2.845 5.936-.234 1.32-.833 2.573-1.456 3.553a.5.5 0 0 0 .485.764c2.01-.245 3.927-.968 5.29-1.716.905.298 1.855.463 2.836.463 5.523 0 10-3.805 10-8.5S17.523 3 12 3Zm-4 9.75a1.25 1.25 0 1 1 0-2.5 1.25 1.25 0 0 1 0 2.5Zm4 0a1.25 1.25 0 1 1 0-2.5 1.25 1.25 0 0 1 0 2.5Zm4 0a1.25 1.25 0 1 1 0-2.5 1.25 1.25 0 0 1 0 2.5Z"/>
+    </svg>
+    <span class="chat-unread-badge hidden absolute -top-1 -right-1 min-w-[22px] h-[22px] px-1.5 rounded-full bg-emerald-500 text-slate-950 text-[11px] font-extrabold flex items-center justify-center shadow-md ring-2 ring-white dark:ring-slate-900">0</span>
+  </button>
+
+  <!-- FENÊTRE MODALE PAR-DESSUS : CANAL DE CONVERSATION ÉQUIPE & VENTES EN DIRECT -->
+  <div id="chat-modal-backdrop" class="hidden fixed inset-0 z-40 bg-slate-950/65 backdrop-blur-sm flex items-center justify-center p-3 sm:p-5 overflow-y-auto no-print">
+    <div class="bg-white w-full max-w-2xl h-[85vh] max-h-[720px] min-h-[440px] rounded-3xl shadow-2xl border border-slate-200/90 flex flex-col overflow-hidden animate-drawer my-auto">
+      <!-- EN-TÊTE DU CANAL -->
+      <div class="px-4 sm:px-6 py-4 bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white flex items-center justify-between gap-3 shrink-0 border-b border-slate-800/80">
+        <div class="flex items-center gap-3 min-w-0">
+          <div class="w-10 h-10 rounded-2xl bg-indigo-500/25 border border-indigo-400/35 text-indigo-200 flex items-center justify-center shrink-0">
+            <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3C6.477 3 2 6.805 2 11.5c0 2.31 1.084 4.404 2.845 5.936-.234 1.32-.833 2.573-1.456 3.553a.5.5 0 0 0 .485.764c2.01-.245 3.927-.968 5.29-1.716.905.298 1.855.463 2.836.463 5.523 0 10-3.805 10-8.5S17.523 3 12 3Zm-4 9.75a1.25 1.25 0 1 1 0-2.5 1.25 1.25 0 0 1 0 2.5Zm4 0a1.25 1.25 0 1 1 0-2.5 1.25 1.25 0 0 1 0 2.5Zm4 0a1.25 1.25 0 1 1 0-2.5 1.25 1.25 0 0 1 0 2.5Z"/></svg>
+          </div>
+          <div class="min-w-0">
+            <div class="flex items-center gap-2">
+              <h3 class="text-sm sm:text-base font-extrabold tracking-tight truncate"># ventes-et-equipe</h3>
+              <span id="chat-live-pill" class="px-2 py-0.5 text-[10px] font-extrabold rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-400/30">● En direct</span>
+            </div>
+            <p class="text-[11px] text-slate-300 truncate">Ventes publiées automatiquement • Discussion d'équipe</p>
+          </div>
+        </div>
+        <div class="flex items-center gap-1.5 sm:gap-2 shrink-0">
+          <button type="button" id="btn-chat-filter-sales" onclick="toggleChatSalesOnlyFilter()" class="px-2.5 py-1.5 text-[11px] font-bold rounded-xl bg-white/10 hover:bg-white/20 text-slate-200 transition">
+            💵 Ventes
+          </button>
+          <button type="button" onclick="refreshTeamChatMessages(true)" title="Actualiser le canal" class="w-8 h-8 text-xs font-bold rounded-xl bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition">
+            ↻
+          </button>
+          <button type="button" onclick="closeTeamChatModal()" title="Fermer" class="w-9 h-9 rounded-xl bg-white/10 hover:bg-white/20 text-slate-200 hover:text-white flex items-center justify-center transition">
+            ✕
+          </button>
+        </div>
+      </div>
+
+      <!-- FIL DES MESSAGES ET DES VENTES -->
+      <div id="chat-messages-feed" class="flex-1 overflow-y-auto p-4 sm:p-5 space-y-3 bg-slate-50/70">
+        <div class="py-12 text-center text-xs text-slate-400">Chargement du canal de conversation...</div>
+      </div>
+
+      <!-- ZONE DE SAISIE DE MESSAGE AVEC AUTOCOMPLÉTION @MENTION -->
+      <div class="relative shrink-0">
+        <div id="chat-mention-autocomplete" class="hidden absolute bottom-full left-3 right-3 sm:left-4 sm:right-auto sm:w-80 mb-1.5 bg-white border border-slate-200 rounded-2xl shadow-2xl overflow-hidden z-50">
+          <div class="px-3 py-1.5 bg-slate-50 border-b border-slate-100 text-[10px] font-extrabold uppercase tracking-wider text-slate-400">
+            Identifier un membre de l'équipe (@)
+          </div>
+          <div id="chat-mention-autocomplete-list" class="max-h-52 overflow-y-auto divide-y divide-slate-100"></div>
+        </div>
+
+        <form id="form-team-chat" class="p-3 sm:p-4 bg-white border-t border-slate-200 flex items-center gap-2">
+          <button type="button" onclick="insertAtSymbolInChat()" title="Identifier un représentant (@)" class="w-9 h-9 rounded-xl bg-slate-100 hover:bg-indigo-50 text-slate-600 hover:text-indigo-700 font-extrabold text-sm flex items-center justify-center transition shrink-0">
+            @
+          </button>
+          <input id="chat-message-input" type="text" maxlength="800" autocomplete="off" placeholder="Écrire un message (@Nom pour notifier)..." class="flex-1 px-4 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-600" />
+          <button id="btn-send-chat" type="submit" class="px-4 sm:px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white text-xs sm:text-sm font-extrabold rounded-xl shadow-sm transition shrink-0 flex items-center gap-1.5">
+            <span>Envoyer</span>
+            <span>➤</span>
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
 
   <!-- MODALE DE CONFIRMATION -->
   <div id="confirm-modal" class="hidden fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-sm flex items-center justify-center p-4 no-print">
@@ -1166,7 +1254,6 @@
             <span class="theme-toggle-icon">🌙</span>
             <span class="theme-toggle-label hidden sm:inline">Sombre</span>
           </button>
-          <button id="btn-reset-cfg" title="Modifier l'URL Supabase" class="text-xs font-medium text-slate-400 hover:text-indigo-600 transition">Config API</button>
         </div>
       </div>
 
@@ -1211,6 +1298,31 @@
         </div>
 
         <div class="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
+          <!-- CLOCHE DE MENTIONS @ DANS LE CANAL DE CHAT (TOUS LES MEMBRES) -->
+          <div id="chat-mention-notif-wrapper" class="relative">
+            <button id="btn-chat-mention-notif" type="button" title="Mentions (@) dans le canal d'équipe" class="relative p-2 text-slate-200 hover:text-white bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-xl transition">
+              <span class="text-xs sm:text-sm font-extrabold leading-none text-indigo-300">@</span>
+              <span id="chat-mention-notif-badge" class="hidden absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] px-1 rounded-full bg-indigo-500 text-white text-[10px] font-extrabold flex items-center justify-center shadow-sm">0</span>
+            </button>
+
+            <!-- MENU DÉROULANT DES MENTIONS @ -->
+            <div id="chat-mention-notif-dropdown" class="hidden fixed inset-x-3 top-16 sm:absolute sm:inset-x-auto sm:right-0 sm:top-auto sm:mt-2 w-auto sm:w-96 bg-white text-slate-900 rounded-2xl border border-slate-200 shadow-2xl z-50 overflow-hidden">
+              <div class="px-4 py-3 bg-slate-900 text-white flex items-center justify-between">
+                <div>
+                  <div class="text-xs font-extrabold">Mentions (@) dans le canal</div>
+                  <div id="chat-mention-notif-subtitle" class="text-[11px] text-slate-400">Messages où l'on vous a identifié</div>
+                </div>
+                <button type="button" onclick="markAllChatMentionsRead()" class="px-2.5 py-1 text-[10px] font-bold rounded-lg bg-white/10 hover:bg-white/20 text-slate-200 transition">
+                  Tout marquer lu
+                </button>
+              </div>
+              <div id="chat-mention-notif-list" class="max-h-80 overflow-y-auto divide-y divide-slate-100"></div>
+              <div class="px-4 py-2.5 bg-slate-50 border-t border-slate-100 flex items-center justify-between">
+                <button type="button" onclick="document.getElementById('chat-mention-notif-dropdown')?.classList.add('hidden'); openTeamChatModal();" class="text-xs font-bold text-indigo-600 hover:underline">Ouvrir le canal #ventes-et-equipe →</button>
+              </div>
+            </div>
+          </div>
+
           <!-- CLOCHE DE NOTIFICATIONS ADMIN (VENTES À CONFIRMER) -->
           <div id="admin-notif-wrapper" class="hidden relative">
             <button id="btn-admin-notif" title="Ventes en attente de confirmation" class="relative p-2 text-slate-200 hover:text-white bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-xl transition">
@@ -1235,11 +1347,6 @@
               </div>
             </div>
           </div>
-
-          <button type="button" onclick="toggleColorTheme()" title="Basculer entre le mode clair et le mode sombre" class="theme-toggle-btn px-2.5 py-1.5 text-xs font-semibold text-slate-200 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-xl flex items-center gap-1.5 transition">
-            <span class="theme-toggle-icon text-sm leading-none">🌙</span>
-            <span class="theme-toggle-label hidden md:inline">Sombre</span>
-          </button>
 
           <button id="btn-refresh" title="Actualiser les données" class="px-3 py-1.5 text-xs font-semibold text-slate-200 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-xl flex items-center gap-1.5 transition">
             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99"/></svg>
@@ -1291,6 +1398,20 @@
 
     <!-- CONTENU PRINCIPAL -->
     <main class="flex-1 max-w-7xl w-full mx-auto px-3 sm:px-6 py-4 sm:py-7 pb-24 sm:pb-8 space-y-5 sm:space-y-6 no-print">
+      <!-- BANDEAU NOTIFICATION EN HAUT : MENTION @ DANS LE CANAL -->
+      <div id="chat-mention-top-banner" class="hidden bg-indigo-50 border border-indigo-300 rounded-2xl px-4 sm:px-5 py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 shadow-xs cursor-pointer transition hover:bg-indigo-100/70" onclick="jumpToLatestUnreadMention()">
+        <div class="flex items-center gap-3 min-w-0">
+          <span class="w-9 h-9 rounded-xl bg-indigo-600 text-white flex items-center justify-center font-extrabold text-base shrink-0">@</span>
+          <div class="min-w-0">
+            <div id="chat-mention-banner-title" class="text-xs font-extrabold text-indigo-950 truncate">Vous avez été mentionné dans le canal</div>
+            <div id="chat-mention-banner-desc" class="text-[11px] text-indigo-800 truncate">Cliquez ici pour accéder directement au message</div>
+          </div>
+        </div>
+        <div class="flex items-center gap-2 shrink-0">
+          <span class="px-3.5 py-1.5 text-xs font-bold text-white bg-indigo-600 rounded-xl shadow-xs">Voir le message →</span>
+        </div>
+      </div>
+
       <!-- BANDEAU ALERTE ADMIN : NOUVELLES VENTES À CONFIRMER -->
       <div id="admin-pending-banner" class="hidden bg-amber-50 border border-amber-300 rounded-2xl px-5 py-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
         <div class="flex items-center gap-3">
@@ -1839,50 +1960,7 @@
       </section>
 
 
-      <!-- ============================================================ -->
-      <!-- ONGLET CANAL DE CONVERSATION ÉQUIPE & VENTES EN DIRECT       -->
-      <!-- ============================================================ -->
-      <section id="tab-chat" class="hidden space-y-4">
-        <div class="max-w-4xl mx-auto bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden flex flex-col" style="height: calc(100vh - 185px); min-height: 480px; max-height: 760px;">
-          <!-- EN-TÊTE DU CANAL -->
-          <div class="px-4 sm:px-6 py-3.5 bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white flex items-center justify-between gap-3 shrink-0">
-            <div class="flex items-center gap-3 min-w-0">
-              <div class="w-10 h-10 rounded-2xl bg-emerald-500/20 border border-emerald-400/30 text-emerald-300 flex items-center justify-center text-lg font-extrabold shrink-0">
-                💬
-              </div>
-              <div class="min-w-0">
-                <div class="flex items-center gap-2">
-                  <h2 class="text-sm sm:text-base font-extrabold tracking-tight truncate"># ventes-et-equipe</h2>
-                  <span id="chat-live-pill" class="px-2 py-0.5 text-[10px] font-extrabold rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-400/30">● En direct</span>
-                </div>
-                <p class="text-[11px] text-slate-300 truncate">Chaque nouvelle vente est publiée automatiquement ici • Discussion d'équipe en temps réel</p>
-              </div>
-            </div>
-            <div class="flex items-center gap-2 shrink-0">
-              <button type="button" id="btn-chat-filter-sales" onclick="toggleChatSalesOnlyFilter()" class="px-2.5 py-1.5 text-[11px] font-bold rounded-xl bg-white/10 hover:bg-white/20 text-slate-200 transition">
-                💵 Ventes seulement
-              </button>
-              <button type="button" onclick="refreshTeamChatMessages(true)" title="Actualiser le canal" class="p-2 text-xs font-bold rounded-xl bg-white/10 hover:bg-white/20 text-white transition">
-                ↻
-              </button>
-            </div>
-          </div>
 
-          <!-- FIL DES MESSAGES ET DES VENTES -->
-          <div id="chat-messages-feed" class="flex-1 overflow-y-auto p-4 sm:p-5 space-y-3 bg-slate-50/70">
-            <div class="py-12 text-center text-xs text-slate-400">Chargement du canal de conversation...</div>
-          </div>
-
-          <!-- ZONE DE SAISIE DE MESSAGE -->
-          <form id="form-team-chat" class="p-3 sm:p-4 bg-white border-t border-slate-200 flex items-center gap-2 shrink-0">
-            <input id="chat-message-input" type="text" maxlength="800" autocomplete="off" placeholder="Écrire un message à l'équipe (félicitations, suivi, info...)..." class="flex-1 px-4 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-600" />
-            <button id="btn-send-chat" type="submit" class="px-4 sm:px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white text-xs sm:text-sm font-extrabold rounded-xl shadow-sm transition shrink-0 flex items-center gap-1.5">
-              <span>Envoyer</span>
-              <span>➤</span>
-            </button>
-          </form>
-        </div>
-      </section>
 
       <!-- ============================================================ -->
       <!-- ONGLET 4 : TOUTES LES VENTES & CSV (ADMIN UNIQUEMENT)        -->
@@ -3521,7 +3599,6 @@
       const mobilePrimaryTabs = [
         { id: 'tab-mes-ventes', icon: '💵', shortLabel: 'Ventes' },
         { id: 'tab-mes-commissions', icon: '💰', shortLabel: 'Commissions' },
-        { id: 'tab-chat', icon: '💬', shortLabel: 'Canal' },
         { id: 'tab-kpi', icon: '📊', shortLabel: 'KPI' },
         { id: 'tab-classement', icon: '🏆', shortLabel: 'Classement' }
       ];
@@ -3535,7 +3612,6 @@
 
       const desktopTabs = [
         { id: 'tab-mes-ventes', icon: '💵', label: 'Mes ventes & commissions' },
-        { id: 'tab-chat', icon: '💬', label: 'Canal ventes & équipe' },
         { id: 'tab-kpi', icon: '📊', label: 'Tableau KPI' },
         { id: 'tab-classement', icon: '🏆', label: 'Classement équipe' },
         ...(isAdmin ? [
@@ -3571,7 +3647,7 @@
       `;
 
       nav.innerHTML =
-        renderMobileGrid(mobilePrimaryTabs, '', 5) +
+        renderMobileGrid(mobilePrimaryTabs, '', 4) +
         (mobileAdminTabs.length ? renderMobileGrid(mobileAdminTabs, 'pt-1 border-t border-slate-800/90', 4) : '') +
         desktopBar;
 
@@ -3650,14 +3726,32 @@
       });
       if (targetSectionId === 'tab-mes-ventes') applyMobilePersonalSplitLayout();
       if (tabId === 'tab-kpi') renderKpiDashboard();
-      if (tabId === 'tab-chat') {
-        activeChatTabOpen = true;
-        markTeamChatAsRead();
-        renderTeamChatFeed(true);
-      } else {
-        activeChatTabOpen = false;
-      }
     }
+
+    window.openTeamChatModal = () => {
+      const backdrop = document.getElementById('chat-modal-backdrop');
+      if (!backdrop) return;
+      backdrop.classList.remove('hidden');
+      activeChatTabOpen = true;
+      markTeamChatAsRead();
+      renderTeamChatFeed(true);
+      setTimeout(() => {
+        document.getElementById('chat-message-input')?.focus();
+      }, 120);
+    };
+
+    window.closeTeamChatModal = () => {
+      const backdrop = document.getElementById('chat-modal-backdrop');
+      if (backdrop) backdrop.classList.add('hidden');
+      activeChatTabOpen = false;
+    };
+
+    document.getElementById('chat-modal-backdrop')?.addEventListener('click', (e) => {
+      if (e.target.id === 'chat-modal-backdrop') closeTeamChatModal();
+    });
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && activeChatTabOpen) closeTeamChatModal();
+    });
 
     // =========================================================================
     // LOGIQUE DU TABLEAU KPI (RDV, OTS, SUIVI, % CLOSE & ENTREPRISES)
@@ -6622,14 +6716,112 @@
 
 
     // =========================================================================
-    // CANAL DE CONVERSATION ÉQUIPE & PUBLICATION AUTOMATIQUE DES VENTES
+    // CANAL DE CONVERSATION ÉQUIPE, MENTIONS @ & PUBLICATION AUTOMATIQUE DES VENTES
     // =========================================================================
-    let teamChatMessages = []; // [{ id, kind: 'sale'|'msg', at, authorId, authorName, authorRole, text, saleData }]
+    let teamChatMessages = []; // [{ id, kind: 'sale'|'msg', at, authorId, authorName, authorRole, text, mentions, saleData }]
     let activeChatTabOpen = false;
     let chatSalesOnlyMode = false;
     let chatRealtimeChannel = null;
     let chatPollingTimer = null;
     let lastSeenChatTimestamp = localStorage.getItem('korpo_chat_last_seen_v1') || '';
+    let readMentionIds = new Set(lsGetJson('korpo_read_mention_ids_v1', '[]'));
+    let alertedMentionIds = new Set();
+    let hasInitializedMentionsBaseline = false;
+    let mentionAcCandidates = [];
+    let mentionAcSelectedIndex = 0;
+
+    function saveReadMentionIds() {
+      const arr = Array.from(readMentionIds).slice(-150);
+      lsSet('korpo_read_mention_ids_v1', JSON.stringify(arr));
+    }
+
+    function normalizeMentionStr(s) {
+      return String(s || '')
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/[^a-z0-9]/g, '');
+    }
+
+    function getMentionableTeamMembers() {
+      const map = new Map();
+      (state.representants || []).forEach(r => {
+        if (r && r.nom) {
+          map.set(String(r.nom).trim().toLowerCase(), {
+            id: String(r.id || ''),
+            nom: String(r.nom).trim(),
+            role: r.role || 'representant'
+          });
+        }
+      });
+      ALL_KPI_REPS.forEach(rn => {
+        const key = rn.toLowerCase();
+        if (!map.has(key)) {
+          map.set(key, { id: '', nom: rn, role: rn === 'Olivier' ? 'admin' : 'representant' });
+        }
+      });
+      return Array.from(map.values()).sort((a, b) => a.nom.localeCompare(b.nom));
+    }
+
+    function extractMentionedNamesFromText(text) {
+      const raw = String(text || '');
+      if (!raw.includes('@')) return [];
+      const members = getMentionableTeamMembers();
+      const found = new Set();
+
+      // Match @Name (including hyphenated names like @Jean-Sébastien or @Olivier)
+      const regex = /@([A-Za-zÀ-ÖØ-öø-ÿ0-9_-]+)/g;
+      let match;
+      while ((match = regex.exec(raw)) !== null) {
+        const tokenNorm = normalizeMentionStr(match[1]);
+        if (!tokenNorm) continue;
+        if (tokenNorm === 'tous' || tokenNorm === 'equipe' || tokenNorm === 'all') {
+          members.forEach(m => found.add(m.nom));
+          continue;
+        }
+        const exact = members.find(m => normalizeMentionStr(m.nom) === tokenNorm);
+        if (exact) {
+          found.add(exact.nom);
+        } else {
+          const partial = members.find(m => normalizeMentionStr(m.nom).startsWith(tokenNorm) && tokenNorm.length >= 2);
+          if (partial) found.add(partial.nom);
+        }
+      }
+      return Array.from(found);
+    }
+
+    function isCurrentUserMentionedInMsg(m) {
+      if (!m || m.kind !== 'msg' || !currentProfile) return false;
+      if (String(m.authorId) === String(currentProfile.id)) return false;
+      const myNorm = normalizeMentionStr(currentProfile.nom);
+      if (!myNorm) return false;
+      const explicitList = Array.isArray(m.mentions) && m.mentions.length
+        ? m.mentions
+        : extractMentionedNamesFromText(m.text);
+      return explicitList.some(name => normalizeMentionStr(name) === myNorm);
+    }
+
+    function formatChatMessageWithMentions(text, isMeBubble = false) {
+      const members = getMentionableTeamMembers();
+      const myNorm = normalizeMentionStr(currentProfile?.nom || '');
+      const escaped = esc(text || '');
+      return escaped.replace(/@([A-Za-zÀ-ÖØ-öø-ÿ0-9_-]+)/g, (full, handle) => {
+        const normH = normalizeMentionStr(handle);
+        const matched = members.find(m =>
+          normalizeMentionStr(m.nom) === normH ||
+          (normH.length >= 2 && normalizeMentionStr(m.nom).startsWith(normH))
+        ) || (['tous', 'equipe', 'all'].includes(normH) ? { nom: handle } : null);
+
+        if (!matched) return full;
+        const isMeTag = myNorm && normalizeMentionStr(matched.nom) === myNorm;
+        const pillCls = isMeBubble
+          ? 'bg-white/25 text-white font-extrabold px-1.5 py-0.5 rounded-md'
+          : (isMeTag
+            ? 'bg-amber-200/90 text-amber-950 font-extrabold px-1.5 py-0.5 rounded-md ring-1 ring-amber-400'
+            : 'bg-indigo-100 text-indigo-800 font-extrabold px-1.5 py-0.5 rounded-md');
+        return `<span class="${pillCls}">@${esc(handle)}</span>`;
+      });
+    }
 
     function formatChatTime(isoStr) {
       if (!isoStr) return '';
@@ -6661,6 +6853,142 @@
       });
     }
 
+    function renderChatMentionNotifications() {
+      if (!currentProfile) return;
+      const myMentions = teamChatMessages
+        .filter(m => isCurrentUserMentionedInMsg(m))
+        .sort((a, b) => String(b.at || '').localeCompare(String(a.at || '')));
+
+      const unreadMentions = myMentions.filter(m => !readMentionIds.has(String(m.id)));
+      const badge = document.getElementById('chat-mention-notif-badge');
+      const listEl = document.getElementById('chat-mention-notif-list');
+      const subEl = document.getElementById('chat-mention-notif-subtitle');
+      const topBanner = document.getElementById('chat-mention-top-banner');
+
+      if (!hasInitializedMentionsBaseline) {
+        unreadMentions.forEach(m => alertedMentionIds.add(String(m.id)));
+        hasInitializedMentionsBaseline = true;
+      } else {
+        unreadMentions.forEach(m => {
+          const mid = String(m.id);
+          if (!alertedMentionIds.has(mid)) {
+            alertedMentionIds.add(mid);
+            playNotificationChime();
+            toast(`@ ${m.authorName} vous a identifié : "${String(m.text || '').slice(0, 65)}"`);
+          }
+        });
+      }
+
+      if (badge) {
+        if (unreadMentions.length > 0) {
+          badge.textContent = unreadMentions.length > 99 ? '99+' : String(unreadMentions.length);
+          badge.classList.remove('hidden');
+        } else {
+          badge.classList.add('hidden');
+        }
+      }
+
+      if (topBanner) {
+        if (unreadMentions.length > 0) {
+          const latest = unreadMentions[0];
+          topBanner.dataset.targetMsgId = String(latest.id);
+          document.getElementById('chat-mention-banner-title').textContent =
+            unreadMentions.length === 1
+              ? `${latest.authorName} vous a tagué dans le canal`
+              : `${unreadMentions.length} messages vous identifient dans le canal (dernier par ${latest.authorName})`;
+          document.getElementById('chat-mention-banner-desc').textContent =
+            `« ${String(latest.text || '')} » — Cliquez pour ouvrir directement le message`;
+          topBanner.classList.remove('hidden');
+        } else {
+          topBanner.classList.add('hidden');
+        }
+      }
+
+      if (subEl) {
+        subEl.textContent = unreadMentions.length > 0
+          ? `${unreadMentions.length} mention(s) non lue(s)`
+          : (myMentions.length > 0 ? 'Toutes vos mentions sont lues' : 'Aucune mention pour le moment');
+      }
+
+      if (listEl) {
+        if (!myMentions.length) {
+          listEl.innerHTML = `<div class="p-6 text-center text-xs text-slate-400">Personne ne vous a encore identifié avec @${esc(currentProfile.nom)}.</div>`;
+        } else {
+          listEl.innerHTML = myMentions.slice(0, 15).map(m => {
+            const isUnread = !readMentionIds.has(String(m.id));
+            return `
+              <button type="button" onclick="jumpToChatMessage('${esc(m.id)}')" class="w-full text-left p-3.5 hover:bg-indigo-50/60 transition flex items-start justify-between gap-3 ${isUnread ? 'bg-indigo-50/40' : ''}">
+                <div class="min-w-0 space-y-0.5">
+                  <div class="flex items-center gap-1.5">
+                    ${isUnread ? '<span class="w-2 h-2 rounded-full bg-indigo-600 shrink-0"></span>' : ''}
+                    <span class="text-xs font-extrabold text-slate-900">${esc(m.authorName)}</span>
+                    <span class="text-[10px] text-slate-400">• ${esc(formatChatTime(m.at))}</span>
+                  </div>
+                  <div class="text-xs text-slate-700 line-clamp-2 break-words">${esc(m.text)}</div>
+                </div>
+                <span class="px-2 py-1 text-[10px] font-bold rounded-lg bg-indigo-600 text-white shrink-0">Voir →</span>
+              </button>
+            `;
+          }).join('');
+        }
+      }
+    }
+
+    window.markAllChatMentionsRead = () => {
+      teamChatMessages.forEach(m => {
+        if (isCurrentUserMentionedInMsg(m)) {
+          readMentionIds.add(String(m.id));
+        }
+      });
+      saveReadMentionIds();
+      renderChatMentionNotifications();
+    };
+
+    window.jumpToLatestUnreadMention = () => {
+      const banner = document.getElementById('chat-mention-top-banner');
+      const targetId = banner?.dataset?.targetMsgId;
+      if (targetId) {
+        jumpToChatMessage(targetId);
+      } else {
+        openTeamChatModal();
+      }
+    };
+
+    window.jumpToChatMessage = (msgId) => {
+      document.getElementById('chat-mention-notif-dropdown')?.classList.add('hidden');
+      const sid = String(msgId);
+      readMentionIds.add(sid);
+      saveReadMentionIds();
+
+      // Si le filtre "Ventes seulement" était actif, le désactiver pour afficher le message texte tagué
+      if (chatSalesOnlyMode) {
+        chatSalesOnlyMode = false;
+        const btn = document.getElementById('btn-chat-filter-sales');
+        if (btn) {
+          btn.classList.remove('bg-emerald-500', 'text-slate-950');
+          btn.classList.add('bg-white/10', 'text-slate-200');
+        }
+      }
+
+      const backdrop = document.getElementById('chat-modal-backdrop');
+      if (backdrop) backdrop.classList.remove('hidden');
+      activeChatTabOpen = true;
+      markTeamChatAsRead();
+      renderTeamChatFeed(false);
+      renderChatMentionNotifications();
+
+      setTimeout(() => {
+        const el = document.getElementById(`chat-item-${sid}`);
+        if (el) {
+          el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          el.classList.add('ring-2', 'ring-amber-400', 'bg-amber-50/70', 'dark:bg-amber-500/15', 'rounded-2xl', 'p-2', '-mx-2', 'transition-all');
+          setTimeout(() => {
+            el.classList.remove('ring-2', 'ring-amber-400', 'bg-amber-50/70', 'dark:bg-amber-500/15', 'p-2', '-mx-2');
+          }, 2800);
+        }
+      }, 90);
+    };
+
     function markTeamChatAsRead() {
       const latestAt = teamChatMessages.length
         ? teamChatMessages[teamChatMessages.length - 1].at
@@ -6669,7 +6997,14 @@
         lastSeenChatTimestamp = latestAt;
         lsSet('korpo_chat_last_seen_v1', lastSeenChatTimestamp);
       }
+      teamChatMessages.forEach(m => {
+        if (isCurrentUserMentionedInMsg(m)) {
+          readMentionIds.add(String(m.id));
+        }
+      });
+      saveReadMentionIds();
       updateChatUnreadBadges();
+      renderChatMentionNotifications();
     }
 
     window.toggleChatSalesOnlyFilter = () => {
@@ -6699,7 +7034,6 @@
       });
 
       // 2. Garantir que toutes les ventes récentes de `state.ventes` apparaissent automatiquement dans le canal
-      // (sans exposer le nom privé du client aux autres représentants si non-admin, tout en affichant Rep + Entreprise + Montant + Type)
       const isAdminUser = currentProfile?.role === 'admin';
       const sortedSales = [...(state.ventes || [])]
         .sort((a, b) => String(a.created_at || a.date_vente || '').localeCompare(String(b.created_at || b.date_vente || '')))
@@ -6744,6 +7078,7 @@
         markTeamChatAsRead();
       } else {
         updateChatUnreadBadges();
+        renderChatMentionNotifications();
       }
     }
 
@@ -6795,6 +7130,7 @@
       if (!cleanText || !sb || !currentProfile) return;
       const nowIso = new Date().toISOString();
       const msgId = `msg_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+      const mentionedNames = extractMentionedNamesFromText(cleanText);
       const chatObj = {
         id: msgId,
         kind: 'msg',
@@ -6802,7 +7138,8 @@
         authorId: String(currentProfile.id),
         authorName: currentProfile.nom,
         authorRole: currentProfile.role || 'representant',
-        text: cleanText
+        text: cleanText,
+        mentions: mentionedNames
       };
 
       kpiHebdoRows.push({
@@ -6846,7 +7183,7 @@
     };
 
     window.sendQuickBravoInChat = async (repNom, entNom, montant) => {
-      await postMessageToTeamChat(`🔥 Félicitations ${repNom} pour la vente ${entNom} (${fmtMoney0(montant)}) ! 👏`);
+      await postMessageToTeamChat(`🔥 Félicitations @${repNom} pour la vente ${entNom} (${fmtMoney0(montant)}) ! 👏`);
     };
 
     function renderTeamChatFeed(scrollToBottom = false) {
@@ -6871,12 +7208,13 @@
       feed.innerHTML = list.map(m => {
         const isMe = String(m.authorId) === String(currentProfile?.id);
         const canDel = isAdminUser || (m.kind === 'msg' && isMe);
+        const isMentionedMe = isCurrentUserMentionedInMsg(m);
 
         if (m.kind === 'sale') {
           const sd = m.saleData || {};
           const showClient = (isAdminUser || isMe) && sd.clientNom && sd.clientNom !== 'Client confidentiel';
           return `
-            <div class="bg-gradient-to-r from-emerald-50/90 via-white to-indigo-50/70 border border-emerald-200/90 rounded-2xl p-3.5 sm:p-4 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div id="chat-item-${esc(m.id)}" class="chat-sale-card bg-gradient-to-r from-emerald-50/90 via-white to-indigo-50/70 border border-emerald-200/90 rounded-2xl p-3.5 sm:p-4 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div class="flex items-start gap-3 min-w-0">
                 <div class="w-10 h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center text-lg font-extrabold shrink-0 shadow-xs">
                   💵
@@ -6906,8 +7244,9 @@
 
         const initials = String(m.authorName || '?').slice(0, 2).toUpperCase();
         const isAuthorAdmin = m.authorRole === 'admin';
+        const formattedBody = formatChatMessageWithMentions(m.text, isMe);
         return `
-          <div class="flex items-start gap-2.5 ${isMe ? 'flex-row-reverse' : ''}">
+          <div id="chat-item-${esc(m.id)}" class="flex items-start gap-2.5 ${isMe ? 'flex-row-reverse' : ''}">
             <div class="w-8 h-8 rounded-full ${isAuthorAdmin ? 'bg-slate-900 text-amber-300' : (isMe ? 'bg-indigo-600 text-white' : 'bg-slate-200 text-slate-700')} text-[11px] font-extrabold flex items-center justify-center shrink-0 mt-0.5">
               ${esc(initials)}
             </div>
@@ -6915,10 +7254,11 @@
               <div class="flex items-center gap-1.5 text-[11px] ${isMe ? 'justify-end' : ''}">
                 <span class="font-extrabold text-slate-800">${esc(m.authorName)}</span>
                 ${isAuthorAdmin ? '<span class="px-1.5 py-0.2 text-[9px] font-extrabold rounded bg-amber-100 text-amber-800">Direction</span>' : ''}
+                ${isMentionedMe ? '<span class="px-1.5 py-0.2 text-[9px] font-extrabold rounded bg-indigo-100 text-indigo-800">@Vous</span>' : ''}
                 <span class="text-slate-400">${esc(formatChatTime(m.at))}</span>
               </div>
-              <div class="inline-block text-left px-3.5 py-2.5 rounded-2xl text-xs sm:text-sm leading-relaxed break-words shadow-2xs ${isMe ? 'bg-indigo-600 text-white rounded-tr-sm' : 'bg-white border border-slate-200/90 text-slate-800 rounded-tl-sm'}">
-                ${esc(m.text)}
+              <div class="inline-block text-left px-3.5 py-2.5 rounded-2xl text-xs sm:text-sm leading-relaxed break-words shadow-2xs ${isMe ? 'bg-indigo-600 text-white rounded-tr-sm' : `chat-msg-bubble-other bg-white border ${isMentionedMe ? 'border-indigo-400 ring-1 ring-indigo-300' : 'border-slate-200/90'} text-slate-800 rounded-tl-sm`}">
+                ${formattedBody}
               </div>
               ${canDel ? `<div><button type="button" onclick="deleteTeamChatMessage('${esc(m.id)}')" class="text-[10px] text-slate-400 hover:text-rose-600 transition">Supprimer</button></div>` : ''}
             </div>
@@ -6929,6 +7269,118 @@
       if (scrollToBottom) {
         feed.scrollTop = feed.scrollHeight;
       }
+    }
+
+    // Autocomplétion @Nom dans la zone de saisie du chat
+    function hideMentionAutocomplete() {
+      const box = document.getElementById('chat-mention-autocomplete');
+      if (box) box.classList.add('hidden');
+      mentionAcCandidates = [];
+      mentionAcSelectedIndex = 0;
+    }
+
+    function renderMentionAutocompleteList() {
+      const box = document.getElementById('chat-mention-autocomplete');
+      const listEl = document.getElementById('chat-mention-autocomplete-list');
+      if (!box || !listEl) return;
+      if (!mentionAcCandidates.length) {
+        hideMentionAutocomplete();
+        return;
+      }
+      listEl.innerHTML = mentionAcCandidates.map((m, idx) => `
+        <button type="button" onmousedown="event.preventDefault(); applyMentionAutocomplete(${idx});" class="w-full px-3.5 py-2 text-left text-xs flex items-center justify-between gap-2 transition ${idx === mentionAcSelectedIndex ? 'bg-indigo-50 text-indigo-900 font-extrabold' : 'hover:bg-slate-50 text-slate-700 font-semibold'}">
+          <span class="flex items-center gap-2">
+            <span class="w-6 h-6 rounded-full bg-indigo-600 text-white text-[10px] font-extrabold flex items-center justify-center">${esc(m.nom.slice(0, 2).toUpperCase())}</span>
+            <span>@${esc(m.nom)}</span>
+          </span>
+          <span class="text-[10px] text-slate-400">${m.role === 'admin' ? 'Admin' : 'Rep'}</span>
+        </button>
+      `).join('');
+      box.classList.remove('hidden');
+    }
+
+    window.applyMentionAutocomplete = (idx) => {
+      const input = document.getElementById('chat-message-input');
+      const chosen = mentionAcCandidates[idx];
+      if (!input || !chosen) return;
+      const curPos = input.selectionStart ?? input.value.length;
+      const before = input.value.slice(0, curPos);
+      const after = input.value.slice(curPos);
+      const replacedBefore = before.replace(/@([A-Za-zÀ-ÖØ-öø-ÿ0-9_-]*)$/, `@${chosen.nom} `);
+      input.value = replacedBefore + after;
+      const newPos = replacedBefore.length;
+      input.focus();
+      input.setSelectionRange(newPos, newPos);
+      hideMentionAutocomplete();
+    };
+
+    window.insertAtSymbolInChat = () => {
+      const input = document.getElementById('chat-message-input');
+      if (!input) return;
+      const needsSpace = input.value.length > 0 && !/\s$/.test(input.value);
+      input.value += (needsSpace ? ' @' : '@');
+      input.focus();
+      input.dispatchEvent(new Event('input'));
+    };
+
+    const chatInputEl = document.getElementById('chat-message-input');
+    if (chatInputEl) {
+      chatInputEl.addEventListener('input', () => {
+        const curPos = chatInputEl.selectionStart ?? chatInputEl.value.length;
+        const before = chatInputEl.value.slice(0, curPos);
+        const match = before.match(/(?:^|\s)@([A-Za-zÀ-ÖØ-öø-ÿ0-9_-]*)$/);
+        if (!match) {
+          hideMentionAutocomplete();
+          return;
+        }
+        const queryNorm = normalizeMentionStr(match[1]);
+        const members = getMentionableTeamMembers();
+        mentionAcCandidates = members.filter(m =>
+          !queryNorm || normalizeMentionStr(m.nom).includes(queryNorm)
+        );
+        mentionAcSelectedIndex = 0;
+        renderMentionAutocompleteList();
+      });
+
+      chatInputEl.addEventListener('keydown', (e) => {
+        if (!mentionAcCandidates.length) return;
+        if (e.key === 'ArrowDown') {
+          e.preventDefault();
+          mentionAcSelectedIndex = (mentionAcSelectedIndex + 1) % mentionAcCandidates.length;
+          renderMentionAutocompleteList();
+        } else if (e.key === 'ArrowUp') {
+          e.preventDefault();
+          mentionAcSelectedIndex = (mentionAcSelectedIndex - 1 + mentionAcCandidates.length) % mentionAcCandidates.length;
+          renderMentionAutocompleteList();
+        } else if (e.key === 'Enter' || e.key === 'Tab') {
+          e.preventDefault();
+          applyMentionAutocomplete(mentionAcSelectedIndex);
+        } else if (e.key === 'Escape') {
+          e.stopPropagation();
+          hideMentionAutocomplete();
+        }
+      });
+
+      chatInputEl.addEventListener('blur', () => {
+        setTimeout(hideMentionAutocomplete, 150);
+      });
+    }
+
+    // Bouton cloche @mentions dans le header
+    const mentionBellBtn = document.getElementById('btn-chat-mention-notif');
+    const mentionDropdown = document.getElementById('chat-mention-notif-dropdown');
+    if (mentionBellBtn && mentionDropdown) {
+      mentionBellBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        document.getElementById('admin-notif-dropdown')?.classList.add('hidden');
+        document.getElementById('user-menu-dropdown')?.classList.add('hidden');
+        mentionDropdown.classList.toggle('hidden');
+      });
+      document.addEventListener('click', (e) => {
+        if (!mentionDropdown.contains(e.target) && !mentionBellBtn.contains(e.target)) {
+          mentionDropdown.classList.add('hidden');
+        }
+      });
     }
 
     let refreshingChatNow = false;
@@ -6983,6 +7435,7 @@
 
     document.getElementById('form-team-chat')?.addEventListener('submit', async (e) => {
       e.preventDefault();
+      hideMentionAutocomplete();
       const input = document.getElementById('chat-message-input');
       if (!input) return;
       const val = input.value.trim();
@@ -9716,10 +10169,42 @@
       }
     });
 
-    document.getElementById('btn-logout').addEventListener('click', async () => {
+    async function performAppLogout() {
       document.getElementById('user-menu-dropdown')?.classList.add('hidden');
-      await sb.auth.signOut();
+      stopAdminBackgroundSync();
+      currentUser = null;
+      currentProfile = null;
+      authLoadingUserId = null;
+
+      // Purger les jetons de session Supabase locaux immédiatement pour garantir la déconnexion
+      try {
+        Object.keys(localStorage).forEach(k => {
+          if (k.startsWith('sb-') && k.endsWith('-auth-token')) {
+            localStorage.removeItem(k);
+          }
+        });
+      } catch (e) {}
+
+      try {
+        if (sb && sb.auth) {
+          await Promise.race([
+            sb.auth.signOut({ scope: 'local' }),
+            new Promise(res => setTimeout(res, 1200))
+          ]);
+        }
+      } catch (e) {
+        console.warn('SignOut fallback:', e?.message);
+      }
+
       restoreRememberedCredentials();
+      showScreen('screen-login');
+      toast('Vous êtes déconnecté');
+    }
+
+    document.getElementById('btn-logout')?.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      performAppLogout();
     });
 
     document.getElementById('btn-refresh').addEventListener('click', async () => {
