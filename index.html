@@ -1274,9 +1274,19 @@
                       <option value="both">Les deux (Rep + Olivier)</option>
                     </select>
                   </div>
-                  <div>
+                  <div id="vente-hit-single-box">
                     <label class="block text-[10px] font-extrabold text-rose-900 mb-1">Montant à déduire ($ CAD)</label>
                     <input id="vente-hit-amount" type="number" step="0.01" min="0" placeholder="0,00 $" class="w-full px-2.5 py-1.5 text-xs font-extrabold bg-white border border-rose-200 rounded-lg tabular-nums focus:outline-none focus:ring-2 focus:ring-rose-500" />
+                  </div>
+                </div>
+                <div id="vente-hit-both-box" class="hidden grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1 border-t border-rose-200/70">
+                  <div>
+                    <label class="block text-[10px] font-extrabold text-rose-900 mb-1">Déduction Représentant ($ CAD)</label>
+                    <input id="vente-hit-amount-rep" type="number" step="0.01" min="0" placeholder="0,00 $" class="w-full px-2.5 py-1.5 text-xs font-extrabold bg-white border border-rose-200 rounded-lg tabular-nums focus:outline-none focus:ring-2 focus:ring-rose-500" />
+                  </div>
+                  <div>
+                    <label class="block text-[10px] font-extrabold text-rose-900 mb-1">Déduction Olivier / Moi ($ CAD)</label>
+                    <input id="vente-hit-amount-oli" type="number" step="0.01" min="0" placeholder="0,00 $" class="w-full px-2.5 py-1.5 text-xs font-extrabold bg-white border border-rose-200 rounded-lg tabular-nums focus:outline-none focus:ring-2 focus:ring-rose-500" />
                   </div>
                 </div>
                 <p id="vente-hit-help" class="text-[10px] text-rose-800 leading-relaxed">
@@ -3367,11 +3377,20 @@
     document.getElementById('vente-is-hit')?.addEventListener('change', (e) => {
       updateDrawerCommissionPreview();
       if (e.target.checked) {
-        setTimeout(() => document.getElementById('vente-hit-amount')?.focus(), 50);
+        const bVal = document.getElementById('vente-hit-bearer')?.value || 'rep';
+        const targetEl = bVal === 'both' ? document.getElementById('vente-hit-amount-rep') : document.getElementById('vente-hit-amount');
+        setTimeout(() => targetEl?.focus(), 50);
       }
     });
-    document.getElementById('vente-hit-bearer')?.addEventListener('change', updateDrawerCommissionPreview);
+    document.getElementById('vente-hit-bearer')?.addEventListener('change', () => {
+      updateDrawerCommissionPreview();
+      const bVal = document.getElementById('vente-hit-bearer')?.value || 'rep';
+      const targetEl = bVal === 'both' ? document.getElementById('vente-hit-amount-rep') : document.getElementById('vente-hit-amount');
+      setTimeout(() => targetEl?.focus(), 30);
+    });
     document.getElementById('vente-hit-amount')?.addEventListener('input', updateDrawerCommissionPreview);
+    document.getElementById('vente-hit-amount-rep')?.addEventListener('input', updateDrawerCommissionPreview);
+    document.getElementById('vente-hit-amount-oli')?.addEventListener('input', updateDrawerCommissionPreview);
 
     function updateRateAdjustModalPreview() {
       const sid = document.getElementById('rate-adjust-sale-id')?.value;
@@ -8871,39 +8890,37 @@
       const isHit = Boolean(document.getElementById('vente-is-hit')?.checked);
       const hitBearer = document.getElementById('vente-hit-bearer')?.value || 'rep';
       const rawHitAmt = parseFloat(document.getElementById('vente-hit-amount')?.value);
-      const dedAmt = (!isNaN(rawHitAmt) && rawHitAmt > 0) ? Math.abs(rawHitAmt) : 0;
+      const rawHitRep = parseFloat(document.getElementById('vente-hit-amount-rep')?.value);
+      const rawHitOli = parseFloat(document.getElementById('vente-hit-amount-oli')?.value);
+
+      const dedSingle = (!isNaN(rawHitAmt) && rawHitAmt > 0) ? Math.abs(rawHitAmt) : 0;
+      const dedRepInput = (!isNaN(rawHitRep) && rawHitRep > 0) ? Math.abs(rawHitRep) : 0;
+      const dedOliInput = (!isNaN(rawHitOli) && rawHitOli > 0) ? Math.abs(rawHitOli) : 0;
 
       const baseCRep = Math.round(valeur * eff.tRep * 100) / 100;
       const baseCOli = Math.round(valeur * eff.tOli * 100) / 100;
       let cRep = baseCRep;
       let cOli = baseCOli;
+      let totalDedAmt = dedSingle;
 
-      // Ne jamais mettre la commission à 0 automatiquement : déduire uniquement le montant saisi
-      if (isHit && dedAmt > 0) {
-        if (hitBearer === 'rep') {
-          cRep = Math.round((baseCRep - dedAmt) * 100) / 100;
+      // Ne jamais mettre la commission à 0 automatiquement : déduire uniquement les montants saisis
+      if (isHit) {
+        if (hitBearer === 'rep' && dedSingle > 0) {
+          cRep = Math.round((baseCRep - dedSingle) * 100) / 100;
           if (Object.is(cRep, -0)) cRep = 0;
           cOli = baseCOli;
-        } else if (hitBearer === 'olivier') {
+          totalDedAmt = dedSingle;
+        } else if (hitBearer === 'olivier' && dedSingle > 0) {
           cRep = baseCRep;
-          cOli = Math.round((baseCOli - dedAmt) * 100) / 100;
+          cOli = Math.round((baseCOli - dedSingle) * 100) / 100;
           if (Object.is(cOli, -0)) cOli = 0;
-        } else {
-          const totalBase = Math.abs(baseCRep) + Math.abs(baseCOli);
-          let dedRep = 0;
-          let dedOli = 0;
-          if (totalBase > 0) {
-            const ratioRep = Math.abs(baseCRep) / totalBase;
-            dedRep = Math.round(dedAmt * ratioRep * 100) / 100;
-            dedOli = Math.round((dedAmt - dedRep) * 100) / 100;
-          } else {
-            dedRep = Math.round((dedAmt / 2) * 100) / 100;
-            dedOli = Math.round((dedAmt - dedRep) * 100) / 100;
-          }
-          cRep = Math.round((baseCRep - dedRep) * 100) / 100;
-          cOli = Math.round((baseCOli - dedOli) * 100) / 100;
+          totalDedAmt = dedSingle;
+        } else if (hitBearer === 'both') {
+          cRep = Math.round((baseCRep - dedRepInput) * 100) / 100;
+          cOli = Math.round((baseCOli - dedOliInput) * 100) / 100;
           if (Object.is(cRep, -0)) cRep = 0;
           if (Object.is(cOli, -0)) cOli = 0;
+          totalDedAmt = Math.round((dedRepInput + dedOliInput) * 100) / 100;
         }
       }
 
@@ -8913,7 +8930,9 @@
         cOli,
         isHit,
         hitBearer,
-        hitAmount: dedAmt
+        hitAmount: totalDedAmt,
+        hitAmountRep: hitBearer === 'both' ? dedRepInput : (hitBearer === 'rep' ? dedSingle : 0),
+        hitAmountOli: hitBearer === 'both' ? dedOliInput : (hitBearer === 'olivier' ? dedSingle : 0)
       };
     }
 
@@ -8975,6 +8994,9 @@
         const oliOpt = bearerSel.querySelector('option[value="olivier"]');
         if (oliOpt) oliOpt.disabled = !isAdmin;
         if (!isAdmin && bearerSel.value === 'olivier') bearerSel.value = 'rep';
+        const isBothMode = bearerSel.value === 'both';
+        document.getElementById('vente-hit-single-box')?.classList.toggle('hidden', isBothMode);
+        document.getElementById('vente-hit-both-box')?.classList.toggle('hidden', !isBothMode);
       }
 
       const comp = computeDrawerCommissions(val);
@@ -9052,6 +9074,8 @@
       const hitCb = document.getElementById('vente-is-hit');
       const hitBearerSel = document.getElementById('vente-hit-bearer');
       const hitAmtIn = document.getElementById('vente-hit-amount');
+      const hitAmtRepIn = document.getElementById('vente-hit-amount-rep');
+      const hitAmtOliIn = document.getElementById('vente-hit-amount-oli');
       if (hitCb && hitBearerSel && hitAmtIn) {
         hitCb.checked = !duplicate && hasHitTag;
         if (!duplicate && hasHitTag) {
@@ -9063,10 +9087,20 @@
             else bearer = 'both';
           }
           hitBearerSel.value = bearer;
-          hitAmtIn.value = ovHit?.hitAmount > 0 ? ovHit.hitAmount : '';
+          if (bearer === 'both') {
+            hitAmtIn.value = '';
+            if (hitAmtRepIn) hitAmtRepIn.value = ovHit?.hitAmountRep > 0 ? ovHit.hitAmountRep : (ovHit?.hitAmount > 0 ? Math.round((ovHit.hitAmount / 2) * 100) / 100 : '');
+            if (hitAmtOliIn) hitAmtOliIn.value = ovHit?.hitAmountOli > 0 ? ovHit.hitAmountOli : (ovHit?.hitAmount > 0 ? Math.round((ovHit.hitAmount / 2) * 100) / 100 : '');
+          } else {
+            hitAmtIn.value = ovHit?.hitAmount > 0 ? ovHit.hitAmount : '';
+            if (hitAmtRepIn) hitAmtRepIn.value = '';
+            if (hitAmtOliIn) hitAmtOliIn.value = '';
+          }
         } else {
           hitBearerSel.value = 'both';
           hitAmtIn.value = '';
+          if (hitAmtRepIn) hitAmtRepIn.value = '';
+          if (hitAmtOliIn) hitAmtOliIn.value = '';
         }
       }
 
@@ -10574,6 +10608,10 @@
       if (hitBearerSel) hitBearerSel.value = 'both';
       const hitAmtIn = document.getElementById('vente-hit-amount');
       if (hitAmtIn) hitAmtIn.value = '';
+      const hitAmtRepIn = document.getElementById('vente-hit-amount-rep');
+      if (hitAmtRepIn) hitAmtRepIn.value = '';
+      const hitAmtOliIn = document.getElementById('vente-hit-amount-oli');
+      if (hitAmtOliIn) hitAmtOliIn.value = '';
       pendingProofDataUrl = '';
       const pfIn = document.getElementById('vente-proof-file');
       if (pfIn) pfIn.value = '';
@@ -11422,7 +11460,7 @@
 
         if (editId) {
           const eff = computeDrawerCommissions(valeur);
-          const { tRep, tOli, cRep, cOli, bonusActive, rateMode, isHit, hitBearer, hitAmount } = eff;
+          const { tRep, tOli, cRep, cOli, bonusActive, rateMode, isHit, hitBearer, hitAmount, hitAmountRep, hitAmountOli } = eff;
           payload.taux_rep_applique = tRep;
           payload.taux_olivier_applique = tOli;
           payload.commission_rep = cRep;
@@ -11470,6 +11508,8 @@
               isHit,
               hitBearer,
               hitAmount,
+              hitAmountRep,
+              hitAmountOli,
               noBonus: rateMode === 'no_bonus',
               customManual: rateMode === 'custom'
             });
@@ -11489,7 +11529,7 @@
           toast(isHit ? 'Dossier HIT mis à jour 🚨' : 'Vente mise à jour');
         } else {
           const eff = computeDrawerCommissions(valeur);
-          const { tRep, tOli, cRep, cOli, bonusActive, rateMode, isHit, hitBearer, hitAmount } = eff;
+          const { tRep, tOli, cRep, cOli, bonusActive, rateMode, isHit, hitBearer, hitAmount, hitAmountRep, hitAmountOli } = eff;
           payload.taux_rep_applique = tRep;
           payload.taux_olivier_applique = tOli;
           payload.commission_rep = cRep;
@@ -11521,6 +11561,8 @@
               isHit,
               hitBearer,
               hitAmount,
+              hitAmountRep,
+              hitAmountOli,
               noBonus: rateMode === 'no_bonus',
               customManual: rateMode === 'custom'
             });
