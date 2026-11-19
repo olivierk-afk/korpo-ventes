@@ -6480,7 +6480,81 @@
         }
       });
 
+      // Calculer les RDV Bookés et RDV Réalisés (et le % Close) sur la période sous-mensuelle / sur mesure
+      const rangeStart = fakePeriodState?.mode === 'custom_range'
+        ? (fakePeriodState.startVal <= fakePeriodState.endVal ? fakePeriodState.startVal : fakePeriodState.endVal)
+        : (fakePeriodState?.weekBounds?.start || `${currentMonthStr}-01`);
+      const rangeEnd = fakePeriodState?.mode === 'custom_range'
+        ? (fakePeriodState.startVal <= fakePeriodState.endVal ? fakePeriodState.endVal : fakePeriodState.startVal)
+        : (fakePeriodState?.weekBounds?.end || currentDateStr);
+
+      const bizDaysPerMonth = new Map();
+      if (rangeStart && rangeEnd) {
+        const curDt = new Date(rangeStart + 'T00:00:00');
+        const endDt = new Date(rangeEnd + 'T00:00:00');
+        if (!isNaN(curDt.getTime()) && !isNaN(endDt.getTime())) {
+          while (curDt <= endDt) {
+            const ym = `${curDt.getFullYear()}-${String(curDt.getMonth() + 1).padStart(2, '0')}`;
+            if (!bizDaysPerMonth.has(ym)) bizDaysPerMonth.set(ym, 0);
+            const dow = curDt.getDay();
+            if (dow !== 0 && dow !== 6) bizDaysPerMonth.set(ym, bizDaysPerMonth.get(ym) + 1);
+            curDt.setDate(curDt.getDate() + 1);
+          }
+        }
+      }
+      if (!bizDaysPerMonth.size) {
+        bizDaysPerMonth.set(refYm, Math.max(1, Math.round(countBusinessDaysInMonth(refYm) * factor)));
+      }
+
+      ALL_KPI_REPS.forEach(rn => {
+        let sumBooke = 0;
+        let sumRdv = 0;
+        let sumBaseOts = 0;
+        let sumBaseSuivi = 0;
+        let sumBaseDol = 0;
+
+        bizDaysPerMonth.forEach((selBiz, ym) => {
+          const totBiz = Math.max(1, countBusinessDaysInMonth(ym));
+          const ratio = selBiz / totBiz;
+          const mData = kpiStore[ym]?.reps?.[rn];
+          if (mData) {
+            sumBooke += Number(mData['Booké']?.cumul || 0) * ratio;
+            sumRdv += Number(mData['RDV Réalisé']?.cumul || 0) * ratio;
+          }
+          const cEntry = condensedBaselineStore?.[ym]?.[rn];
+          if (cEntry) {
+            sumBaseOts += Number(cEntry.ots || 0) * ratio;
+            sumBaseSuivi += Number(cEntry.suivi || 0) * ratio;
+            sumBaseDol += Number(cEntry.dollars || 0) * ratio;
+          }
+        });
+
+        const rObj = obj.reps[rn];
+        rObj['Booké'].cumul = Math.round(sumBooke);
+        rObj['Booké'].weeks[0] = rObj['Booké'].cumul;
+        rObj['RDV Réalisé'].cumul = Math.round(sumRdv);
+        rObj['RDV Réalisé'].weeks[0] = rObj['RDV Réalisé'].cumul;
+
+        if (sumBaseOts > 0 || sumBaseSuivi > 0 || sumBaseDol > 0) {
+          rObj['Ventes OTS'].cumul += Math.round(sumBaseOts);
+          rObj['Ventes OTS'].weeks[0] = rObj['Ventes OTS'].cumul;
+          rObj['Ventes SUIVI'].cumul += Math.round(sumBaseSuivi);
+          rObj['Ventes SUIVI'].weeks[0] = rObj['Ventes SUIVI'].cumul;
+          rObj['Vente $'].cumul = Math.round((rObj['Vente $'].cumul + sumBaseDol) * 100) / 100;
+          rObj['Vente $'].weeks[0] = rObj['Vente $'].cumul;
+        }
+
+        const totV = rObj['Ventes OTS'].cumul + rObj['Ventes SUIVI'].cumul;
+        const totRdv = rObj['RDV Réalisé'].cumul;
+        rObj['% Close'].cumul = totRdv > 0 ? Math.round((totV / totRdv) * 10000) / 100 : 0;
+        rObj['% Close'].weeks[0] = rObj['% Close'].cumul;
+      });
+
       recalcTeamObjectivesForMonth(obj);
+      obj.team['Booké'].cumul = ALL_KPI_REPS.reduce((s, rn) => s + obj.reps[rn]['Booké'].cumul, 0);
+      obj.team['Booké'].weeks[0] = obj.team['Booké'].cumul;
+      obj.team['RDV RÉA'].cumul = ALL_KPI_REPS.reduce((s, rn) => s + obj.reps[rn]['RDV Réalisé'].cumul, 0);
+      obj.team['RDV RÉA'].weeks[0] = obj.team['RDV RÉA'].cumul;
       obj.team['VENTE OTS'].cumul = ALL_KPI_REPS.reduce((s, rn) => s + obj.reps[rn]['Ventes OTS'].cumul, 0);
       obj.team['VENTE SUIVI'].cumul = ALL_KPI_REPS.reduce((s, rn) => s + obj.reps[rn]['Ventes SUIVI'].cumul, 0);
       obj.team['VENTE TOTAL'].cumul = obj.team['VENTE OTS'].cumul + obj.team['VENTE SUIVI'].cumul;
