@@ -1838,6 +1838,52 @@
         <div id="classement-cards" class="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-4xl mx-auto"></div>
       </section>
 
+
+      <!-- ============================================================ -->
+      <!-- ONGLET CANAL DE CONVERSATION ÉQUIPE & VENTES EN DIRECT       -->
+      <!-- ============================================================ -->
+      <section id="tab-chat" class="hidden space-y-4">
+        <div class="max-w-4xl mx-auto bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden flex flex-col" style="height: calc(100vh - 185px); min-height: 480px; max-height: 760px;">
+          <!-- EN-TÊTE DU CANAL -->
+          <div class="px-4 sm:px-6 py-3.5 bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white flex items-center justify-between gap-3 shrink-0">
+            <div class="flex items-center gap-3 min-w-0">
+              <div class="w-10 h-10 rounded-2xl bg-emerald-500/20 border border-emerald-400/30 text-emerald-300 flex items-center justify-center text-lg font-extrabold shrink-0">
+                💬
+              </div>
+              <div class="min-w-0">
+                <div class="flex items-center gap-2">
+                  <h2 class="text-sm sm:text-base font-extrabold tracking-tight truncate"># ventes-et-equipe</h2>
+                  <span id="chat-live-pill" class="px-2 py-0.5 text-[10px] font-extrabold rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-400/30">● En direct</span>
+                </div>
+                <p class="text-[11px] text-slate-300 truncate">Chaque nouvelle vente est publiée automatiquement ici • Discussion d'équipe en temps réel</p>
+              </div>
+            </div>
+            <div class="flex items-center gap-2 shrink-0">
+              <button type="button" id="btn-chat-filter-sales" onclick="toggleChatSalesOnlyFilter()" class="px-2.5 py-1.5 text-[11px] font-bold rounded-xl bg-white/10 hover:bg-white/20 text-slate-200 transition">
+                💵 Ventes seulement
+              </button>
+              <button type="button" onclick="refreshTeamChatMessages(true)" title="Actualiser le canal" class="p-2 text-xs font-bold rounded-xl bg-white/10 hover:bg-white/20 text-white transition">
+                ↻
+              </button>
+            </div>
+          </div>
+
+          <!-- FIL DES MESSAGES ET DES VENTES -->
+          <div id="chat-messages-feed" class="flex-1 overflow-y-auto p-4 sm:p-5 space-y-3 bg-slate-50/70">
+            <div class="py-12 text-center text-xs text-slate-400">Chargement du canal de conversation...</div>
+          </div>
+
+          <!-- ZONE DE SAISIE DE MESSAGE -->
+          <form id="form-team-chat" class="p-3 sm:p-4 bg-white border-t border-slate-200 flex items-center gap-2 shrink-0">
+            <input id="chat-message-input" type="text" maxlength="800" autocomplete="off" placeholder="Écrire un message à l'équipe (félicitations, suivi, info...)..." class="flex-1 px-4 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-600" />
+            <button id="btn-send-chat" type="submit" class="px-4 sm:px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white text-xs sm:text-sm font-extrabold rounded-xl shadow-sm transition shrink-0 flex items-center gap-1.5">
+              <span>Envoyer</span>
+              <span>➤</span>
+            </button>
+          </form>
+        </div>
+      </section>
+
       <!-- ============================================================ -->
       <!-- ONGLET 4 : TOUTES LES VENTES & CSV (ADMIN UNIQUEMENT)        -->
       <!-- ============================================================ -->
@@ -3475,6 +3521,7 @@
       const mobilePrimaryTabs = [
         { id: 'tab-mes-ventes', icon: '💵', shortLabel: 'Ventes' },
         { id: 'tab-mes-commissions', icon: '💰', shortLabel: 'Commissions' },
+        { id: 'tab-chat', icon: '💬', shortLabel: 'Canal' },
         { id: 'tab-kpi', icon: '📊', shortLabel: 'KPI' },
         { id: 'tab-classement', icon: '🏆', shortLabel: 'Classement' }
       ];
@@ -3488,6 +3535,7 @@
 
       const desktopTabs = [
         { id: 'tab-mes-ventes', icon: '💵', label: 'Mes ventes & commissions' },
+        { id: 'tab-chat', icon: '💬', label: 'Canal ventes & équipe' },
         { id: 'tab-kpi', icon: '📊', label: 'Tableau KPI' },
         { id: 'tab-classement', icon: '🏆', label: 'Classement équipe' },
         ...(isAdmin ? [
@@ -3498,12 +3546,13 @@
         ] : [])
       ];
 
-      const renderMobileGrid = (items, extraCls = '') => `
-        <div class="grid grid-cols-4 gap-1 md:hidden ${extraCls}">
+      const renderMobileGrid = (items, extraCls = '', cols = 4) => `
+        <div class="grid grid-cols-${cols} gap-1 md:hidden ${extraCls}">
           ${items.map(t => `
-            <button data-tab="${t.id}" class="nav-btn flex flex-col items-center justify-center py-1.5 px-1 rounded-xl text-[11px] font-bold transition text-slate-300 hover:text-white hover:bg-slate-800">
+            <button data-tab="${t.id}" class="nav-btn relative flex flex-col items-center justify-center py-1.5 px-1 rounded-xl text-[11px] font-bold transition text-slate-300 hover:text-white hover:bg-slate-800">
               <span class="text-base leading-none mb-0.5">${t.icon}</span>
               <span class="truncate max-w-full">${t.shortLabel}</span>
+              ${t.id === 'tab-chat' ? '<span class="chat-unread-badge hidden absolute top-1 right-1.5 min-w-[16px] h-[16px] px-1 rounded-full bg-emerald-500 text-slate-950 text-[9px] font-extrabold flex items-center justify-center">0</span>' : ''}
             </button>
           `).join('')}
         </div>
@@ -3515,14 +3564,15 @@
             <button data-tab="${t.id}" class="nav-btn px-3.5 py-2 text-xs font-semibold rounded-xl transition whitespace-nowrap inline-flex items-center gap-1.5 text-slate-300 hover:text-white hover:bg-slate-800">
               <span class="text-sm leading-none">${t.icon}</span>
               <span>${t.label}</span>
+              ${t.id === 'tab-chat' ? '<span class="chat-unread-badge hidden ml-1 px-1.5 py-0.2 rounded-full bg-emerald-500 text-slate-950 text-[10px] font-extrabold">0</span>' : ''}
             </button>
           `).join('')}
         </div>
       `;
 
       nav.innerHTML =
-        renderMobileGrid(mobilePrimaryTabs) +
-        (mobileAdminTabs.length ? renderMobileGrid(mobileAdminTabs, 'pt-1 border-t border-slate-800/90') : '') +
+        renderMobileGrid(mobilePrimaryTabs, '', 5) +
+        (mobileAdminTabs.length ? renderMobileGrid(mobileAdminTabs, 'pt-1 border-t border-slate-800/90', 4) : '') +
         desktopBar;
 
       document.querySelectorAll('.nav-btn').forEach(btn => {
@@ -3600,6 +3650,13 @@
       });
       if (targetSectionId === 'tab-mes-ventes') applyMobilePersonalSplitLayout();
       if (tabId === 'tab-kpi') renderKpiDashboard();
+      if (tabId === 'tab-chat') {
+        activeChatTabOpen = true;
+        markTeamChatAsRead();
+        renderTeamChatFeed(true);
+      } else {
+        activeChatTabOpen = false;
+      }
     }
 
     // =========================================================================
@@ -4359,7 +4416,10 @@
 
     function stopAdminBackgroundSync() {
       if (adminPollingTimer) { clearInterval(adminPollingTimer); adminPollingTimer = null; }
+      if (chatPollingTimer) { clearInterval(chatPollingTimer); chatPollingTimer = null; }
       if (realtimeVentesChannel && sb) { try { sb.removeChannel(realtimeVentesChannel); } catch (e) {} }
+      if (chatRealtimeChannel && sb) { try { sb.removeChannel(chatRealtimeChannel); } catch (e) {} }
+      chatRealtimeChannel = null;
       realtimeVentesChannel = null;
       knownPendingSaleIds = new Set();
       hasInitializedPendingBaseline = false;
@@ -6560,6 +6620,377 @@
       toast('Export CSV condensé téléchargé ✓');
     });
 
+
+    // =========================================================================
+    // CANAL DE CONVERSATION ÉQUIPE & PUBLICATION AUTOMATIQUE DES VENTES
+    // =========================================================================
+    let teamChatMessages = []; // [{ id, kind: 'sale'|'msg', at, authorId, authorName, authorRole, text, saleData }]
+    let activeChatTabOpen = false;
+    let chatSalesOnlyMode = false;
+    let chatRealtimeChannel = null;
+    let chatPollingTimer = null;
+    let lastSeenChatTimestamp = localStorage.getItem('korpo_chat_last_seen_v1') || '';
+
+    function formatChatTime(isoStr) {
+      if (!isoStr) return '';
+      try {
+        const d = new Date(isoStr);
+        const isToday = localYmd(d) === localYmd(new Date());
+        const timePart = d.toLocaleTimeString('fr-CA', { hour: '2-digit', minute: '2-digit' });
+        if (isToday) return `Aujourd'hui à ${timePart}`;
+        return d.toLocaleDateString('fr-CA', { day: 'numeric', month: 'short' }) + ` • ${timePart}`;
+      } catch (e) {
+        return isoStr;
+      }
+    }
+
+    function updateChatUnreadBadges() {
+      const unreadCount = teamChatMessages.filter(m => {
+        if (String(m.authorId) === String(currentProfile?.id)) return false;
+        if (!lastSeenChatTimestamp) return true;
+        return String(m.at || '') > lastSeenChatTimestamp;
+      }).length;
+
+      document.querySelectorAll('.chat-unread-badge').forEach(el => {
+        if (unreadCount > 0 && !activeChatTabOpen) {
+          el.textContent = unreadCount > 99 ? '99+' : String(unreadCount);
+          el.classList.remove('hidden');
+        } else {
+          el.classList.add('hidden');
+        }
+      });
+    }
+
+    function markTeamChatAsRead() {
+      const latestAt = teamChatMessages.length
+        ? teamChatMessages[teamChatMessages.length - 1].at
+        : new Date().toISOString();
+      if (latestAt && (!lastSeenChatTimestamp || latestAt > lastSeenChatTimestamp)) {
+        lastSeenChatTimestamp = latestAt;
+        lsSet('korpo_chat_last_seen_v1', lastSeenChatTimestamp);
+      }
+      updateChatUnreadBadges();
+    }
+
+    window.toggleChatSalesOnlyFilter = () => {
+      chatSalesOnlyMode = !chatSalesOnlyMode;
+      const btn = document.getElementById('btn-chat-filter-sales');
+      if (btn) {
+        btn.classList.toggle('bg-emerald-500', chatSalesOnlyMode);
+        btn.classList.toggle('text-slate-950', chatSalesOnlyMode);
+        btn.classList.toggle('bg-white/10', !chatSalesOnlyMode);
+        btn.classList.toggle('text-slate-200', !chatSalesOnlyMode);
+      }
+      renderTeamChatFeed(true);
+    };
+
+    function buildTeamChatMessagesFromState() {
+      const itemsMap = new Map();
+
+      // 1. Messages & annonces stockés dans kpi_hebdo (semaine_index = -12)
+      (kpiHebdoRows || []).forEach(r => {
+        if (Number(r.semaine_index) !== -12 || !r.representant_nom) return;
+        try {
+          const parsed = JSON.parse(r.representant_nom);
+          if (parsed && parsed.id) {
+            itemsMap.set(String(parsed.id), parsed);
+          }
+        } catch (e) {}
+      });
+
+      // 2. Garantir que toutes les ventes récentes de `state.ventes` apparaissent automatiquement dans le canal
+      // (sans exposer le nom privé du client aux autres représentants si non-admin, tout en affichant Rep + Entreprise + Montant + Type)
+      const isAdminUser = currentProfile?.role === 'admin';
+      const sortedSales = [...(state.ventes || [])]
+        .sort((a, b) => String(a.created_at || a.date_vente || '').localeCompare(String(b.created_at || b.date_vente || '')))
+        .slice(-40);
+
+      sortedSales.forEach(v => {
+        const autoId = `sale_${v.id}`;
+        if (itemsMap.has(autoId)) return;
+        const repObj = state.representants.find(r => String(r.id) === String(v.representant_id));
+        const repNom = repObj?.nom || v.rep_nom || 'Représentant';
+        const entNom = state.entreprises.find(e => String(e.id) === String(v.entreprise_id))?.nom || v.entreprise_nom || 'Entreprise';
+        const isOwnSale = String(v.representant_id) === String(currentProfile?.id);
+        const rawCli = v.client_nom || state.clients.find(c => String(c.id) === String(v.client_id))?.nom || '';
+        const cliDisplay = (isAdminUser || isOwnSale) && rawCli && rawCli !== 'Client confidentiel' ? rawCli : '';
+        const noteUp = String(v.note || '').toUpperCase();
+        const typeKpi = noteUp.includes('[SUIVI]') ? 'SUIVI' : 'OTS';
+        const atIso = v.created_at || (v.date_vente ? `${v.date_vente}T12:00:00.000Z` : new Date().toISOString());
+
+        itemsMap.set(autoId, {
+          id: autoId,
+          kind: 'sale',
+          at: atIso,
+          authorId: String(v.representant_id || ''),
+          authorName: repNom,
+          authorRole: repObj?.role || 'representant',
+          saleData: {
+            saleId: String(v.id),
+            repNom,
+            entNom,
+            clientNom: cliDisplay,
+            valeur: Number(v.valeur || 0),
+            typeKpi,
+            dateVente: v.date_vente || ''
+          }
+        });
+      });
+
+      teamChatMessages = Array.from(itemsMap.values()).sort((a, b) =>
+        String(a.at || '').localeCompare(String(b.at || ''))
+      );
+      if (activeChatTabOpen) {
+        markTeamChatAsRead();
+      } else {
+        updateChatUnreadBadges();
+      }
+    }
+
+    async function publishAutoSaleToTeamChat(saleRow, repNom, entNom, clientNom, typeKpi) {
+      if (!sb || !currentProfile || !saleRow?.id) return;
+      const msgId = `sale_${saleRow.id}`;
+      const atIso = saleRow.created_at || new Date().toISOString();
+      const chatObj = {
+        id: msgId,
+        kind: 'sale',
+        at: atIso,
+        authorId: String(saleRow.representant_id || currentProfile.id),
+        authorName: repNom,
+        authorRole: currentProfile.role || 'representant',
+        saleData: {
+          saleId: String(saleRow.id),
+          repNom,
+          entNom,
+          clientNom: clientNom || '',
+          valeur: Number(saleRow.valeur || 0),
+          typeKpi: typeKpi || 'OTS',
+          dateVente: saleRow.date_vente || localYmd()
+        }
+      };
+
+      kpiHebdoRows.push({
+        mois_commission: msgId,
+        semaine_index: -12,
+        representant_nom: JSON.stringify(chatObj),
+        booke: 0,
+        rdv_realise: 0,
+        updated_at: atIso
+      });
+      buildTeamChatMessagesFromState();
+      renderTeamChatFeed(true);
+
+      await safeUpsertKpiHebdoRow({
+        mois_commission: msgId,
+        semaine_index: -12,
+        representant_nom: JSON.stringify(chatObj),
+        booke: 0,
+        rdv_realise: 0,
+        updated_at: atIso
+      });
+    }
+
+    async function postMessageToTeamChat(text) {
+      const cleanText = String(text || '').trim();
+      if (!cleanText || !sb || !currentProfile) return;
+      const nowIso = new Date().toISOString();
+      const msgId = `msg_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+      const chatObj = {
+        id: msgId,
+        kind: 'msg',
+        at: nowIso,
+        authorId: String(currentProfile.id),
+        authorName: currentProfile.nom,
+        authorRole: currentProfile.role || 'representant',
+        text: cleanText
+      };
+
+      kpiHebdoRows.push({
+        mois_commission: msgId,
+        semaine_index: -12,
+        representant_nom: JSON.stringify(chatObj),
+        booke: 0,
+        rdv_realise: 0,
+        updated_at: nowIso
+      });
+      buildTeamChatMessagesFromState();
+      renderTeamChatFeed(true);
+
+      const res = await safeUpsertKpiHebdoRow({
+        mois_commission: msgId,
+        semaine_index: -12,
+        representant_nom: JSON.stringify(chatObj),
+        booke: 0,
+        rdv_realise: 0,
+        updated_at: nowIso
+      });
+      if (res && res.error) {
+        toast('Erreur lors de l’envoi du message : ' + res.error.message, 'error');
+      }
+    }
+
+    window.deleteTeamChatMessage = async (msgId) => {
+      if (!sb || !currentProfile) return;
+      const target = teamChatMessages.find(m => String(m.id) === String(msgId));
+      if (!target) return;
+      const canDelete = currentProfile.role === 'admin' || String(target.authorId) === String(currentProfile.id);
+      if (!canDelete) return;
+
+      kpiHebdoRows = kpiHebdoRows.filter(r => !(Number(r.semaine_index) === -12 && String(r.mois_commission) === String(msgId)));
+      buildTeamChatMessagesFromState();
+      renderTeamChatFeed(false);
+
+      try {
+        await sb.from('kpi_hebdo').delete().eq('mois_commission', String(msgId)).eq('semaine_index', -12);
+      } catch (e) {}
+    };
+
+    window.sendQuickBravoInChat = async (repNom, entNom, montant) => {
+      await postMessageToTeamChat(`🔥 Félicitations ${repNom} pour la vente ${entNom} (${fmtMoney0(montant)}) ! 👏`);
+    };
+
+    function renderTeamChatFeed(scrollToBottom = false) {
+      const feed = document.getElementById('chat-messages-feed');
+      if (!feed) return;
+      const isAdminUser = currentProfile?.role === 'admin';
+      const list = chatSalesOnlyMode
+        ? teamChatMessages.filter(m => m.kind === 'sale')
+        : teamChatMessages;
+
+      if (!list.length) {
+        feed.innerHTML = `
+          <div class="py-16 text-center space-y-2">
+            <div class="text-3xl">💬</div>
+            <div class="text-sm font-extrabold text-slate-700">Aucun message dans le canal pour le moment</div>
+            <p class="text-xs text-slate-400">Dès qu'un représentant enregistrera une vente ou écrira un message, il apparaîtra ici en direct.</p>
+          </div>
+        `;
+        return;
+      }
+
+      feed.innerHTML = list.map(m => {
+        const isMe = String(m.authorId) === String(currentProfile?.id);
+        const canDel = isAdminUser || (m.kind === 'msg' && isMe);
+
+        if (m.kind === 'sale') {
+          const sd = m.saleData || {};
+          const showClient = (isAdminUser || isMe) && sd.clientNom && sd.clientNom !== 'Client confidentiel';
+          return `
+            <div class="bg-gradient-to-r from-emerald-50/90 via-white to-indigo-50/70 border border-emerald-200/90 rounded-2xl p-3.5 sm:p-4 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div class="flex items-start gap-3 min-w-0">
+                <div class="w-10 h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center text-lg font-extrabold shrink-0 shadow-xs">
+                  💵
+                </div>
+                <div class="min-w-0 space-y-1">
+                  <div class="flex items-center flex-wrap gap-1.5">
+                    <span class="px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wider rounded-full bg-emerald-100 text-emerald-800">Nouvelle vente</span>
+                    <span class="text-xs sm:text-sm font-extrabold text-slate-900">${esc(sd.repNom || m.authorName)}</span>
+                    <span class="text-[11px] text-slate-400">• ${esc(formatChatTime(m.at))}</span>
+                  </div>
+                  <div class="flex items-center flex-wrap gap-1.5 text-xs text-slate-700">
+                    ${entBadge(sd.entNom || 'Entreprise')}
+                    <span class="px-1.5 py-0.5 text-[10px] font-extrabold rounded border ${sd.typeKpi === 'SUIVI' ? 'bg-purple-50 text-purple-700 border-purple-200' : 'bg-sky-50 text-sky-700 border-sky-200'}">${esc(sd.typeKpi || 'OTS')}</span>
+                    ${showClient ? `<span class="font-bold text-slate-800">• ${esc(sd.clientNom)}</span>` : ''}
+                  </div>
+                </div>
+              </div>
+              <div class="flex items-center justify-between sm:justify-end gap-2.5 shrink-0 pl-13 sm:pl-0">
+                <div class="text-right tabular-nums">
+                  <div class="text-base sm:text-lg font-extrabold text-emerald-700">${fmtMoney(sd.valeur)}</div>
+                </div>
+                ${!isMe ? `<button type="button" onclick="sendQuickBravoInChat('${esc(sd.repNom || m.authorName)}', '${esc(sd.entNom || '')}', ${Number(sd.valeur || 0)})" title="Féliciter dans le canal" class="px-2.5 py-1.5 text-xs font-extrabold bg-amber-100 hover:bg-amber-200 text-amber-900 rounded-xl transition">👏 Bravo</button>` : ''}
+              </div>
+            </div>
+          `;
+        }
+
+        const initials = String(m.authorName || '?').slice(0, 2).toUpperCase();
+        const isAuthorAdmin = m.authorRole === 'admin';
+        return `
+          <div class="flex items-start gap-2.5 ${isMe ? 'flex-row-reverse' : ''}">
+            <div class="w-8 h-8 rounded-full ${isAuthorAdmin ? 'bg-slate-900 text-amber-300' : (isMe ? 'bg-indigo-600 text-white' : 'bg-slate-200 text-slate-700')} text-[11px] font-extrabold flex items-center justify-center shrink-0 mt-0.5">
+              ${esc(initials)}
+            </div>
+            <div class="max-w-[82%] sm:max-w-[70%] space-y-1 ${isMe ? 'items-end text-right' : ''}">
+              <div class="flex items-center gap-1.5 text-[11px] ${isMe ? 'justify-end' : ''}">
+                <span class="font-extrabold text-slate-800">${esc(m.authorName)}</span>
+                ${isAuthorAdmin ? '<span class="px-1.5 py-0.2 text-[9px] font-extrabold rounded bg-amber-100 text-amber-800">Direction</span>' : ''}
+                <span class="text-slate-400">${esc(formatChatTime(m.at))}</span>
+              </div>
+              <div class="inline-block text-left px-3.5 py-2.5 rounded-2xl text-xs sm:text-sm leading-relaxed break-words shadow-2xs ${isMe ? 'bg-indigo-600 text-white rounded-tr-sm' : 'bg-white border border-slate-200/90 text-slate-800 rounded-tl-sm'}">
+                ${esc(m.text)}
+              </div>
+              ${canDel ? `<div><button type="button" onclick="deleteTeamChatMessage('${esc(m.id)}')" class="text-[10px] text-slate-400 hover:text-rose-600 transition">Supprimer</button></div>` : ''}
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      if (scrollToBottom) {
+        feed.scrollTop = feed.scrollHeight;
+      }
+    }
+
+    let refreshingChatNow = false;
+    window.refreshTeamChatMessages = async (forceScroll = false) => {
+      if (!sb || !currentProfile || refreshingChatNow) return;
+      refreshingChatNow = true;
+      try {
+        const rows = await fetchAllRows(() =>
+          sb.from('kpi_hebdo').select('*').eq('semaine_index', -12).order('id')
+        );
+        kpiHebdoRows = [
+          ...(kpiHebdoRows || []).filter(r => Number(r.semaine_index) !== -12),
+          ...rows
+        ];
+        buildTeamChatMessagesFromState();
+        renderTeamChatFeed(forceScroll);
+      } catch (e) {
+        console.warn('Actualisation canal:', e.message);
+      } finally {
+        refreshingChatNow = false;
+      }
+    };
+
+    function subscribeToTeamChatRealtime() {
+      if (!sb || !currentProfile) return;
+      buildTeamChatMessagesFromState();
+      renderTeamChatFeed(true);
+
+      if (!chatRealtimeChannel) {
+        chatRealtimeChannel = sb
+          .channel('korpo-team-chat-' + Date.now())
+          .on('postgres_changes', { event: '*', schema: 'public', table: 'kpi_hebdo' }, async (payload) => {
+            const sIdx = Number(payload?.new?.semaine_index ?? payload?.old?.semaine_index);
+            if (sIdx === -12) {
+              await refreshTeamChatMessages(activeChatTabOpen);
+            }
+          })
+          .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'ventes' }, async () => {
+            await refreshTeamChatMessages(activeChatTabOpen);
+          })
+          .subscribe((status) => {
+            if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+              chatRealtimeChannel = null;
+            }
+          });
+      }
+
+      if (!chatPollingTimer) {
+        chatPollingTimer = setInterval(() => refreshTeamChatMessages(false), 12000);
+      }
+    }
+
+    document.getElementById('form-team-chat')?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const input = document.getElementById('chat-message-input');
+      if (!input) return;
+      const val = input.value.trim();
+      if (!val) return;
+      input.value = '';
+      await postMessageToTeamChat(val);
+    });
+
     // CHARGEMENT SUPABASE (VENTES & COMMISSIONS)
     // =========================================================================
     async function loadAllDataInner() {
@@ -6675,6 +7106,7 @@
       renderMesVentes();
       renderClassement();
       renderKpiDashboard();
+      subscribeToTeamChatRealtime();
     }
 
     async function loadAllData() {
@@ -9543,6 +9975,16 @@
           toast('Vente enregistrée avec succès');
           const repObjCel = state.representants.find(r => String(r.id) === String(repId));
           const entObjCel = state.entreprises.find(en => String(en.id) === String(entId));
+          if (insertedRow?.id) {
+            const typeKpiVal = document.getElementById('vente-type-kpi')?.value || 'OTS';
+            await publishAutoSaleToTeamChat(
+              insertedRow,
+              repObjCel?.nom || currentProfile?.nom || 'Représentant',
+              entObjCel?.nom || 'Entreprise',
+              clientNom.trim(),
+              typeKpiVal
+            );
+          }
           const shownComm = (currentProfile?.role === 'admin' && String(repId) !== String(currentProfile?.id))
             ? payload.commission_olivier
             : payload.commission_rep;
