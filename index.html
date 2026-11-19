@@ -7930,6 +7930,8 @@
             r.note = noteByIdMap.get(String(r.id));
           }
         });
+        document.getElementById('filter-admin-scope')?.classList.add('hidden');
+        document.getElementById('th-rep-col')?.classList.add('hidden');
         state.representants = (allRepsPublicRows && allRepsPublicRows.length) ? allRepsPublicRows : [currentProfile];
         state.mesVentes = mesVentesRows;
 
@@ -8412,6 +8414,9 @@
       const inspectedRepObj = isInspectingRep
         ? state.representants.find(r => String(r.id) === inspectedRepId)
         : null;
+      const showRepCol = isAdmin && !isInspectingRep;
+      const thRepColEl = document.getElementById('th-rep-col');
+      if (thRepColEl) thRepColEl.classList.toggle('hidden', !showRepCol);
 
       const subtitleEl = document.getElementById('mes-ventes-subtitle');
       const commCardTitleEl = document.getElementById('kpi-rep-comm-mois')?.parentElement?.querySelector('span');
@@ -8525,7 +8530,7 @@
       const mobileCardsBox = document.getElementById('mobile-mes-ventes-cards');
       const mobileCommCardsBox = document.getElementById('mobile-mes-commissions-cards');
       if (!filtered.length) {
-        tbody.innerHTML = `<tr><td colspan="${isAdmin ? 7 : 6}" class="py-12 text-center text-sm text-slate-400">Aucune vente enregistrée pour cette période.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="${showRepCol ? 7 : 6}" class="py-12 text-center text-sm text-slate-400">Aucune vente enregistrée pour cette période.</td></tr>`;
         if (mobileCardsBox) {
           mobileCardsBox.innerHTML = `<div class="bg-white rounded-2xl border border-slate-200/80 p-8 text-center text-xs text-slate-400">Aucune vente enregistrée pour cette période.</div>`;
         }
@@ -8659,7 +8664,7 @@
               ${cleanNote ? `<span class="text-[11px] text-slate-400 truncate max-w-[230px]">${esc(cleanNote)}</span>` : ''}
             </div>
           </td>
-          ${isAdmin ? `<td class="py-3.5 px-4 text-xs font-semibold text-slate-700 whitespace-nowrap align-middle">${esc(v.rep_nom || '—')}</td>` : ''}
+          ${showRepCol ? `<td class="py-3.5 px-4 text-xs font-semibold text-slate-700 whitespace-nowrap align-middle">${esc(v.rep_nom || '—')}</td>` : ''}
           <td class="py-3.5 px-4 text-right font-bold text-slate-900 tabular-nums whitespace-nowrap align-middle">${fmtMoney(v.valeur)}</td>
           <td class="py-3.5 px-4 text-right tabular-nums whitespace-nowrap align-middle">
             <div class="font-extrabold ${Number(v.commission_rep) < 0 ? 'text-rose-600' : 'text-emerald-600'}">${fmtMoney(v.commission_rep)}</div>
@@ -8682,14 +8687,14 @@
             </div>
           </td>
           <td class="py-3.5 px-4 text-right whitespace-nowrap align-middle">
-            <div class="inline-flex items-center gap-1">
+            <div class="inline-flex items-center justify-end gap-1.5">
               ${proofSrc
-                ? `<button type="button" onclick="openProofModal('${v.id}')" title="Voir la preuve photo" class="p-1.5 text-xs font-bold rounded-lg bg-indigo-50 text-indigo-700 hover:bg-indigo-100 transition">📷</button>`
-                : `<label title="Ajouter une preuve photo" class="cursor-pointer p-1.5 text-xs font-semibold rounded-lg text-slate-400 hover:bg-slate-100 hover:text-indigo-700 transition">+📷<input type="file" accept="image/*" class="sr-only" onchange="attachProofToExistingSale('${v.id}', this.files[0])" /></label>`
+                ? `<button type="button" onclick="openProofModal('${v.id}')" title="Voir la preuve photo" class="px-2 py-1 text-xs font-bold rounded-lg bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-200/70 transition">📷</button>`
+                : `<label title="Ajouter une preuve photo" class="cursor-pointer px-2 py-1 text-xs font-semibold rounded-lg bg-slate-100 text-slate-600 hover:bg-indigo-50 hover:text-indigo-700 transition">+📷<input type="file" accept="image/*" class="sr-only" onchange="attachProofToExistingSale('${v.id}', this.files[0])" /></label>`
               }
-              <button type="button" onclick="openSaleAuditModal('${v.id}')" title="Historique du dossier" class="p-1.5 text-xs rounded-lg text-slate-400 hover:text-indigo-700 hover:bg-slate-100 transition">🕒</button>
+              <button type="button" onclick="openSaleAuditModal('${v.id}')" title="Historique du dossier" class="px-2 py-1 text-xs rounded-lg bg-slate-100 text-slate-600 hover:text-indigo-700 hover:bg-indigo-50 transition">🕒</button>
               ${canDelete
-                ? `<button type="button" onclick="deleteVente('${v.id}')" title="Supprimer" class="p-1.5 text-xs rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition">🗑️</button>`
+                ? `<button type="button" onclick="deleteVente('${v.id}')" title="Supprimer" class="px-2 py-1 text-xs rounded-lg bg-rose-50 text-rose-600 hover:bg-rose-100 transition">🗑️</button>`
                 : ''
               }
             </div>
