@@ -2361,6 +2361,47 @@
           <div id="dash-monthly-chart" class="grid grid-cols-3 sm:grid-cols-6 lg:grid-cols-12 gap-3 items-end pt-4 min-h-[180px]"></div>
         </div>
 
+        <!-- VENTES & COMMISSIONS PLANIFIÉES DANS LES MOIS ULTÉRIEURS -->
+        <div id="dash-future-sales-card" class="bg-white rounded-2xl border border-indigo-200/90 p-5 sm:p-6 shadow-xs space-y-5">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+              <div class="flex flex-wrap items-center gap-2">
+                <span class="px-2.5 py-0.5 text-[10px] font-extrabold uppercase tracking-wider rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200">Pipeline futur</span>
+                <h3 class="text-base font-extrabold text-slate-900">📅 Ventes & commissions planifiées (Mois ultérieurs)</h3>
+              </div>
+              <p class="text-xs text-slate-500 mt-0.5">Toutes les ventes dont le mois de commission ou la date est postérieur au mois en cours, ventilées par représentant et par mois à venir</p>
+            </div>
+            <div class="flex flex-wrap items-center gap-2 shrink-0">
+              <select id="dash-future-month-filter" class="px-3 py-1.5 text-xs font-bold bg-indigo-50/70 text-indigo-950 border border-indigo-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-600 cursor-pointer">
+                <option value="ALL">Tous les mois futurs</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- 4 CARTES RÉCAPITULATIVES DES MOIS ULTÉRIEURS -->
+          <div id="dash-future-kpis" class="grid grid-cols-2 lg:grid-cols-4 gap-3"></div>
+
+          <!-- CARTES MOBILES (< 768px) -->
+          <div id="mobile-dash-future-reps" class="md:hidden space-y-2.5"></div>
+
+          <!-- TABLEAU DESKTOP PAR REPRÉSENTANT (>= 768px) -->
+          <div class="hidden md:block overflow-x-auto border border-slate-200/80 rounded-xl">
+            <table class="w-full text-left border-collapse text-sm">
+              <thead>
+                <tr class="bg-slate-50/90 border-b border-slate-200 text-[11px] font-bold uppercase text-slate-500">
+                  <th class="py-3 px-4">Représentant</th>
+                  <th class="py-3 px-4">Détail par mois ultérieur</th>
+                  <th class="py-3 px-3 text-center">Nb ventes</th>
+                  <th class="py-3 px-4 text-right">Volume ventes</th>
+                  <th class="py-3 px-4 text-right text-amber-700">Comm. Rep à venir</th>
+                  <th class="py-3 px-4 text-right text-emerald-700">Comm. Olivier à venir</th>
+                </tr>
+              </thead>
+              <tbody id="tbody-dash-future-reps" class="divide-y divide-slate-100"></tbody>
+            </table>
+          </div>
+        </div>
+
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <div class="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-xs">
             <h3 class="text-sm font-bold text-slate-900 mb-4">Répartition & relevés de paie par représentant</h3>
@@ -6922,6 +6963,7 @@
         document.getElementById('kpi-import-preview-box').classList.add('hidden');
         renderKpiDashboard();
         renderExecutiveForecast();
+      renderFutureMonthsBreakdown();
         toast(`Fichier condensé enregistré sur ${impactedMonths.size} mois ! Vos futures ventes s'y ajouteront automatiquement ✓`);
       } catch (err) {
         toast('Erreur lors de l’enregistrement : ' + err.message, 'error');
@@ -9589,6 +9631,154 @@
       }).join('');
     }
 
+    function getSaleTargetFutureMonth(v) {
+      if (!v) return '';
+      const commYm = (v.mois_commission || '').trim().slice(0, 7);
+      const dateYm = (v.date_vente || '').trim().slice(0, 7);
+      if (isValidYearMonth(commYm) && commYm > currentMonthStr) return commYm;
+      if (isValidYearMonth(dateYm) && dateYm > currentMonthStr) return dateYm;
+      return '';
+    }
+
+    function renderFutureMonthsBreakdown() {
+      const kpisBox = document.getElementById('dash-future-kpis');
+      const tbody = document.getElementById('tbody-dash-future-reps');
+      const mobileBox = document.getElementById('mobile-dash-future-reps');
+      const monthSel = document.getElementById('dash-future-month-filter');
+      if (!kpisBox || !tbody || !mobileBox) return;
+
+      const allFutureSales = (state.ventes || []).filter(v => Boolean(getSaleTargetFutureMonth(v)));
+      const futureMonthsSet = new Set(allFutureSales.map(v => getSaleTargetFutureMonth(v)).filter(Boolean));
+      const futureMonthsSorted = Array.from(futureMonthsSet).sort();
+
+      if (monthSel) {
+        const prevVal = monthSel.value || 'ALL';
+        monthSel.innerHTML = `<option value="ALL">Tous les mois futurs (${futureMonthsSorted.length})</option>` +
+          futureMonthsSorted.map(ym => `<option value="${ym}">${esc(formatYearMonthLabelFr(ym))}</option>`).join('');
+        monthSel.value = (prevVal === 'ALL' || futureMonthsSorted.includes(prevVal)) ? prevVal : 'ALL';
+      }
+
+      const selectedFutureYm = monthSel?.value || 'ALL';
+      const scopedFutureSales = selectedFutureYm === 'ALL'
+        ? allFutureSales
+        : allFutureSales.filter(v => getSaleTargetFutureMonth(v) === selectedFutureYm);
+
+      const totCount = scopedFutureSales.length;
+      const totVol = scopedFutureSales.reduce((s, v) => s + Number(v.valeur || 0), 0);
+      const totCommRep = scopedFutureSales.reduce((s, v) => s + Number(v.commission_rep || 0), 0);
+      const totCommOli = scopedFutureSales.reduce((s, v) => s + Number(v.commission_olivier || 0), 0);
+
+      kpisBox.innerHTML = `
+        <div class="bg-slate-50/90 rounded-xl border border-slate-200/80 p-3.5">
+          <div class="text-[11px] font-semibold text-slate-500">Ventes planifiées</div>
+          <div class="text-xl font-extrabold text-slate-900 mt-1 tabular-nums">${totCount} <span class="text-xs font-semibold text-slate-400">dossier(s)</span></div>
+          <div class="text-[10px] text-slate-400 mt-0.5">${selectedFutureYm === 'ALL' ? `Sur ${futureMonthsSorted.length} mois futur(s)` : esc(formatYearMonthLabelFr(selectedFutureYm))}</div>
+        </div>
+        <div class="bg-slate-50/90 rounded-xl border border-slate-200/80 p-3.5">
+          <div class="text-[11px] font-semibold text-slate-500">Volume ventes futures</div>
+          <div class="text-xl font-extrabold text-indigo-700 mt-1 tabular-nums">${fmtMoney(totVol)}</div>
+          <div class="text-[10px] text-slate-400 mt-0.5">Contrats reportés / à venir</div>
+        </div>
+        <div class="bg-amber-50/70 rounded-xl border border-amber-200/80 p-3.5">
+          <div class="text-[11px] font-semibold text-amber-900">Commissions Rep à venir</div>
+          <div class="text-xl font-extrabold text-amber-700 mt-1 tabular-nums">${fmtMoney(totCommRep)}</div>
+          <div class="text-[10px] text-amber-800/80 mt-0.5">À verser aux représentants</div>
+        </div>
+        <div class="bg-emerald-50/70 rounded-xl border border-emerald-200/80 p-3.5">
+          <div class="text-[11px] font-semibold text-emerald-900">Commissions Olivier à venir</div>
+          <div class="text-xl font-extrabold text-emerald-700 mt-1 tabular-nums">${fmtMoney(totCommOli)}</div>
+          <div class="text-[10px] text-emerald-800/80 mt-0.5">Votre part sur mois ultérieurs</div>
+        </div>
+      `;
+
+      const repSummaries = state.representants.map(r => {
+        const repSales = scopedFutureSales.filter(v => String(v.representant_id) === String(r.id));
+        const byYmMap = new Map();
+        repSales.forEach(v => {
+          const fYm = getSaleTargetFutureMonth(v);
+          if (!fYm) return;
+          const cur = byYmMap.get(fYm) || { count: 0, val: 0, cRep: 0, cOli: 0 };
+          cur.count += 1;
+          cur.val += Number(v.valeur || 0);
+          cur.cRep += Number(v.commission_rep || 0);
+          cur.cOli += Number(v.commission_olivier || 0);
+          byYmMap.set(fYm, cur);
+        });
+        const monthsBreakdown = Array.from(byYmMap.entries()).sort((a, b) => a[0].localeCompare(b[0]));
+        return {
+          rep: r,
+          count: repSales.length,
+          vol: repSales.reduce((s, v) => s + Number(v.valeur || 0), 0),
+          cRep: repSales.reduce((s, v) => s + Number(v.commission_rep || 0), 0),
+          cOli: repSales.reduce((s, v) => s + Number(v.commission_olivier || 0), 0),
+          monthsBreakdown
+        };
+      }).sort((a, b) => b.count - a.count || b.vol - a.vol);
+
+      if (!scopedFutureSales.length) {
+        tbody.innerHTML = `<tr><td colspan="6" class="py-8 text-center text-xs text-slate-400">Aucune vente planifiée dans un mois ultérieur pour le moment.</td></tr>`;
+        mobileBox.innerHTML = `<div class="py-6 text-center text-xs text-slate-400 bg-slate-50 rounded-xl border border-slate-200/80">Aucune vente planifiée dans un mois ultérieur.</div>`;
+        return;
+      }
+
+      tbody.innerHTML = repSummaries.map(item => {
+        const pillsHtml = item.monthsBreakdown.length
+          ? item.monthsBreakdown.map(([ym, info]) => `
+              <button type="button" onclick="selectDashMonth('${ym}')" title="Filtrer le tableau de bord sur ${esc(formatYearMonthLabelFr(ym))}" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-900 border border-indigo-200/80 text-[11px] font-bold transition tabular-nums">
+                <span>${esc(formatYearMonthLabelFr(ym, true))} :</span>
+                <span class="px-1.5 py-0.2 rounded bg-indigo-600 text-white text-[10px]">${info.count}</span>
+                <span class="text-slate-600 font-semibold">(${fmtMoney0(info.val)})</span>
+              </button>
+            `).join(' ')
+          : `<span class="text-xs text-slate-400 italic">Aucune vente future</span>`;
+
+        return `
+          <tr class="${item.count === 0 ? 'opacity-50' : 'hover:bg-slate-50/90'} transition">
+            <td class="py-3 px-4 font-extrabold text-slate-900 whitespace-nowrap">${esc(item.rep.nom)}</td>
+            <td class="py-3 px-4"><div class="flex flex-wrap gap-1.5">${pillsHtml}</div></td>
+            <td class="py-3 px-3 text-center tabular-nums">
+              <span class="inline-flex items-center justify-center min-w-[28px] px-2 py-0.5 rounded-full text-xs font-extrabold ${item.count > 0 ? 'bg-indigo-100 text-indigo-800' : 'bg-slate-100 text-slate-500'}">${item.count}</span>
+            </td>
+            <td class="py-3 px-4 text-right tabular-nums font-bold text-slate-900 whitespace-nowrap">${fmtMoney(item.vol)}</td>
+            <td class="py-3 px-4 text-right tabular-nums font-extrabold text-amber-600 whitespace-nowrap">${fmtMoney(item.cRep)}</td>
+            <td class="py-3 px-4 text-right tabular-nums font-extrabold text-emerald-600 whitespace-nowrap">${fmtMoney(item.cOli)}</td>
+          </tr>
+        `;
+      }).join('');
+
+      mobileBox.innerHTML = repSummaries.filter(x => x.count > 0).map(item => `
+        <div class="bg-slate-50/80 rounded-xl border border-slate-200/90 p-3.5 space-y-2.5">
+          <div class="flex items-center justify-between">
+            <span class="font-extrabold text-sm text-slate-900">${esc(item.rep.nom)}</span>
+            <span class="px-2.5 py-0.5 rounded-full text-xs font-extrabold bg-indigo-100 text-indigo-800 tabular-nums">${item.count} vente(s)</span>
+          </div>
+          <div class="flex flex-wrap gap-1.5">
+            ${item.monthsBreakdown.map(([ym, info]) => `
+              <button type="button" onclick="selectDashMonth('${ym}')" class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-white border border-indigo-200 text-[11px] font-bold text-indigo-900 tabular-nums">
+                <span>${esc(formatYearMonthLabelFr(ym, true))} :</span>
+                <span class="text-indigo-600">${info.count}</span>
+                <span class="text-slate-500 font-normal">(${fmtMoney0(info.val)})</span>
+              </button>
+            `).join('')}
+          </div>
+          <div class="grid grid-cols-3 gap-2 pt-2 border-t border-slate-200/80 text-[11px] tabular-nums">
+            <div>
+              <span class="text-slate-400 block">Volume</span>
+              <strong class="text-slate-900">${fmtMoney0(item.vol)}</strong>
+            </div>
+            <div>
+              <span class="text-slate-400 block">Comm. Rep</span>
+              <strong class="text-amber-700">${fmtMoney(item.cRep)}</strong>
+            </div>
+            <div class="text-right">
+              <span class="text-slate-400 block">Comm. Olivier</span>
+              <strong class="text-emerald-700">${fmtMoney(item.cOli)}</strong>
+            </div>
+          </div>
+        </div>
+      `).join('');
+    }
+
     window.openPayslipModal = (repId) => {
       const rep = state.representants.find(r => r.id === repId);
       if (!rep) return;
@@ -11421,6 +11611,7 @@
     });
 
     document.getElementById('filter-admin-scope')?.addEventListener('change', renderMesVentes);
+    document.getElementById('dash-future-month-filter')?.addEventListener('change', renderFutureMonthsBreakdown);
 
     document.getElementById('vente-entreprise')?.addEventListener('change', updateClientDatalist);
     document.getElementById('taux-ent')?.addEventListener('change', updateTauxClientSelect);
