@@ -9168,15 +9168,19 @@
         `;
       }
 
-      // 2. PODIUM TOP 3 (Ordre visuel sur desktop : #2 à gauche, #1 au centre surélevé, #3 à droite)
+      // 2. PODIUM TOP 3 (Sur mobile : #1 en haut, #2 puis #3 ; sur desktop : #2 à gauche, #1 au centre surélevé, #3 à droite)
       const podiumBox = document.getElementById('classement-podium');
       if (podiumBox) {
         const top3 = enriched.slice(0, 3);
         const podiumOrder = top3.length === 3
-          ? [{ r: top3[1], rank: 2 }, { r: top3[0], rank: 1 }, { r: top3[2], rank: 3 }]
-          : top3.map((r, i) => ({ r, rank: i + 1 }));
+          ? [
+              { r: top3[1], rank: 2, orderCls: 'order-2 md:order-1' },
+              { r: top3[0], rank: 1, orderCls: 'order-1 md:order-2' },
+              { r: top3[2], rank: 3, orderCls: 'order-3 md:order-3' }
+            ]
+          : top3.map((r, i) => ({ r, rank: i + 1, orderCls: `order-${i + 1}` }));
 
-        podiumBox.innerHTML = podiumOrder.map(({ r, rank }, pIdx) => {
+        podiumBox.innerHTML = podiumOrder.map(({ r, rank, orderCls }, pIdx) => {
           const isFirst = rank === 1;
           const isSecond = rank === 2;
           const isMe = r.nom === currentProfile.nom;
@@ -9196,7 +9200,7 @@
             : (isFirst ? 'bg-gradient-to-r from-amber-500 to-orange-400' : 'bg-gradient-to-r from-indigo-600 to-sky-500');
 
           return `
-            <div style="animation-delay: ${pIdx * 55}ms" class="rank-card-smooth rounded-3xl p-5 text-center space-y-3 ${podiumCls} ${isMe ? 'ring-2 ring-indigo-500/45' : ''}">
+            <div style="animation-delay: ${(rank - 1) * 55}ms" class="${orderCls} rank-card-smooth rounded-3xl p-5 text-center space-y-3 ${podiumCls} ${isMe ? 'ring-2 ring-indigo-500/45' : ''}">
               <div class="flex items-center justify-center gap-2">
                 <span class="px-3 py-0.5 text-[11px] font-extrabold rounded-full ${badgeStyle}">${crownOrMedal} #${rank}</span>
                 ${isMe ? '<span class="px-2 py-0.5 text-[10px] font-extrabold uppercase rounded-full bg-indigo-600 text-white">Vous</span>' : ''}
