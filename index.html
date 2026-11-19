@@ -11825,6 +11825,7 @@
         const clientNom = document.getElementById('vente-client-nom').value;
         const clientId = await getOrCreateClient(clientNom, entId);
         const valeur = parseFloat(document.getElementById('vente-valeur').value);
+        if (!Number.isFinite(valeur) || valeur <= 0) throw new Error('Montant de vente invalide.');
 
         const payload = {
           representant_id: repId,
@@ -11849,6 +11850,7 @@
           })()
         };
 
+        let insertedRow = null; // portée de toute la soumission (utilisé plus bas pour la réconciliation des doublons)
         if (editId) {
           const eff = computeDrawerCommissions(valeur);
           const { tRep, tOli, cRep, cOli, bonusActive, rateMode, isHit, hitBearer, hitAmount, hitAmountRep, hitAmountOli } = eff;
@@ -11928,7 +11930,8 @@
 
           window._justCreatedSaleClientSide = true;
           if (pendingProofDataUrl) payload.preuve_url = pendingProofDataUrl;
-          let { data: insertedRow, error } = await sb.from('ventes').insert(payload).select().single();
+          let error;
+          ({ data: insertedRow, error } = await sb.from('ventes').insert(payload).select().single());
           if (error && pendingProofDataUrl && (error.message || '').includes('preuve_url')) {
             delete payload.preuve_url;
             const retryRes = await sb.from('ventes').insert(payload).select().single();
@@ -12016,7 +12019,7 @@
           if (kpiMonthSel) kpiMonthSel.value = savedSaleYm;
         }
         if (payload.statut_depot === 'depot_recu') {
-          const targetId = editId || (typeof insertedRow !== 'undefined' && insertedRow?.id ? insertedRow.id : null);
+          const targetId = editId || (insertedRow?.id ? insertedRow.id : null);
           if (targetId) {
             await loadAllData();
             const merged = await reconcilePreviousUnconfirmedDuplicateSales([targetId]);
