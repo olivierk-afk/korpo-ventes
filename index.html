@@ -1895,7 +1895,7 @@
         </div>
 
         <!-- CARTES MOBILES DES VENTES (< 768px : ONGLET MES VENTES) -->
-        <div data-mobile-group="ventes" class="md:hidden space-y-3">
+        <div data-mobile-group="ventes" class="block md:hidden space-y-3">
           <div class="flex items-center justify-between px-3 py-2 rounded-xl bg-indigo-50/80 border border-indigo-200/80">
             <span class="text-xs font-extrabold uppercase tracking-wider text-indigo-900">📊 Liste des ventes</span>
             <button type="button" onclick="switchTab('tab-mes-commissions')" class="text-xs font-bold text-emerald-700 hover:underline">Aller aux commissions →</button>
@@ -1904,7 +1904,7 @@
         </div>
 
         <!-- CARTES MOBILES DES COMMISSIONS (< 768px : ONGLET MES COMMISSIONS) -->
-        <div data-mobile-group="commissions" class="md:hidden space-y-3">
+        <div data-mobile-group="commissions" class="block md:hidden space-y-3">
           <div class="flex items-center justify-between px-3 py-2 rounded-xl bg-emerald-50/80 border border-emerald-200/80">
             <span class="text-xs font-extrabold uppercase tracking-wider text-emerald-900">💰 Liste des commissions</span>
             <button type="button" onclick="switchTab('tab-mes-ventes')" class="text-xs font-bold text-indigo-700 hover:underline">← Retour aux ventes</button>
@@ -1912,8 +1912,12 @@
           <div id="mobile-mes-commissions-cards" class="space-y-3"></div>
         </div>
 
-        <!-- TABLEAU DES VENTES (DESKTOP >= 768px) -->
-        <div class="hidden md:block bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden">
+        <!-- TABLEAU DES VENTES (DESKTOP >= 768px — SECTION VENTES) -->
+        <div data-mobile-group="ventes" class="hidden md:block bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden">
+          <div class="px-5 py-3 bg-indigo-50/70 border-b border-indigo-200/80 flex items-center justify-between">
+            <span class="text-xs font-extrabold uppercase tracking-wider text-indigo-900">📊 Dossiers & Ventes enregistrées</span>
+            <button type="button" onclick="switchTab('tab-mes-commissions')" class="text-xs font-bold text-emerald-700 hover:underline">Voir mes commissions →</button>
+          </div>
           <div class="overflow-x-auto">
             <table class="w-full text-left border-collapse">
               <thead>
@@ -1921,13 +1925,36 @@
                   <th onclick="toggleSortMesVentes('date_vente')" class="py-3.5 px-4 cursor-pointer hover:text-indigo-600 transition group">Date <span id="sort-ind-mes-date_vente" class="ml-1 text-indigo-600">↓</span></th>
                   <th onclick="toggleSortMesVentes('client_nom')" class="py-3.5 px-4 cursor-pointer hover:text-indigo-600 transition group">Dossier & Client <span id="sort-ind-mes-client_nom" class="ml-1 text-slate-300 group-hover:text-indigo-400">⇅</span></th>
                   <th id="th-rep-col" onclick="toggleSortMesVentes('rep_nom')" class="hidden py-3.5 px-4 cursor-pointer hover:text-indigo-600 transition group">Représentant <span id="sort-ind-mes-rep_nom" class="ml-1 text-slate-300 group-hover:text-indigo-400">⇅</span></th>
-                  <th onclick="toggleSortMesVentes('valeur')" class="py-3.5 px-4 text-right cursor-pointer hover:text-indigo-600 transition group">Vente <span id="sort-ind-mes-valeur" class="ml-1 text-slate-300 group-hover:text-indigo-400">⇅</span></th>
-                  <th onclick="toggleSortMesVentes('commission_rep')" class="py-3.5 px-4 text-right cursor-pointer hover:text-emerald-700 transition group">Ma commission <span id="sort-ind-mes-commission_rep" class="ml-1 text-slate-300 group-hover:text-emerald-500">⇅</span></th>
-                  <th onclick="toggleSortMesVentes('statut_depot')" class="py-3.5 px-4 cursor-pointer hover:text-indigo-600 transition group">Suivi & Paiement <span id="sort-ind-mes-statut_depot" class="ml-1 text-slate-300 group-hover:text-indigo-400">⇅</span></th>
+                  <th onclick="toggleSortMesVentes('valeur')" class="py-3.5 px-4 text-right cursor-pointer hover:text-indigo-600 transition group">Montant vente <span id="sort-ind-mes-valeur" class="ml-1 text-slate-300 group-hover:text-indigo-400">⇅</span></th>
+                  <th onclick="toggleSortMesVentes('statut_depot')" class="py-3.5 px-4 cursor-pointer hover:text-indigo-600 transition group">Statut du dépôt <span id="sort-ind-mes-statut_depot" class="ml-1 text-slate-300 group-hover:text-indigo-400">⇅</span></th>
                   <th class="py-3.5 px-4 text-right">Actions</th>
                 </tr>
               </thead>
               <tbody id="tbody-mes-ventes" class="divide-y divide-slate-100 text-sm"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- TABLEAU DES COMMISSIONS (DESKTOP >= 768px — SECTION COMMISSIONS) -->
+        <div data-mobile-group="commissions" class="hidden md:block bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden">
+          <div class="px-5 py-3 bg-emerald-50/70 border-b border-emerald-200/80 flex items-center justify-between">
+            <span class="text-xs font-extrabold uppercase tracking-wider text-emerald-900">💰 Relevé détaillé de mes commissions</span>
+            <button type="button" onclick="switchTab('tab-mes-ventes')" class="text-xs font-bold text-indigo-700 hover:underline">← Retour à mes ventes</button>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+              <thead>
+                <tr class="bg-slate-50/90 border-b border-slate-200 text-[11px] font-bold text-slate-500 uppercase tracking-wider select-none">
+                  <th onclick="toggleSortMesVentes('date_vente')" class="py-3.5 px-4 cursor-pointer hover:text-indigo-600 transition">Date & Paie</th>
+                  <th onclick="toggleSortMesVentes('client_nom')" class="py-3.5 px-4 cursor-pointer hover:text-indigo-600 transition">Dossier & Client</th>
+                  <th id="th-rep-comm-col" onclick="toggleSortMesVentes('rep_nom')" class="hidden py-3.5 px-4 cursor-pointer hover:text-indigo-600 transition">Représentant</th>
+                  <th onclick="toggleSortMesVentes('valeur')" class="py-3.5 px-4 text-right cursor-pointer hover:text-indigo-600 transition">Vente</th>
+                  <th onclick="toggleSortMesVentes('commission_rep')" class="py-3.5 px-4 text-right cursor-pointer hover:text-emerald-700 transition">Ma commission</th>
+                  <th onclick="toggleSortMesVentes('statut_depot')" class="py-3.5 px-4 cursor-pointer hover:text-indigo-600 transition">Dépôt & Paiement</th>
+                  <th class="py-3.5 px-4 text-right">Historique</th>
+                </tr>
+              </thead>
+              <tbody id="tbody-mes-commissions" class="divide-y divide-slate-100 text-sm"></tbody>
             </table>
           </div>
         </div>
@@ -4190,7 +4217,8 @@
       ] : [];
 
       const desktopTabs = [
-        { id: 'tab-mes-ventes', icon: '💵', label: 'Mes ventes & commissions' },
+        { id: 'tab-mes-ventes', icon: '💵', label: 'Mes ventes' },
+        { id: 'tab-mes-commissions', icon: '💰', label: 'Mes commissions' },
         { id: 'tab-kpi', icon: '📊', label: 'Tableau KPI' },
         { id: 'tab-classement', icon: '🏆', label: 'Classement équipe' },
         ...(isAdmin ? [
@@ -4239,46 +4267,51 @@
     function applyMobilePersonalSplitLayout() {
       const sec = document.getElementById('tab-mes-ventes');
       if (!sec) return;
-      const isCommMobile = activeMobilePersonalView === 'commissions';
-      const isMobile = window.innerWidth < 768;
+      const isCommView = activeMobilePersonalView === 'commissions';
       const isAdmin = currentProfile?.role === 'admin';
 
       const titleTextEl = document.getElementById('mes-ventes-main-title');
       const titleIconEl = document.getElementById('mes-ventes-main-icon');
       if (titleTextEl && titleIconEl) {
-        if (isMobile && isCommMobile) {
+        if (isCommView) {
           titleIconEl.textContent = '💰';
-          titleTextEl.textContent = 'Mes commissions';
-        } else if (isMobile) {
-          titleIconEl.textContent = '💵';
-          titleTextEl.textContent = 'Mes ventes';
+          titleIconEl.textContent = 'Mes commissions';
         } else {
           titleIconEl.textContent = '💵';
-          titleTextEl.textContent = 'Mes ventes et commissions';
+          titleTextEl.textContent = 'Mes ventes';
         }
       }
 
-      // Sur mobile, séparer proprement les éléments Ventes vs Commissions
+      // Séparer proprement les sections Ventes vs Commissions sur mobile ET ordinateur
+      const isDesktop = window.innerWidth >= 768;
       sec.querySelectorAll('[data-mobile-group="ventes"]').forEach(el => {
         if (el.id === 'btn-rep-open-drawer') {
-          el.classList.toggle('hidden', window.innerWidth < 640 || (isMobile && isCommMobile));
+          el.classList.toggle('hidden', window.innerWidth < 640 || isCommView);
+        } else if (el.classList.contains('md:hidden')) {
+          el.classList.toggle('hidden', isDesktop || isCommView);
+        } else if (el.classList.contains('md:block')) {
+          el.classList.toggle('hidden', !isDesktop || isCommView);
         } else {
-          el.classList.toggle('hidden', isMobile && isCommMobile);
+          el.classList.toggle('hidden', isCommView);
         }
       });
       sec.querySelectorAll('[data-mobile-group="commissions"]').forEach(el => {
         if (el.id === 'filter-admin-scope') {
-          el.classList.toggle('hidden', !isAdmin || (isMobile && !isCommMobile));
+          el.classList.toggle('hidden', !isAdmin || !isCommView);
+        } else if (el.classList.contains('md:hidden')) {
+          el.classList.toggle('hidden', isDesktop || !isCommView);
+        } else if (el.classList.contains('md:block')) {
+          el.classList.toggle('hidden', !isDesktop || !isCommView);
         } else {
-          el.classList.toggle('hidden', isMobile && !isCommMobile);
+          el.classList.toggle('hidden', !isCommView);
         }
       });
 
       const subEl = document.getElementById('mes-ventes-subtitle');
-      if (subEl && isMobile) {
-        subEl.textContent = isCommMobile
+      if (subEl) {
+        subEl.textContent = isCommView
           ? 'Vos gains confirmés, paiements reçus et soldes à venir'
-          : 'Vos dossiers fermés et le suivi de vos dépôts';
+          : 'Suivi confidentiel de vos dossiers fermés et de vos dépôts';
       }
     }
 
@@ -4294,8 +4327,7 @@
         sec.classList.toggle('hidden', sec.id !== targetSectionId);
       });
       document.querySelectorAll('.nav-btn').forEach(btn => {
-        const isDesktopUnified = btn.classList.contains('inline-flex');
-        const active = btn.dataset.tab === tabId || (isDesktopUnified && tabId === 'tab-mes-commissions' && btn.dataset.tab === 'tab-mes-ventes');
+        const active = btn.dataset.tab === tabId;
         btn.classList.toggle('bg-indigo-600', active);
         btn.classList.toggle('text-white', active);
         btn.classList.toggle('shadow-xs', active);
@@ -8852,6 +8884,8 @@
       const showRepCol = isAdmin && !isInspectingRep;
       const thRepColEl = document.getElementById('th-rep-col');
       if (thRepColEl) thRepColEl.classList.toggle('hidden', !showRepCol);
+      const thRepCommColEl = document.getElementById('th-rep-comm-col');
+      if (thRepCommColEl) thRepCommColEl.classList.toggle('hidden', !showRepCol);
 
       const subtitleEl = document.getElementById('mes-ventes-subtitle');
       const commCardTitleEl = document.getElementById('kpi-rep-comm-mois')?.parentElement?.querySelector('span');
@@ -8859,9 +8893,9 @@
         if (subtitleEl) subtitleEl.textContent = `Vue miroir de ${inspectedRepObj.nom} — ses ventes, ses commissions et ses objectifs`;
         if (commCardTitleEl) commCardTitleEl.textContent = `Commission de ${inspectedRepObj.nom} (Période)`;
       } else {
-        if (subtitleEl) subtitleEl.textContent = isAdmin
-          ? 'Vos ventes directes et vos commissions sur l’ensemble de l’équipe'
-          : 'Suivi confidentiel de vos dossiers fermés, paiements reçus et soldes à venir';
+        if (subtitleEl) subtitleEl.textContent = activeMobilePersonalView === 'commissions'
+          ? (isAdmin ? 'Vos commissions directes et d’équipe, paiements reçus et soldes à venir' : 'Vos gains confirmés, paiements reçus et soldes à venir')
+          : (isAdmin ? 'Vos ventes directes et le suivi des dossiers de l’équipe' : 'Suivi confidentiel de vos dossiers fermés et de vos dépôts');
         if (commCardTitleEl) commCardTitleEl.textContent = 'Ma commission (Période)';
       }
 
@@ -9007,10 +9041,14 @@
       document.getElementById('kpi-rep-annee-paid-split').textContent = `Payé : ${fmtMoney(paidYear)} • À venir : ${fmtMoney(Math.max(0, commYear - paidYear))}`;
 
       const tbody = document.getElementById('tbody-mes-ventes');
+      const tbodyComm = document.getElementById('tbody-mes-commissions');
       const mobileCardsBox = document.getElementById('mobile-mes-ventes-cards');
       const mobileCommCardsBox = document.getElementById('mobile-mes-commissions-cards');
       if (!filtered.length) {
-        tbody.innerHTML = `<tr><td colspan="${showRepCol ? 7 : 6}" class="py-12 text-center text-sm text-slate-400">Aucune vente enregistrée pour cette période.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="${showRepCol ? 6 : 5}" class="py-12 text-center text-sm text-slate-400">Aucune vente enregistrée pour cette période.</td></tr>`;
+        if (tbodyComm) {
+          tbodyComm.innerHTML = `<tr><td colspan="${showRepCol ? 7 : 6}" class="py-12 text-center text-sm text-slate-400">Aucune commission enregistrée pour cette période.</td></tr>`;
+        }
         if (mobileCardsBox) {
           mobileCardsBox.innerHTML = `<div class="bg-white rounded-2xl border border-slate-200/80 p-8 text-center text-xs text-slate-400">Aucune vente enregistrée pour cette période.</div>`;
         }
@@ -9154,22 +9192,11 @@
           </td>
           ${showRepCol ? `<td class="py-3.5 px-4 text-xs font-semibold text-slate-700 whitespace-nowrap align-middle">${esc(v.rep_nom || '—')}</td>` : ''}
           <td class="py-3.5 px-4 text-right font-bold text-slate-900 tabular-nums whitespace-nowrap align-middle">${fmtMoney(v.valeur)}</td>
-          <td class="py-3.5 px-4 text-right tabular-nums whitespace-nowrap align-middle">
-            <div class="font-extrabold ${Number(v.commission_rep) < 0 ? 'text-rose-600' : 'text-emerald-600'}">${fmtMoney(v.commission_rep)}</div>
-            ${v._bonusApplied ? (() => {
-              const baseR = getRateForSale(v.representant_id, v.entreprise_id, v.client_id);
-              const diff = baseR ? Math.max(0, Number(v.taux_rep_applique) - Number(baseR.taux)) : 0.01;
-              return `<span class="inline-block mt-0.5 px-1.5 py-0.2 text-[10px] font-extrabold rounded bg-emerald-100 text-emerald-800">+${formatBonusPctShort(diff || 0.01)} bonus</span>`;
-            })() : ''}
-          </td>
           <td class="py-3.5 px-4 whitespace-nowrap align-middle">
             <div class="flex items-center gap-1.5">
               <span class="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded-full ${v.statut_depot === 'depot_recu' ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'}">
                 <span class="w-1.5 h-1.5 rounded-full ${v.statut_depot === 'depot_recu' ? 'bg-emerald-500' : 'bg-amber-500'}"></span>
                 ${v.statut_depot === 'depot_recu' ? 'Dépôt reçu' : 'À confirmer'}
-              </span>
-              <span class="px-2 py-0.5 text-[11px] font-semibold rounded-full ${v.statut_paiement === 'paye' ? 'bg-indigo-50 text-indigo-700' : 'bg-slate-100 text-slate-500'}">
-                ${v.statut_paiement === 'paye' ? 'Payé' : 'À payer'}
               </span>
               ${agingBadgeForDeposit(v)}
             </div>
@@ -9192,6 +9219,48 @@
         </tr>
       `;
       }).join('');
+
+      if (tbodyComm) {
+        tbodyComm.innerHTML = filtered.map(v => {
+          const locked = isMonthClosed(v.mois_commission);
+          const baseR = getRateForSale(v.representant_id, v.entreprise_id, v.client_id);
+          const diff = baseR ? Math.max(0, Number(v.taux_rep_applique) - Number(baseR.taux)) : 0.01;
+          return `
+          <tr class="${locked ? 'bg-slate-50/60' : 'hover:bg-slate-50/90'} transition">
+            <td class="py-3.5 px-4 whitespace-nowrap align-middle">
+              <div class="font-semibold text-slate-800 tabular-nums">${v.date_vente}</div>
+              <div class="text-[11px] text-slate-400">Paie ${v.mois_commission}</div>
+            </td>
+            <td class="py-3.5 px-4 align-middle">
+              <div class="flex items-center flex-wrap gap-2">
+                ${entBadge(v.entreprise_nom)}
+                <span class="font-bold text-slate-900">${esc(v.client_nom)}</span>
+                ${locked ? `<span class="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-extrabold rounded-md bg-slate-800 text-amber-300 border border-slate-700">🔒 Clôturée</span>` : ''}
+              </div>
+            </td>
+            ${showRepCol ? `<td class="py-3.5 px-4 text-xs font-semibold text-slate-700 whitespace-nowrap align-middle">${esc(v.rep_nom || '—')}</td>` : ''}
+            <td class="py-3.5 px-4 text-right font-semibold text-slate-700 tabular-nums whitespace-nowrap align-middle">${fmtMoney(v.valeur)}</td>
+            <td class="py-3.5 px-4 text-right tabular-nums whitespace-nowrap align-middle">
+              <div class="font-extrabold ${Number(v.commission_rep) < 0 ? 'text-rose-600' : 'text-emerald-600'}">${Number(v.commission_rep) < 0 ? fmtMoney(v.commission_rep) : `+ ${fmtMoney(v.commission_rep)}`}</div>
+              ${isHitSale(v) ? hitBadgeHtml(v) : (v._bonusApplied ? `<span class="inline-block mt-0.5 px-1.5 py-0.2 text-[10px] font-extrabold rounded bg-emerald-100 text-emerald-800">+${formatBonusPctShort(diff || 0.01)} bonus</span>` : '')}
+            </td>
+            <td class="py-3.5 px-4 whitespace-nowrap align-middle">
+              <div class="flex items-center gap-1.5">
+                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded-full ${v.statut_depot === 'depot_recu' ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'}">
+                  ${v.statut_depot === 'depot_recu' ? 'Dépôt reçu' : 'À confirmer'}
+                </span>
+                <span class="px-2 py-0.5 text-[11px] font-semibold rounded-full ${v.statut_paiement === 'paye' ? 'bg-indigo-50 text-indigo-700' : 'bg-slate-100 text-slate-500'}">
+                  ${v.statut_paiement === 'paye' ? '✓ Payé' : 'À recevoir'}
+                </span>
+              </div>
+            </td>
+            <td class="py-3.5 px-4 text-right whitespace-nowrap align-middle">
+              <button type="button" onclick="openSaleAuditModal('${v.id}')" title="Historique du dossier" class="px-2.5 py-1 text-xs font-semibold rounded-lg bg-slate-100 text-slate-600 hover:text-indigo-700 hover:bg-indigo-50 transition">🕒 Historique</button>
+            </td>
+          </tr>
+        `;
+        }).join('');
+      }
     }
 
     window.setRankPeriodQuick = (mode) => {
