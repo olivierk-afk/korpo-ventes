@@ -10730,12 +10730,16 @@
 
     document.getElementById('filter-rep-statut')?.addEventListener('change', renderMesVentes);
     let _clientSearchScrollTimer = null;
-    function scrollToClientSearchResults(context) {
+    function scrollToClientSearchResults(context, blurMobileKeyboard = false) {
       clearTimeout(_clientSearchScrollTimer);
-      _clientSearchScrollTimer = setTimeout(() => {
-        const isMobile = window.innerWidth < 768;
-        let targetEl = null;
+      const isMobile = window.innerWidth < 768;
 
+      if (blurMobileKeyboard && isMobile && document.activeElement && typeof document.activeElement.blur === 'function') {
+        document.activeElement.blur();
+      }
+
+      const performScroll = () => {
+        let targetEl = null;
         if (context === 'mes') {
           if (isMobile) {
             const groupSel = activeMobilePersonalView === 'commissions'
@@ -10758,24 +10762,45 @@
         }
 
         if (!targetEl) return;
-        const headerOffset = 88;
+        const headerEl = document.querySelector('#screen-app header');
+        const headerOffset = (headerEl ? headerEl.offsetHeight : 96) + 12;
         const rect = targetEl.getBoundingClientRect();
-        const targetY = Math.max(0, window.scrollY + rect.top - headerOffset);
-        window.scrollTo({ top: targetY, behavior: 'smooth' });
+        const currentScrollTop = window.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop || 0;
+        const targetY = Math.max(0, currentScrollTop + rect.top - headerOffset);
 
-        // Mise en surbrillance brève sur la première fiche/ligne correspondante
+        try {
+          window.scrollTo({ top: targetY, behavior: 'smooth' });
+        } catch (err) {
+          window.scrollTo(0, targetY);
+        }
+        if (document.documentElement) document.documentElement.scrollTop = targetY;
+
         targetEl.classList.add('ring-2', 'ring-indigo-500', 'bg-indigo-50/60');
         setTimeout(() => {
           targetEl.classList.remove('ring-2', 'ring-indigo-500', 'bg-indigo-50/60');
-        }, 1600);
-      }, 280);
+        }, 1800);
+      };
+
+      // Sur mobile, attendre légèrement plus longtemps (et refaire un calage après fermeture du clavier)
+      _clientSearchScrollTimer = setTimeout(() => {
+        performScroll();
+        if (isMobile && blurMobileKeyboard) {
+          setTimeout(performScroll, 260);
+        }
+      }, isMobile ? (blurMobileKeyboard ? 140 : 480) : 260);
     }
 
     document.getElementById('filter-admin-scope')?.addEventListener('change', renderMesVentes);
     document.getElementById('search-rep-ventes')?.addEventListener('input', (e) => {
       renderMesVentes();
       if (e.target.value.trim().length >= 2) {
-        scrollToClientSearchResults('mes');
+        scrollToClientSearchResults('mes', false);
+      }
+    });
+    document.getElementById('search-rep-ventes')?.addEventListener('change', (e) => {
+      renderMesVentes();
+      if (e.target.value.trim().length >= 1) {
+        scrollToClientSearchResults('mes', true);
       }
     });
     document.getElementById('search-rep-ventes')?.addEventListener('keydown', (e) => {
@@ -10783,7 +10808,7 @@
         e.preventDefault();
         renderMesVentes();
         if (e.target.value.trim().length >= 1) {
-          scrollToClientSearchResults('mes');
+          scrollToClientSearchResults('mes', true);
         }
       }
     });
@@ -11010,17 +11035,22 @@
       document.getElementById(id).addEventListener('input', () => {
         renderAdminVentes();
         if (id === 'admin-search' && document.getElementById('admin-search').value.trim().length >= 2) {
-          scrollToClientSearchResults('admin');
+          scrollToClientSearchResults('admin', false);
         }
       });
-      document.getElementById(id).addEventListener('change', renderAdminVentes);
+      document.getElementById(id).addEventListener('change', () => {
+        renderAdminVentes();
+        if (id === 'admin-search' && document.getElementById('admin-search').value.trim().length >= 1) {
+          scrollToClientSearchResults('admin', true);
+        }
+      });
     });
     document.getElementById('admin-search')?.addEventListener('keydown', (e) => {
       if (e.key === 'Enter') {
         e.preventDefault();
         renderAdminVentes();
         if (e.target.value.trim().length >= 1) {
-          scrollToClientSearchResults('admin');
+          scrollToClientSearchResults('admin', true);
         }
       }
     });
