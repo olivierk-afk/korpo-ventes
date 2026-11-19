@@ -2375,7 +2375,7 @@
                 <span class="px-2.5 py-0.5 text-[10px] font-extrabold uppercase tracking-wider rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200">Pipeline futur</span>
                 <h3 class="text-base font-extrabold text-slate-900">📅 Ventes & commissions planifiées (Mois ultérieurs)</h3>
               </div>
-              <p class="text-xs text-slate-500 mt-0.5">Toutes les ventes dont le mois de commission ou la date est postérieur au mois en cours, ventilées par représentant et par mois à venir</p>
+              <p class="text-xs text-slate-500 mt-0.5">Uniquement les ventes ayant une date de vente future (postérieure à aujourd'hui), ventilées par représentant et par mois</p>
             </div>
             <div class="flex flex-wrap items-center gap-2 shrink-0">
               <select id="dash-future-month-filter" class="px-3 py-1.5 text-xs font-bold bg-indigo-50/70 text-indigo-950 border border-indigo-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-600 cursor-pointer">
@@ -5129,8 +5129,13 @@
         } else if (dashPeriod.mode === 'this_year') {
           coveredMonths = Array.from(allKnownMonths).filter(ym => ym.startsWith(dashPeriod.currentYear)).sort();
         } else if (dashPeriod.mode === 'future') {
-          coveredMonths = Array.from(allKnownMonths).filter(ym => ym > currentMonthStr).sort();
-          if (coveredMonths.length) targetYm = coveredMonths[0];
+          const futureSaleMonths = Array.from(new Set(
+            (state.ventes || [])
+              .map(v => getSaleTargetFutureMonth(v))
+              .filter(isValidYearMonth)
+          )).sort();
+          coveredMonths = futureSaleMonths.length ? futureSaleMonths : [currentMonthStr];
+          targetYm = coveredMonths[0];
         } else if (dashPeriod.mode === 'all') {
           coveredMonths = Array.from(allKnownMonths).sort();
         } else {
@@ -5184,7 +5189,7 @@
       // Ventes filtrées selon la période choisie dans le tableau de bord (exactement synchronisées avec les cartes du haut)
       const periodSales = (state.ventes || []).filter(v => matchesSalePeriod(v, dashPeriod, true));
       const rawSalesSigned = periodSales.reduce((s, v) => s + Number(v.valeur || 0), 0);
-      const condensedBaselineSum = (dashPeriod.mode === 'this_week' || dashPeriod.mode === 'specific_date')
+      const condensedBaselineSum = (dashPeriod.mode === 'this_week' || dashPeriod.mode === 'specific_date' || dashPeriod.mode === 'future')
         ? 0
         : coveredMonths.reduce((s, ym) => {
             const mBase = condensedBaselineStore?.[ym];
@@ -5244,7 +5249,7 @@
           return resolveKpiRepName(rN) === rn;
         });
         const signedFromSales = repSalesList.reduce((s, v) => s + Number(v.valeur || 0), 0);
-        const signedFromCondensed = (dashPeriod.mode === 'this_week' || dashPeriod.mode === 'specific_date')
+        const signedFromCondensed = (dashPeriod.mode === 'this_week' || dashPeriod.mode === 'specific_date' || dashPeriod.mode === 'future')
           ? 0
           : coveredMonths.reduce((s, ym) => s + Number(condensedBaselineStore?.[ym]?.[rn]?.dollars || 0), 0);
         const signed = Math.round((signedFromSales + signedFromCondensed) * 100) / 100;
@@ -9670,11 +9675,9 @@
 
     function getSaleTargetFutureMonth(v) {
       if (!v) return '';
-      const commYm = (v.mois_commission || '').trim().slice(0, 7);
-      const dateYm = (v.date_vente || '').trim().slice(0, 7);
-      if (isValidYearMonth(commYm) && commYm > currentMonthStr) return commYm;
-      if (isValidYearMonth(dateYm) && dateYm > currentMonthStr) return dateYm;
-      return '';
+      const dStr = (v.date_vente || '').trim().slice(0, 10);
+      if (!dStr || dStr.length < 10 || dStr <= currentDateStr) return '';
+      return dStr.slice(0, 7);
     }
 
     function renderFutureMonthsBreakdown() {
@@ -11337,7 +11340,7 @@
       else if (mode === 'this_month') { label = `Ce mois-ci (${formatYearMonthLabelFr(currentMonthStr)})`; singleMonth = currentMonthStr; }
       else if (mode === 'this_quarter') label = `Ce trimestre (${currentQuarter.replace('-Q', ' • T')})`;
       else if (mode === 'this_year') label = `Cette année (${currentYear})`;
-      else if (mode === 'future') label = `Vue Futur (Mois à venir > ${formatYearMonthLabelFr(currentMonthStr)})`;
+      else if (mode === 'future') label = `Vue Futur (Dates à venir > ${formatDateLabelFr(currentDateStr)})`;
       else if (mode === 'specific_month') { label = formatYearMonthLabelFr(monthVal); singleMonth = monthVal; }
       else if (mode === 'specific_date') { label = formatDateLabelFr(dateVal); singleMonth = dateVal ? dateVal.slice(0, 7) : ''; }
 
@@ -11367,7 +11370,7 @@
         return (ym || '').startsWith(currentYear);
       }
       if (mode === 'future') {
-        return Boolean(getSaleTargetFutureMonth(v) || (ym && ym > currentMonthStr));
+        return Boolean(dStr && dStr.length === 10 && dStr > currentDateStr);
       }
       if (mode === 'specific_month') {
         return !monthVal || ym === monthVal;
