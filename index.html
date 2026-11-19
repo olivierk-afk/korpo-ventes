@@ -630,12 +630,94 @@
     </div>
   </div>
 
+  <!-- MODALE ENVOI AUTOMATIQUE DES RELEVÉS MENSUELS PAR COURRIEL (ADMIN) -->
+  <div id="auto-email-modal" class="hidden fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm flex items-center justify-center p-4 no-print">
+    <div class="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-4xl w-full max-h-[92vh] flex flex-col overflow-hidden">
+      <div class="px-6 py-4 bg-slate-900 text-white flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <span class="w-9 h-9 rounded-xl bg-indigo-500/25 text-indigo-300 border border-indigo-400/30 flex items-center justify-center text-base">✉️</span>
+          <div>
+            <h3 class="text-base font-extrabold">Envoi automatique des relevés mensuels par courriel</h3>
+            <p class="text-xs text-slate-400">Envoie à chaque représentant ses ventes, ses commissions confirmées et le détail de ses dossiers du mois</p>
+          </div>
+        </div>
+        <button id="btn-close-auto-email" type="button" class="w-8 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 flex items-center justify-center">✕</button>
+      </div>
+
+      <div class="p-6 overflow-y-auto space-y-5 flex-1">
+        <!-- BARRE DE CONFIGURATION DE L'ENVOI AUTOMATIQUE -->
+        <div class="bg-indigo-50/70 border border-indigo-200/90 rounded-2xl p-4 space-y-3">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+              <div class="text-xs font-extrabold text-indigo-950 flex items-center gap-2">
+                <span>⚡ Automatisation mensuelle (Supabase Edge Function + Resend)</span>
+                <span id="auto-email-status-pill" class="px-2 py-0.5 text-[10px] font-extrabold rounded-full bg-emerald-100 text-emerald-800">Prêt</span>
+              </div>
+              <p class="text-[11px] text-slate-600 mt-0.5">Une fois la fonction <code>send-monthly-statements</code> déployée sur Supabase, les relevés partent automatiquement ou en 1 clic ci-dessous.</p>
+            </div>
+            <div class="flex items-center gap-2 shrink-0">
+              <label class="text-xs font-bold text-slate-700">Mois :</label>
+              <input id="auto-email-month" type="month" class="px-3 py-1.5 text-xs font-bold bg-white border border-indigo-200 rounded-xl" />
+            </div>
+          </div>
+
+          <div class="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-indigo-200/70 text-xs">
+            <label class="inline-flex items-center gap-2 font-semibold text-slate-700 cursor-pointer">
+              <input id="auto-email-confirmed-only" type="checkbox" class="rounded border-slate-300 text-indigo-600" />
+              <span>Inclure uniquement les ventes avec dépôt reçu (confirmées)</span>
+            </label>
+            <button type="button" id="btn-toggle-edge-guide" class="text-xs font-bold text-indigo-700 hover:underline">
+              Voir le code serveur (envoi automatique le dernier jour du mois) ▾
+            </button>
+          </div>
+
+          <!-- GUIDE TECHNIQUE DÉPLIABLE (EDGE FUNCTION + CRON SUPABASE) -->
+          <div id="auto-email-edge-guide" class="hidden pt-2 space-y-2">
+            <div class="bg-slate-900 text-slate-100 rounded-xl p-3.5 text-[11px] space-y-2">
+              <div class="font-bold text-emerald-400">Configuration serveur 100 % automatique (3 minutes dans Supabase) :</div>
+              <ol class="list-decimal pl-4 space-y-1 text-slate-300">
+                <li>Créez un compte gratuit sur <strong>resend.com</strong> et copiez votre clé API (<code>re_...</code>).</li>
+                <li>Dans <strong>Supabase &gt; Edge Functions</strong>, créez une fonction nommée <code>send-monthly-statements</code>, ajoutez le secret <code>RESEND_API_KEY</code>, et collez le code ci-dessous.</li>
+                <li>Activez l'extension <strong>pg_cron</strong> dans Supabase pour déclencher cette fonction automatiquement le dernier jour de chaque mois à 18h00.</li>
+              </ol>
+              <div class="flex justify-end pt-1">
+                <button type="button" id="btn-copy-edge-fn-code" class="px-3 py-1.5 text-[11px] font-bold bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg transition">
+                  📋 Copier le code de la fonction Supabase
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- APERÇU PAR REPRÉSENTANT -->
+        <div class="space-y-2">
+          <div class="flex items-center justify-between">
+            <h4 class="text-xs font-extrabold uppercase tracking-wider text-slate-700">Aperçu des relevés à envoyer</h4>
+            <span id="auto-email-summary-label" class="text-[11px] font-semibold text-slate-500"></span>
+          </div>
+          <div id="auto-email-reps-list" class="space-y-2.5"></div>
+        </div>
+      </div>
+
+      <div class="px-6 py-4 bg-slate-50 border-t border-slate-200 flex flex-wrap items-center justify-between gap-3">
+        <span class="text-[11px] text-slate-500">Si la fonction serveur n'est pas encore déployée, un brouillon courriel prérempli s'ouvre automatiquement.</span>
+        <div class="flex items-center gap-2">
+          <button type="button" id="btn-cancel-auto-email" class="px-4 py-2 text-xs font-semibold text-slate-700 bg-white border border-slate-300 rounded-xl hover:bg-slate-50">Fermer</button>
+          <button type="button" id="btn-send-all-statements-now" class="px-5 py-2.5 text-xs font-extrabold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl shadow-sm transition flex items-center gap-1.5">
+            <span>🚀</span> Envoyer à tous les représentants sélectionnés
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- MODALE RELEVÉ DE PAIE IMPRIMABLE / PDF / CSV -->
   <div id="payslip-modal" class="hidden fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-sm flex items-center justify-center p-4">
     <div class="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-3xl w-full max-h-[90vh] flex flex-col overflow-hidden">
       <div class="px-6 py-4 bg-slate-900 text-white flex items-center justify-between no-print">
         <span class="text-sm font-bold">Aperçu du relevé de commissions</span>
         <div class="flex items-center gap-2">
+          <button id="btn-send-payslip-email" type="button" class="px-3.5 py-1.5 text-xs font-bold bg-amber-400 hover:bg-amber-300 text-slate-950 rounded-lg transition">✉️ Envoyer par courriel</button>
           <button id="btn-export-payslip-csv" class="px-3.5 py-1.5 text-xs font-bold bg-indigo-500 hover:bg-indigo-600 text-white rounded-lg transition">Télécharger CSV</button>
           <button onclick="window.print()" class="px-3.5 py-1.5 text-xs font-bold bg-emerald-500 hover:bg-emerald-600 text-slate-950 rounded-lg transition">Imprimer / PDF complet</button>
           <button id="btn-close-payslip" class="w-8 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 flex items-center justify-center">✕</button>
@@ -1229,42 +1311,49 @@
       <!-- ONGLET 1 : MES VENTES & COMMISSIONS (REP + ADMIN)            -->
       <!-- ============================================================ -->
       <section id="tab-mes-ventes" class="space-y-6">
-        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div>
-            <h2 class="text-xl font-extrabold text-slate-900 tracking-tight flex items-center gap-2"><span id="mes-ventes-main-icon" class="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 border border-emerald-200/80 flex items-center justify-center text-base">💵</span><span id="mes-ventes-main-title">Mes ventes et commissions</span></h2>
-            <p id="mes-ventes-subtitle" class="text-xs text-slate-500 mt-0.5">Suivi confidentiel de vos dossiers fermés, paiements reçus et soldes à venir</p>
+        <div class="space-y-3.5">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+              <h2 class="text-xl font-extrabold text-slate-900 tracking-tight flex items-center gap-2"><span id="mes-ventes-main-icon" class="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 border border-emerald-200/80 flex items-center justify-center text-base">💵</span><span id="mes-ventes-main-title">Mes ventes et commissions</span></h2>
+              <p id="mes-ventes-subtitle" class="text-xs text-slate-500 mt-0.5">Suivi confidentiel de vos dossiers fermés, paiements reçus et soldes à venir</p>
+            </div>
+            <div class="flex items-center gap-2 self-stretch sm:self-auto">
+              <button id="btn-rep-open-drawer" data-mobile-group="ventes" class="hidden sm:flex px-4 py-2.5 text-xs font-extrabold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl shadow-sm shadow-indigo-600/20 items-center justify-center gap-1.5 transition">
+                <span class="text-base leading-none">💵</span> Déclarer une vente
+              </button>
+              <button type="button" data-mobile-group="ventes" onclick="openTrashModal()" class="w-full sm:w-auto px-3.5 py-2.5 text-xs font-semibold text-slate-700 bg-white border border-slate-200 rounded-xl hover:bg-rose-50 hover:text-rose-700 hover:border-rose-200 transition flex items-center justify-center gap-1.5 shrink-0">
+                <span>🗑️ Corbeille</span>
+                <span class="trash-badge-count px-1.5 py-0.2 text-[10px] font-extrabold rounded-full bg-slate-100 text-slate-600">0</span>
+              </button>
+            </div>
           </div>
-          <div class="grid grid-cols-2 sm:flex sm:flex-wrap items-stretch sm:items-center gap-2 w-full md:w-auto">
-            <button id="btn-rep-open-drawer" data-mobile-group="ventes" class="col-span-2 px-4 py-2.5 sm:py-2 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl shadow-sm shadow-indigo-600/20 flex items-center justify-center gap-1.5 transition">
-              <span class="text-base leading-none">💵</span> Déclarer une vente
-            </button>
-            <select id="filter-admin-scope" data-mobile-group="commissions" class="hidden col-span-2 px-3 py-2 text-xs font-semibold bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-600">
+
+          <div class="bg-white rounded-2xl border border-slate-200/80 p-3 shadow-xs flex flex-wrap items-center justify-center gap-2">
+            <select id="filter-admin-scope" data-mobile-group="commissions" class="hidden w-full sm:w-auto px-3 py-2 text-xs font-semibold bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-600">
               <option value="all">Toutes mes commissions (Directes + Équipe)</option>
               <option value="direct">Mes ventes directes uniquement</option>
             </select>
-            <input id="search-rep-ventes" type="text" placeholder="Rechercher un client..." class="col-span-2 px-3.5 py-2 text-xs bg-white border border-slate-200 rounded-xl w-full sm:w-56 focus:outline-none focus:ring-2 focus:ring-indigo-600" />
-            <select id="filter-rep-statut" class="col-span-2 sm:col-span-1 px-3 py-2 text-xs font-semibold bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-600">
+            <input id="search-rep-ventes" type="text" placeholder="Rechercher un client..." class="w-full sm:w-56 px-3.5 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-600" />
+            <select id="filter-rep-statut" class="w-full sm:w-auto px-3 py-2 text-xs font-semibold bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-600">
               <option value="">Tous les dossiers</option>
               <option value="en_attente">⏳ En attente</option>
               <option value="depot_attente">Dépôt à confirmer</option>
               <option value="non_paye">Commission à recevoir</option>
               <option value="paye">Commission payée</option>
             </select>
-            <select id="filter-rep-period" class="w-full sm:w-auto px-3 py-2 text-xs font-bold bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-600 cursor-pointer">
-              <option value="this_month" selected>📅 Ce mois-ci</option>
-              <option value="this_week">📆 Cette semaine</option>
-              <option value="this_quarter">📊 Ce trimestre</option>
-              <option value="this_year">🗓️ Cette année</option>
-              <option value="all">∞ Tout l'historique</option>
-              <option value="specific_month">🎯 Choisir un mois précis...</option>
-              <option value="specific_date">📌 Choisir une date précise...</option>
-            </select>
-            <input id="filter-rep-month" type="month" title="Choisir un mois précis" class="hidden w-full sm:w-auto px-3 py-2 text-xs font-semibold bg-white border border-indigo-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-600 cursor-pointer" />
-            <input id="filter-rep-date" type="date" title="Choisir une date précise" class="hidden w-full sm:w-auto px-3 py-2 text-xs font-semibold bg-white border border-indigo-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-600 cursor-pointer" />
-            <button type="button" data-mobile-group="ventes" onclick="openTrashModal()" class="col-span-2 sm:col-span-1 w-full sm:w-auto px-3 py-2 text-xs font-semibold text-slate-700 bg-white border border-slate-200 rounded-xl hover:bg-rose-50 hover:text-rose-700 hover:border-rose-200 transition text-center flex items-center justify-center gap-1.5">
-              <span>🗑️ Corbeille</span>
-              <span class="trash-badge-count px-1.5 py-0.2 text-[10px] font-extrabold rounded-full bg-slate-100 text-slate-600">0</span>
-            </button>
+            <div class="flex flex-wrap items-center justify-center gap-2 w-full sm:w-auto">
+              <select id="filter-rep-period" class="w-full sm:w-auto px-3.5 py-2 text-xs font-bold bg-indigo-50/70 text-indigo-950 border border-indigo-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-600 cursor-pointer">
+                <option value="this_month" selected>📅 Ce mois-ci</option>
+                <option value="this_week">📆 Cette semaine</option>
+                <option value="this_quarter">📊 Ce trimestre</option>
+                <option value="this_year">🗓️ Cette année</option>
+                <option value="all">∞ Tout l'historique</option>
+                <option value="specific_month">🎯 Choisir un mois précis...</option>
+                <option value="specific_date">📌 Choisir une date précise...</option>
+              </select>
+              <input id="filter-rep-month" type="month" title="Choisir un mois précis" class="hidden w-full sm:w-auto px-3 py-2 text-xs font-semibold bg-white border border-indigo-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-600 cursor-pointer" />
+              <input id="filter-rep-date" type="date" title="Choisir une date précise" class="hidden w-full sm:w-auto px-3 py-2 text-xs font-semibold bg-white border border-indigo-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-600 cursor-pointer" />
+            </div>
           </div>
         </div>
 
@@ -1726,13 +1815,13 @@
       </section>
 
       <section id="tab-classement" class="hidden space-y-6">
-        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div class="max-w-4xl mx-auto flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <h2 class="text-xl font-extrabold text-slate-900 tracking-tight flex items-center gap-2"><span class="w-8 h-8 rounded-xl bg-amber-50 text-amber-600 border border-amber-200/80 flex items-center justify-center text-base">🏆</span><span>Classement de l'équipe</span></h2>
             <p class="text-xs text-slate-500 mt-0.5">Comparatif des volumes de ventes (les commissions demeurent strictement privées)</p>
           </div>
-          <div class="flex flex-wrap items-center gap-2">
-            <select id="filter-rank-period" class="px-3 py-2 text-xs font-bold bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-600 cursor-pointer">
+          <div class="flex flex-wrap items-center justify-center sm:justify-end gap-2">
+            <select id="filter-rank-period" class="px-3.5 py-2 text-xs font-bold bg-indigo-50/70 text-indigo-950 border border-indigo-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-600 cursor-pointer">
               <option value="this_month" selected>📅 Ce mois-ci</option>
               <option value="this_week">📆 Cette semaine</option>
               <option value="this_quarter">📊 Ce trimestre</option>
@@ -1746,7 +1835,7 @@
           </div>
         </div>
 
-        <div id="classement-cards" class="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-4xl"></div>
+        <div id="classement-cards" class="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-4xl mx-auto"></div>
       </section>
 
       <!-- ============================================================ -->
@@ -1784,31 +1873,29 @@
 
         <!-- BARRE DE RECHERCHE & FILTRES RAPIDES -->
         <div class="bg-white rounded-2xl border border-slate-200/80 p-4 shadow-xs space-y-3">
-          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
-            <input id="admin-search" type="text" placeholder="Rechercher client, note..." class="px-3.5 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-600" />
-            <select id="admin-filter-rep" class="px-3 py-2 text-xs font-medium bg-slate-50 border border-slate-200 rounded-xl"></select>
-            <select id="admin-filter-ent" class="px-3 py-2 text-xs font-medium bg-slate-50 border border-slate-200 rounded-xl"></select>
-            <div class="flex flex-wrap sm:flex-nowrap items-center gap-1.5">
-              <select id="admin-filter-period" class="w-full px-3 py-2 text-xs font-bold bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-600 cursor-pointer">
-                <option value="all" selected>∞ Toutes les dates</option>
-                <option value="this_week">📆 Cette semaine</option>
-                <option value="this_month">📅 Ce mois-ci</option>
-                <option value="this_quarter">📊 Ce trimestre</option>
-                <option value="this_year">🗓️ Cette année</option>
-                <option value="specific_month">🎯 Mois précis...</option>
-                <option value="specific_date">📌 Date précise...</option>
-              </select>
-              <input id="admin-filter-month" type="month" class="hidden px-2.5 py-2 text-xs font-semibold bg-white border border-indigo-300 rounded-xl cursor-pointer" />
-              <input id="admin-filter-date" type="date" class="hidden px-2.5 py-2 text-xs font-semibold bg-white border border-indigo-300 rounded-xl cursor-pointer" />
-            </div>
-            <select id="admin-filter-statut" class="px-3 py-2 text-xs font-medium bg-slate-50 border border-slate-200 rounded-xl">
+          <div class="flex flex-wrap items-center justify-center gap-2.5">
+            <input id="admin-search" type="text" placeholder="Rechercher client, note..." class="w-full sm:w-56 px-3.5 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-600" />
+            <select id="admin-filter-rep" class="w-full sm:w-auto px-3 py-2 text-xs font-medium bg-slate-50 border border-slate-200 rounded-xl"></select>
+            <select id="admin-filter-ent" class="w-full sm:w-auto px-3 py-2 text-xs font-medium bg-slate-50 border border-slate-200 rounded-xl"></select>
+            <select id="admin-filter-period" class="w-full sm:w-auto px-3.5 py-2 text-xs font-bold bg-indigo-50/70 text-indigo-950 border border-indigo-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-600 cursor-pointer">
+              <option value="all" selected>∞ Toutes les dates</option>
+              <option value="this_week">📆 Cette semaine</option>
+              <option value="this_month">📅 Ce mois-ci</option>
+              <option value="this_quarter">📊 Ce trimestre</option>
+              <option value="this_year">🗓️ Cette année</option>
+              <option value="specific_month">🎯 Mois précis...</option>
+              <option value="specific_date">📌 Date précise...</option>
+            </select>
+            <input id="admin-filter-month" type="month" class="hidden w-full sm:w-auto px-3 py-2 text-xs font-semibold bg-white border border-indigo-300 rounded-xl cursor-pointer" />
+            <input id="admin-filter-date" type="date" class="hidden w-full sm:w-auto px-3 py-2 text-xs font-semibold bg-white border border-indigo-300 rounded-xl cursor-pointer" />
+            <select id="admin-filter-statut" class="w-full sm:w-auto px-3 py-2 text-xs font-medium bg-slate-50 border border-slate-200 rounded-xl">
               <option value="">Tous les statuts</option>
               <option value="depot_attente">Dépôt à confirmer</option>
               <option value="non_paye">Paiement non payé</option>
               <option value="paye">Payé</option>
             </select>
           </div>
-          <div class="flex items-center justify-between pt-1">
+          <div class="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-100">
             <div id="admin-filter-summary" class="text-xs font-semibold text-slate-600"></div>
             <button id="btn-admin-clear-filters" class="text-xs font-semibold text-indigo-600 hover:underline">Réinitialiser les filtres</button>
           </div>
@@ -1853,10 +1940,13 @@
             <p class="text-xs text-slate-500 mt-0.5">Vue consolidée, graphique mensuel et relevés de paie imprimables</p>
           </div>
           <div class="flex flex-wrap items-center gap-2">
+            <button id="btn-open-auto-email-modal" type="button" class="px-3.5 py-2 text-xs font-bold text-indigo-800 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 rounded-xl transition flex items-center gap-1.5">
+              <span>✉️</span> Envoyer les relevés par courriel
+            </button>
             <button id="btn-export-payroll-batch" class="px-3.5 py-2 text-xs font-bold text-emerald-800 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-xl transition">
               💸 Exporter fichier de paie (CSV)
             </button>
-            <select id="dash-filter-period" class="px-3 py-2 text-xs font-bold bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-600 cursor-pointer">
+            <select id="dash-filter-period" class="px-3.5 py-2 text-xs font-bold bg-indigo-50/70 text-indigo-950 border border-indigo-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-600 cursor-pointer">
               <option value="all" selected>🗓️ Toute l'année / Tout</option>
               <option value="this_week">📆 Cette semaine</option>
               <option value="this_month">📅 Ce mois-ci</option>
@@ -3465,7 +3555,11 @@
 
       // Sur mobile, séparer proprement les éléments Ventes vs Commissions
       sec.querySelectorAll('[data-mobile-group="ventes"]').forEach(el => {
-        el.classList.toggle('hidden', isMobile && isCommMobile);
+        if (el.id === 'btn-rep-open-drawer') {
+          el.classList.toggle('hidden', window.innerWidth < 640 || (isMobile && isCommMobile));
+        } else {
+          el.classList.toggle('hidden', isMobile && isCommMobile);
+        }
       });
       sec.querySelectorAll('[data-mobile-group="commissions"]').forEach(el => {
         if (el.id === 'filter-admin-scope') {
@@ -6765,8 +6859,17 @@
 
       let salesTarget = getSalesTargetForRep(inspectedRepName, activeYm);
       let commTarget = getCommissionTargetForRep(inspectedRepName, activeYm);
+      const bizDaysInActiveMonth = Math.max(1, countBusinessDaysInMonth(activeYm));
 
-      if (pMode === 'this_quarter') {
+      if (pMode === 'this_week') {
+        const weekRatio = 5 / bizDaysInActiveMonth;
+        salesTarget = Math.round(salesTarget * weekRatio);
+        commTarget = Math.round(commTarget * weekRatio);
+      } else if (pMode === 'specific_date') {
+        const dayRatio = 1 / bizDaysInActiveMonth;
+        salesTarget = Math.round(salesTarget * dayRatio);
+        commTarget = Math.round(commTarget * dayRatio);
+      } else if (pMode === 'this_quarter') {
         salesTarget = salesTarget * 3;
         commTarget = commTarget * 3;
       } else if (pMode === 'this_year') {
@@ -7331,12 +7434,17 @@
       document.getElementById('classement-cards').innerHTML = ranked.map((r, idx) => {
         const activeYm = rankPeriod.singleMonth || currentMonthStr;
         const unitTarget = getSalesTargetForRep(r.nom, activeYm);
-        const mult = rankPeriod.mode === 'this_quarter'
-          ? 3
-          : (rankPeriod.mode === 'this_year'
-            ? 12
-            : (rankPeriod.mode === 'all' ? Math.max(1, r.monthsCount.size || Object.keys(kpiStore).length || 1) : 1));
-        const repTarget = unitTarget * mult;
+        const bizDaysM = Math.max(1, countBusinessDaysInMonth(activeYm));
+        const mult = rankPeriod.mode === 'this_week'
+          ? (5 / bizDaysM)
+          : (rankPeriod.mode === 'specific_date'
+            ? (1 / bizDaysM)
+            : (rankPeriod.mode === 'this_quarter'
+              ? 3
+              : (rankPeriod.mode === 'this_year'
+                ? 12
+                : (rankPeriod.mode === 'all' ? Math.max(1, r.monthsCount.size || Object.keys(kpiStore).length || 1) : 1))));
+        const repTarget = Math.round(unitTarget * mult);
         const targetPct = repTarget > 0 ? Math.round((r.total / repTarget) * 100) : 0;
         const barWidth = Math.min(100, Math.max(r.total > 0 ? 4 : 0, targetPct));
         const isMe = r.nom === currentProfile.nom;
@@ -8080,6 +8188,14 @@
         </table>
       `;
 
+      const btnSendSingleEmail = document.getElementById('btn-send-payslip-email');
+      if (btnSendSingleEmail) {
+        btnSendSingleEmail.onclick = async () => {
+          const ym = dashPeriod.singleMonth || currentMonthStr;
+          await sendStatementsForReps([rep], ym, isConfirmedOnly);
+        };
+      }
+
       document.getElementById('btn-export-payslip-csv').onclick = () => {
         const headers = ['Date', 'Mois', 'Entreprise', 'Client', 'Valeur_vente', 'Commission', 'Statut_paiement'];
         const rows = sales.map(v => {
@@ -8112,6 +8228,328 @@
       syncAllMonthPickers();
       renderAdminDashboard();
     };
+
+    // =========================================================================
+    // ENVOI AUTOMATIQUE DES RELEVÉS DE COMMISSIONS PAR COURRIEL
+    // =========================================================================
+    const SUPABASE_EDGE_FUNCTION_CODE = `// Supabase Edge Function : send-monthly-statements
+// Déclenchée automatiquement chaque fin de mois (pg_cron) ou depuis le portail Korpo
+import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
+
+const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY")!;
+const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
+const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+const FROM_EMAIL = Deno.env.get("KORPO_FROM_EMAIL") || "Korpo Solutions <commissions@korposolutions.com>";
+
+const fmtMoney = (n: number) =>
+  new Intl.NumberFormat("fr-CA", { style: "currency", currency: "CAD" }).format(Number(n || 0));
+
+serve(async (req) => {
+  if (req.method === "OPTIONS") {
+    return new Response("ok", { headers: { "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type" } });
+  }
+
+  try {
+    const body = await req.json().catch(() => ({}));
+    const now = new Date();
+    const defaultYm = \`\${now.getFullYear()}-\${String(now.getMonth() + 1).padStart(2, "0")}\`;
+    const targetYm = body.month || defaultYm;
+    const confirmedOnly = Boolean(body.confirmedOnly);
+    const customStatements = Array.isArray(body.statements) ? body.statements : null;
+
+    let statementsToSend = customStatements;
+
+    // Si appelé par le déclencheur automatique (cron) sans payload pré-calculé, lire directement la base
+    if (!statementsToSend) {
+      const sb = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+      const [{ data: reps }, { data: ventes }, { data: entreprises }, { data: clients }] = await Promise.all([
+        sb.from("representants").select("*"),
+        sb.from("ventes").select("*").eq("mois_commission", targetYm),
+        sb.from("entreprises").select("id,nom"),
+        sb.from("clients").select("id,nom"),
+      ]);
+
+      const entMap = new Map((entreprises || []).map((e: any) => [String(e.id), e.nom]));
+      const cliMap = new Map((clients || []).map((c: any) => [String(c.id), c.nom]));
+
+      statementsToSend = (reps || []).map((rep: any) => {
+        const isAdmin = rep.role === "admin";
+        const repSales = (ventes || []).filter((v: any) => {
+          if (!isAdmin && String(v.representant_id) !== String(rep.id)) return false;
+          if (confirmedOnly && v.statut_depot !== "depot_recu") return false;
+          return true;
+        });
+        const totalVentes = repSales.reduce((s: number, v: any) => s + Number(v.valeur || 0), 0);
+        const totalComm = repSales.reduce((s: number, v: any) => s + Number(isAdmin ? v.commission_olivier : v.commission_rep), 0);
+        const totalPaye = repSales.filter((v: any) => v.statut_paiement === "paye").reduce((s: number, v: any) => s + Number(isAdmin ? v.commission_olivier : v.commission_rep), 0);
+
+        return {
+          nom: rep.nom,
+          courriel: rep.courriel,
+          mois: targetYm,
+          totalVentes,
+          totalComm,
+          totalPaye,
+          soldeAVerser: Math.max(0, totalComm - totalPaye),
+          dossiers: repSales.map((v: any) => ({
+            date: v.date_vente,
+            entreprise: entMap.get(String(v.entreprise_id)) || "—",
+            client: cliMap.get(String(v.client_id)) || "—",
+            valeur: Number(v.valeur || 0),
+            commission: Number(isAdmin ? v.commission_olivier : v.commission_rep),
+            depot: v.statut_depot === "depot_recu" ? "Confirmé" : "À confirmer",
+            paiement: v.statut_paiement === "paye" ? "Payé" : "À payer",
+          })),
+        };
+      }).filter((st: any) => st.courriel && st.dossiers.length > 0);
+    }
+
+    let sentCount = 0;
+    for (const st of statementsToSend || []) {
+      if (!st.courriel) continue;
+      const rowsHtml = (st.dossiers || []).map((d: any) => \`
+        <tr>
+          <td style="padding:8px;border-bottom:1px solid #e2e8f0;">\${d.date}</td>
+          <td style="padding:8px;border-bottom:1px solid #e2e8f0;">\${d.entreprise}</td>
+          <td style="padding:8px;border-bottom:1px solid #e2e8f0;">\${d.client}</td>
+          <td style="padding:8px;border-bottom:1px solid #e2e8f0;text-align:right;">\${fmtMoney(d.valeur)}</td>
+          <td style="padding:8px;border-bottom:1px solid #e2e8f0;text-align:right;font-weight:bold;color:#059669;">\${fmtMoney(d.commission)}</td>
+          <td style="padding:8px;border-bottom:1px solid #e2e8f0;text-align:right;">\${d.paiement}</td>
+        </tr>
+      \`).join("");
+
+      const htmlEmail = \`
+        <div style="font-family:Arial,sans-serif;max-width:680px;margin:0 auto;color:#0f172a;">
+          <div style="background:#0f172a;color:#fff;padding:20px 24px;border-radius:12px 12px 0 0;">
+            <h2 style="margin:0;font-size:18px;">Korpo Solutions — Relevé mensuel (\${st.mois})</h2>
+            <p style="margin:4px 0 0;font-size:13px;color:#94a3b8;">Bonjour \${st.nom}, voici le récapitulatif de vos ventes et commissions.</p>
+          </div>
+          <div style="padding:20px 24px;border:1px solid #e2e8f0;border-top:none;border-radius:0 0 12px 12px;">
+            <table style="width:100%;margin-bottom:18px;border-collapse:collapse;">
+              <tr>
+                <td style="padding:12px;background:#f8fafc;border-radius:8px;"><strong>Volume vendu :</strong><br/>\${fmtMoney(st.totalVentes)}</td>
+                <td style="padding:12px;background:#ecfdf5;border-radius:8px;color:#065f46;"><strong>Total commissions :</strong><br/>\${fmtMoney(st.totalComm)}</td>
+                <td style="padding:12px;background:#eef2ff;border-radius:8px;color:#3730a3;"><strong>Solde à verser :</strong><br/>\${fmtMoney(st.soldeAVerser)}</td>
+              </tr>
+            </table>
+            <table style="width:100%;border-collapse:collapse;font-size:12px;">
+              <thead>
+                <tr style="background:#f1f5f9;text-align:left;">
+                  <th style="padding:8px;">Date</th>
+                  <th style="padding:8px;">Entreprise</th>
+                  <th style="padding:8px;">Client</th>
+                  <th style="padding:8px;text-align:right;">Vente</th>
+                  <th style="padding:8px;text-align:right;">Commission</th>
+                  <th style="padding:8px;text-align:right;">Statut</th>
+                </tr>
+              </thead>
+              <tbody>\${rowsHtml}</tbody>
+            </table>
+          </div>
+        </div>
+      \`;
+
+      const res = await fetch("https://api.resend.com/emails", {
+        method: "POST",
+        headers: {
+          "Authorization": \`Bearer \${RESEND_API_KEY}\`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          from: FROM_EMAIL,
+          to: [st.courriel],
+          subject: \`Relevé de ventes et commissions — \${st.mois} | Korpo Solutions\`,
+          html: htmlEmail,
+        }),
+      });
+      if (res.ok) sentCount++;
+    }
+
+    return new Response(JSON.stringify({ ok: true, sentCount }), {
+      headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
+    });
+  } catch (err: any) {
+    return new Response(JSON.stringify({ ok: false, error: err.message }), {
+      status: 500,
+      headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
+    });
+  }
+});`;
+
+    function buildStatementForRep(rep, ym, confirmedOnly = false) {
+      const isOlivier = rep.role === 'admin';
+      const sales = (state.ventes || []).filter(v => {
+        if (!isOlivier && String(v.representant_id) !== String(rep.id)) return false;
+        if (ym && getSaleStatsMonth(v) !== ym) return false;
+        if (confirmedOnly && v.statut_depot !== 'depot_recu') return false;
+        return true;
+      });
+      const totalVentes = sales.reduce((s, v) => s + Number(v.valeur || 0), 0);
+      const totalComm = sales.reduce((s, v) => s + Number(isOlivier ? v.commission_olivier : v.commission_rep), 0);
+      const totalPaye = sales.filter(v => v.statut_paiement === 'paye').reduce((s, v) => s + Number(isOlivier ? v.commission_olivier : v.commission_rep), 0);
+      const soldeAVerser = Math.max(0, totalComm - totalPaye);
+
+      const dossiers = sales.map(v => {
+        const ent = state.entreprises.find(e => String(e.id) === String(v.entreprise_id))?.nom || '—';
+        const cli = state.clients.find(c => String(c.id) === String(v.client_id))?.nom || '—';
+        const comm = Number(isOlivier ? v.commission_olivier : v.commission_rep);
+        return {
+          date: v.date_vente,
+          entreprise: ent,
+          client: cli,
+          valeur: Number(v.valeur || 0),
+          commission: comm,
+          depot: v.statut_depot === 'depot_recu' ? 'Dépôt reçu' : 'À confirmer',
+          paiement: v.statut_paiement === 'paye' ? 'Payé' : 'À payer'
+        };
+      });
+
+      const lines = [
+        `Bonjour ${rep.nom},`,
+        ``,
+        `Voici votre relevé mensuel des ventes et commissions (${ym}) chez Korpo Solutions :`,
+        ``,
+        `• Nombre de dossiers : ${dossiers.length}`,
+        `• Volume total des ventes : ${fmtMoney(totalVentes)}`,
+        `• Total des commissions : ${fmtMoney(totalComm)}`,
+        `• Déjà payé : ${fmtMoney(totalPaye)}`,
+        `• Solde à verser : ${fmtMoney(soldeAVerser)}`,
+        ``,
+        `Détail de vos dossiers :`,
+        ...dossiers.map(d => `- ${d.date} | ${d.entreprise} | ${d.client} : Vente ${fmtMoney(d.valeur)} -> Comm. ${fmtMoney(d.commission)} (${d.depot} / ${d.paiement})`),
+        ``,
+        `Cordialement,`,
+        `L'équipe Korpo Solutions`
+      ];
+
+      return {
+        repId: rep.id,
+        nom: rep.nom,
+        courriel: rep.courriel,
+        mois: ym,
+        totalVentes,
+        totalComm,
+        totalPaye,
+        soldeAVerser,
+        dossiers,
+        subject: `Relevé de ventes et commissions — ${ym} | Korpo Solutions`,
+        bodyText: lines.join('
+')
+      };
+    }
+
+    async function sendStatementsForReps(repsList, ym, confirmedOnly = false) {
+      if (!repsList || !repsList.length) return toast('Aucun représentant sélectionné.', 'error');
+      const statements = repsList.map(r => buildStatementForRep(r, ym, confirmedOnly));
+
+      // 1. Tenter d'abord l'envoi automatique côté serveur via Supabase Edge Function (`send-monthly-statements`)
+      try {
+        const { data, error } = await sb.functions.invoke('send-monthly-statements', {
+          body: { month: ym, confirmedOnly, statements }
+        });
+        if (!error && data && data.ok) {
+          toast(`✉️ ${data.sentCount || statements.length} relevé(s) envoyé(s) automatiquement par courriel ✓`);
+          return true;
+        }
+      } catch (e) {}
+
+      // 2. Fallback immédiat : ouvrir le courriel prérempli dans le client mail pour chaque représentant sélectionné
+      statements.forEach((st, idx) => {
+        setTimeout(() => {
+          const mailtoUrl = `mailto:${encodeURIComponent(st.courriel)}?subject=${encodeURIComponent(st.subject)}&body=${encodeURIComponent(st.bodyText)}`;
+          window.open(mailtoUrl, idx === 0 ? '_self' : '_blank');
+        }, idx * 350);
+      });
+      toast(`✉️ Brouillon(s) de relevé préparé(s) pour ${statements.length} représentant(s) ✓`);
+      return false;
+    }
+
+    function renderAutoEmailPreviewList() {
+      const ym = document.getElementById('auto-email-month')?.value || currentMonthStr;
+      const confirmedOnly = Boolean(document.getElementById('auto-email-confirmed-only')?.checked);
+      const listBox = document.getElementById('auto-email-reps-list');
+      const sumEl = document.getElementById('auto-email-summary-label');
+      if (!listBox) return;
+
+      const statements = state.representants.map(r => buildStatementForRep(r, ym, confirmedOnly));
+      const activeCount = statements.filter(s => s.dossiers.length > 0).length;
+      if (sumEl) sumEl.textContent = `${activeCount} représentant(s) avec ventes sur ${ym}`;
+
+      listBox.innerHTML = statements.map(st => {
+        const hasSales = st.dossiers.length > 0;
+        return `
+          <label class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 rounded-2xl border ${hasSales ? 'bg-white border-slate-200/90' : 'bg-slate-50/70 border-slate-200/60 opacity-65'} cursor-pointer hover:border-indigo-300 transition">
+            <div class="flex items-center gap-3 min-w-0">
+              <input type="checkbox" data-auto-email-rep-id="${esc(st.repId)}" ${hasSales ? 'checked' : ''} class="rounded border-slate-300 text-indigo-600 focus:ring-indigo-600" />
+              <div class="min-w-0">
+                <div class="text-xs font-extrabold text-slate-900 truncate">${esc(st.nom)} <span class="font-normal text-slate-500">(${esc(st.courriel)})</span></div>
+                <div class="text-[11px] text-slate-500 tabular-nums mt-0.5">
+                  ${st.dossiers.length} dossier(s) • Ventes : <strong class="text-slate-800">${fmtMoney(st.totalVentes)}</strong> • Comm. : <strong class="text-emerald-700">${fmtMoney(st.totalComm)}</strong> • Solde : <strong class="text-indigo-700">${fmtMoney(st.soldeAVerser)}</strong>
+                </div>
+              </div>
+            </div>
+            <button type="button" onclick="event.preventDefault(); sendSingleRepStatementById('${esc(st.repId)}')" class="self-end sm:self-center px-3 py-1.5 text-[11px] font-bold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 rounded-xl transition shrink-0">
+              ✉️ Envoyer seul
+            </button>
+          </label>
+        `;
+      }).join('');
+    }
+
+    window.sendSingleRepStatementById = async (repId) => {
+      const rep = state.representants.find(r => String(r.id) === String(repId));
+      if (!rep) return;
+      const ym = document.getElementById('auto-email-month')?.value || currentMonthStr;
+      const confirmedOnly = Boolean(document.getElementById('auto-email-confirmed-only')?.checked);
+      await sendStatementsForReps([rep], ym, confirmedOnly);
+    };
+
+    document.getElementById('btn-open-auto-email-modal')?.addEventListener('click', () => {
+      const dashPeriod = readPeriodFilterState('dash-filter');
+      const mIn = document.getElementById('auto-email-month');
+      if (mIn) mIn.value = dashPeriod.singleMonth || currentMonthStr;
+      const confIn = document.getElementById('auto-email-confirmed-only');
+      if (confIn) confIn.checked = commDisplayMode === 'confirme';
+      renderAutoEmailPreviewList();
+      document.getElementById('auto-email-modal').classList.remove('hidden');
+    });
+
+    document.getElementById('auto-email-month')?.addEventListener('change', renderAutoEmailPreviewList);
+    document.getElementById('auto-email-confirmed-only')?.addEventListener('change', renderAutoEmailPreviewList);
+    document.getElementById('btn-close-auto-email')?.addEventListener('click', () => document.getElementById('auto-email-modal').classList.add('hidden'));
+    document.getElementById('btn-cancel-auto-email')?.addEventListener('click', () => document.getElementById('auto-email-modal').classList.add('hidden'));
+    document.getElementById('auto-email-modal')?.addEventListener('click', (e) => {
+      if (e.target.id === 'auto-email-modal') document.getElementById('auto-email-modal').classList.add('hidden');
+    });
+    document.getElementById('btn-toggle-edge-guide')?.addEventListener('click', () => {
+      document.getElementById('auto-email-edge-guide')?.classList.toggle('hidden');
+    });
+    document.getElementById('btn-copy-edge-fn-code')?.addEventListener('click', async () => {
+      try {
+        await navigator.clipboard.writeText(SUPABASE_EDGE_FUNCTION_CODE);
+        toast('Code de la fonction Supabase copié dans le presse-papiers 📋');
+      } catch (e) {
+        toast('Impossible de copier automatiquement.', 'error');
+      }
+    });
+    document.getElementById('btn-send-all-statements-now')?.addEventListener('click', async () => {
+      const ym = document.getElementById('auto-email-month')?.value || currentMonthStr;
+      const confirmedOnly = Boolean(document.getElementById('auto-email-confirmed-only')?.checked);
+      const checkedIds = Array.from(document.querySelectorAll('#auto-email-reps-list input[data-auto-email-rep-id]:checked')).map(el => String(el.dataset.autoEmailRepId));
+      const selectedReps = state.representants.filter(r => checkedIds.includes(String(r.id)));
+      if (!selectedReps.length) return toast('Cochez au moins un représentant.', 'error');
+      const btn = document.getElementById('btn-send-all-statements-now');
+      btn.disabled = true;
+      btn.textContent = 'Envoi en cours...';
+      try {
+        await sendStatementsForReps(selectedReps, ym, confirmedOnly);
+        document.getElementById('auto-email-modal').classList.add('hidden');
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<span>🚀</span> Envoyer à tous les représentants sélectionnés';
+      }
+    });
 
     function renderAdminTaux() {
       const tbody = document.getElementById('tbody-taux');
