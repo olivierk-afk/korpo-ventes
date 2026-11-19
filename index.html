@@ -7472,7 +7472,7 @@
             <div class="space-y-1.5">
               <div class="flex items-center justify-between text-[11px] tabular-nums">
                 <span class="font-bold ${reached ? 'text-emerald-600' : 'text-slate-600'}">
-                  ${reached ? '🔥 Target atteint !' : `Progression vers le target (${monthFilter || 'Cumul'})`}
+                  ${reached ? '🔥 Target atteint !' : `Progression vers le target (${esc(rankPeriod.label || 'Cumul')})`}
                 </span>
                 <span class="px-2 py-0.5 rounded-full font-extrabold ${reached ? 'bg-emerald-100 text-emerald-800' : (targetPct >= 65 ? 'bg-amber-100 text-amber-800' : 'bg-indigo-50 text-indigo-700')}">
                   ${targetPct} %
