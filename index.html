@@ -2919,17 +2919,11 @@
       const sid = v.id ? String(v.id) : '';
       const co = sid ? carriedOverSalesStore[sid] : null;
       const origYm = co?.origYm || (v.date_vente && v.date_vente.length >= 7 ? v.date_vente.slice(0, 7) : '');
-      let commYm = co?.movedToYm && (!v.mois_commission || v.mois_commission < co.movedToYm)
+      const commYm = co?.movedToYm && (!v.mois_commission || v.mois_commission < co.movedToYm)
         ? co.movedToYm
         : (v.mois_commission || '');
-      // Toute vente non confirmée (`a_confirmer`) d'un mois antérieur bascule automatiquement au mois courant (`currentMonthStr`) et vaut 0 dans le mois précédent
-      if (v.statut_depot === 'a_confirmer' && ((origYm && origYm < currentMonthStr) || (commYm && commYm < currentMonthStr))) {
-        commYm = currentMonthStr;
-      }
-      const isCarried = Boolean(co || (origYm && commYm && origYm < commYm));
-      if (isCarried && commYm) return commYm;
-      if (v._statsMonth) return v._statsMonth;
       if (origYm) return origYm;
+      if (v._statsMonth) return v._statsMonth;
       return commYm || currentMonthStr;
     }
 
@@ -5103,13 +5097,17 @@
         remainingBizDays = Math.max(0, totalBizDays - elapsedBizDays);
       }
 
-      // Ventes filtrées selon la période choisie dans le tableau de bord
+      // Ventes filtrées selon la période choisie dans le tableau de bord (exactement synchronisées avec les cartes du haut)
       const periodSales = (state.ventes || []).filter(v => matchesSalePeriod(v, dashPeriod, true));
-      const kpiSignedSum = (dashPeriod.mode === 'this_week' || dashPeriod.mode === 'specific_date')
-        ? 0
-        : coveredMonths.reduce((s, ym) => s + Number(ensureKpiMonthStructure(ym).team?.['VENTE $']?.cumul || 0), 0);
       const rawSalesSigned = periodSales.reduce((s, v) => s + Number(v.valeur || 0), 0);
-      const totSigned = Math.max(kpiSignedSum, rawSalesSigned);
+      const condensedBaselineSum = (dashPeriod.mode === 'this_week' || dashPeriod.mode === 'specific_date')
+        ? 0
+        : coveredMonths.reduce((s, ym) => {
+            const mBase = condensedBaselineStore?.[ym];
+            if (!mBase || typeof mBase !== 'object') return s;
+            return s + ALL_KPI_REPS.reduce((acc, rn) => acc + Number(mBase[rn]?.dollars || 0), 0);
+          }, 0);
+      const totSigned = Math.round((rawSalesSigned + condensedBaselineSum) * 100) / 100;
 
       // Objectif global proportionnel à la période sélectionnée
       const monthMultiplier = dashPeriod.mode === 'specific_date'
@@ -5162,10 +5160,10 @@
           return resolveKpiRepName(rN) === rn;
         });
         const signedFromSales = repSalesList.reduce((s, v) => s + Number(v.valeur || 0), 0);
-        const signedFromKpi = (dashPeriod.mode === 'this_week' || dashPeriod.mode === 'specific_date')
+        const signedFromCondensed = (dashPeriod.mode === 'this_week' || dashPeriod.mode === 'specific_date')
           ? 0
-          : coveredMonths.reduce((s, ym) => s + Number(ensureKpiMonthStructure(ym).reps?.[rn]?.['Vente $']?.cumul || 0), 0);
-        const signed = Math.max(signedFromSales, signedFromKpi);
+          : coveredMonths.reduce((s, ym) => s + Number(condensedBaselineStore?.[ym]?.[rn]?.dollars || 0), 0);
+        const signed = Math.round((signedFromSales + signedFromCondensed) * 100) / 100;
 
         const target = repTargetsMap[rn] || 150000;
         const pct = target > 0 ? Math.round((signed / target) * 100) : 0;
@@ -9646,7 +9644,7 @@
           input.value = ym;
         }
       }
-      syncAllMonthPickers();
+      syncPeriodInputsVisibility('dash-filter', false);
       renderAdminDashboard();
     };
 
@@ -10813,8 +10811,12 @@
     function matchesSalePeriod(v, periodState, useStatsMonth = true) {
       if (!periodState || periodState.mode === 'all') return true;
       const { mode, monthVal, dateVal, weekBounds, currentQuarter, currentYear } = periodState;
-      const dStr = (v.date_vente || '').slice(0, 10);
-      const ym = useStatsMonth ? getSaleStatsMonth(v) : (v.mois_commission || dStr.slice(0, 7));
+      const dStr = (v.date_vente || '').trim().slice(0, 10);
+      const saleDateYm = dStr.length >= 7 ? dStr.slice(0, 7) : '';
+      const commYm = (v.mois_commission || '').trim().slice(0, 7);
+      const ym = useStatsMonth
+        ? (saleDateYm || getSaleStatsMonth(v) || commYm)
+        : (commYm || saleDateYm);
 
       if (mode === 'this_week') {
         return Boolean(dStr && dStr >= weekBounds.start && dStr <= weekBounds.end);
