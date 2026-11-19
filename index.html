@@ -274,6 +274,14 @@
     html.dark .to-indigo-50\/60 {
       --tw-gradient-to: rgba(99, 102, 241, 0.20) var(--tw-gradient-to-position) !important;
     }
+    html.dark #voice-sale-assistant-box {
+      background-image: linear-gradient(to right, rgba(79, 70, 229, 0.22), rgba(16, 185, 129, 0.14)) !important;
+      border-color: rgba(129, 140, 248, 0.45) !important;
+    }
+    html.dark #voice-sale-live-box {
+      background-color: #0f172a !important;
+      border-color: #334155 !important;
+    }
 
     /* Canal de conversation Korpo Top Earner (palette douce, reposante et hiérarchisée) */
     html.dark #chat-modal-backdrop > div {
@@ -1250,6 +1258,46 @@
 
       <form id="form-new-vente" class="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4">
         <input type="hidden" id="vente-edit-id" value="" />
+
+        <!-- BLOC 0 : SAISIE VOCALE RAPIDE (PRÉ-REMPLISSAGE INTELLIGENT) -->
+        <div id="voice-sale-assistant-box" class="bg-gradient-to-r from-indigo-50/90 via-sky-50/70 to-emerald-50/70 rounded-2xl border border-indigo-200/90 p-3.5 space-y-2.5">
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <div class="min-w-0">
+              <div class="text-xs font-extrabold text-indigo-950 flex items-center gap-1.5">
+                <span>🎙️</span>
+                <span>Remplissage vocal express</span>
+              </div>
+              <p class="text-[11px] text-slate-600 leading-snug mt-0.5">
+                Ex. : <em>« Toitex, client Jean Tremblay, montant 14 500 $, suivi, dépôt reçu, contrat Est 3505 »</em>
+              </p>
+            </div>
+            <div class="flex items-center gap-1.5 shrink-0">
+              <button type="button" id="btn-voice-sale-toggle" onclick="toggleVoiceSaleDictation()" style="touch-action: manipulation; -webkit-tap-highlight-color: transparent;" class="px-3.5 py-2 text-xs font-extrabold text-white bg-indigo-600 hover:bg-indigo-700 active:scale-95 rounded-xl shadow-xs flex items-center gap-1.5 transition cursor-pointer">
+                <span id="voice-sale-btn-icon">🎙️</span>
+                <span id="voice-sale-btn-label">Dicter la vente</span>
+              </button>
+              <button type="button" id="btn-voice-manual-toggle" onclick="toggleVoiceManualInputBox()" title="Coller ou dicter avec le micro du clavier" class="px-2.5 py-2 text-xs font-bold text-indigo-700 bg-white hover:bg-indigo-50 border border-indigo-200 rounded-xl transition cursor-pointer">
+                ⌨️
+              </button>
+            </div>
+          </div>
+
+          <div id="voice-sale-live-box" class="hidden bg-white/95 rounded-xl border border-indigo-200/80 p-2.5 space-y-1.5">
+            <div class="flex items-center justify-between gap-2">
+              <span id="voice-sale-status" class="text-[11px] font-bold text-indigo-700">Écoute en cours... parlez maintenant</span>
+              <button type="button" onclick="clearVoiceSaleTranscript()" class="text-[10px] font-bold text-slate-400 hover:text-slate-600">Effacer</button>
+            </div>
+            <div id="voice-sale-transcript" class="text-xs text-slate-800 italic min-h-[20px] break-words"></div>
+            <div id="voice-sale-summary" class="hidden text-[11px] font-extrabold text-emerald-700 pt-1 border-t border-slate-100"></div>
+          </div>
+
+          <div id="voice-sale-manual-box" class="hidden space-y-1.5 pt-1">
+            <div class="flex gap-1.5">
+              <input id="voice-sale-manual-input" type="text" placeholder="Dictez avec le micro du clavier ou collez la phrase ici..." class="flex-1 min-w-0 px-3 py-2 text-xs bg-white border border-indigo-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-600" />
+              <button type="button" onclick="applyManualVoiceText()" class="px-3 py-2 text-xs font-extrabold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl shrink-0">Remplir</button>
+            </div>
+          </div>
+        </div>
 
         <!-- BLOC 1 : INTERVENANTS & CLIENT -->
         <div class="bg-slate-50/80 rounded-2xl border border-slate-200/80 p-3.5 sm:p-4 space-y-3.5">
@@ -12033,6 +12081,403 @@
       await loadAllData();
     });
 
+
+    // =========================================================================
+    // SAISIE VOCALE EXPRESS DE VENTE (RECONNAISSANCE + ANALYSE MULTI-CHAMPS)
+    // =========================================================================
+    let activeVoiceRecognition = null;
+    let isVoiceListening = false;
+    let voiceFinalTranscript = '';
+
+    function stopVoiceSaleDictation() {
+      isVoiceListening = false;
+      if (activeVoiceRecognition) {
+        try { activeVoiceRecognition.stop(); } catch (e) {}
+        activeVoiceRecognition = null;
+      }
+      const btn = document.getElementById('btn-voice-sale-toggle');
+      const iconEl = document.getElementById('voice-sale-btn-icon');
+      const lblEl = document.getElementById('voice-sale-btn-label');
+      if (btn) {
+        btn.classList.remove('bg-rose-600', 'hover:bg-rose-700', 'animate-pulse');
+        btn.classList.add('bg-indigo-600', 'hover:bg-indigo-700');
+      }
+      if (iconEl) iconEl.textContent = '🎙️';
+      if (lblEl) lblEl.textContent = 'Dicter la vente';
+    }
+
+    window.toggleVoiceManualInputBox = () => {
+      const box = document.getElementById('voice-sale-manual-box');
+      if (!box) return;
+      box.classList.toggle('hidden');
+      if (!box.classList.contains('hidden')) {
+        document.getElementById('voice-sale-manual-input')?.focus();
+      }
+    };
+
+    window.clearVoiceSaleTranscript = () => {
+      voiceFinalTranscript = '';
+      const tEl = document.getElementById('voice-sale-transcript');
+      const sEl = document.getElementById('voice-sale-summary');
+      const mEl = document.getElementById('voice-sale-manual-input');
+      if (tEl) tEl.textContent = '';
+      if (sEl) { sEl.textContent = ''; sEl.classList.add('hidden'); }
+      if (mEl) mEl.value = '';
+    };
+
+    window.applyManualVoiceText = () => {
+      const val = document.getElementById('voice-sale-manual-input')?.value || '';
+      if (!val.trim()) return toast('Saisissez ou dictez une phrase avant de remplir.', 'error');
+      const liveBox = document.getElementById('voice-sale-live-box');
+      const tEl = document.getElementById('voice-sale-transcript');
+      const stEl = document.getElementById('voice-sale-status');
+      if (liveBox) liveBox.classList.remove('hidden');
+      if (tEl) tEl.textContent = `« ${val.trim()} »`;
+      if (stEl) stEl.textContent = '✓ Phrase analysée';
+      parseAndFillSaleFromSpeech(val);
+    };
+
+    function parseFrenchSpokenNumbers(text) {
+      let s = String(text || '').toLowerCase()
+        .replace(/\u00a0/g, ' ')
+        .replace(/dollars?|piastres?|cad|\$/gi, ' $ ')
+        .replace(/virgule|point/gi, '.');
+
+      const units = {
+        'zero': 0, 'zéro': 0, 'un': 1, 'une': 1, 'deux': 2, 'trois': 3, 'quatre': 4,
+        'cinq': 5, 'six': 6, 'sept': 7, 'huit': 8, 'neuf': 9, 'dix': 10,
+        'onze': 11, 'douze': 12, 'treize': 13, 'quatorze': 14, 'quinze': 15,
+        'seize': 16, 'dix-sept': 17, 'dix sept': 17, 'dix-huit': 18, 'dix huit': 18,
+        'dix-neuf': 19, 'dix neuf': 19, 'vingt': 20, 'trente': 30, 'quarante': 40,
+        'cinquante': 50, 'soixante': 60, 'soixante-dix': 70, 'soixante dix': 70,
+        'quatre-vingt': 80, 'quatre-vingts': 80, 'quatre vingt': 80,
+        'quatre-vingt-dix': 90, 'quatre vingt dix': 90
+      };
+
+      // Convertir "14 mille 500" ou "quatorze mille cinq cents" en nombre
+      const wordGroupRegex = /\b((?:(?:zero|zéro|un|une|deux|trois|quatre|cinq|six|sept|huit|neuf|dix|onze|douze|treize|quatorze|quinze|seize|vingt|trente|quarante|cinquante|soixante|quatre-vingt(?:s)?|cent(?:s)?|mille|et|\d+)[\s-]*)+)\b/gi;
+      s = s.replace(wordGroupRegex, (match) => {
+        const clean = match.trim();
+        if (!/(mille|cent|vingt|trente|quarante|cinquante|soixante|quatorze|quinze|douze|treize|seize|onze|dix|deux|trois|quatre|cinq|six|sept|huit|neuf)/i.test(clean)) {
+          return match;
+        }
+        const tokens = clean.split(/[\s-]+/).filter(Boolean);
+        let total = 0;
+        let current = 0;
+        let matchedAny = false;
+        for (const tok of tokens) {
+          if (tok === 'et') continue;
+          if (/^\d+$/.test(tok)) {
+            current += parseInt(tok, 10);
+            matchedAny = true;
+          } else if (units[tok] !== undefined) {
+            current += units[tok];
+            matchedAny = true;
+          } else if (tok === 'cent' || tok === 'cents') {
+            current = (current === 0 ? 1 : current) * 100;
+            matchedAny = true;
+          } else if (tok === 'mille') {
+            total += (current === 0 ? 1 : current) * 1000;
+            current = 0;
+            matchedAny = true;
+          }
+        }
+        if (!matchedAny) return match;
+        return ` ${total + current} `;
+      });
+
+      return s;
+    }
+
+    function flashVoiceFilledField(el) {
+      if (!el) return;
+      el.classList.add('ring-2', 'ring-emerald-500', 'bg-emerald-50/40');
+      setTimeout(() => {
+        el.classList.remove('ring-2', 'ring-emerald-500', 'bg-emerald-50/40');
+      }, 2200);
+    }
+
+    function formatTitleCaseName(raw) {
+      return String(raw || '')
+        .trim()
+        .replace(/\s+/g, ' ')
+        .split(' ')
+        .map(part => part.split('-').map(sub => sub ? (sub[0].toUpperCase() + sub.slice(1).toLowerCase()) : '').join('-'))
+        .join(' ');
+    }
+
+    function parseAndFillSaleFromSpeech(rawTranscript) {
+      const original = String(rawTranscript || '').trim();
+      if (!original) return;
+      const normalized = parseFrenchSpokenNumbers(original);
+      const filledLabels = [];
+
+      // 1. ENTREPRISE PARTENAIRE
+      const entSel = document.getElementById('vente-entreprise');
+      if (entSel && entSel.options.length) {
+        const normNoAcc = original.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+        const entAliases = [
+          { keys: ['toitex', 'toit ex', 'toit x'], match: 'toitex' },
+          { keys: ['maclim', 'ma clim', 'ma clime', 'clim'], match: 'maclim' },
+          { keys: ['monspray', 'mon spray', 'spray'], match: 'monspray' },
+          { keys: ['verrevdm', 'verre vdm', 'vdm', 'cloture vdm', 'clôture vdm'], match: 'verrevdm' },
+          { keys: ['diamant pro', 'groupe diamant', 'diamant'], match: 'diamant' },
+          { keys: ['ornithorynque'], match: 'ornithorynque' }
+        ];
+        let targetEntKey = '';
+        for (const item of entAliases) {
+          if (item.keys.some(k => normNoAcc.includes(k))) {
+            targetEntKey = item.match;
+            break;
+          }
+        }
+        for (const opt of entSel.options) {
+          const optNorm = (opt.textContent || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+          if ((targetEntKey && optNorm.includes(targetEntKey)) || (optNorm.length >= 4 && normNoAcc.includes(optNorm))) {
+            entSel.value = opt.value;
+            flashVoiceFilledField(entSel);
+            filledLabels.push(`Entreprise : ${opt.textContent.trim()}`);
+            break;
+          }
+        }
+      }
+
+      // 2. REPRÉSENTANT (si admin et qu'un prénom de rep est mentionné)
+      const repSel = document.getElementById('vente-rep');
+      if (repSel && !repSel.disabled && currentProfile?.role === 'admin') {
+        const normRepText = original.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+        const repAliases = [
+          { keys: ['jean-sebastien', 'jean sebastien', 'j-s', 'js'], match: 'jean' },
+          { keys: ['gabryel', 'gabriel'], match: 'gab' },
+          { keys: ['samuel', 'sam'], match: 'samuel' },
+          { keys: ['alexandre', 'alex'], match: 'alex' },
+          { keys: ['olivier'], match: 'olivier' }
+        ];
+        for (const ra of repAliases) {
+          if (ra.keys.some(k => new RegExp('\\b' + k + '\\b', 'i').test(normRepText))) {
+            const opt = Array.from(repSel.options).find(o => o.textContent.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').includes(ra.match));
+            if (opt) {
+              repSel.value = opt.value;
+              flashVoiceFilledField(repSel);
+              filledLabels.push(`Rep : ${opt.textContent.trim()}`);
+              break;
+            }
+          }
+        }
+      }
+
+      // 3. MONTANT ($ CAD)
+      // Éviter de confondre le numéro de contrat ("Est 3505" ou "contrat 3505") avec le montant
+      const withoutContractNums = normalized.replace(/\b(?:contrat|estimation|est|facture|dossier|numero|numéro|no|#)\s*[a-z]*\s*\d+[a-z0-9-]*/gi, ' ');
+      let detectedAmount = null;
+      const explicitMoneyMatch = withoutContractNums.match(/(\d[\d\s]{0,10}(?:[.,]\d{1,2})?)\s*\$/);
+      if (explicitMoneyMatch) {
+        detectedAmount = parseAmount(explicitMoneyMatch[1]);
+      } else {
+        const afterMontantMatch = withoutContractNums.match(/\b(?:montant|valeur|vente|total|prix|de)\s*(?:de\s*)?(\d[\d\s]{1,10}(?:[.,]\d{1,2})?)/i);
+        if (afterMontantMatch) {
+          detectedAmount = parseAmount(afterMontantMatch[1]);
+        } else {
+          const allNums = Array.from(withoutContractNums.matchAll(/\b(\d[\d\s]{1,9}(?:[.,]\d{1,2})?)\b/g))
+            .map(m => parseAmount(m[1]))
+            .filter(n => !isNaN(n) && n >= 50);
+          if (allNums.length) detectedAmount = Math.max(...allNums);
+        }
+      }
+      if (detectedAmount && !isNaN(detectedAmount) && detectedAmount > 0) {
+        const valEl = document.getElementById('vente-valeur');
+        if (valEl) {
+          valEl.value = detectedAmount.toFixed(2).replace(/\.00$/, '');
+          flashVoiceFilledField(valEl);
+          filledLabels.push(`Montant : ${fmtMoney(detectedAmount)}`);
+        }
+      }
+
+      // 4. TYPE KPI (OTS vs SUIVI)
+      const kpiSel = document.getElementById('vente-type-kpi');
+      if (kpiSel) {
+        if (/\b(?:suivi|suivis|relance)\b/i.test(original)) {
+          kpiSel.value = 'SUIVI';
+          flashVoiceFilledField(kpiSel);
+          filledLabels.push('Type : Suivi');
+        } else if (/\b(?:ots|o\.t\.s|sur place|one time)\b/i.test(original)) {
+          kpiSel.value = 'OTS';
+          flashVoiceFilledField(kpiSel);
+          filledLabels.push('Type : OTS');
+        }
+      }
+
+      // 5. STATUT DU DÉPÔT
+      const depotSel = document.getElementById('vente-statut-depot');
+      if (depotSel) {
+        if (/\b(?:dépôt reçu|depot recu|dépôt recu|depot reçu|dépôt payé|depot paye|virement reçu|chèque reçu|cheque recu|acompte reçu)\b/i.test(original)) {
+          depotSel.value = 'depot_recu';
+          flashVoiceFilledField(depotSel);
+          filledLabels.push('Dépôt : Reçu');
+        } else if (/\b(?:à confirmer|a confirmer|pas de dépôt|sans dépôt|aucun dépôt)\b/i.test(original)) {
+          depotSel.value = 'a_confirmer';
+          flashVoiceFilledField(depotSel);
+          filledLabels.push('Dépôt : À confirmer');
+        }
+      }
+
+      // 6. NUMÉRO DE CONTRAT / NOTE INTERNE
+      let detectedNote = '';
+      const noteExplicitMatch = original.match(/\b(?:contrat|estimation|est|facture|note|dossier)\s*(?:numéro|numero|no|#)?\s*[:\-]?\s*([a-z0-9\s-]{2,35})$/i)
+        || original.match(/\b(?:contrat|estimation|est|facture|note)\s*(?:numéro|numero|no|#)?\s*[:\-]?\s*([a-z]*\s*\d+[a-z0-9-]*)/i);
+      if (noteExplicitMatch && noteExplicitMatch[1]) {
+        detectedNote = noteExplicitMatch[1].trim();
+        if (/^\d+$/.test(detectedNote) && /\b(?:est|estimation)\b/i.test(noteExplicitMatch[0])) {
+          detectedNote = `Est${detectedNote}`;
+        } else if (/^est\s+\d+$/i.test(detectedNote)) {
+          detectedNote = detectedNote.replace(/^est\s+/i, 'Est');
+        }
+      }
+      if (detectedNote) {
+        const noteEl = document.getElementById('vente-note');
+        if (noteEl) {
+          noteEl.value = detectedNote;
+          flashVoiceFilledField(noteEl);
+          filledLabels.push(`Note : ${detectedNote}`);
+        }
+      }
+
+      // 7. NOM DU CLIENT
+      let detectedClient = '';
+      const clientAfterKeyword = original.match(/\b(?:client|cliente|pour|chez|nom)\s+([a-zà-ÿ'\s-]{2,45}?)(?=\s*(?:,|\.|\bmontant\b|\bvaleur\b|\bvente\b|\bde\b\s*\d|\d|\bsuivi\b|\bots\b|\bdépôt\b|\bdepot\b|\bcontrat\b|\bestimation\b|\bnote\b|\btoitex\b|\bmaclim\b|\bmonspray\b|\bverre|\bvdm\b|\bdiamant\b|$))/i);
+      if (clientAfterKeyword && clientAfterKeyword[1]) {
+        detectedClient = clientAfterKeyword[1].trim();
+      } else {
+        // Fallback : retirer les mots-clés connus et garder le segment texte restant s'il ressemble à un nom
+        let stripped = original
+          .replace(/\b(?:toitex|maclim|ma clim|monspray|mon spray|verrevdm|verre vdm|clôture vdm|cloture vdm|groupe diamant pro|diamant pro|ornithorynque)\b/gi, ',')
+          .replace(/\b(?:dépôt reçu|depot recu|à confirmer|a confirmer|suivi|ots|sur place|montant|valeur|vente|dollars?|piastres?|cad)\b/gi, ',')
+          .replace(/\b(?:contrat|estimation|est|facture|note|dossier)\s*(?:numéro|numero|no|#)?\s*[a-z0-9-]+/gi, ',')
+          .replace(/\d[\d\s.,]*\$?/g, ',');
+        const candidates = stripped.split(/[,.;]+/).map(x => x.trim()).filter(x => x.length >= 3 && /^[a-zà-ÿ'\s-]+$/i.test(x));
+        if (candidates.length) {
+          detectedClient = candidates[0];
+        }
+      }
+
+      if (detectedClient) {
+        const formattedClient = formatTitleCaseName(detectedClient);
+        const cliEl = document.getElementById('vente-client-nom');
+        if (cliEl) {
+          cliEl.value = formattedClient;
+          flashVoiceFilledField(cliEl);
+          filledLabels.push(`Client : ${formattedClient}`);
+        }
+      }
+
+      // Mettre à jour l'aperçu des commissions calculées en direct
+      if (typeof updateDrawerCommissionPreview === 'function') {
+        updateDrawerCommissionPreview();
+      }
+
+      const summaryEl = document.getElementById('voice-sale-summary');
+      if (summaryEl) {
+        if (filledLabels.length > 0) {
+          summaryEl.textContent = `✓ ${filledLabels.length} champ(s) rempli(s) : ${filledLabels.join(' • ')}`;
+          summaryEl.className = 'text-[11px] font-extrabold text-emerald-700 pt-1 border-t border-slate-100';
+          summaryEl.classList.remove('hidden');
+        } else {
+          summaryEl.textContent = 'Aucun champ reconnu automatiquement — vérifiez le texte ou complétez manuellement.';
+          summaryEl.className = 'text-[11px] font-bold text-amber-700 pt-1 border-t border-slate-100';
+          summaryEl.classList.remove('hidden');
+        }
+      }
+    }
+
+    window.toggleVoiceSaleDictation = () => {
+      if (isVoiceListening) {
+        stopVoiceSaleDictation();
+        return;
+      }
+
+      const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SpeechRec) {
+        toast('Micro direct non supporté sur ce navigateur : utilisez le micro du clavier ci-dessous.', 'error');
+        const mBox = document.getElementById('voice-sale-manual-box');
+        if (mBox) mBox.classList.remove('hidden');
+        document.getElementById('voice-sale-manual-input')?.focus();
+        return;
+      }
+
+      const recognition = new SpeechRec();
+      recognition.lang = 'fr-CA';
+      recognition.continuous = false;
+      recognition.interimResults = true;
+      recognition.maxAlternatives = 1;
+
+      activeVoiceRecognition = recognition;
+      isVoiceListening = true;
+      voiceFinalTranscript = '';
+
+      const btn = document.getElementById('btn-voice-sale-toggle');
+      const iconEl = document.getElementById('voice-sale-btn-icon');
+      const lblEl = document.getElementById('voice-sale-btn-label');
+      const liveBox = document.getElementById('voice-sale-live-box');
+      const statusEl = document.getElementById('voice-sale-status');
+      const transcriptEl = document.getElementById('voice-sale-transcript');
+      const summaryEl = document.getElementById('voice-sale-summary');
+
+      if (btn) {
+        btn.classList.remove('bg-indigo-600', 'hover:bg-indigo-700');
+        btn.classList.add('bg-rose-600', 'hover:bg-rose-700', 'animate-pulse');
+      }
+      if (iconEl) iconEl.textContent = '⏹️';
+      if (lblEl) lblEl.textContent = 'Arrêter';
+      if (liveBox) liveBox.classList.remove('hidden');
+      if (statusEl) statusEl.textContent = '🔴 Écoute en cours... énoncez l’entreprise, le client, le montant...';
+      if (transcriptEl) transcriptEl.textContent = '';
+      if (summaryEl) summaryEl.classList.add('hidden');
+
+      recognition.onresult = (event) => {
+        let interim = '';
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+          const piece = event.results[i][0].transcript;
+          if (event.results[i].isFinal) {
+            voiceFinalTranscript += (voiceFinalTranscript ? ' ' : '') + piece;
+          } else {
+            interim += piece;
+          }
+        }
+        const combined = (voiceFinalTranscript + ' ' + interim).trim();
+        if (transcriptEl) transcriptEl.textContent = combined ? `« ${combined} »` : '';
+        if (combined) {
+          parseAndFillSaleFromSpeech(combined);
+        }
+      };
+
+      recognition.onerror = (event) => {
+        if (event.error === 'not-allowed') {
+          toast('Autorisez l’accès au microphone dans les réglages de votre navigateur.', 'error');
+        } else if (event.error !== 'aborted' && event.error !== 'no-speech') {
+          toast('Erreur vocale : ' + event.error, 'error');
+        }
+        stopVoiceSaleDictation();
+        if (statusEl) statusEl.textContent = 'Dictée interrompue';
+      };
+
+      recognition.onend = () => {
+        const hadText = Boolean((voiceFinalTranscript || transcriptEl?.textContent || '').trim());
+        stopVoiceSaleDictation();
+        if (statusEl) {
+          statusEl.textContent = hadText
+            ? '✓ Dictée terminée — vérifiez les champs puis cliquez sur Enregistrer'
+            : 'Aucune parole détectée — appuyez sur Dicter pour réessayer';
+        }
+      };
+
+      try {
+        recognition.start();
+      } catch (e) {
+        stopVoiceSaleDictation();
+        toast('Impossible de démarrer le micro : ' + e.message, 'error');
+      }
+    };
+
     const drawer = document.getElementById('sale-drawer-backdrop');
     function openNewSaleDrawer() {
       document.getElementById('vente-edit-id').value = '';
@@ -12069,15 +12514,19 @@
       document.getElementById('vente-proof-preview-box')?.classList.add('hidden');
       document.getElementById('btn-clear-proof')?.classList.add('hidden');
       document.getElementById('vente-proof-status')?.classList.add('hidden');
+      stopVoiceSaleDictation();
+      clearVoiceSaleTranscript();
+      document.getElementById('voice-sale-live-box')?.classList.add('hidden');
+      document.getElementById('voice-sale-manual-box')?.classList.add('hidden');
       drawer.classList.remove('hidden');
       updateDrawerCommissionPreview();
     }
     document.getElementById('btn-open-drawer')?.addEventListener('click', openNewSaleDrawer);
     document.getElementById('btn-rep-open-drawer')?.addEventListener('click', openNewSaleDrawer);
     document.getElementById('btn-mobile-fab-sale')?.addEventListener('click', openNewSaleDrawer);
-    document.getElementById('btn-close-drawer')?.addEventListener('click', () => drawer.classList.add('hidden'));
-    document.getElementById('btn-cancel-drawer')?.addEventListener('click', () => drawer.classList.add('hidden'));
-    drawer.addEventListener('click', (e) => { if (e.target === drawer) drawer.classList.add('hidden'); });
+    document.getElementById('btn-close-drawer')?.addEventListener('click', () => { stopVoiceSaleDictation(); drawer.classList.add('hidden'); });
+    document.getElementById('btn-cancel-drawer')?.addEventListener('click', () => { stopVoiceSaleDictation(); drawer.classList.add('hidden'); });
+    drawer.addEventListener('click', (e) => { if (e.target === drawer) { stopVoiceSaleDictation(); drawer.classList.add('hidden'); } });
 
     document.getElementById('btn-close-payslip')?.addEventListener('click', () => document.getElementById('payslip-modal').classList.add('hidden'));
 
