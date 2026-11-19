@@ -2528,19 +2528,23 @@
       };
       const filterOutSupersededUnconfirmed = (rows) => {
         if (!Array.isArray(rows)) return [];
-        const confirmedKeys = new Set();
-        rows.forEach(r => {
-          if (r.statut_depot === 'depot_recu') {
-            const cName = normClientKey(r.client_nom || state.clients.find(c => String(c.id) === String(r.client_id))?.nom || '');
-            if (cName) confirmedKeys.add(`${r.representant_id || ''}__${r.entreprise_id || ''}__${cName}`);
-          }
-        });
-        if (!confirmedKeys.size) return rows;
+        const confirmedList = rows.filter(r => r.statut_depot === 'depot_recu');
+        const unconfirmedList = rows.filter(r => r.statut_depot === 'a_confirmer');
+
         return rows.filter(r => {
           if (r.statut_depot !== 'a_confirmer') return true;
-          const cName = normClientKey(r.client_nom || state.clients.find(c => String(c.id) === String(r.client_id))?.nom || '');
-          const k = `${r.representant_id || ''}__${r.entreprise_id || ''}__${cName}`;
-          return !confirmedKeys.has(k);
+          // 1. Masquer si un dossier confirmé (`depot_recu`) existe déjà pour ce même client + entreprise + rep
+          if (confirmedList.some(cRow => areSameClientSales(cRow, r))) return false;
+          // 2. Si plusieurs entrées `a_confirmer` existent sur des mois différents pour la même vente (même client + entreprise + rep + même montant), ne garder que la plus récente
+          const rKey = `${r.date_vente || r.mois_commission || ''}_${r.created_at || ''}_${r.id || ''}`;
+          const hasNewerUnconfirmedCopy = unconfirmedList.some(other => {
+            if (String(other.id) === String(r.id)) return false;
+            if (!areSameClientSales(other, r)) return false;
+            if (Math.abs(Number(other.valeur || 0) - Number(r.valeur || 0)) >= 0.01) return false;
+            const oKey = `${other.date_vente || other.mois_commission || ''}_${other.created_at || ''}_${other.id || ''}`;
+            return oKey > rKey;
+          });
+          return !hasNewerUnconfirmedCopy;
         });
       };
 
@@ -8084,7 +8088,15 @@
     }
 
     function normClientKey(name) {
-      return String(name || '').trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, ' ');
+      return String(name || '')
+        .trim()
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/\bsainte\b/g, 'st')
+        .replace(/\bsaint\b/g, 'st')
+        .replace(/[^a-z0-9]+/g, ' ')
+        .trim();
     }
 
     function getResolvedClientNameForSale(v) {
@@ -8092,12 +8104,27 @@
       return v.client_nom || state.clients.find(c => String(c.id) === String(v.client_id))?.nom || '';
     }
 
+    function areSameClientSales(v1, v2) {
+      if (!v1 || !v2) return false;
+      const sameRep = String(v1.representant_id || '') === String(v2.representant_id || '');
+      const sameEnt = String(v1.entreprise_id || '') === String(v2.entreprise_id || '');
+      if (!sameRep || !sameEnt) return false;
+      const n1 = normClientKey(getResolvedClientNameForSale(v1));
+      const n2 = normClientKey(getResolvedClientNameForSale(v2));
+      if (!n1 || !n2) return false;
+      if (n1 === n2) return true;
+      // Correspondance tolérante si un nom complet inclut l'autre (ex. "Benoit St-Marie" vs "Benoit Sainte-Marie" ou note/prénom)
+      const tokens1 = n1.split(' ').filter(t => t.length >= 3);
+      const tokens2 = n2.split(' ').filter(t => t.length >= 3);
+      if (tokens1.length >= 2 && tokens2.length >= 2 && tokens1.every(t => tokens2.includes(t))) return true;
+      return false;
+    }
+
     async function reconcilePreviousUnconfirmedDuplicateSales(confirmedSaleIds = null) {
       if (!sb || !Array.isArray(state.ventes) || !state.ventes.length) return 0;
       const isSpecific = Array.isArray(confirmedSaleIds) && confirmedSaleIds.length > 0;
       const idSet = isSpecific ? new Set(confirmedSaleIds.map(x => String(x))) : null;
 
-      // Dossiers confirmés (ou ciblés) qui font foi
       const confirmedRows = state.ventes.filter(v => {
         if (idSet) return idSet.has(String(v.id));
         return v.statut_depot === 'depot_recu';
@@ -8109,28 +8136,16 @@
 
       confirmedRows.forEach(confV => {
         const confId = String(confV.id);
-        const confCli = normClientKey(getResolvedClientNameForSale(confV));
-        if (!confCli) return;
-        const confEnt = String(confV.entreprise_id || '');
-        const confRep = String(confV.representant_id || '');
-
         (state.ventes || []).forEach(cand => {
           const cid = String(cand.id);
           if (cid === confId || seenDupIds.has(cid)) return;
           if (idSet && idSet.has(cid)) return;
-          // Retirer tout dossier antérieur ou identique resté `a_confirmer` pour ce même client + entreprise + représentant
           if (cand.statut_depot !== 'a_confirmer') return;
-          if (String(cand.entreprise_id || '') !== confEnt) return;
-          if (String(cand.representant_id || '') !== confRep) return;
-          const candCli = normClientKey(getResolvedClientNameForSale(cand));
-          if (candCli !== confCli) return;
+          if (!areSameClientSales(confV, cand)) return;
 
-          const candDateKey = `${cand.date_vente || cand.mois_commission || ''}_${cand.created_at || ''}`;
-          const confDateKey = `${confV.date_vente || confV.mois_commission || ''}_${confV.created_at || ''}`;
-          if (candDateKey <= confDateKey) {
-            seenDupIds.add(cid);
-            duplicatesToRemove.push({ dup: cand, kept: confV });
-          }
+          // Si un dossier est confirmé (`depot_recu`), toute autre entrée restée `a_confirmer` pour le même client/entreprise/rep est un report non confirmé à fusionner
+          seenDupIds.add(cid);
+          duplicatesToRemove.push({ dup: cand, kept: confV });
         });
       });
 
