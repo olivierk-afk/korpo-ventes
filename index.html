@@ -9890,9 +9890,14 @@
       const confirmedOnly = Boolean(document.getElementById('auto-email-confirmed-only')?.checked);
       const st = buildStatementForRep(rep, ym, confirmedOnly);
       if (!st.dossiers.length) return toast('Aucune commission à exporter pour ce mois.', 'error');
+      if (st.highestWaveInvUsed) {
+        lsSet('korpo_wave_last_inv_num', st.highestWaveInvUsed);
+        const invIn = document.getElementById('auto-email-last-inv');
+        if (invIn) invIn.value = st.highestWaveInvUsed;
+      }
       const slug = rep.nom.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-');
       triggerWaveCsvDownload(st.waveCsvContent, `facture-wave-${slug}-${ym}.csv`);
-      toast(`📄 Fichier Wave téléchargé (${st.dossiers.length} ligne(s)) pour ${rep.nom} ✓`);
+      toast(`📄 Fichier Wave téléchargé (${st.dossiers.length} ligne(s), jusqu'à la facture #${st.highestWaveInvUsed || ''}) pour ${rep.nom} ✓`);
     };
 
     window.downloadCurrentUserWaveCsv = () => {
