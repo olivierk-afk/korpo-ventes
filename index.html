@@ -1652,9 +1652,15 @@
               <option value="non_paye">Commission à recevoir</option>
               <option value="paye">Commission payée</option>
             </select>
+            <button id="btn-rep-future-comm" type="button" onclick="toggleRepFutureCommQuickView()" title="Afficher en 1 clic toutes vos commissions prévues dans les prochains mois" class="w-full sm:w-auto px-3.5 py-2 text-xs font-extrabold text-emerald-900 bg-emerald-50 hover:bg-emerald-100 border border-emerald-300 rounded-xl transition flex items-center justify-center gap-1.5 shadow-2xs">
+              <span>🔮</span>
+              <span>Commissions futures</span>
+              <span id="rep-future-comm-badge" class="px-1.5 py-0.2 text-[10px] font-extrabold rounded-full bg-emerald-600 text-white tabular-nums">0</span>
+            </button>
             <div class="flex flex-wrap items-center justify-center gap-2 w-full sm:w-auto">
               <select id="filter-rep-period" class="w-full sm:w-auto px-3.5 py-2 text-xs font-bold bg-indigo-50/70 text-indigo-950 border border-indigo-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-600 cursor-pointer">
                 <option value="this_month" selected>📅 Ce mois-ci</option>
+                <option value="future">🔮 Commissions futures (Mois à venir)</option>
                 <option value="this_week">📆 Cette semaine</option>
                 <option value="this_quarter">📊 Ce trimestre</option>
                 <option value="this_year">🗓️ Cette année</option>
@@ -1818,6 +1824,18 @@
               </div>
             </div>
           </div>
+        </div>
+
+        <!-- RÉPARTITION PAR MOIS FUTUR (QUAND « COMMISSIONS FUTURES » EST ACTIF) -->
+        <div id="rep-future-months-breakdown" class="hidden bg-gradient-to-r from-emerald-50/90 via-white to-indigo-50/70 rounded-2xl border border-emerald-200 p-4 shadow-xs space-y-2.5">
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <div class="text-xs font-extrabold text-emerald-950 flex items-center gap-1.5">
+              <span>🔮</span>
+              <span>Vos commissions prévues par mois à venir</span>
+            </div>
+            <button type="button" onclick="toggleRepFutureCommQuickView()" class="text-[11px] font-bold text-slate-500 hover:text-slate-800">← Revenir au mois en cours</button>
+          </div>
+          <div id="rep-future-months-pills" class="flex flex-wrap gap-2"></div>
         </div>
 
         <!-- CARTES MOBILES DES VENTES (< 768px : ONGLET MES VENTES) -->
@@ -2997,6 +3015,7 @@
       const commYm = co?.movedToYm && (!v.mois_commission || v.mois_commission < co.movedToYm)
         ? co.movedToYm
         : (v.mois_commission || '');
+      if (isValidYearMonth(commYm) && commYm > currentMonthStr) return commYm;
       if (origYm) return origYm;
       if (v._statsMonth) return v._statsMonth;
       return commYm || currentMonthStr;
@@ -8476,6 +8495,18 @@
       }
     }
 
+    window.toggleRepFutureCommQuickView = () => {
+      const sel = document.getElementById('filter-rep-period');
+      if (!sel) return;
+      sel.value = sel.value === 'future' ? 'this_month' : 'future';
+      syncPeriodInputsVisibility('filter-rep', false);
+      renderMesVentes();
+      if (sel.value === 'future') {
+        if (window.innerWidth < 768) switchTab('tab-mes-commissions');
+        toast('🔮 Affichage de vos commissions prévues dans les prochains mois');
+      }
+    };
+
     function renderMesVentes() {
       syncCommDisplayModeButtons();
       const isAdmin = currentProfile.role === 'admin';
@@ -8522,6 +8553,51 @@
             if (isAdmin && scopeFilter === 'direct' && v.representant_id !== currentProfile.id) return false;
             return true;
           });
+
+      const allFutureRepSales = scopeFilteredAll.filter(v => Boolean(getSaleTargetFutureMonth(v)));
+      const repFutureBadge = document.getElementById('rep-future-comm-badge');
+      const repFutureBtn = document.getElementById('btn-rep-future-comm');
+      if (repFutureBadge) repFutureBadge.textContent = String(allFutureRepSales.length);
+      if (repFutureBtn) {
+        const isRepFuture = periodState.mode === 'future';
+        repFutureBtn.className = isRepFuture
+          ? 'w-full sm:w-auto px-3.5 py-2 text-xs font-extrabold text-white bg-emerald-600 hover:bg-emerald-700 border border-emerald-600 rounded-xl transition flex items-center justify-center gap-1.5 shadow-sm ring-2 ring-emerald-400/40'
+          : 'w-full sm:w-auto px-3.5 py-2 text-xs font-extrabold text-emerald-900 bg-emerald-50 hover:bg-emerald-100 border border-emerald-300 rounded-xl transition flex items-center justify-center gap-1.5 shadow-2xs';
+        if (repFutureBadge) {
+          repFutureBadge.className = isRepFuture
+            ? 'px-1.5 py-0.2 text-[10px] font-extrabold rounded-full bg-white text-emerald-800 tabular-nums'
+            : 'px-1.5 py-0.2 text-[10px] font-extrabold rounded-full bg-emerald-600 text-white tabular-nums';
+        }
+      }
+
+      const futureBreakdownBox = document.getElementById('rep-future-months-breakdown');
+      const futurePillsEl = document.getElementById('rep-future-months-pills');
+      if (futureBreakdownBox && futurePillsEl) {
+        if (periodState.mode === 'future') {
+          futureBreakdownBox.classList.remove('hidden');
+          const byFutureYm = new Map();
+          allFutureRepSales.forEach(v => {
+            const fYm = getSaleTargetFutureMonth(v);
+            if (!fYm) return;
+            const cur = byFutureYm.get(fYm) || { count: 0, val: 0, comm: 0 };
+            cur.count += 1;
+            cur.val += Number(v.valeur || 0);
+            cur.comm += Number(v.commission_rep || 0);
+            byFutureYm.set(fYm, cur);
+          });
+          const sortedYms = Array.from(byFutureYm.entries()).sort((a, b) => a[0].localeCompare(b[0]));
+          futurePillsEl.innerHTML = sortedYms.length
+            ? sortedYms.map(([ym, info]) => `
+                <button type="button" onclick="document.getElementById('filter-rep-period').value='specific_month'; document.getElementById('filter-rep-month').value='${ym}'; syncPeriodInputsVisibility('filter-rep', false); renderMesVentes();" class="px-3 py-2 rounded-xl bg-white hover:bg-emerald-50 border border-emerald-200 text-left shadow-2xs transition tabular-nums">
+                  <div class="text-xs font-extrabold text-slate-900">${esc(formatYearMonthLabelFr(ym))} <span class="text-[10px] font-bold text-indigo-600">(${info.count} vente${info.count > 1 ? 's' : ''})</span></div>
+                  <div class="text-[11px] text-slate-500">Ventes : <strong>${fmtMoney0(info.val)}</strong> • Comm. : <strong class="text-emerald-700">${fmtMoney(info.comm)}</strong></div>
+                </button>
+              `).join('')
+            : `<span class="text-xs text-slate-500 italic">Aucune commission planifiée dans les prochains mois pour le moment.</span>`;
+        } else {
+          futureBreakdownBox.classList.add('hidden');
+        }
+      }
 
       const filtered = scopeFilteredAll.filter(v => {
         if (!matchesSalePeriod(v, periodState, true)) return false;
@@ -9620,6 +9696,7 @@
 
       document.getElementById('dash-depots-attente').textContent = list.filter(v => v.statut_depot === 'a_confirmer').length;
       renderExecutiveForecast();
+      renderFutureMonthsBreakdown();
 
       const byMonth = new Map();
       state.ventes.forEach(v => {
