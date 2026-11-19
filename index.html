@@ -510,6 +510,56 @@
       background-color: rgba(244, 63, 94, 0.32) !important;
     }
 
+    /* ===================================================================== */
+    /* CLASSEMENT D'ÉQUIPE : HARMONIE DES COULEURS, FLUIDITÉ & MODE SOMBRE     */
+    /* ===================================================================== */
+    @keyframes rankCardReveal {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .rank-card-smooth {
+      animation: rankCardReveal 0.28s cubic-bezier(0.22, 1, 0.36, 1) both;
+      transition: transform 0.22s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.22s ease, border-color 0.22s ease;
+      will-change: transform;
+    }
+    .rank-card-smooth:hover {
+      transform: translateY(-2px);
+    }
+    .rank-podium-gold {
+      background: linear-gradient(180deg, rgba(254, 243, 199, 0.72) 0%, rgba(255, 255, 255, 0.98) 58%, #ffffff 100%);
+      border-color: rgba(245, 158, 11, 0.55) !important;
+      box-shadow: 0 10px 26px -10px rgba(217, 119, 6, 0.22), 0 2px 6px rgba(15, 23, 42, 0.04);
+    }
+    .rank-podium-silver {
+      background: linear-gradient(180deg, rgba(241, 245, 249, 0.85) 0%, #ffffff 65%);
+      border-color: rgba(148, 163, 184, 0.55) !important;
+    }
+    .rank-podium-bronze {
+      background: linear-gradient(180deg, rgba(255, 237, 213, 0.65) 0%, #ffffff 65%);
+      border-color: rgba(251, 146, 60, 0.45) !important;
+    }
+    html.dark .rank-podium-gold {
+      background: linear-gradient(180deg, rgba(245, 158, 11, 0.20) 0%, rgba(30, 27, 75, 0.55) 55%, #111827 100%) !important;
+      border-color: rgba(251, 191, 36, 0.55) !important;
+      box-shadow: 0 12px 28px -8px rgba(245, 158, 11, 0.20) !important;
+    }
+    html.dark .rank-podium-silver {
+      background: linear-gradient(180deg, rgba(148, 163, 184, 0.16) 0%, #111827 65%) !important;
+      border-color: rgba(148, 163, 184, 0.42) !important;
+    }
+    html.dark .rank-podium-bronze {
+      background: linear-gradient(180deg, rgba(249, 115, 22, 0.16) 0%, #111827 65%) !important;
+      border-color: rgba(251, 146, 60, 0.42) !important;
+    }
+    html.dark .rank-hero-banner {
+      background-image: linear-gradient(135deg, #0b1120 0%, #1e1b4b 52%, #0f172a 100%) !important;
+      border-color: rgba(129, 140, 248, 0.40) !important;
+    }
+    html.dark .rank-stat-tile {
+      background-color: #162033 !important;
+      border-color: #283652 !important;
+    }
+
     @media print {
       body > *:not(#payslip-modal) { display: none !important; }
       #payslip-modal {
@@ -2134,36 +2184,50 @@
       </section>
 
       <section id="tab-classement" class="hidden space-y-6">
-        <div class="max-w-5xl mx-auto space-y-6">
-          <!-- EN-TÊTE ET FILTRES -->
-          <div class="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div>
-              <div class="flex flex-wrap items-center gap-2">
-                <h2 class="text-xl font-extrabold text-slate-900 tracking-tight flex items-center gap-2">
-                  <span class="w-9 h-9 rounded-xl bg-gradient-to-br from-amber-400 to-orange-500 text-slate-950 shadow-sm flex items-center justify-center text-base">🏆</span>
-                  <span>Classement & Performance de l'équipe</span>
-                </h2>
-                <span id="classement-period-pill" class="px-2.5 py-0.5 text-[11px] font-extrabold rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200">Ce mois-ci</span>
+        <div class="max-w-5xl mx-auto space-y-5">
+          <!-- EN-TÊTE ET FILTRES RAPIDES EN 1 CLIC -->
+          <div class="bg-white rounded-3xl border border-slate-200/80 p-5 shadow-xs space-y-4">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div>
+                <div class="flex flex-wrap items-center gap-2.5">
+                  <span class="w-10 h-10 rounded-2xl bg-gradient-to-br from-amber-400 via-amber-500 to-orange-500 text-slate-950 shadow-sm flex items-center justify-center text-lg shrink-0">🏆</span>
+                  <div>
+                    <div class="flex flex-wrap items-center gap-2">
+                      <h2 class="text-lg sm:text-xl font-extrabold text-slate-900 tracking-tight">Classement & Performance de l'équipe</h2>
+                      <span id="classement-period-pill" class="px-2.5 py-0.5 text-[11px] font-extrabold rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200">Ce mois-ci</span>
+                    </div>
+                    <p class="text-xs text-slate-500 mt-0.5">Volumes signés, progression vers les targets et parts d'équipe (commissions strictement privées)</p>
+                  </div>
+                </div>
               </div>
-              <p class="text-xs text-slate-500 mt-1">Volumes signés, progression vers les targets, cadence quotidienne et répartition (les commissions demeurent strictement privées)</p>
+
+              <div class="flex flex-wrap items-center gap-2 shrink-0">
+                <select id="filter-rank-period" class="px-3 py-2 text-xs font-bold bg-slate-50 text-slate-800 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-600 cursor-pointer">
+                  <option value="this_month" selected>📅 Ce mois-ci</option>
+                  <option value="this_week">📆 Cette semaine</option>
+                  <option value="this_quarter">📊 Ce trimestre</option>
+                  <option value="this_year">🗓️ Cette année</option>
+                  <option value="all">∞ Cumul global</option>
+                  <option value="specific_month">🎯 Mois précis...</option>
+                  <option value="specific_date">📌 Date précise...</option>
+                </select>
+                <input id="filter-rank-month" type="month" title="Choisir un mois précis" class="hidden px-3 py-2 text-xs font-semibold bg-white border border-indigo-300 rounded-xl cursor-pointer" />
+                <input id="filter-rank-date" type="date" title="Choisir une date précise" class="hidden px-3 py-2 text-xs font-semibold bg-white border border-indigo-300 rounded-xl cursor-pointer" />
+              </div>
             </div>
-            <div class="flex flex-wrap items-center justify-center sm:justify-end gap-2 shrink-0">
-              <select id="filter-rank-period" class="px-3.5 py-2.5 text-xs font-bold bg-indigo-50/70 text-indigo-950 border border-indigo-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-600 cursor-pointer">
-                <option value="this_month" selected>📅 Ce mois-ci</option>
-                <option value="this_week">📆 Cette semaine</option>
-                <option value="this_quarter">📊 Ce trimestre</option>
-                <option value="this_year">🗓️ Cette année</option>
-                <option value="all">∞ Cumul global</option>
-                <option value="specific_month">🎯 Choisir un mois précis...</option>
-                <option value="specific_date">📌 Choisir une date précise...</option>
-              </select>
-              <input id="filter-rank-month" type="month" title="Choisir un mois précis" class="hidden px-3 py-2 text-xs font-semibold bg-white border border-indigo-300 rounded-xl cursor-pointer" />
-              <input id="filter-rank-date" type="date" title="Choisir une date précise" class="hidden px-3 py-2 text-xs font-semibold bg-white border border-indigo-300 rounded-xl cursor-pointer" />
+
+            <!-- PILULES RAPIDES DE PÉRIODE (NAVIGATION INSTANTANÉE) -->
+            <div id="rank-quick-pills" class="flex items-center gap-1.5 overflow-x-auto no-scrollbar pt-1 border-t border-slate-100">
+              <button type="button" data-rank-mode="this_month" onclick="setRankPeriodQuick('this_month')" class="rank-pill-btn px-3 py-1.5 text-xs font-extrabold rounded-xl bg-indigo-600 text-white shadow-2xs transition whitespace-nowrap">📅 Ce mois-ci</button>
+              <button type="button" data-rank-mode="this_week" onclick="setRankPeriodQuick('this_week')" class="rank-pill-btn px-3 py-1.5 text-xs font-bold rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200 transition whitespace-nowrap">📆 Cette semaine</button>
+              <button type="button" data-rank-mode="this_quarter" onclick="setRankPeriodQuick('this_quarter')" class="rank-pill-btn px-3 py-1.5 text-xs font-bold rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200 transition whitespace-nowrap">📊 Trimestre</button>
+              <button type="button" data-rank-mode="this_year" onclick="setRankPeriodQuick('this_year')" class="rank-pill-btn px-3 py-1.5 text-xs font-bold rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200 transition whitespace-nowrap">🗓️ Année</button>
+              <button type="button" data-rank-mode="all" onclick="setRankPeriodQuick('all')" class="rank-pill-btn px-3 py-1.5 text-xs font-bold rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200 transition whitespace-nowrap">∞ Cumul global</button>
             </div>
           </div>
 
           <!-- BANDEAU OBJECTIF COLLECTIF DE L'ÉQUIPE & 4 CARTES KPI -->
-          <div id="classement-team-hero" class="bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 rounded-3xl border border-indigo-500/30 p-5 sm:p-6 text-white shadow-lg space-y-5"></div>
+          <div id="classement-team-hero" class="rank-hero-banner bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 rounded-3xl border border-indigo-500/30 p-5 sm:p-6 text-white shadow-lg space-y-5"></div>
 
           <!-- PODIUM TOP 3 -->
           <div id="classement-podium" class="grid grid-cols-1 md:grid-cols-3 gap-4 items-end"></div>
@@ -2454,15 +2518,19 @@
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">
           <div class="bg-white rounded-2xl border border-slate-200/80 p-5 sm:p-6 shadow-xs flex flex-col justify-between">
             <div>
-              <h3 class="text-sm font-bold text-slate-900 mb-4">Répartition & relevés de paie par représentant</h3>
+              <div class="flex items-center justify-between gap-2 mb-4">
+                <h3 class="text-sm font-bold text-slate-900">🏆 Rentabilité & paie par représentant</h3>
+                <span class="px-2 py-0.5 text-[10px] font-extrabold rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">Du + au − rentable</span>
+              </div>
               <div class="overflow-x-auto">
                 <table class="w-full text-left text-xs sm:text-sm border-collapse">
                   <thead>
                     <tr class="border-b border-slate-200 text-[11px] font-bold uppercase text-slate-400">
-                      <th class="py-2.5 pr-2 whitespace-nowrap">Représentant</th>
+                      <th class="py-2.5 pr-2 whitespace-nowrap">Rang & Rep</th>
                       <th class="py-2.5 px-2 text-right whitespace-nowrap">Ventes</th>
                       <th class="py-2.5 px-2 text-right whitespace-nowrap">Comm. Rep</th>
                       <th class="py-2.5 px-2 text-right whitespace-nowrap">Comm. Olivier</th>
+                      <th class="py-2.5 px-2 text-right whitespace-nowrap">Marge %</th>
                       <th class="py-2.5 pl-2 text-right whitespace-nowrap">Paie</th>
                     </tr>
                   </thead>
@@ -8892,10 +8960,41 @@
       }).join('');
     }
 
+    window.setRankPeriodQuick = (mode) => {
+      const sel = document.getElementById('filter-rank-period');
+      if (!sel) return;
+      sel.value = mode;
+      syncPeriodInputsVisibility('filter-rank', false);
+      renderClassement();
+    };
+
+    const REP_AVATAR_GRADIENTS = [
+      'from-indigo-600 to-blue-600',
+      'from-emerald-600 to-teal-600',
+      'from-violet-600 to-purple-600',
+      'from-sky-600 to-cyan-600',
+      'from-rose-600 to-pink-600',
+      'from-amber-600 to-orange-600'
+    ];
+
+    function getRepAvatarGradient(name) {
+      let h = 0;
+      const s = String(name || '');
+      for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0;
+      return REP_AVATAR_GRADIENTS[Math.abs(h) % REP_AVATAR_GRADIENTS.length];
+    }
+
     function renderClassement() {
       const rankPeriod = readPeriodFilterState('filter-rank');
       const pillEl = document.getElementById('classement-period-pill');
       if (pillEl) pillEl.textContent = rankPeriod.label || 'Ce mois-ci';
+
+      document.querySelectorAll('.rank-pill-btn').forEach(btn => {
+        const isAct = btn.dataset.rankMode === rankPeriod.mode;
+        btn.className = isAct
+          ? 'rank-pill-btn px-3 py-1.5 text-xs font-extrabold rounded-xl bg-indigo-600 text-white shadow-2xs transition whitespace-nowrap'
+          : 'rank-pill-btn px-3 py-1.5 text-xs font-bold rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200 transition whitespace-nowrap';
+      });
 
       const totalsByRep = new Map();
       const ensureRepEntry = (id, nom) => {
@@ -9077,44 +9176,48 @@
           ? [{ r: top3[1], rank: 2 }, { r: top3[0], rank: 1 }, { r: top3[2], rank: 3 }]
           : top3.map((r, i) => ({ r, rank: i + 1 }));
 
-        podiumBox.innerHTML = podiumOrder.map(({ r, rank }) => {
+        podiumBox.innerHTML = podiumOrder.map(({ r, rank }, pIdx) => {
           const isFirst = rank === 1;
           const isSecond = rank === 2;
           const isMe = r.nom === currentProfile.nom;
           const sharePct = teamTotalVol > 0 ? Math.round((r.total / teamTotalVol) * 100) : 0;
           const crownOrMedal = isFirst ? '👑' : (isSecond ? '🥈' : '🥉');
-          const cardStyle = isFirst
-            ? 'bg-gradient-to-b from-amber-50/90 via-white to-white border-2 border-amber-300 shadow-md md:pb-7'
-            : (isSecond
-              ? 'bg-white border border-slate-300/90 shadow-xs'
-              : 'bg-white border border-orange-200/90 shadow-xs');
+          const podiumCls = isFirst
+            ? 'rank-podium-gold border-2 md:pb-7'
+            : (isSecond ? 'rank-podium-silver border' : 'rank-podium-bronze border');
           const badgeStyle = isFirst
-            ? 'bg-amber-400 text-slate-950'
+            ? 'bg-amber-400 text-slate-950 shadow-2xs'
             : (isSecond ? 'bg-slate-200 text-slate-800' : 'bg-orange-100 text-orange-900');
+          const avatarBg = isFirst
+            ? 'bg-gradient-to-br from-amber-400 via-amber-500 to-orange-500 text-slate-950 shadow-md'
+            : `bg-gradient-to-br ${getRepAvatarGradient(r.nom)} text-white shadow-sm`;
+          const barGradient = r.targetPct >= 100
+            ? 'bg-gradient-to-r from-emerald-500 to-teal-400'
+            : (isFirst ? 'bg-gradient-to-r from-amber-500 to-orange-400' : 'bg-gradient-to-r from-indigo-600 to-sky-500');
 
           return `
-            <div class="rounded-3xl p-5 text-center space-y-3 transition ${cardStyle} ${isMe ? 'ring-2 ring-indigo-500/35' : ''}">
+            <div style="animation-delay: ${pIdx * 55}ms" class="rank-card-smooth rounded-3xl p-5 text-center space-y-3 ${podiumCls} ${isMe ? 'ring-2 ring-indigo-500/45' : ''}">
               <div class="flex items-center justify-center gap-2">
-                <span class="px-2.5 py-0.5 text-[11px] font-extrabold rounded-full ${badgeStyle}">${crownOrMedal} #${rank}</span>
+                <span class="px-3 py-0.5 text-[11px] font-extrabold rounded-full ${badgeStyle}">${crownOrMedal} #${rank}</span>
                 ${isMe ? '<span class="px-2 py-0.5 text-[10px] font-extrabold uppercase rounded-full bg-indigo-600 text-white">Vous</span>' : ''}
               </div>
-              <div class="w-12 h-12 mx-auto rounded-2xl ${isFirst ? 'bg-gradient-to-br from-amber-400 to-orange-500 text-slate-950 shadow-md' : 'bg-slate-900 text-white'} font-extrabold text-base flex items-center justify-center">
+              <div class="w-13 h-13 w-12 h-12 mx-auto rounded-2xl ${avatarBg} font-extrabold text-base flex items-center justify-center">
                 ${esc(r.nom.slice(0, 2).toUpperCase())}
               </div>
               <div>
                 <div class="font-extrabold text-base text-slate-900 truncate">${esc(r.nom)}</div>
-                <div class="text-[11px] text-slate-500 mt-0.5">${sharePct} % du volume équipe</div>
+                <div class="text-[11px] font-semibold text-slate-500 mt-0.5">${sharePct} % du volume équipe</div>
               </div>
               <div class="text-xl sm:text-2xl font-extrabold ${isFirst ? 'text-amber-700' : 'text-slate-900'} tabular-nums">
                 ${fmtMoney(r.total)}
               </div>
-              <div class="space-y-1 pt-1">
+              <div class="space-y-1.5 pt-1">
                 <div class="flex items-center justify-between text-[11px] font-bold tabular-nums">
                   <span class="text-slate-500">Target : ${fmtMoney0(r.repTarget)}</span>
                   <span class="${r.targetPct >= 100 ? 'text-emerald-600' : 'text-indigo-700'}">${r.targetPct} %</span>
                 </div>
-                <div class="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
-                  <div class="h-full rounded-full ${r.targetPct >= 100 ? 'bg-emerald-500' : (isFirst ? 'bg-amber-500' : 'bg-indigo-600')}" style="width: ${Math.min(100, r.targetPct)}%"></div>
+                <div class="w-full h-2.5 bg-slate-100 rounded-full overflow-hidden">
+                  <div class="h-full rounded-full transition-all duration-700 ease-out ${barGradient}" style="width: ${Math.min(100, r.targetPct)}%"></div>
                 </div>
               </div>
             </div>
@@ -9132,21 +9235,38 @@
         const reached = r.targetPct >= 100;
         const sharePct = teamTotalVol > 0 ? Math.round((r.total / teamTotalVol) * 100) : 0;
         const gapToLeader = idx === 0 ? 0 : Math.max(0, leaderVol - r.total);
+        const rankPillCls = idx === 0
+          ? 'bg-amber-100 text-amber-900 border border-amber-300'
+          : (idx === 1
+            ? 'bg-slate-200/80 text-slate-800 border border-slate-300'
+            : (idx === 2 ? 'bg-orange-100 text-orange-900 border border-orange-200' : 'bg-slate-100 text-slate-700 border border-slate-200'));
+        const progressGradient = reached
+          ? 'bg-gradient-to-r from-emerald-500 to-teal-400'
+          : (r.targetPct >= 65
+            ? 'bg-gradient-to-r from-indigo-600 via-sky-500 to-emerald-400'
+            : 'bg-gradient-to-r from-indigo-600 to-sky-500');
 
         return `
-          <div class="bg-white p-5 rounded-2xl border ${isMe ? 'border-indigo-400 ring-2 ring-indigo-600/15' : 'border-slate-200/80'} shadow-xs space-y-3.5">
+          <div style="animation-delay: ${Math.min(idx * 45, 250)}ms" class="rank-card-smooth bg-white p-5 rounded-2xl border ${isMe ? 'border-indigo-400 ring-2 ring-indigo-600/20' : 'border-slate-200/80'} shadow-xs space-y-3.5">
             <div class="flex items-start justify-between gap-3">
               <div class="flex items-center gap-3 min-w-0">
-                <span class="w-10 h-10 shrink-0 rounded-xl ${reached ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-slate-100 text-slate-800'} flex items-center justify-center text-base font-extrabold">${medals[idx] || `#${idx + 1}`}</span>
+                <div class="relative shrink-0">
+                  <div class="w-11 h-11 rounded-2xl bg-gradient-to-br ${getRepAvatarGradient(r.nom)} text-white font-extrabold text-sm flex items-center justify-center shadow-xs">
+                    ${esc(r.nom.slice(0, 2).toUpperCase())}
+                  </div>
+                  <span class="absolute -bottom-1.5 -right-1.5 px-1.5 py-0.2 rounded-full text-[10px] font-extrabold ${rankPillCls} shadow-2xs">
+                    ${medals[idx] || `#${idx + 1}`}
+                  </span>
+                </div>
                 <div class="min-w-0">
                   <div class="font-extrabold text-slate-900 flex items-center gap-2 truncate">
                     <span>${esc(r.nom)}</span>
-                    ${isMe ? '<span class="text-[10px] font-bold uppercase px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-600 border border-indigo-200">Vous</span>' : ''}
+                    ${isMe ? '<span class="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200">Vous</span>' : ''}
                   </div>
                   <div class="text-[11px] text-slate-500 flex flex-wrap items-center gap-1.5 mt-0.5">
-                    <span>${idx === 0 ? '👑 Leader' : `Position #${idx + 1}`}</span>
+                    <span class="font-semibold">${idx === 0 ? '👑 Leader' : `Rang #${idx + 1}`}</span>
                     <span>•</span>
-                    <span class="font-semibold text-indigo-600">${sharePct} % de l'équipe</span>
+                    <span class="font-bold text-indigo-600">${sharePct} % de l'équipe</span>
                   </div>
                 </div>
               </div>
@@ -9157,21 +9277,21 @@
             </div>
 
             <!-- MINI INDICATEURS DE PERFORMANCE -->
-            <div class="grid grid-cols-3 gap-2 bg-slate-50/90 rounded-xl p-2.5 border border-slate-100 text-center text-[11px] tabular-nums">
-              <div>
+            <div class="grid grid-cols-3 gap-2">
+              <div class="rank-stat-tile bg-slate-50/90 rounded-xl p-2.5 border border-slate-100 text-center text-[11px] tabular-nums">
                 <span class="text-slate-400 block text-[10px]">Dossiers</span>
                 <strong class="text-slate-800">${r.dealsCount > 0 ? r.dealsCount : '—'}</strong>
                 ${(r.otsCount > 0 || r.suiviCount > 0) ? `<span class="text-[9px] text-slate-400 block">${r.otsCount} OTS • ${r.suiviCount} Suivi</span>` : ''}
               </div>
-              <div>
+              <div class="rank-stat-tile bg-slate-50/90 rounded-xl p-2.5 border border-slate-100 text-center text-[11px] tabular-nums">
                 <span class="text-slate-400 block text-[10px]">Panier moyen</span>
                 <strong class="text-slate-800">${r.avgTicket > 0 ? fmtMoney0(r.avgTicket) : '—'}</strong>
-                ${r.bestSale > 0 ? `<span class="text-[9px] text-emerald-700 block">Max : ${fmtMoney0(r.bestSale)}</span>` : ''}
+                ${r.bestSale > 0 ? `<span class="text-[9px] text-emerald-700 font-semibold block">Max : ${fmtMoney0(r.bestSale)}</span>` : ''}
               </div>
-              <div>
+              <div class="rank-stat-tile bg-slate-50/90 rounded-xl p-2.5 border border-slate-100 text-center text-[11px] tabular-nums">
                 <span class="text-slate-400 block text-[10px]">${r.topEntName ? 'Top partenaire' : 'Écart #1'}</span>
                 <strong class="text-slate-800 truncate block px-1">${r.topEntName ? esc(r.topEntName) : (idx === 0 ? '👑 En tête' : `- ${fmtMoney0(gapToLeader)}`)}</strong>
-                ${r.topEntVal > 0 ? `<span class="text-[9px] text-indigo-600 block">${fmtMoney0(r.topEntVal)}</span>` : ''}
+                ${r.topEntVal > 0 ? `<span class="text-[9px] text-indigo-600 font-semibold block">${fmtMoney0(r.topEntVal)}</span>` : ''}
               </div>
             </div>
 
@@ -9185,7 +9305,7 @@
                 </span>
               </div>
               <div class="w-full h-2.5 bg-slate-100 rounded-full overflow-hidden">
-                <div class="h-full rounded-full transition-all duration-700 ${reached ? 'bg-gradient-to-r from-emerald-500 to-teal-400' : (r.targetPct >= 65 ? 'bg-gradient-to-r from-indigo-600 to-amber-400' : 'bg-indigo-600')}" style="width: ${barWidth}%"></div>
+                <div class="h-full rounded-full transition-all duration-700 ease-out ${progressGradient}" style="width: ${barWidth}%"></div>
               </div>
             </div>
           </div>
@@ -9962,17 +10082,44 @@
           }).join('')
         : `<p class="col-span-full text-xs text-slate-400">Aucune donnée mensuelle disponible.</p>`;
 
-      document.getElementById('tbody-dash-rep').innerHTML = state.representants.map(r => {
+      const rankedReps = state.representants.map(r => {
         const subAll = statsList.filter(v => v.representant_id === r.id);
         const subComm = activeCommList.filter(v => v.representant_id === r.id);
+        const ventesVol = subAll.reduce((s, v) => s + Number(v.valeur || 0), 0);
+        const commRepVol = subComm.reduce((s, v) => s + Number(v.commission_rep || 0), 0);
+        const commOliVol = subComm.reduce((s, v) => s + Number(v.commission_olivier || 0), 0);
+        const commBaseVol = subComm.reduce((s, v) => s + Number(v.valeur || 0), 0);
+        const margePct = commBaseVol > 0 ? ((commOliVol / commBaseVol) * 100) : 0;
+        return { r, ventesVol, commRepVol, commOliVol, margePct };
+      }).sort((a, b) => {
+        if (Math.abs(b.commOliVol - a.commOliVol) > 0.005) return b.commOliVol - a.commOliVol;
+        if (Math.abs(b.margePct - a.margePct) > 0.005) return b.margePct - a.margePct;
+        return b.ventesVol - a.ventesVol;
+      });
+
+      const repMedals = ['🥇', '🥈', '🥉'];
+      document.getElementById('tbody-dash-rep').innerHTML = rankedReps.map((item, idx) => {
+        const rankTag = item.commOliVol > 0 && idx < 3
+          ? `<span class="text-sm leading-none">${repMedals[idx]}</span>`
+          : `<span class="text-[11px] font-bold text-slate-400 w-4 text-center">#${idx + 1}</span>`;
         return `
-          <tr class="h-11">
-            <td class="py-2.5 pr-2 font-semibold text-slate-900 whitespace-nowrap align-middle">${esc(r.nom)}</td>
-            <td class="py-2.5 px-2 text-right tabular-nums font-medium whitespace-nowrap align-middle">${fmtMoney(subAll.reduce((s, v) => s + Number(v.valeur), 0))}</td>
-            <td class="py-2.5 px-2 text-right tabular-nums text-amber-600 font-semibold whitespace-nowrap align-middle">${fmtMoney(subComm.reduce((s, v) => s + Number(v.commission_rep), 0))}</td>
-            <td class="py-2.5 px-2 text-right tabular-nums text-emerald-600 font-bold whitespace-nowrap align-middle">${fmtMoney(subComm.reduce((s, v) => s + Number(v.commission_olivier), 0))}</td>
+          <tr class="h-11 ${idx === 0 && item.commOliVol > 0 ? 'bg-emerald-50/40' : ''}">
+            <td class="py-2.5 pr-2 font-semibold text-slate-900 whitespace-nowrap align-middle">
+              <div class="inline-flex items-center gap-1.5">
+                ${rankTag}
+                <span>${esc(item.r.nom)}</span>
+              </div>
+            </td>
+            <td class="py-2.5 px-2 text-right tabular-nums font-medium whitespace-nowrap align-middle">${fmtMoney(item.ventesVol)}</td>
+            <td class="py-2.5 px-2 text-right tabular-nums text-amber-600 font-semibold whitespace-nowrap align-middle">${fmtMoney(item.commRepVol)}</td>
+            <td class="py-2.5 px-2 text-right tabular-nums text-emerald-600 font-extrabold whitespace-nowrap align-middle">${fmtMoney(item.commOliVol)}</td>
+            <td class="py-2.5 px-2 text-right tabular-nums whitespace-nowrap align-middle">
+              <span class="px-1.5 py-0.5 text-[11px] font-bold rounded-md ${item.margePct > 0 ? 'bg-emerald-50 text-emerald-700 border border-emerald-200/80' : 'text-slate-400'}">
+                ${item.margePct > 0 ? `${item.margePct.toFixed(2)} %` : '—'}
+              </span>
+            </td>
             <td class="py-2.5 pl-2 text-right whitespace-nowrap align-middle">
-              <button onclick="openPayslipModal('${r.id}')" class="px-2.5 py-1 text-[11px] font-semibold bg-slate-100 hover:bg-indigo-600 hover:text-white text-slate-700 rounded-lg transition">Relevé</button>
+              <button onclick="openPayslipModal('${item.r.id}')" class="px-2.5 py-1 text-[11px] font-semibold bg-slate-100 hover:bg-indigo-600 hover:text-white text-slate-700 rounded-lg transition">Relevé</button>
             </td>
           </tr>
         `;
