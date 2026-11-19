@@ -2267,6 +2267,9 @@
               <span>🗑️ Corbeille</span>
               <span class="trash-badge-count px-1.5 py-0.2 text-[10px] font-extrabold rounded-full bg-slate-100 text-slate-700">0</span>
             </button>
+            <button type="button" onclick="openMonthClosureModal()" class="px-3 py-2.5 text-xs font-bold text-slate-700 bg-white hover:bg-indigo-50 hover:text-indigo-700 border border-slate-200 rounded-xl transition inline-flex items-center justify-center gap-1.5">
+              <span>🔒 Clôture des mois</span>
+            </button>
             <button id="btn-delete-all-ventes" class="px-3 py-2.5 text-xs font-semibold text-rose-600 bg-rose-50 hover:bg-rose-100 border border-rose-200 rounded-xl transition text-center">Tout supprimer</button>
           </div>
         </div>
@@ -8379,6 +8382,7 @@
         populateDrawerSelects();
       }
 
+      await refreshClosedMonths();
       await refreshProofUrls([...(state.mesVentes || []), ...(state.ventes || [])]);
       migrateLegacyProofs(state.mesVentes);
       renderMesVentes();
@@ -12450,6 +12454,11 @@
         const clientId = await getOrCreateClient(clientNom, entId);
         const valeur = parseFloat(document.getElementById('vente-valeur').value);
         if (!Number.isFinite(valeur) || valeur <= 0) throw new Error('Montant de vente invalide.');
+        {
+          const ymGuard = document.getElementById('vente-mois-comm')?.value;
+          const oldGuard = editId ? findSaleById(editId) : null;
+          if (isMonthClosed(ymGuard) || (oldGuard && isMonthClosed(oldGuard.mois_commission))) throw new Error(LOCK_MSG);
+        }
 
         const payload = {
           representant_id: repId,
@@ -12940,6 +12949,89 @@
         errBox.classList.remove('hidden');
       }
     });
+  
+    // =========================================================================
+    // CLÔTURE DE MOIS : un mois clôturé est verrouillé (ventes, taux, commissions, dépôts).
+    // Seuls le statut de paiement et la preuve restent modifiables. Le verrou est appliqué par la base
+    // (voir migration_cloture_validation.sql) ; ce code affiche des messages clairs et gère l'écran admin.
+    // =========================================================================
+    const closedMonths = new Set();
+    const LOCK_MSG = '🔒 Ce mois est clôturé : rouvrez-le (Clôture des mois) pour modifier ce dossier.';
+    const isMonthClosed = (ym) => Boolean(ym) && closedMonths.has(String(ym).slice(0, 7));
+    function findSaleById(id) {
+      return (state.ventes || []).find(x => String(x.id) === String(id)) || (state.mesVentes || []).find(x => String(x.id) === String(id));
+    }
+    const isSaleLocked = (id) => { const v = findSaleById(id); return Boolean(v) && isMonthClosed(v.mois_commission); };
+    async function refreshClosedMonths() {
+      try {
+        const { data, error } = await sb.from('mois_clotures').select('ym');
+        if (error) throw error;
+        closedMonths.clear(); (data || []).forEach(r => closedMonths.add(r.ym));
+      } catch (e) { /* table absente : fonction inactive tant que la migration SQL n'est pas exécutée */ }
+    }
+    const fmtYmLong = (ym) => { try { return new Date(ym + '-01T12:00:00').toLocaleDateString('fr-CA', { month: 'long', year: 'numeric' }); } catch (e) { return ym; } };
+    function monthClosureSummary(ym) {
+      const list = (state.ventes || []).filter(v => v.mois_commission === ym);
+      const comm = list.reduce((s, v) => s + Number(v.commission_rep || 0) + Number(v.commission_olivier || 0), 0);
+      return { n: list.length, toConfirm: list.filter(v => v.statut_depot !== 'depot_recu').length, unpaid: list.filter(v => v.statut_paiement !== 'paye').length, comm };
+    }
+    async function renderMonthClosureModal() {
+      let m = document.getElementById('month-closure-modal');
+      if (!m) {
+        m = document.createElement('div'); m.id = 'month-closure-modal';
+        m.className = 'fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-sm flex items-center justify-center p-4 no-print';
+        m.addEventListener('click', (e) => { if (e.target === m) m.remove(); });
+        document.body.appendChild(m);
+      }
+      const known = new Set([currentMonthStr, ...closedMonths, ...(state.ventes || []).map(v => v.mois_commission).filter(Boolean)]);
+      const openMonths = Array.from(known).filter(ym => !closedMonths.has(ym)).sort().reverse();
+      const closed = Array.from(closedMonths).sort().reverse();
+      m.innerHTML = `
+        <div class="bg-white rounded-3xl border border-slate-200 shadow-2xl w-full max-w-md p-5 space-y-4 text-slate-900">
+          <div class="flex items-center justify-between"><h3 class="text-base font-extrabold">🔒 Clôture des mois</h3>
+            <button type="button" id="mc-close" class="w-8 h-8 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600">✕</button></div>
+          <p class="text-xs text-slate-500">Un mois clôturé ne peut plus changer : ventes, taux, commissions et dépôts sont verrouillés. Seuls le paiement et la preuve restent modifiables.</p>
+          <div class="flex gap-2">
+            <select id="mc-month" class="flex-1 px-3 py-2 text-xs font-bold border border-slate-200 rounded-xl bg-white">${openMonths.map(ym => `<option value="${esc(ym)}">${esc(fmtYmLong(ym))}</option>`).join('')}</select>
+            <button type="button" id="mc-do-close" class="px-3 py-2 text-xs font-extrabold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl">Clôturer</button>
+          </div>
+          <div class="space-y-1.5"><div class="text-[11px] font-extrabold uppercase tracking-wider text-slate-400">Mois clôturés</div>
+            ${closed.length ? closed.map(ym => `<div class="flex items-center justify-between px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs"><span class="font-bold">🔒 ${esc(fmtYmLong(ym))}</span><button type="button" data-reopen="${esc(ym)}" class="px-2.5 py-1 font-bold text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 rounded-lg">Rouvrir</button></div>`).join('') : '<div class="text-xs text-slate-400">Aucun mois clôturé.</div>'}
+          </div>
+        </div>`;
+      m.querySelector('#mc-close').onclick = () => m.remove();
+      m.querySelector('#mc-do-close').onclick = async () => {
+        const ym = m.querySelector('#mc-month').value; if (!ym) return;
+        const s = monthClosureSummary(ym);
+        const warn = (s.toConfirm ? `\n⚠️ ${s.toConfirm} dépôt(s) pas encore confirmé(s).` : '') + (s.unpaid ? `\n${s.unpaid} commission(s) non payée(s) (le paiement restera modifiable).` : '');
+        if (!(await askConfirm(`Clôturer ${fmtYmLong(ym)} ?`, `${s.n} vente(s), commissions totales ${fmtMoney(s.comm)}.${warn}\nLe mois sera verrouillé.`))) return;
+        const { error } = await sb.from('mois_clotures').insert({ ym, closed_by_nom: currentProfile?.nom || null });
+        if (error) return toast(error.message, 'error');
+        closedMonths.add(ym); toast(`Mois ${fmtYmLong(ym)} clôturé 🔒`); renderMonthClosureModal();
+      };
+      m.querySelectorAll('[data-reopen]').forEach(btn => { btn.onclick = async () => {
+        const ym = btn.getAttribute('data-reopen');
+        if (!(await askConfirm(`Rouvrir ${fmtYmLong(ym)} ?`, 'Les ventes de ce mois redeviendront modifiables.'))) return;
+        const { error } = await sb.from('mois_clotures').delete().eq('ym', ym);
+        if (error) return toast(error.message, 'error');
+        closedMonths.delete(ym); toast(`Mois ${fmtYmLong(ym)} rouvert`); renderMonthClosureModal();
+      }; });
+    }
+    window.openMonthClosureModal = async () => {
+      if (currentProfile?.role !== 'admin') return;
+      await refreshClosedMonths(); renderMonthClosureModal();
+    };
+    // Messages clairs avant d'atteindre le verrou de la base
+    (function guardClosedMonths() {
+      const wrap = (name, blocked) => {
+        const orig = window[name]; if (typeof orig !== 'function') return;
+        window[name] = function (...a) { if (blocked(...a)) { toast(LOCK_MSG, 'error'); return; } return orig.apply(this, a); };
+      };
+      wrap('openEditVenteDrawer', (id, dup) => !dup && isSaleLocked(id));
+      wrap('deleteVente', (id) => isSaleLocked(id));
+      wrap('toggleVenteStatut', (id, field) => field === 'statut_depot' && isSaleLocked(id));
+      wrap('quickConfirmSale', (id) => isSaleLocked(id));
+    })();
   </script>
 </body>
 </html>
