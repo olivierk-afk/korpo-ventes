@@ -2495,11 +2495,14 @@
       const sid = v.id ? String(v.id) : '';
       const co = sid ? carriedOverSalesStore[sid] : null;
       const origYm = co?.origYm || (v.date_vente && v.date_vente.length >= 7 ? v.date_vente.slice(0, 7) : '');
-      const commYm = co?.movedToYm && (!v.mois_commission || v.mois_commission < co.movedToYm)
+      let commYm = co?.movedToYm && (!v.mois_commission || v.mois_commission < co.movedToYm)
         ? co.movedToYm
         : (v.mois_commission || '');
+      // Toute vente non confirmée (`a_confirmer`) d'un mois antérieur bascule automatiquement au mois courant (`currentMonthStr`) et vaut 0 dans le mois précédent
+      if (v.statut_depot === 'a_confirmer' && ((origYm && origYm < currentMonthStr) || (commYm && commYm < currentMonthStr))) {
+        commYm = currentMonthStr;
+      }
       const isCarried = Boolean(co || (origYm && commYm && origYm < commYm));
-      // Si la vente a été transférée vers un mois ultérieur faute de dépôt reçu, elle compte uniquement dans le mois de transfert (`commYm`)
       if (isCarried && commYm) return commYm;
       if (v._statsMonth) return v._statsMonth;
       if (origYm) return origYm;
@@ -2511,7 +2514,10 @@
         const sid = String(row.id);
         const co = carriedOverSalesStore[sid];
         const origYm = co?.origYm || (row.date_vente && row.date_vente.length >= 7 ? row.date_vente.slice(0, 7) : row.mois_commission);
-        const effectiveCommYm = co?.movedToYm && row.mois_commission < co.movedToYm ? co.movedToYm : row.mois_commission;
+        let effectiveCommYm = co?.movedToYm && row.mois_commission < co.movedToYm ? co.movedToYm : row.mois_commission;
+        if (row.statut_depot === 'a_confirmer' && ((origYm && origYm < currentMonthStr) || (effectiveCommYm && effectiveCommYm < currentMonthStr))) {
+          effectiveCommYm = currentMonthStr;
+        }
         const isCarried = Boolean(co || (origYm && effectiveCommYm && origYm < effectiveCommYm));
         return {
           ...row,
@@ -2537,8 +2543,10 @@
       if (!sb || !currentProfile) return;
 
       // 2. Détecter toutes les ventes non confirmées (`a_confirmer`) des mois précédents (< currentMonthStr)
+      const isAdminUser = currentProfile.role === 'admin';
       const allKnownSales = [...(state.ventes || [])];
       const toCarry = allKnownSales.filter(v => {
+        if (!isAdminUser && String(v.representant_id) !== String(currentProfile.id)) return false;
         if (v.statut_depot !== 'a_confirmer') return false;
         const curCommYm = v.mois_commission || '';
         return curCommYm && curCommYm < currentMonthStr;
@@ -2589,7 +2597,10 @@
       applyCarryOverMetadataToState();
 
       if (movedCount > 0) {
-        toast(`↪️ ${movedCount} vente(s) non confirmée(s) transférée(s) et comptabilisée(s) dans ${currentMonthStr}`);
+        try {
+          state.classement = await fetchAllRows(() => sb.from('vue_classement_ventes').select('*'));
+        } catch (e) {}
+        toast(`↪️ ${movedCount} vente(s) non confirmée(s) mise(s) à 0 sur le mois précédent et transférée(s) vers ${currentMonthStr}`);
       }
     }
 
@@ -4052,7 +4063,10 @@
       const { error } = await sb.from('ventes').update({ statut_depot: 'depot_recu' }).eq('id', saleId);
       if (error) return toast(error.message, 'error');
       await recordSaleAudit(saleId, 'Dépôt confirmé (Reçu)', 'Validation rapide depuis les notifications', '✅');
-      toast('Vente confirmée (Dépôt reçu) ✓');
+      const mergedCount = await reconcilePreviousUnconfirmedDuplicateSales([saleId]);
+      toast(mergedCount > 0
+        ? `Vente confirmée ✓ (${mergedCount} doublon antérieur non confirmé retiré)`
+        : 'Vente confirmée (Dépôt reçu) ✓');
       await loadAllData();
     };
 
@@ -6408,7 +6422,7 @@
         const [mesVentesRows, myTauxRows, teamVentesPublicRows, allRepsPublicRows] = await Promise.all([
           fetchAllRows(() => sb.from('vue_ventes_representant').select('*').eq('representant_id', currentProfile.id).order('date_vente', { ascending: false }).order('created_at', { ascending: false })),
           fetchAllRows(() => sb.from('taux_commission').select('*').eq('representant_id', currentProfile.id)),
-          fetchAllRows(() => sb.from('ventes').select('id,representant_id,entreprise_id,valeur,date_vente,mois_commission,note,created_at').order('date_vente', { ascending: false })).catch(() => []),
+          fetchAllRows(() => sb.from('ventes').select('id,representant_id,entreprise_id,valeur,date_vente,mois_commission,statut_depot,note,created_at').order('date_vente', { ascending: false })).catch(() => []),
           fetchAllRows(() => sb.from('representants').select('id,nom,role').order('nom')).catch(() => [])
         ]);
         const noteByIdMap = new Map((teamVentesPublicRows || []).map(r => [String(r.id), r.note]));
@@ -7539,7 +7553,13 @@
       for (const sid of ids) {
         await recordSaleAudit(sid, label, '', '📦');
       }
-      toast(`${ids.length} vente(s) mise(s) à jour`);
+      let mergedCount = 0;
+      if (field === 'statut_depot' && newVal === 'depot_recu') {
+        mergedCount = await reconcilePreviousUnconfirmedDuplicateSales(ids);
+      }
+      toast(mergedCount > 0
+        ? `${ids.length} vente(s) mise(s) à jour • ${mergedCount} doublon antérieur retiré ✓`
+        : `${ids.length} vente(s) mise(s) à jour`);
       await loadAllData();
     };
 
@@ -8030,6 +8050,67 @@
       try { return await p; } finally { pendingClientCreations.delete(key); }
     }
 
+    function normClientKey(name) {
+      return String(name || '').trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, ' ');
+    }
+
+    function getResolvedClientNameForSale(v) {
+      if (!v) return '';
+      return v.client_nom || state.clients.find(c => String(c.id) === String(v.client_id))?.nom || '';
+    }
+
+    async function reconcilePreviousUnconfirmedDuplicateSales(confirmedSaleIds) {
+      if (!sb || !Array.isArray(confirmedSaleIds) || !confirmedSaleIds.length) return 0;
+      const idSet = new Set(confirmedSaleIds.map(x => String(x)));
+      const confirmedRows = (state.ventes || []).filter(v => idSet.has(String(v.id)));
+      if (!confirmedRows.length) return 0;
+
+      const duplicatesToRemove = [];
+      const seenDupIds = new Set();
+
+      confirmedRows.forEach(confV => {
+        const confCli = normClientKey(getResolvedClientNameForSale(confV));
+        if (!confCli) return;
+        const confEnt = String(confV.entreprise_id || '');
+        const confRep = String(confV.representant_id || '');
+        const confVal = Number(confV.valeur || 0);
+
+        (state.ventes || []).forEach(cand => {
+          const cid = String(cand.id);
+          if (idSet.has(cid) || seenDupIds.has(cid)) return;
+          if (cand.statut_depot !== 'a_confirmer') return;
+          if (String(cand.entreprise_id || '') !== confEnt) return;
+          if (String(cand.representant_id || '') !== confRep) return;
+          const candCli = normClientKey(getResolvedClientNameForSale(cand));
+          if (candCli !== confCli) return;
+          // Même client, même compagnie, même rep, même montant (ou dossier antérieur non confirmé)
+          const sameAmount = Math.abs(Number(cand.valeur || 0) - confVal) < 0.01;
+          const isEarlierOrSameMonth = (cand.date_vente || cand.mois_commission || '') <= (confV.date_vente || confV.mois_commission || '');
+          if (sameAmount && isEarlierOrSameMonth) {
+            seenDupIds.add(cid);
+            duplicatesToRemove.push({ dup: cand, kept: confV });
+          }
+        });
+      });
+
+      if (!duplicatesToRemove.length) return 0;
+
+      const dupsOnly = duplicatesToRemove.map(x => x.dup);
+      await moveSalesToTrash(dupsOnly);
+      for (const { dup, kept } of duplicatesToRemove) {
+        const dupYm = dup.date_vente ? dup.date_vente.slice(0, 7) : dup.mois_commission;
+        const keptYm = kept.mois_commission || (kept.date_vente ? kept.date_vente.slice(0, 7) : '');
+        await recordSaleAudit(
+          String(kept.id),
+          'Doublon précédent fusionné automatiquement',
+          `L'entrée non confirmée de ${dupYm} (${fmtMoney(dup.valeur)}) a été retirée pour ne compter ce dossier qu'une seule fois en ${keptYm}`,
+          '🔗'
+        );
+        await sb.from('ventes').delete().eq('id', dup.id);
+      }
+      return duplicatesToRemove.length;
+    }
+
     window.toggleVenteStatut = async (id, field, newVal) => {
       const { error } = await sb.from('ventes').update({ [field]: newVal }).eq('id', id);
       if (error) return toast(error.message, 'error');
@@ -8037,7 +8118,13 @@
         ? (newVal === 'depot_recu' ? 'Dépôt confirmé (Reçu)' : 'Dépôt remis À confirmer')
         : (newVal === 'paye' ? 'Commission marquée Payée' : 'Commission remise Non payée');
       await recordSaleAudit(id, label, '', field === 'statut_depot' ? '✅' : '💳');
-      toast('Statut mis à jour');
+      let mergedCount = 0;
+      if (field === 'statut_depot' && newVal === 'depot_recu') {
+        mergedCount = await reconcilePreviousUnconfirmedDuplicateSales([id]);
+      }
+      toast(mergedCount > 0
+        ? `Dépôt confirmé ✓ (${mergedCount} doublon antérieur non confirmé retiré automatiquement)`
+        : 'Statut mis à jour');
       await loadAllData();
     };
 
@@ -8818,6 +8905,19 @@
           populateKpiMonthSelect(false);
           const kpiMonthSel = document.getElementById('kpi-select-month');
           if (kpiMonthSel) kpiMonthSel.value = savedSaleYm;
+        }
+        if (payload.statut_depot === 'depot_recu') {
+          const targetId = editId || (typeof insertedRow !== 'undefined' && insertedRow?.id ? insertedRow.id : null);
+          if (targetId) {
+            await loadAllData();
+            const merged = await reconcilePreviousUnconfirmedDuplicateSales([targetId]);
+            if (merged > 0) {
+              toast(`Doublon antérieur non confirmé retiré automatiquement (${merged}) ✓`);
+              await loadAllData();
+            }
+            drawer.classList.add('hidden');
+            return;
+          }
         }
         drawer.classList.add('hidden');
         await loadAllData();
