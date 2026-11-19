@@ -12088,9 +12088,11 @@
     let activeVoiceRecognition = null;
     let isVoiceListening = false;
     let voiceFinalTranscript = '';
+    let voiceSilenceTimer = null;
 
     function stopVoiceSaleDictation() {
       isVoiceListening = false;
+      clearTimeout(voiceSilenceTimer);
       if (activeVoiceRecognition) {
         try { activeVoiceRecognition.stop(); } catch (e) {}
         activeVoiceRecognition = null;
@@ -12140,22 +12142,26 @@
     function parseFrenchSpokenNumbers(text) {
       let s = String(text || '').toLowerCase()
         .replace(/\u00a0/g, ' ')
+        // Formulations québécoises courantes : "14 mille et demi" -> "14500", "14 mille 5" -> "14500"
+        .replace(/(\d+)\s*mille\s*et\s*demi/gi, (_, m) => String(parseInt(m, 10) * 1000 + 500))
+        .replace(/(\d+)\s*mille\s*(\d)(?!\d)/gi, (_, m, c) => String(parseInt(m, 10) * 1000 + parseInt(c, 10) * 100))
+        .replace(/(\d+)\s*k\b/gi, (_, k) => String(parseInt(k, 10) * 1000))
         .replace(/dollars?|piastres?|cad|\$/gi, ' $ ')
-        .replace(/virgule|point/gi, '.');
+        .replace(/\b(?:et\s+)?(\d{1,2})\s*(?:sous|cents?)\b/gi, '.$1')
+        .replace(/\bvirgule\b|\bpoint\b/gi, '.');
 
       const units = {
         'zero': 0, 'zéro': 0, 'un': 1, 'une': 1, 'deux': 2, 'trois': 3, 'quatre': 4,
         'cinq': 5, 'six': 6, 'sept': 7, 'huit': 8, 'neuf': 9, 'dix': 10,
         'onze': 11, 'douze': 12, 'treize': 13, 'quatorze': 14, 'quinze': 15,
         'seize': 16, 'dix-sept': 17, 'dix sept': 17, 'dix-huit': 18, 'dix huit': 18,
-        'dix-neuf': 19, 'dix neuf': 19, 'vingt': 20, 'trente': 30, 'quarante': 40,
+        'dix-neuf': 19, 'dix neuf': 19, 'vingt': 20, 'vingts': 20, 'trente': 30, 'quarante': 40,
         'cinquante': 50, 'soixante': 60, 'soixante-dix': 70, 'soixante dix': 70,
         'quatre-vingt': 80, 'quatre-vingts': 80, 'quatre vingt': 80,
         'quatre-vingt-dix': 90, 'quatre vingt dix': 90
       };
 
-      // Convertir "14 mille 500" ou "quatorze mille cinq cents" en nombre
-      const wordGroupRegex = /\b((?:(?:zero|zéro|un|une|deux|trois|quatre|cinq|six|sept|huit|neuf|dix|onze|douze|treize|quatorze|quinze|seize|vingt|trente|quarante|cinquante|soixante|quatre-vingt(?:s)?|cent(?:s)?|mille|et|\d+)[\s-]*)+)\b/gi;
+      const wordGroupRegex = /\b((?:(?:zero|zéro|un|une|deux|trois|quatre|cinq|six|sept|huit|neuf|dix|onze|douze|treize|quatorze|quinze|seize|vingts?|trente|quarante|cinquante|soixante|quatre-vingts?|quatre\s+vingts?|cents?|mille|et|\d+)[\s-]*)+)\b/gi;
       s = s.replace(wordGroupRegex, (match) => {
         const clean = match.trim();
         if (!/(mille|cent|vingt|trente|quarante|cinquante|soixante|quatorze|quinze|douze|treize|seize|onze|dix|deux|trois|quatre|cinq|six|sept|huit|neuf)/i.test(clean)) {
@@ -12165,7 +12171,8 @@
         let total = 0;
         let current = 0;
         let matchedAny = false;
-        for (const tok of tokens) {
+        for (let i = 0; i < tokens.length; i++) {
+          const tok = tokens[i];
           if (tok === 'et') continue;
           if (/^\d+$/.test(tok)) {
             current += parseInt(tok, 10);
@@ -12186,6 +12193,8 @@
         return ` ${total + current} `;
       });
 
+      // Fusionner les milliers séparés par un espace : "14 500" -> "14500"
+      s = s.replace(/\b(\d{1,3})\s+(\d{3})\b/g, '$1$2');
       return s;
     }
 
@@ -12206,21 +12215,52 @@
         .join(' ');
     }
 
+    function matchExistingClientFuzzy(rawName, entId) {
+      const clean = String(rawName || '').trim();
+      if (!clean) return '';
+      const normIn = clean.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9\s-]/g, '').trim();
+      if (!normIn) return formatTitleCaseName(clean);
+
+      const pool = (state.clients || []).filter(c => !entId || String(c.entreprise_id) === String(entId));
+      const allPool = pool.length ? pool : (state.clients || []);
+
+      // Correspondance exacte sans accents
+      const exact = allPool.find(c => {
+        const cn = String(c.nom || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
+        return cn === normIn;
+      });
+      if (exact) return exact.nom;
+
+      // Correspondance phonétique simple (ex. "Jean Tremblé" -> "Jean Tremblay", "Marc Gagnons" -> "Marc Gagnon")
+      const phonetic = (str) => str
+        .replace(/ay\b|et\b|er\b|ez\b|ais\b|ait\b/g, 'e')
+        .replace(/ault\b|aud\b|eau\b|aux\b/g, 'o')
+        .replace(/s\b/g, '');
+      const pIn = phonetic(normIn);
+      const fuzzy = allPool.find(c => {
+        const cn = String(c.nom || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
+        return phonetic(cn) === pIn;
+      });
+      if (fuzzy) return fuzzy.nom;
+
+      return formatTitleCaseName(clean);
+    }
+
     function parseAndFillSaleFromSpeech(rawTranscript) {
       const original = String(rawTranscript || '').trim();
       if (!original) return;
       const normalized = parseFrenchSpokenNumbers(original);
+      const normNoAcc = original.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
       const filledLabels = [];
 
-      // 1. ENTREPRISE PARTENAIRE
+      // 1. ENTREPRISE PARTENAIRE (dictionnaire phonétique élargi)
       const entSel = document.getElementById('vente-entreprise');
       if (entSel && entSel.options.length) {
-        const normNoAcc = original.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
         const entAliases = [
-          { keys: ['toitex', 'toit ex', 'toit x'], match: 'toitex' },
-          { keys: ['maclim', 'ma clim', 'ma clime', 'clim'], match: 'maclim' },
-          { keys: ['monspray', 'mon spray', 'spray'], match: 'monspray' },
-          { keys: ['verrevdm', 'verre vdm', 'vdm', 'cloture vdm', 'clôture vdm'], match: 'verrevdm' },
+          { keys: ['toitex', 'toit ex', 'toit x', 'toit tex', 'toit tech', 'toitech', 'toiture ex'], match: 'toitex' },
+          { keys: ['maclim', 'ma clim', 'ma clime', 'mac lim', 'maclime', 'clim'], match: 'maclim' },
+          { keys: ['monspray', 'mon spray', 'mon spre', 'mons pre', 'spray'], match: 'monspray' },
+          { keys: ['verrevdm', 'verre vdm', 'vers vdm', 'vdm', 'v d m', 'cloture vdm', 'verre'], match: 'verrevdm' },
           { keys: ['diamant pro', 'groupe diamant', 'diamant'], match: 'diamant' },
           { keys: ['ornithorynque'], match: 'ornithorynque' }
         ];
@@ -12245,16 +12285,15 @@
       // 2. REPRÉSENTANT (si admin et qu'un prénom de rep est mentionné)
       const repSel = document.getElementById('vente-rep');
       if (repSel && !repSel.disabled && currentProfile?.role === 'admin') {
-        const normRepText = original.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
         const repAliases = [
           { keys: ['jean-sebastien', 'jean sebastien', 'j-s', 'js'], match: 'jean' },
-          { keys: ['gabryel', 'gabriel'], match: 'gab' },
+          { keys: ['gabryel', 'gabriel', 'gab'], match: 'gab' },
           { keys: ['samuel', 'sam'], match: 'samuel' },
           { keys: ['alexandre', 'alex'], match: 'alex' },
           { keys: ['olivier'], match: 'olivier' }
         ];
         for (const ra of repAliases) {
-          if (ra.keys.some(k => new RegExp('\\b' + k + '\\b', 'i').test(normRepText))) {
+          if (ra.keys.some(k => new RegExp('\\b' + k + '\\b', 'i').test(normNoAcc))) {
             const opt = Array.from(repSel.options).find(o => o.textContent.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').includes(ra.match));
             if (opt) {
               repSel.value = opt.value;
@@ -12267,14 +12306,13 @@
       }
 
       // 3. MONTANT ($ CAD)
-      // Éviter de confondre le numéro de contrat ("Est 3505" ou "contrat 3505") avec le montant
       const withoutContractNums = normalized.replace(/\b(?:contrat|estimation|est|facture|dossier|numero|numéro|no|#)\s*[a-z]*\s*\d+[a-z0-9-]*/gi, ' ');
       let detectedAmount = null;
       const explicitMoneyMatch = withoutContractNums.match(/(\d[\d\s]{0,10}(?:[.,]\d{1,2})?)\s*\$/);
       if (explicitMoneyMatch) {
         detectedAmount = parseAmount(explicitMoneyMatch[1]);
       } else {
-        const afterMontantMatch = withoutContractNums.match(/\b(?:montant|valeur|vente|total|prix|de)\s*(?:de\s*)?(\d[\d\s]{1,10}(?:[.,]\d{1,2})?)/i);
+        const afterMontantMatch = withoutContractNums.match(/\b(?:montant|valeur|vente|total|prix|pour|de)\s*(?:de\s*)?(\d[\d\s]{1,10}(?:[.,]\d{1,2})?)/i);
         if (afterMontantMatch) {
           detectedAmount = parseAmount(afterMontantMatch[1]);
         } else {
@@ -12296,11 +12334,11 @@
       // 4. TYPE KPI (OTS vs SUIVI)
       const kpiSel = document.getElementById('vente-type-kpi');
       if (kpiSel) {
-        if (/\b(?:suivi|suivis|relance)\b/i.test(original)) {
+        if (/\b(?:suivi|suivis|en suivi|relance)\b/i.test(normNoAcc)) {
           kpiSel.value = 'SUIVI';
           flashVoiceFilledField(kpiSel);
           filledLabels.push('Type : Suivi');
-        } else if (/\b(?:ots|o\.t\.s|sur place|one time)\b/i.test(original)) {
+        } else if (/\b(?:ots|o\.t\.s|o t s|au ts|sur place|one time|one time sit)\b/i.test(normNoAcc)) {
           kpiSel.value = 'OTS';
           flashVoiceFilledField(kpiSel);
           filledLabels.push('Type : OTS');
@@ -12310,11 +12348,11 @@
       // 5. STATUT DU DÉPÔT
       const depotSel = document.getElementById('vente-statut-depot');
       if (depotSel) {
-        if (/\b(?:dépôt reçu|depot recu|dépôt recu|depot reçu|dépôt payé|depot paye|virement reçu|chèque reçu|cheque recu|acompte reçu)\b/i.test(original)) {
+        if (/\b(?:depot recu|depot fait|depot paye|virement recu|virement fait|interac recu|interac fait|cheque recu|acompte recu|acompte paye|paye)\b/i.test(normNoAcc) && !/\b(?:non paye|pas paye|a confirmer|sans depot|pas de depot)\b/i.test(normNoAcc)) {
           depotSel.value = 'depot_recu';
           flashVoiceFilledField(depotSel);
           filledLabels.push('Dépôt : Reçu');
-        } else if (/\b(?:à confirmer|a confirmer|pas de dépôt|sans dépôt|aucun dépôt)\b/i.test(original)) {
+        } else if (/\b(?:a confirmer|pas de depot|sans depot|aucun depot|depot a venir)\b/i.test(normNoAcc)) {
           depotSel.value = 'a_confirmer';
           flashVoiceFilledField(depotSel);
           filledLabels.push('Dépôt : À confirmer');
@@ -12344,14 +12382,13 @@
 
       // 7. NOM DU CLIENT
       let detectedClient = '';
-      const clientAfterKeyword = original.match(/\b(?:client|cliente|pour|chez|nom)\s+([a-zà-ÿ'\s-]{2,45}?)(?=\s*(?:,|\.|\bmontant\b|\bvaleur\b|\bvente\b|\bde\b\s*\d|\d|\bsuivi\b|\bots\b|\bdépôt\b|\bdepot\b|\bcontrat\b|\bestimation\b|\bnote\b|\btoitex\b|\bmaclim\b|\bmonspray\b|\bverre|\bvdm\b|\bdiamant\b|$))/i);
+      const clientAfterKeyword = original.match(/\b(?:client|cliente|pour|chez|nom)\s+([a-zà-ÿ'\s-]{2,45}?)(?=\s*(?:,|\.|\bmontant\b|\bvaleur\b|\bvente\b|\bde\b\s*\d|\d|\bsuivi\b|\bots\b|\bsur place\b|\bone time\b|\bdépôt\b|\bdepot\b|\bvirement\b|\bchèque\b|\bcheque\b|\bcontrat\b|\bestimation\b|\bnote\b|\btoitex\b|\btoit\s*ex\b|\bmaclim\b|\bma\s*clim\b|\bmonspray\b|\bmon\s*spray\b|\bverre|\bvdm\b|\bdiamant\b|$))/i);
       if (clientAfterKeyword && clientAfterKeyword[1]) {
         detectedClient = clientAfterKeyword[1].trim();
       } else {
-        // Fallback : retirer les mots-clés connus et garder le segment texte restant s'il ressemble à un nom
         let stripped = original
-          .replace(/\b(?:toitex|maclim|ma clim|monspray|mon spray|verrevdm|verre vdm|clôture vdm|cloture vdm|groupe diamant pro|diamant pro|ornithorynque)\b/gi, ',')
-          .replace(/\b(?:dépôt reçu|depot recu|à confirmer|a confirmer|suivi|ots|sur place|montant|valeur|vente|dollars?|piastres?|cad)\b/gi, ',')
+          .replace(/\b(?:toitex|toit\s*ex|toit\s*x|toit\s*tex|maclim|ma\s*clim|ma\s*clime|monspray|mon\s*spray|verrevdm|verre\s*vdm|clôture\s*vdm|cloture\s*vdm|groupe\s*diamant\s*pro|diamant\s*pro|ornithorynque)\b/gi, ',')
+          .replace(/\b(?:dépôt\s*reçu|depot\s*recu|dépôt\s*fait|depot\s*fait|à\s*confirmer|a\s*confirmer|suivi|ots|sur\s*place|one\s*time\s*sit|montant|valeur|vente|dollars?|piastres?|cad)\b/gi, ',')
           .replace(/\b(?:contrat|estimation|est|facture|note|dossier)\s*(?:numéro|numero|no|#)?\s*[a-z0-9-]+/gi, ',')
           .replace(/\d[\d\s.,]*\$?/g, ',');
         const candidates = stripped.split(/[,.;]+/).map(x => x.trim()).filter(x => x.length >= 3 && /^[a-zà-ÿ'\s-]+$/i.test(x));
@@ -12361,7 +12398,7 @@
       }
 
       if (detectedClient) {
-        const formattedClient = formatTitleCaseName(detectedClient);
+        const formattedClient = matchExistingClientFuzzy(detectedClient, entSel?.value || '');
         const cliEl = document.getElementById('vente-client-nom');
         if (cliEl) {
           cliEl.value = formattedClient;
@@ -12370,7 +12407,6 @@
         }
       }
 
-      // Mettre à jour l'aperçu des commissions calculées en direct
       if (typeof updateDrawerCommissionPreview === 'function') {
         updateDrawerCommissionPreview();
       }
@@ -12406,7 +12442,7 @@
 
       const recognition = new SpeechRec();
       recognition.lang = 'fr-CA';
-      recognition.continuous = false;
+      recognition.continuous = true;
       recognition.interimResults = true;
       recognition.maxAlternatives = 1;
 
@@ -12427,11 +12463,18 @@
         btn.classList.add('bg-rose-600', 'hover:bg-rose-700', 'animate-pulse');
       }
       if (iconEl) iconEl.textContent = '⏹️';
-      if (lblEl) lblEl.textContent = 'Arrêter';
+      if (lblEl) lblEl.textContent = 'Terminer';
       if (liveBox) liveBox.classList.remove('hidden');
-      if (statusEl) statusEl.textContent = '🔴 Écoute en cours... énoncez l’entreprise, le client, le montant...';
+      if (statusEl) statusEl.textContent = '🔴 Écoute continue... parlez calmement puis appuyez sur Terminer (ou faites une pause)';
       if (transcriptEl) transcriptEl.textContent = '';
       if (summaryEl) summaryEl.classList.add('hidden');
+
+      const resetSilenceAutoStop = () => {
+        clearTimeout(voiceSilenceTimer);
+        voiceSilenceTimer = setTimeout(() => {
+          if (isVoiceListening) stopVoiceSaleDictation();
+        }, 2800);
+      };
 
       recognition.onresult = (event) => {
         let interim = '';
@@ -12447,6 +12490,7 @@
         if (transcriptEl) transcriptEl.textContent = combined ? `« ${combined} »` : '';
         if (combined) {
           parseAndFillSaleFromSpeech(combined);
+          resetSilenceAutoStop();
         }
       };
 
