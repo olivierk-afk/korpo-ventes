@@ -626,6 +626,24 @@
     </div>
   </div>
 
+  <!-- MODALE DE RECHERCHE GLOBALE CLIENT (LOUPE D'EN-TÊTE) -->
+  <div id="global-client-search-modal" class="hidden fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm flex items-start justify-center p-3 sm:p-6 pt-16 sm:pt-20 overflow-y-auto no-print">
+    <div class="bg-white w-full max-w-2xl rounded-3xl shadow-2xl border border-slate-200/90 overflow-hidden animate-drawer">
+      <div class="p-3.5 sm:p-4 bg-slate-900 text-white flex items-center gap-2.5 border-b border-slate-800">
+        <span class="w-9 h-9 rounded-full bg-indigo-500/25 border border-indigo-400/35 text-emerald-300 flex items-center justify-center shrink-0">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35m1.85-5.15a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+        </span>
+        <input id="global-client-search-input" type="search" enterkeyhint="search" autocomplete="off" placeholder="Tapez le nom d'un client (ex. Tremblay, Roy...)..." class="flex-1 min-w-0 px-3.5 py-2 text-sm bg-slate-800 text-white placeholder-slate-400 border border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-400" />
+        <button type="button" onclick="closeGlobalClientSearch()" title="Fermer" class="w-9 h-9 rounded-xl bg-white/10 hover:bg-white/20 text-slate-200 hover:text-white flex items-center justify-center shrink-0 transition">✕</button>
+      </div>
+      <div id="global-client-search-meta" class="px-4 py-2 bg-slate-50 border-b border-slate-100 text-[11px] font-semibold text-slate-500 flex items-center justify-between">
+        <span>Recherche instantanée dans tout l'historique</span>
+        <span id="global-client-search-count"></span>
+      </div>
+      <div id="global-client-search-results" class="max-h-[65vh] overflow-y-auto divide-y divide-slate-100"></div>
+    </div>
+  </div>
+
   <!-- MODALE DE CONFIRMATION -->
   <div id="confirm-modal" class="hidden fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-sm flex items-center justify-center p-4 no-print">
     <div class="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-md w-full p-6">
@@ -1400,7 +1418,15 @@
           </div>
         </div>
 
-        <div class="flex items-center gap-2 sm:gap-2.5 shrink-0">
+        <div class="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
+          <!-- RECHERCHE GLOBALE RAPIDE PAR CLIENT (BULLE LOUPE DANS L'EN-TÊTE) -->
+          <div id="global-search-wrapper" class="relative">
+            <button id="btn-global-search-open" type="button" onclick="openGlobalClientSearch()" title="Rechercher un client dans toute l'application" class="h-9 px-2.5 sm:px-3.5 inline-flex items-center gap-1.5 text-slate-200 hover:text-white bg-slate-800/95 hover:bg-slate-700 border border-slate-700/90 rounded-full shadow-xs transition active:scale-95">
+              <svg class="w-4 h-4 text-emerald-400 shrink-0" fill="none" stroke="currentColor" stroke-width="2.4" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35m1.85-5.15a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+              <span class="text-xs font-semibold text-slate-300 hidden xs:inline sm:inline">Client...</span>
+            </button>
+          </div>
+
           <!-- CLOCHE DE MENTIONS @ DANS KORPO TOP EARNER -->
           <div id="chat-mention-notif-wrapper" class="relative">
             <button id="btn-chat-mention-notif" type="button" title="Mentions (@) dans Korpo Top Earner" class="relative w-9 h-9 inline-flex items-center justify-center text-slate-200 hover:text-white bg-slate-800/95 hover:bg-slate-700 border border-slate-700/90 rounded-xl shadow-xs transition">
@@ -1558,7 +1584,6 @@
               <option value="all">Toutes mes commissions (Directes + Équipe)</option>
               <option value="direct">Mes ventes directes uniquement</option>
             </select>
-            <input id="search-rep-ventes" type="search" enterkeyhint="search" autocomplete="off" placeholder="Rechercher un client..." class="w-full sm:w-56 px-3.5 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-600" />
             <select id="filter-rep-statut" class="w-full sm:w-auto px-3 py-2 text-xs font-semibold bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-600">
               <option value="">Tous les dossiers</option>
               <option value="en_attente">⏳ En attente</option>
@@ -2069,14 +2094,6 @@
             <button id="btn-open-drawer" class="col-span-2 px-4 py-2.5 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl shadow-sm shadow-indigo-600/20 flex items-center justify-center gap-1.5 transition">
               <span class="text-base leading-none">💵</span> Nouvelle vente
             </button>
-            <button id="btn-open-wa" class="px-3 py-2.5 text-xs font-bold text-emerald-800 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-xl flex items-center justify-center gap-1.5 transition">
-              <span>💬</span> WhatsApp
-            </button>
-            <label class="cursor-pointer px-3 py-2.5 text-xs font-semibold text-slate-700 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 transition flex items-center justify-center">
-              Importer CSV
-              <input id="csv-import-input" type="file" accept=".csv" class="hidden" />
-            </label>
-            <button id="btn-csv-export" class="px-3 py-2.5 text-xs font-semibold text-slate-700 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 transition text-center">Exporter CSV</button>
             <button type="button" onclick="openDedupAuditModal()" class="px-3 py-2.5 text-xs font-bold text-amber-900 bg-amber-50 hover:bg-amber-100 border border-amber-200 rounded-xl transition text-center flex items-center justify-center gap-1.5">
               <span>🧹 Ménage doublons</span>
               <span id="dedup-badge-count" class="px-1.5 py-0.2 text-[10px] font-extrabold rounded-full bg-amber-200/80 text-amber-950">0</span>
@@ -2092,7 +2109,6 @@
         <!-- BARRE DE RECHERCHE & FILTRES RAPIDES -->
         <div class="bg-white rounded-2xl border border-slate-200/80 p-4 shadow-xs space-y-3">
           <div class="flex flex-wrap items-center justify-center gap-2.5">
-            <input id="admin-search" type="search" enterkeyhint="search" autocomplete="off" placeholder="Rechercher client, note..." class="w-full sm:w-56 px-3.5 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-600" />
             <select id="admin-filter-rep" class="w-full sm:w-auto px-3 py-2 text-xs font-medium bg-slate-50 border border-slate-200 rounded-xl"></select>
             <select id="admin-filter-ent" class="w-full sm:w-auto px-3 py-2 text-xs font-medium bg-slate-50 border border-slate-200 rounded-xl"></select>
             <select id="admin-filter-period" class="w-full sm:w-auto px-3.5 py-2 text-xs font-bold bg-indigo-50/70 text-indigo-950 border border-indigo-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-600 cursor-pointer">
@@ -3726,7 +3742,7 @@
         { id: 'tab-kpi', icon: '📊', label: 'Tableau KPI' },
         { id: 'tab-classement', icon: '🏆', label: 'Classement équipe' },
         ...(isAdmin ? [
-          { id: 'tab-admin-ventes', icon: '📋', label: 'Toutes les ventes & CSV' },
+          { id: 'tab-admin-ventes', icon: '📋', label: 'Toutes les ventes' },
           { id: 'tab-admin-dashboard', icon: '📈', label: 'Tableau de bord' },
           { id: 'tab-admin-taux', icon: '⚙️', label: 'Grille des taux' },
           { id: 'tab-admin-equipe', icon: '🏢', label: 'Entreprises & Équipe' }
@@ -3763,7 +3779,7 @@
         desktopBar;
 
       document.querySelectorAll('.nav-btn').forEach(btn => {
-        btn.addEventListener('click', () => switchTab(btn.dataset.tab));
+        btn.addEventListener('click', () => { if (window._globalClientFilterQuery) { window._globalClientFilterQuery = ''; showActiveClientSearchBanner(''); } switchTab(btn.dataset.tab); });
       });
       switchTab('tab-mes-ventes');
     }
@@ -4955,33 +4971,119 @@
       return `${y}-${String(m).padStart(2, '0')}`;
     }
 
+    function formatYearMonthLabelFr(ym, shortMonth = false) {
+      if (!ym || typeof ym !== 'string' || !ym.includes('-')) return String(ym || '');
+      const [yStr, mStr] = ym.split('-');
+      const shortNames = {
+        '01': 'Janv.', '02': 'Févr.', '03': 'Mars', '04': 'Avr.',
+        '05': 'Mai', '06': 'Juin', '07': 'Juill.', '08': 'Août',
+        '09': 'Sept.', '10': 'Oct.', '11': 'Nov.', '12': 'Déc.'
+      };
+      if (shortMonth) {
+        return `${shortNames[mStr] || mStr} ${yStr.slice(2)}`;
+      }
+      return `${MONTH_NAMES_FR[mStr] || mStr} ${yStr}`;
+    }
+
+    function formatDateLabelFr(ymdStr) {
+      if (!ymdStr || typeof ymdStr !== 'string' || ymdStr.length < 10) return String(ymdStr || '');
+      const y = ymdStr.slice(0, 4);
+      const m = ymdStr.slice(5, 7);
+      const d = parseInt(ymdStr.slice(8, 10), 10);
+      const monthName = (MONTH_NAMES_FR[m] || m).toLowerCase();
+      return `${d} ${monthName} ${y}`;
+    }
+
     function renderExecutiveForecast() {
       const dashPeriod = readPeriodFilterState('dash-filter');
+      const isSingleMonthMode = dashPeriod.mode === 'this_month' || dashPeriod.mode === 'specific_month';
       const targetYm = dashPeriod.singleMonth || currentMonthStr;
       const mObj = ensureKpiMonthStructure(targetYm);
-      const isCurrentMonth = targetYm === currentMonthStr;
+      const isCurrentMonth = isSingleMonthMode && targetYm === currentMonthStr;
+
+      // Déterminer les mois couverts par le filtre actif du tableau de bord
+      let coveredMonths = [targetYm];
+      if (!isSingleMonthMode) {
+        const allKnownMonths = new Set([
+          ...Object.keys(kpiStore).filter(isValidYearMonth),
+          ...(state.ventes || []).map(v => getSaleStatsMonth(v)).filter(isValidYearMonth)
+        ]);
+        if (dashPeriod.mode === 'this_quarter') {
+          coveredMonths = Array.from(allKnownMonths).filter(ym => getQuarterForMonth(ym) === dashPeriod.currentQuarter).sort();
+        } else if (dashPeriod.mode === 'this_year') {
+          coveredMonths = Array.from(allKnownMonths).filter(ym => ym.startsWith(dashPeriod.currentYear)).sort();
+        } else if (dashPeriod.mode === 'all') {
+          coveredMonths = Array.from(allKnownMonths).sort();
+        } else {
+          coveredMonths = [targetYm];
+        }
+        if (!coveredMonths.length) coveredMonths = [targetYm];
+      }
+
+      const periodDisplayTitle = isSingleMonthMode
+        ? formatYearMonthLabelFr(targetYm)
+        : dashPeriod.label;
 
       const titleEl = document.getElementById('forecast-title');
-      if (titleEl) titleEl.textContent = `Rythme quotidien & Suivi des bonus — ${mObj.label || targetYm}`;
+      if (titleEl) titleEl.textContent = `Rythme quotidien & Suivi des bonus — ${periodDisplayTitle}`;
 
       const [yStr, mStr] = targetYm.split('-');
       const totalDaysInMonth = new Date(parseInt(yStr, 10), parseInt(mStr, 10), 0).getDate();
-      const currentDayOfMonth = isCurrentMonth ? Math.min(today.getDate(), totalDaysInMonth) : totalDaysInMonth;
+      const currentDayOfMonth = isCurrentMonth
+        ? Math.min(today.getDate(), totalDaysInMonth)
+        : (dashPeriod.mode === 'specific_date' && dashPeriod.dateVal
+          ? Math.min(parseInt(dashPeriod.dateVal.slice(8, 10), 10) || 1, totalDaysInMonth)
+          : totalDaysInMonth);
 
-      const totalBizDays = Math.max(1, countBusinessDaysInMonth(targetYm));
-      const elapsedBizDays = Math.max(1, countBusinessDaysInMonth(targetYm, currentDayOfMonth));
-      const remainingBizDays = isCurrentMonth ? Math.max(0, totalBizDays - elapsedBizDays) : 0;
+      let totalBizDays = 1;
+      let elapsedBizDays = 1;
+      let remainingBizDays = 0;
 
-      // Volume total signé ce mois-ci (équipe)
-      const monthSales = (state.ventes || []).filter(v => getSaleStatsMonth(v) === targetYm);
-      const kpiTeamSigned = Number(mObj.team?.['VENTE $']?.cumul || 0);
-      const rawSalesSigned = monthSales.reduce((s, v) => s + Number(v.valeur || 0), 0);
-      const totSigned = Math.max(kpiTeamSigned, rawSalesSigned);
+      if (isSingleMonthMode) {
+        totalBizDays = Math.max(1, countBusinessDaysInMonth(targetYm));
+        elapsedBizDays = Math.max(1, countBusinessDaysInMonth(targetYm, currentDayOfMonth));
+        remainingBizDays = isCurrentMonth ? Math.max(0, totalBizDays - elapsedBizDays) : 0;
+      } else if (dashPeriod.mode === 'specific_date') {
+        totalBizDays = 1;
+        elapsedBizDays = 1;
+        remainingBizDays = 0;
+      } else if (dashPeriod.mode === 'this_week') {
+        totalBizDays = 5;
+        const dow = today.getDay();
+        elapsedBizDays = dow === 0 ? 5 : Math.min(5, Math.max(1, dow));
+        remainingBizDays = Math.max(0, 5 - elapsedBizDays);
+      } else {
+        totalBizDays = Math.max(1, coveredMonths.reduce((s, ym) => s + countBusinessDaysInMonth(ym), 0));
+        elapsedBizDays = Math.max(1, coveredMonths.reduce((s, ym) => {
+          if (ym === currentMonthStr) return s + countBusinessDaysInMonth(ym, today.getDate());
+          if (ym < currentMonthStr) return s + countBusinessDaysInMonth(ym);
+          return s;
+        }, 0));
+        remainingBizDays = Math.max(0, totalBizDays - elapsedBizDays);
+      }
 
-      // Objectif global = somme des targets individuels des représentants actifs
+      // Ventes filtrées selon la période choisie dans le tableau de bord
+      const periodSales = (state.ventes || []).filter(v => matchesSalePeriod(v, dashPeriod, true));
+      const kpiSignedSum = (dashPeriod.mode === 'this_week' || dashPeriod.mode === 'specific_date')
+        ? 0
+        : coveredMonths.reduce((s, ym) => s + Number(ensureKpiMonthStructure(ym).team?.['VENTE $']?.cumul || 0), 0);
+      const rawSalesSigned = periodSales.reduce((s, v) => s + Number(v.valeur || 0), 0);
+      const totSigned = Math.max(kpiSignedSum, rawSalesSigned);
+
+      // Objectif global proportionnel à la période sélectionnée
+      const monthMultiplier = dashPeriod.mode === 'specific_date'
+        ? (1 / Math.max(1, countBusinessDaysInMonth(targetYm)))
+        : (dashPeriod.mode === 'this_week' ? 0.25 : coveredMonths.length);
+
       const repTargetsMap = {};
       ALL_KPI_REPS.forEach(rn => {
-        repTargetsMap[rn] = getSalesTargetForRep(rn, targetYm);
+        if (isSingleMonthMode) {
+          repTargetsMap[rn] = getSalesTargetForRep(rn, targetYm);
+        } else if (dashPeriod.mode === 'specific_date' || dashPeriod.mode === 'this_week') {
+          repTargetsMap[rn] = Math.round(getSalesTargetForRep(rn, targetYm) * monthMultiplier);
+        } else {
+          repTargetsMap[rn] = coveredMonths.reduce((s, ym) => s + getSalesTargetForRep(rn, ym), 0);
+        }
       });
       const totObjective = ALL_KPI_REPS.reduce((s, rn) => s + (repTargetsMap[rn] || 0), 0);
 
@@ -4992,8 +5094,9 @@
         ? Math.round(remainingToTarget / remainingBizDays)
         : (remainingToTarget > 0 ? remainingToTarget : 0);
 
-      // Comparatif au même jour du mois précédent (M-1)
+      // Comparatif période précédente
       const prevYm = getPreviousYearMonth(targetYm);
+      const prevLabelFr = formatYearMonthLabelFr(prevYm);
       const prevMonthObj = kpiStore[prevYm];
       const prevSalesSameCutoff = (state.ventes || [])
         .filter(v => {
@@ -5012,13 +5115,15 @@
       let unlockedCount = 0;
       const repRowsData = ALL_KPI_REPS.map(rn => {
         const repObj = state.representants.find(r => r.nom === rn);
-        const repSalesList = monthSales.filter(v => {
+        const repSalesList = periodSales.filter(v => {
           if (repObj && String(v.representant_id) === String(repObj.id)) return true;
           const rN = state.representants.find(r => String(r.id) === String(v.representant_id))?.nom || v.rep_nom || '';
           return resolveKpiRepName(rN) === rn;
         });
         const signedFromSales = repSalesList.reduce((s, v) => s + Number(v.valeur || 0), 0);
-        const signedFromKpi = Number(mObj.reps?.[rn]?.['Vente $']?.cumul || 0);
+        const signedFromKpi = (dashPeriod.mode === 'this_week' || dashPeriod.mode === 'specific_date')
+          ? 0
+          : coveredMonths.reduce((s, ym) => s + Number(ensureKpiMonthStructure(ym).reps?.[rn]?.['Vente $']?.cumul || 0), 0);
         const signed = Math.max(signedFromSales, signedFromKpi);
 
         const target = repTargetsMap[rn] || 150000;
@@ -5031,7 +5136,7 @@
         if (unlocked) unlockedCount++;
 
         const commEarned = isAdminRep
-          ? monthSales.reduce((s, v) => s + Number(v.commission_olivier || 0), 0)
+          ? periodSales.reduce((s, v) => s + Number(v.commission_olivier || 0), 0)
           : repSalesList.reduce((s, v) => s + Number(v.commission_rep || 0), 0);
 
         return { rn, signed, target, pct, gap, bonusStr, isAdminRep, unlocked, commEarned };
@@ -5039,18 +5144,24 @@
 
       const topBadgeLabel = document.getElementById('forecast-cadence-badge-label');
       if (topBadgeLabel) {
-        topBadgeLabel.textContent = isCurrentMonth
+        topBadgeLabel.textContent = (isCurrentMonth || remainingBizDays > 0)
           ? `Cadence (${elapsedBizDays}j / ${totalBizDays}j ouvrables)`
-          : `Cadence moyenne (${totalBizDays}j ouvrables)`;
+          : `Cadence moyenne (${totalBizDays}j ouvrable${totalBizDays > 1 ? 's' : ''})`;
       }
       const projEl = document.getElementById('forecast-total-projected');
       if (projEl) projEl.textContent = `${fmtMoney0(dailyPace)} / jour`;
 
       const progLbl = document.getElementById('forecast-month-progress-label');
       if (progLbl) {
-        progLbl.textContent = isCurrentMonth
-          ? `Jour ${currentDayOfMonth}/${totalDaysInMonth} • ${remainingBizDays} jour(s) ouvrable(s) restant(s)`
-          : `Mois complété (${totalBizDays} jours ouvrables)`;
+        if (isCurrentMonth) {
+          progLbl.textContent = `${formatDateLabelFr(currentDateStr)} • ${remainingBizDays} jour(s) ouvrable(s) restant(s)`;
+        } else if (dashPeriod.mode === 'specific_date') {
+          progLbl.textContent = `Journée du ${formatDateLabelFr(dashPeriod.dateVal)}`;
+        } else if (isSingleMonthMode) {
+          progLbl.textContent = `${formatYearMonthLabelFr(targetYm)} (${totalBizDays} jours ouvrables)`;
+        } else {
+          progLbl.textContent = `${periodDisplayTitle} (${coveredMonths.length} mois • ${elapsedBizDays}j ouvrables)`;
+        }
       }
 
       const cardsEl = document.getElementById('forecast-kpi-cards');
@@ -5069,14 +5180,14 @@
               ${remainingToTarget === 0 ? 'Objectif atteint !' : `${fmtMoney0(requiredPace)} / jour`}
             </div>
             <div class="text-[11px] text-slate-300 tabular-nums">
-              ${remainingToTarget === 0 ? `Surplus : + ${fmtMoney0(totSigned - totObjective)}` : `Reste ${fmtMoney0(remainingToTarget)} (${remainingBizDays}j rest.)`}
+              ${remainingToTarget === 0 ? `Surplus : + ${fmtMoney0(totSigned - totObjective)}` : `Reste ${fmtMoney0(remainingToTarget)}${remainingBizDays > 0 ? ` (${remainingBizDays}j rest.)` : ''}`}
             </div>
           </div>
           <div class="bg-white/10 rounded-xl p-3.5 border border-white/10 space-y-1">
-            <div class="text-[11px] text-indigo-200 font-semibold">3. Vs mois dernier (${prevYm})</div>
+            <div class="text-[11px] text-indigo-200 font-semibold">3. Vs ${esc(prevLabelFr)}</div>
             <div class="text-xl font-extrabold ${diffColor} tabular-nums">${diffSign}${fmtMoney0(diffVsPrev)}</div>
             <div class="text-[11px] text-slate-300 tabular-nums">
-              ${prevComparable > 0 ? `${diffSign}${diffVsPrevPct}% (M-1 au J${currentDayOfMonth} : ${fmtMoney0(prevComparable)})` : 'Aucune donnée M-1'}
+              ${prevComparable > 0 ? `${diffSign}${diffVsPrevPct}% (${esc(prevLabelFr)} : ${fmtMoney0(prevComparable)})` : `Aucune donnée en ${esc(prevLabelFr)}`}
             </div>
           </div>
           <div class="bg-white/10 rounded-xl p-3.5 border border-white/10 space-y-1">
@@ -8239,7 +8350,7 @@
       const scopeSelEl = document.getElementById('filter-admin-scope');
       if (scopeSelEl && !isAdmin) scopeSelEl.classList.add('hidden');
       const scopeFilter = (isAdmin && scopeSelEl) ? scopeSelEl.value : 'all';
-      const q = document.getElementById('search-rep-ventes').value.trim().toLowerCase();
+      const q = String(window._globalClientFilterQuery || '').trim().toLowerCase();
       const currentYear = new Date().getFullYear().toString();
 
       const isInspectingRep = isAdmin && typeof scopeFilter === 'string' && scopeFilter.startsWith('rep:');
@@ -8380,7 +8491,7 @@
           const cleanNote = cleanDisplaySaleNote(v.note);
           const hitRow = isHitSale(v);
           return `
-            <div class="bg-white rounded-2xl border ${hitRow ? 'border-rose-300 bg-rose-50/20' : 'border-slate-200/80'} p-4 shadow-xs space-y-3">
+            <div data-sale-id="${v.id}" class="bg-white rounded-2xl border ${hitRow ? 'border-rose-300 bg-rose-50/20' : 'border-slate-200/80'} p-4 shadow-xs space-y-3">
               <div class="flex items-start justify-between gap-2">
                 <div class="space-y-1 min-w-0">
                   <div class="flex items-center flex-wrap gap-1.5">
@@ -8469,7 +8580,7 @@
         const canDelete = v.statut_depot === 'a_confirmer' && v.statut_paiement !== 'paye';
         const showMoisDiff = v.mois_commission && v.date_vente && !v.date_vente.startsWith(v.mois_commission);
         return `
-        <tr class="hover:bg-slate-50/90 transition">
+        <tr data-sale-id="${v.id}" class="hover:bg-slate-50/90 transition">
           <td class="py-3.5 px-4 whitespace-nowrap align-middle">
             <div class="font-semibold text-slate-800 tabular-nums">${v.date_vente}</div>
             ${showMoisDiff ? `<div class="text-[11px] text-slate-400">Paie ${v.mois_commission}</div>` : ''}
@@ -9079,7 +9190,7 @@
     };
 
     function renderAdminVentes() {
-      const q = document.getElementById('admin-search').value.trim().toLowerCase();
+      const q = String(window._globalClientFilterQuery || '').trim().toLowerCase();
       const fRep = document.getElementById('admin-filter-rep').value;
       const fEnt = document.getElementById('admin-filter-ent').value;
       const adminPeriod = readPeriodFilterState('admin-filter');
@@ -9156,7 +9267,7 @@
           const cleanNote = cleanDisplaySaleNote(v.note);
           const hitRow = isHitSale(v);
           return `
-            <div class="bg-white rounded-2xl border ${hitRow ? 'border-rose-300 bg-rose-50/20' : 'border-slate-200/80'} p-4 shadow-xs space-y-3">
+            <div data-sale-id="${v.id}" class="bg-white rounded-2xl border ${hitRow ? 'border-rose-300 bg-rose-50/20' : 'border-slate-200/80'} p-4 shadow-xs space-y-3">
               <div class="flex items-start justify-between gap-2">
                 <div class="min-w-0">
                   <div class="flex items-center flex-wrap gap-1.5">
@@ -9213,7 +9324,7 @@
         const proofSrc = getProofForSale(v);
         const showMoisDiff = v.mois_commission && v.date_vente && !v.date_vente.startsWith(v.mois_commission);
         return `
-          <tr class="hover:bg-slate-50/90 transition ${isChecked ? 'bg-indigo-50/40' : ''}">
+          <tr data-sale-id="${v.id}" class="hover:bg-slate-50/90 transition ${isChecked ? 'bg-indigo-50/40' : ''}">
             <td class="py-3 px-3 text-center align-middle">
               <input type="checkbox" class="sale-row-cb rounded border-slate-300 text-indigo-600" ${isChecked ? 'checked' : ''} onchange="toggleSelectSale('${v.id}', this.checked)" />
             </td>
@@ -9349,7 +9460,7 @@
                 <div class="w-full h-28 bg-slate-100 rounded-xl flex items-end p-1">
                   <div class="w-full rounded-lg transition-all ${isSelected ? 'bg-emerald-500' : 'bg-indigo-600 group-hover:bg-indigo-500'}" style="height: ${hPct}%"></div>
                 </div>
-                <span class="text-[11px] font-bold ${isSelected ? 'text-emerald-600' : 'text-slate-600'}">${ym.slice(5)}/${ym.slice(2, 4)}</span>
+                <span class="text-[11px] font-bold ${isSelected ? 'text-emerald-600' : 'text-slate-600'}">${esc(formatYearMonthLabelFr(ym, true))}</span>
               </button>
             `;
           }).join('')
@@ -10648,12 +10759,12 @@
 
       let label = 'Toutes les périodes';
       let singleMonth = '';
-      if (mode === 'this_week') label = `Cette semaine (${weekBounds.start} → ${weekBounds.end})`;
-      else if (mode === 'this_month') { label = `Ce mois-ci (${currentMonthStr})`; singleMonth = currentMonthStr; }
+      if (mode === 'this_week') label = `Cette semaine (${formatDateLabelFr(weekBounds.start)} → ${formatDateLabelFr(weekBounds.end)})`;
+      else if (mode === 'this_month') { label = `Ce mois-ci (${formatYearMonthLabelFr(currentMonthStr)})`; singleMonth = currentMonthStr; }
       else if (mode === 'this_quarter') label = `Ce trimestre (${currentQuarter.replace('-Q', ' • T')})`;
       else if (mode === 'this_year') label = `Cette année (${currentYear})`;
-      else if (mode === 'specific_month') { label = `Mois : ${monthVal}`; singleMonth = monthVal; }
-      else if (mode === 'specific_date') label = `Date précise : ${dateVal}`;
+      else if (mode === 'specific_month') { label = formatYearMonthLabelFr(monthVal); singleMonth = monthVal; }
+      else if (mode === 'specific_date') { label = formatDateLabelFr(dateVal); singleMonth = dateVal ? dateVal.slice(0, 7) : ''; }
 
       return { mode, monthVal, dateVal, weekBounds, currentQuarter, currentYear, label, singleMonth };
     }
@@ -10720,7 +10831,9 @@
         renderFn();
       });
       mInp?.addEventListener('change', renderFn);
+      mInp?.addEventListener('input', renderFn);
       dInp?.addEventListener('change', renderFn);
+      dInp?.addEventListener('input', renderFn);
     }
 
     bindPeriodSelectorGroup('filter-rep', renderMesVentes);
@@ -10729,135 +10842,205 @@
     bindPeriodSelectorGroup('dash-filter', renderAdminDashboard);
 
     document.getElementById('filter-rep-statut')?.addEventListener('change', renderMesVentes);
-    let _clientSearchScrollTimer = null;
-    function getClientSearchTargetElement(context) {
-      const isMobile = window.innerWidth < 768;
-      if (context === 'mes') {
-        if (isMobile) {
-          const groupSel = activeMobilePersonalView === 'commissions'
-            ? '#mobile-mes-commissions-cards'
-            : '#mobile-mes-ventes-cards';
-          const box = document.querySelector(groupSel);
-          return box?.firstElementChild || box;
-        }
-        const tbody = document.getElementById('tbody-mes-ventes');
-        return tbody?.querySelector('tr') || tbody?.closest('.bg-white');
-      }
-      if (context === 'admin') {
-        if (isMobile) {
-          const box = document.getElementById('mobile-admin-ventes-cards');
-          return box?.firstElementChild || box;
-        }
-        const tbody = document.getElementById('tbody-admin-ventes');
-        return tbody?.querySelector('tr') || tbody?.closest('.bg-white');
-      }
-      return null;
+    // =========================================================================
+    // RECHERCHE GLOBALE CLIENT DEPUIS L'EN-TÊTE (LOUPE)
+    // =========================================================================
+    window.openGlobalClientSearch = () => {
+      const modal = document.getElementById('global-client-search-modal');
+      const input = document.getElementById('global-client-search-input');
+      if (!modal || !input) return;
+      modal.classList.remove('hidden');
+      input.value = '';
+      renderGlobalClientSearchResults('');
+      setTimeout(() => input.focus(), 60);
+    };
+
+    window.closeGlobalClientSearch = () => {
+      const modal = document.getElementById('global-client-search-modal');
+      if (modal) modal.classList.add('hidden');
+    };
+
+    function getAllSearchableSalesForCurrentUser() {
+      const isAdmin = currentProfile?.role === 'admin';
+      const source = isAdmin ? (state.ventes || []) : (state.mesVentes || []);
+      return source.map(v => {
+        const cli = v.client_nom || state.clients.find(c => String(c.id) === String(v.client_id))?.nom || '—';
+        const ent = v.entreprise_nom || state.entreprises.find(e => String(e.id) === String(v.entreprise_id))?.nom || '—';
+        const rep = v.rep_nom || state.representants.find(r => String(r.id) === String(v.representant_id))?.nom || '—';
+        const commVal = isAdmin ? Number(v.commission_olivier || 0) : Number(v.commission_rep || 0);
+        return {
+          ...v,
+          _cli: cli,
+          _ent: ent,
+          _rep: rep,
+          _comm: commVal
+        };
+      }).sort((a, b) => String(b.date_vente || '').localeCompare(String(a.date_vente || '')));
     }
 
-    function showMobileJumpToResultPill(context, count) {
-      let pill = document.getElementById('mobile-search-jump-pill');
-      if (window.innerWidth >= 768 || !count) {
-        if (pill) pill.remove();
+    function renderGlobalClientSearchResults(rawQuery) {
+      const box = document.getElementById('global-client-search-results');
+      const countEl = document.getElementById('global-client-search-count');
+      if (!box) return;
+
+      const q = String(rawQuery || '').trim().toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+      const all = getAllSearchableSalesForCurrentUser();
+
+      const matches = !q
+        ? all.slice(0, 12)
+        : all.filter(v => {
+            const hay = `${v._cli} ${v._ent} ${v._rep} ${v.note || ''} ${v.date_vente || ''}`
+              .toLowerCase()
+              .normalize('NFD')
+              .replace(/[̀-ͯ]/g, '');
+            return hay.includes(q);
+          }).slice(0, 30);
+
+      if (countEl) {
+        countEl.textContent = q
+          ? `${matches.length} dossier(s) trouvé(s)`
+          : `${all.length} dossier(s) au total`;
+      }
+
+      if (!matches.length) {
+        box.innerHTML = `<div class="p-8 text-center text-xs text-slate-400">Aucun client ou dossier ne correspond à « ${esc(rawQuery)} ».</div>`;
         return;
       }
-      if (!pill) {
-        pill = document.createElement('button');
-        pill.id = 'mobile-search-jump-pill';
-        pill.type = 'button';
-        pill.className = 'fixed top-28 left-1/2 -translate-x-1/2 z-40 px-4 py-2 rounded-full bg-indigo-600 text-white text-xs font-extrabold shadow-xl border border-indigo-400/50 flex items-center gap-1.5 active:scale-95 transition no-print';
-        document.body.appendChild(pill);
-      }
-      pill.innerHTML = `<span>🎯 ${count} fiche(s) trouvée(s) — Voir</span><span>↓</span>`;
-      pill.onclick = () => {
-        scrollToClientSearchResults(context, true);
-        pill.remove();
-      };
-      clearTimeout(window._mobileSearchPillTimer);
-      window._mobileSearchPillTimer = setTimeout(() => {
-        document.getElementById('mobile-search-jump-pill')?.remove();
-      }, 4500);
+
+      const isAdmin = currentProfile?.role === 'admin';
+      box.innerHTML = matches.map(v => {
+        const isSuivi = (v.note || '').toUpperCase().includes('[SUIVI]');
+        const cleanNote = cleanDisplaySaleNote(v.note);
+        return `
+          <button type="button" onclick="navigateToSaleRecord('${v.id}')" class="w-full text-left p-3.5 sm:px-5 hover:bg-indigo-50/70 active:bg-indigo-100/70 transition flex items-center justify-between gap-3">
+            <div class="min-w-0 space-y-1">
+              <div class="flex items-center flex-wrap gap-1.5">
+                ${entBadge(v._ent)}
+                <span class="font-extrabold text-sm text-slate-900 truncate">${esc(v._cli)}</span>
+              </div>
+              <div class="flex items-center flex-wrap gap-1.5 text-[11px] text-slate-500">
+                <span class="font-semibold text-slate-700">${v.date_vente || '—'}</span>
+                ${isAdmin ? `<span>•</span><span class="font-semibold text-indigo-600">${esc(v._rep)}</span>` : ''}
+                <span>•</span>
+                <span class="px-1.5 py-0.2 text-[10px] font-extrabold rounded border ${isSuivi ? 'bg-purple-50 text-purple-700 border-purple-200' : 'bg-sky-50 text-sky-700 border-sky-200'}">${isSuivi ? 'SUIVI' : 'OTS'}</span>
+                <span class="px-1.5 py-0.2 text-[10px] font-bold rounded-full ${v.statut_depot === 'depot_recu' ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'}">${v.statut_depot === 'depot_recu' ? 'Dépôt reçu' : 'À confirmer'}</span>
+                ${cleanNote ? `<span class="text-slate-400 truncate max-w-[160px]">• ${esc(cleanNote)}</span>` : ''}
+              </div>
+            </div>
+            <div class="text-right shrink-0 tabular-nums">
+              <div class="text-sm font-extrabold text-slate-900">${fmtMoney(v.valeur)}</div>
+              <div class="text-[11px] font-bold text-emerald-600">+ ${fmtMoney(v._comm)}</div>
+              <div class="text-[10px] font-bold text-indigo-600 mt-0.5">Ouvrir la fiche →</div>
+            </div>
+          </button>
+        `;
+      }).join('');
     }
 
-    function scrollToClientSearchResults(context, blurMobileKeyboard = false) {
-      clearTimeout(_clientSearchScrollTimer);
-      const isMobile = window.innerWidth < 768;
+    window._globalClientFilterQuery = '';
+    function showActiveClientSearchBanner(cliNom) {
+      let bar = document.getElementById('active-global-client-filter-bar');
+      if (!cliNom) {
+        if (bar) bar.remove();
+        return;
+      }
+      if (!bar) {
+        bar = document.createElement('div');
+        bar.id = 'active-global-client-filter-bar';
+        bar.className = 'fixed bottom-20 sm:bottom-6 left-1/2 -translate-x-1/2 z-40 px-4 py-2 rounded-full bg-slate-900 text-white text-xs font-bold shadow-2xl border border-indigo-400/50 flex items-center gap-2.5 no-print';
+        document.body.appendChild(bar);
+      }
+      bar.innerHTML = `<span>🔍 Client : <strong class="text-emerald-300">${esc(cliNom)}</strong></span><button type="button" onclick="clearGlobalClientFilter()" class="px-2 py-0.5 rounded-full bg-white/15 hover:bg-white/25 text-[11px] font-extrabold transition">Tout afficher ✕</button>`;
+    }
 
-      if (blurMobileKeyboard && isMobile && document.activeElement && typeof document.activeElement.blur === 'function') {
+    window.clearGlobalClientFilter = () => {
+      window._globalClientFilterQuery = '';
+      showActiveClientSearchBanner('');
+      renderMesVentes();
+      if (currentProfile?.role === 'admin') renderAdminVentes();
+    };
+
+    window.navigateToSaleRecord = (saleId) => {
+      const sid = String(saleId);
+      closeGlobalClientSearch();
+      if (document.activeElement && typeof document.activeElement.blur === 'function') {
         document.activeElement.blur();
       }
 
-      const performScroll = () => {
-        const targetEl = getClientSearchTargetElement(context);
-        if (!targetEl) return;
+      const isAdmin = currentProfile?.role === 'admin';
+      const v = (isAdmin ? state.ventes : state.mesVentes).find(x => String(x.id) === sid);
+      if (!v) return;
+
+      const cliNom = v.client_nom || state.clients.find(c => String(c.id) === String(v.client_id))?.nom || '';
+
+      window._globalClientFilterQuery = cliNom;
+      showActiveClientSearchBanner(cliNom);
+
+      if (isAdmin) {
+        switchTab('tab-admin-ventes');
+        const rIn = document.getElementById('admin-filter-rep');
+        const eIn = document.getElementById('admin-filter-ent');
+        const pIn = document.getElementById('admin-filter-period');
+        const stIn = document.getElementById('admin-filter-statut');
+        if (rIn) rIn.value = '';
+        if (eIn) eIn.value = '';
+        if (pIn) pIn.value = 'all';
+        if (stIn) stIn.value = '';
+        syncPeriodFilterVisibility('admin-filter');
+        renderAdminVentes();
+      } else {
+        switchTab('tab-mes-ventes');
+        const stIn = document.getElementById('filter-rep-statut');
+        const pIn = document.getElementById('filter-rep-period');
+        if (stIn) stIn.value = '';
+        if (pIn) pIn.value = 'all';
+        syncPeriodFilterVisibility('filter-rep');
+        renderMesVentes();
+      }
+
+      // Défiler jusqu'à la fiche exacte du client et l'illuminer
+      const scrollToExactCard = () => {
+        const isMobile = window.innerWidth < 768;
+        const containerSel = isAdmin
+          ? (isMobile ? '#mobile-admin-ventes-cards' : '#tbody-admin-ventes')
+          : (isMobile ? '#mobile-mes-ventes-cards' : '#tbody-mes-ventes');
+        const container = document.querySelector(containerSel);
+        const exactEl = container?.querySelector(`[data-sale-id="${sid}"]`) || container?.firstElementChild;
+        if (!exactEl) return;
 
         const headerEl = document.querySelector('#screen-app header');
         const headerOffset = (headerEl ? headerEl.offsetHeight : 104) + 14;
-        targetEl.style.scrollMarginTop = `${headerOffset}px`;
-
-        if (typeof targetEl.scrollIntoView === 'function') {
-          try {
-            targetEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
-          } catch (e) {
-            targetEl.scrollIntoView(true);
-          }
+        exactEl.style.scrollMarginTop = `${headerOffset}px`;
+        try {
+          exactEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        } catch (e) {
+          exactEl.scrollIntoView(true);
         }
 
-        const rect = targetEl.getBoundingClientRect();
-        const curScroll = window.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop || 0;
-        const targetY = Math.max(0, curScroll + rect.top - headerOffset);
-        window.scrollTo({ top: targetY, behavior: 'smooth' });
-        if (document.documentElement) document.documentElement.scrollTop = targetY;
-        if (document.body) document.body.scrollTop = targetY;
-
-        targetEl.classList.add('ring-2', 'ring-indigo-500', 'bg-indigo-50/60');
+        exactEl.classList.add('ring-2', 'ring-emerald-500', 'bg-emerald-50/60');
         setTimeout(() => {
-          targetEl.classList.remove('ring-2', 'ring-indigo-500', 'bg-indigo-50/60');
-        }, 1800);
+          exactEl.classList.remove('ring-2', 'ring-emerald-500', 'bg-emerald-50/60');
+        }, 2400);
       };
 
-      _clientSearchScrollTimer = setTimeout(() => {
-        performScroll();
-        if (isMobile) {
-          setTimeout(performScroll, 280);
-          setTimeout(performScroll, 550);
-        }
-      }, isMobile ? (blurMobileKeyboard ? 80 : 380) : 240);
-    }
+      setTimeout(scrollToExactCard, 120);
+      setTimeout(scrollToExactCard, 420);
+    };
+
+    document.getElementById('global-client-search-input')?.addEventListener('input', (e) => {
+      renderGlobalClientSearchResults(e.target.value);
+    });
+    document.getElementById('global-client-search-modal')?.addEventListener('click', (e) => {
+      if (e.target.id === 'global-client-search-modal') closeGlobalClientSearch();
+    });
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        const gModal = document.getElementById('global-client-search-modal');
+        if (gModal && !gModal.classList.contains('hidden')) closeGlobalClientSearch();
+      }
+    });
 
     document.getElementById('filter-admin-scope')?.addEventListener('change', renderMesVentes);
-    document.getElementById('search-rep-ventes')?.addEventListener('input', (e) => {
-      renderMesVentes();
-      const val = e.target.value.trim();
-      if (val.length >= 2) {
-        const boxSel = activeMobilePersonalView === 'commissions' ? '#mobile-mes-commissions-cards' : '#mobile-mes-ventes-cards';
-        const cnt = document.querySelectorAll(`${boxSel} > div`).length;
-        showMobileJumpToResultPill('mes', cnt);
-        scrollToClientSearchResults('mes', false);
-      } else {
-        document.getElementById('mobile-search-jump-pill')?.remove();
-      }
-    });
-    document.getElementById('search-rep-ventes')?.addEventListener('search', (e) => {
-      renderMesVentes();
-      if (e.target.value.trim().length >= 1) {
-        scrollToClientSearchResults('mes', true);
-      }
-    });
-    document.getElementById('search-rep-ventes')?.addEventListener('change', (e) => {
-      renderMesVentes();
-      if (e.target.value.trim().length >= 1) {
-        scrollToClientSearchResults('mes', true);
-      }
-    });
-    document.getElementById('search-rep-ventes')?.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter' || e.keyCode === 13) {
-        e.preventDefault();
-        renderMesVentes();
-        if (e.target.value.trim().length >= 1) {
-          scrollToClientSearchResults('mes', true);
-        }
-      }
-    });
 
     document.getElementById('vente-entreprise')?.addEventListener('change', updateClientDatalist);
     document.getElementById('taux-ent')?.addEventListener('change', updateTauxClientSelect);
@@ -11077,44 +11260,12 @@
       }
     });
 
-    ['admin-search', 'admin-filter-rep', 'admin-filter-ent', 'admin-filter-statut'].forEach(id => {
-      document.getElementById(id).addEventListener('input', () => {
-        renderAdminVentes();
-        if (id === 'admin-search') {
-          const val = document.getElementById('admin-search').value.trim();
-          if (val.length >= 2) {
-            const cnt = document.querySelectorAll('#mobile-admin-ventes-cards > div').length;
-            showMobileJumpToResultPill('admin', cnt);
-            scrollToClientSearchResults('admin', false);
-          } else {
-            document.getElementById('mobile-search-jump-pill')?.remove();
-          }
-        }
-      });
-      document.getElementById(id).addEventListener('change', () => {
-        renderAdminVentes();
-        if (id === 'admin-search' && document.getElementById('admin-search').value.trim().length >= 1) {
-          scrollToClientSearchResults('admin', true);
-        }
-      });
-    });
-    document.getElementById('admin-search')?.addEventListener('search', (e) => {
-      renderAdminVentes();
-      if (e.target.value.trim().length >= 1) {
-        scrollToClientSearchResults('admin', true);
-      }
-    });
-    document.getElementById('admin-search')?.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter' || e.keyCode === 13) {
-        e.preventDefault();
-        renderAdminVentes();
-        if (e.target.value.trim().length >= 1) {
-          scrollToClientSearchResults('admin', true);
-        }
-      }
+    ['admin-filter-rep', 'admin-filter-ent', 'admin-filter-statut'].forEach(id => {
+      document.getElementById(id)?.addEventListener('change', renderAdminVentes);
     });
     document.getElementById('btn-admin-clear-filters')?.addEventListener('click', () => {
-      document.getElementById('admin-search').value = '';
+      window._globalClientFilterQuery = '';
+      showActiveClientSearchBanner('');
       document.getElementById('admin-filter-rep').value = '';
       document.getElementById('admin-filter-ent').value = '';
       document.getElementById('admin-filter-period').value = 'all';
