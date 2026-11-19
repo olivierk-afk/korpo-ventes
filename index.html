@@ -232,18 +232,56 @@
       --tw-gradient-to: rgba(99, 102, 241, 0.20) var(--tw-gradient-to-position) !important;
     }
 
-    /* Canal de conversation Korpo Top Earner */
+    /* Canal de conversation Korpo Top Earner (palette douce, reposante et hiérarchisée) */
+    html.dark #chat-modal-backdrop > div {
+      background-color: #131b2b !important;
+      border-color: #263247 !important;
+    }
+    html.dark #chat-modal-backdrop .bg-gradient-to-r.from-slate-900 {
+      background-image: linear-gradient(to right, #0f1623, #172033, #0f1623) !important;
+      border-bottom-color: #243045 !important;
+    }
     html.dark #chat-messages-feed {
-      background-color: #080d17 !important;
+      background-color: #0e1420 !important;
     }
     html.dark #chat-messages-feed .chat-sale-card {
-      background-image: linear-gradient(135deg, rgba(16, 185, 129, 0.18), #141e30 55%, rgba(99, 102, 241, 0.20)) !important;
-      border-color: rgba(52, 211, 153, 0.45) !important;
+      background-image: none !important;
+      background-color: #172234 !important;
+      border-color: #26364f !important;
+      border-left: 3px solid #10b981 !important;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25) !important;
     }
     html.dark #chat-messages-feed .chat-msg-bubble-other {
-      background-color: #1c273d !important;
-      border-color: #364766 !important;
+      background-color: #1c2638 !important;
+      border-color: #2b3952 !important;
+      color: #e2e8f0 !important;
+    }
+    html.dark #chat-messages-feed .chat-msg-bubble-me {
+      background-color: #3730a3 !important;
+      border: 1px solid #4f46e5 !important;
       color: #f8fafc !important;
+    }
+    html.dark #chat-messages-feed .chat-mention-pill-me {
+      background-color: rgba(245, 158, 11, 0.22) !important;
+      color: #fcd34d !important;
+      box-shadow: inset 0 0 0 1px rgba(251, 191, 36, 0.45) !important;
+    }
+    html.dark #chat-messages-feed .chat-mention-pill-other {
+      background-color: rgba(99, 102, 241, 0.22) !important;
+      color: #c7d2fe !important;
+    }
+    html.dark #chat-messages-feed .chat-mention-pill-own-bubble {
+      background-color: rgba(255, 255, 255, 0.16) !important;
+      color: #ffffff !important;
+    }
+    html.dark #form-team-chat {
+      background-color: #131b2b !important;
+      border-top-color: #243045 !important;
+    }
+    html.dark #chat-mention-autocomplete,
+    html.dark #chat-emoji-picker {
+      background-color: #182234 !important;
+      border-color: #2e3d59 !important;
     }
 
     /* Barre supérieure et en-têtes de fenêtres modales */
@@ -6847,10 +6885,10 @@
         if (!matched) return full;
         const isMeTag = myNorm && normalizeMentionStr(matched.nom) === myNorm;
         const pillCls = isMeBubble
-          ? 'bg-white/25 text-white font-extrabold px-1.5 py-0.5 rounded-md'
+          ? 'chat-mention-pill-own-bubble bg-white/25 text-white font-extrabold px-1.5 py-0.5 rounded-md'
           : (isMeTag
-            ? 'bg-amber-200/90 text-amber-950 font-extrabold px-1.5 py-0.5 rounded-md ring-1 ring-amber-400'
-            : 'bg-indigo-100 text-indigo-800 font-extrabold px-1.5 py-0.5 rounded-md');
+            ? 'chat-mention-pill-me bg-amber-200/90 text-amber-950 font-extrabold px-1.5 py-0.5 rounded-md ring-1 ring-amber-400'
+            : 'chat-mention-pill-other bg-indigo-100 text-indigo-800 font-extrabold px-1.5 py-0.5 rounded-md');
         return `<span class="${pillCls}">@${esc(handle)}</span>`;
       });
     }
@@ -7289,7 +7327,7 @@
                 ${isMentionedMe ? '<span class="px-1.5 py-0.2 text-[9px] font-extrabold rounded bg-indigo-100 text-indigo-800">@Vous</span>' : ''}
                 <span class="text-slate-400">${esc(formatChatTime(m.at))}</span>
               </div>
-              <div class="inline-block text-left px-3.5 py-2.5 rounded-2xl text-xs sm:text-sm leading-relaxed break-words shadow-2xs ${isMe ? 'bg-indigo-600 text-white rounded-tr-sm' : `chat-msg-bubble-other bg-white border ${isMentionedMe ? 'border-indigo-400 ring-1 ring-indigo-300' : 'border-slate-200/90'} text-slate-800 rounded-tl-sm`}">
+              <div class="inline-block text-left px-3.5 py-2.5 rounded-2xl text-xs sm:text-sm leading-relaxed break-words shadow-2xs ${isMe ? 'chat-msg-bubble-me bg-indigo-600 text-white rounded-tr-sm' : `chat-msg-bubble-other bg-white border ${isMentionedMe ? 'border-indigo-400 ring-1 ring-indigo-300' : 'border-slate-200/90'} text-slate-800 rounded-tl-sm`}">
                 ${formattedBody}
               </div>
               ${canDel ? `<div><button type="button" onclick="deleteTeamChatMessage('${esc(m.id)}')" class="text-[10px] text-slate-400 hover:text-rose-600 transition">Supprimer</button></div>` : ''}
