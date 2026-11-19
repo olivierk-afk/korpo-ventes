@@ -510,6 +510,15 @@
       background-color: rgba(244, 63, 94, 0.32) !important;
     }
 
+    @keyframes sectionSmoothFade {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    #tab-mes-ventes > div:not(.hidden),
+    #tab-mes-ventes [data-mobile-group]:not(.hidden) {
+      animation: sectionSmoothFade 0.22s cubic-bezier(0.22, 1, 0.36, 1) both;
+    }
+
     /* ===================================================================== */
     /* CLASSEMENT D'ÉQUIPE : HARMONIE DES COULEURS, FLUIDITÉ & MODE SOMBRE     */
     /* ===================================================================== */
@@ -1686,13 +1695,6 @@
               <button id="btn-rep-open-drawer" data-mobile-group="ventes" class="hidden sm:flex px-4 py-2.5 text-xs font-extrabold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl shadow-sm shadow-indigo-600/20 items-center justify-center gap-1.5 transition">
                 <span class="text-base leading-none">💵</span> Déclarer une vente
               </button>
-              <button type="button" data-mobile-group="commissions" onclick="downloadCurrentUserWaveCsv()" title="Télécharger un fichier CSV prêt à importer dans Wave Accounting avec une ligne par vente" class="w-full sm:w-auto px-3.5 py-2.5 text-xs font-extrabold text-emerald-800 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-xl transition flex items-center justify-center gap-1.5 shrink-0">
-                <span>📄 Facture Wave (CSV)</span>
-              </button>
-              <button type="button" data-mobile-group="ventes" onclick="openTrashModal()" class="w-full sm:w-auto px-3.5 py-2.5 text-xs font-semibold text-slate-700 bg-white border border-slate-200 rounded-xl hover:bg-rose-50 hover:text-rose-700 hover:border-rose-200 transition flex items-center justify-center gap-1.5 shrink-0">
-                <span>🗑️ Corbeille</span>
-                <span class="trash-badge-count px-1.5 py-0.2 text-[10px] font-extrabold rounded-full bg-slate-100 text-slate-600">0</span>
-              </button>
             </div>
           </div>
 
@@ -1745,7 +1747,7 @@
             </span>
           </div>
 
-          <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <div class="grid grid-cols-1 gap-4">
             <!-- BARRE 1 : TARGET COMMISSION ($) -->
             <div data-mobile-group="commissions" class="bg-gradient-to-br from-emerald-50/70 to-teal-50/40 rounded-2xl border border-emerald-200/80 p-3.5 space-y-2">
               <div class="flex items-center justify-between gap-2">
@@ -1781,7 +1783,7 @@
         </div>
 
         <!-- KPIs REPRÉSENTANT / OLIVIER : SÉPARATION NETTE VENTES VS COMMISSIONS -->
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div class="grid grid-cols-1 gap-4">
           <!-- BLOC 1 : SECTION VENTES -->
           <div data-mobile-group="ventes" class="rounded-2xl border border-indigo-200/80 bg-indigo-50/30 p-3.5 sm:p-4 space-y-3">
             <div class="flex items-center justify-between px-1">
@@ -2234,19 +2236,7 @@
                 </div>
               </div>
 
-              <div class="flex flex-wrap items-center gap-2 shrink-0">
-                <select id="filter-rank-period" class="px-3 py-2 text-xs font-bold bg-slate-50 text-slate-800 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-600 cursor-pointer">
-                  <option value="this_month" selected>📅 Ce mois-ci</option>
-                  <option value="this_week">📆 Cette semaine</option>
-                  <option value="this_quarter">📊 Ce trimestre</option>
-                  <option value="this_year">🗓️ Cette année</option>
-                  <option value="all">∞ Cumul global</option>
-                  <option value="specific_month">🎯 Mois précis...</option>
-                  <option value="specific_date">📌 Date précise...</option>
-                </select>
-                <input id="filter-rank-month" type="month" title="Choisir un mois précis" class="hidden px-3 py-2 text-xs font-semibold bg-white border border-indigo-300 rounded-xl cursor-pointer" />
-                <input id="filter-rank-date" type="date" title="Choisir une date précise" class="hidden px-3 py-2 text-xs font-semibold bg-white border border-indigo-300 rounded-xl cursor-pointer" />
-              </div>
+              <input type="hidden" id="filter-rank-period" value="this_month" />
             </div>
 
             <!-- PILULES RAPIDES DE PÉRIODE (NAVIGATION INSTANTANÉE) -->
@@ -4275,7 +4265,7 @@
       if (titleTextEl && titleIconEl) {
         if (isCommView) {
           titleIconEl.textContent = '💰';
-          titleIconEl.textContent = 'Mes commissions';
+          titleTextEl.textContent = 'Mes commissions';
         } else {
           titleIconEl.textContent = '💵';
           titleTextEl.textContent = 'Mes ventes';
