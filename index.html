@@ -1966,8 +1966,8 @@
             <p class="text-xs text-slate-500 mt-1 leading-relaxed">Alimenté par votre base condensée et mis à jour automatiquement à chaque vente enregistrée.</p>
           </div>
 
-          <div class="grid grid-cols-2 sm:flex sm:flex-wrap items-stretch sm:items-center gap-2 w-full lg:w-auto">
-            <select id="kpi-select-month" class="w-full sm:w-auto px-3 py-2.5 text-xs font-bold bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-600"></select>
+          <div class="flex flex-wrap items-center gap-2 w-full lg:w-auto">
+            <select id="kpi-select-month" class="hidden" aria-hidden="true"></select>
             <select id="kpi-select-rep" class="w-full sm:w-auto px-3 py-2.5 text-xs font-bold bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-600">
               <option value="ALL">👥 Toute l'équipe</option>
               <option value="Olivier">Olivier</option>
@@ -1993,13 +1993,13 @@
           <!-- BALISES RAPIDES EN ORDRE DE PÉRIODE + DATE SUR MESURE (KPI) -->
           <div class="w-full pt-3 mt-1 border-t border-slate-100 flex flex-col gap-2.5">
             <input type="hidden" id="kpi-period-mode" value="this_month" />
-            <div id="kpi-quick-pills" class="flex flex-wrap items-center gap-1.5">
-              <button type="button" data-kpi-mode="this_week" onclick="setKpiPeriodQuick('this_week')" style="touch-action: manipulation; -webkit-tap-highlight-color: transparent;" class="kpi-pill-btn px-3 py-2 sm:py-1.5 text-xs font-bold rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200 transition whitespace-nowrap cursor-pointer">📆 Cette semaine</button>
-              <button type="button" data-kpi-mode="this_month" onclick="setKpiPeriodQuick('this_month')" style="touch-action: manipulation; -webkit-tap-highlight-color: transparent;" class="kpi-pill-btn px-3 py-2 sm:py-1.5 text-xs font-extrabold rounded-xl bg-indigo-600 text-white shadow-2xs transition whitespace-nowrap cursor-pointer">📅 Ce mois-ci</button>
-              <button type="button" data-kpi-mode="this_quarter" onclick="setKpiPeriodQuick('this_quarter')" style="touch-action: manipulation; -webkit-tap-highlight-color: transparent;" class="kpi-pill-btn px-3 py-2 sm:py-1.5 text-xs font-bold rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200 transition whitespace-nowrap cursor-pointer">📊 Ce trimestre</button>
-              <button type="button" data-kpi-mode="this_year" onclick="setKpiPeriodQuick('this_year')" style="touch-action: manipulation; -webkit-tap-highlight-color: transparent;" class="kpi-pill-btn px-3 py-2 sm:py-1.5 text-xs font-bold rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200 transition whitespace-nowrap cursor-pointer">🗓️ Cette année</button>
-              <button type="button" data-kpi-mode="all" onclick="setKpiPeriodQuick('all')" style="touch-action: manipulation; -webkit-tap-highlight-color: transparent;" class="kpi-pill-btn px-3 py-2 sm:py-1.5 text-xs font-bold rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200 transition whitespace-nowrap cursor-pointer">∞ Cumul global</button>
-              <button type="button" data-kpi-mode="custom_range" onclick="setKpiPeriodQuick('custom_range')" style="touch-action: manipulation; -webkit-tap-highlight-color: transparent;" class="kpi-pill-btn px-3 py-2 sm:py-1.5 text-xs font-bold rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200 transition whitespace-nowrap cursor-pointer">🎯 Date sur mesure</button>
+            <div id="kpi-quick-pills" class="flex flex-nowrap items-center gap-1.5 overflow-x-auto no-scrollbar pb-0.5">
+              <button type="button" data-kpi-mode="this_week" onclick="setKpiPeriodQuick('this_week')" style="touch-action: manipulation; -webkit-tap-highlight-color: transparent;" class="kpi-pill-btn shrink-0 px-3 py-2 sm:py-1.5 text-xs font-bold rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200 transition whitespace-nowrap cursor-pointer">📆 Cette semaine</button>
+              <button type="button" data-kpi-mode="this_month" onclick="setKpiPeriodQuick('this_month')" style="touch-action: manipulation; -webkit-tap-highlight-color: transparent;" class="kpi-pill-btn shrink-0 px-3 py-2 sm:py-1.5 text-xs font-extrabold rounded-xl bg-indigo-600 text-white shadow-2xs transition whitespace-nowrap cursor-pointer">📅 Ce mois-ci</button>
+              <button type="button" data-kpi-mode="this_quarter" onclick="setKpiPeriodQuick('this_quarter')" style="touch-action: manipulation; -webkit-tap-highlight-color: transparent;" class="kpi-pill-btn shrink-0 px-3 py-2 sm:py-1.5 text-xs font-bold rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200 transition whitespace-nowrap cursor-pointer">📊 Ce trimestre</button>
+              <button type="button" data-kpi-mode="this_year" onclick="setKpiPeriodQuick('this_year')" style="touch-action: manipulation; -webkit-tap-highlight-color: transparent;" class="kpi-pill-btn shrink-0 px-3 py-2 sm:py-1.5 text-xs font-bold rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200 transition whitespace-nowrap cursor-pointer">🗓️ Cette année</button>
+              <button type="button" data-kpi-mode="all" onclick="setKpiPeriodQuick('all')" style="touch-action: manipulation; -webkit-tap-highlight-color: transparent;" class="kpi-pill-btn shrink-0 px-3 py-2 sm:py-1.5 text-xs font-bold rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200 transition whitespace-nowrap cursor-pointer">∞ Cumul global</button>
+              <button type="button" data-kpi-mode="custom_range" onclick="setKpiPeriodQuick('custom_range')" style="touch-action: manipulation; -webkit-tap-highlight-color: transparent;" class="kpi-pill-btn shrink-0 px-3 py-2 sm:py-1.5 text-xs font-bold rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200 transition whitespace-nowrap cursor-pointer">🎯 Date sur mesure</button>
             </div>
 
             <div id="kpi-custom-range-box" class="hidden grid grid-cols-1 sm:flex sm:flex-wrap items-center gap-2.5 text-xs">
@@ -2254,13 +2254,13 @@
             </div>
 
             <!-- BALISES RAPIDES EN ORDRE DE PÉRIODE + DATE SUR MESURE -->
-            <div id="rank-quick-pills" class="flex flex-wrap items-center gap-1.5 pt-2 border-t border-slate-100">
-              <button type="button" data-rank-mode="this_week" onclick="setRankPeriodQuick('this_week')" style="touch-action: manipulation; -webkit-tap-highlight-color: transparent;" class="rank-pill-btn px-3 py-2 sm:py-1.5 text-xs font-bold rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200 transition whitespace-nowrap cursor-pointer">📆 Cette semaine</button>
-              <button type="button" data-rank-mode="this_month" onclick="setRankPeriodQuick('this_month')" style="touch-action: manipulation; -webkit-tap-highlight-color: transparent;" class="rank-pill-btn px-3 py-2 sm:py-1.5 text-xs font-extrabold rounded-xl bg-indigo-600 text-white shadow-2xs transition whitespace-nowrap cursor-pointer">📅 Ce mois-ci</button>
-              <button type="button" data-rank-mode="this_quarter" onclick="setRankPeriodQuick('this_quarter')" style="touch-action: manipulation; -webkit-tap-highlight-color: transparent;" class="rank-pill-btn px-3 py-2 sm:py-1.5 text-xs font-bold rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200 transition whitespace-nowrap cursor-pointer">📊 Ce trimestre</button>
-              <button type="button" data-rank-mode="this_year" onclick="setRankPeriodQuick('this_year')" style="touch-action: manipulation; -webkit-tap-highlight-color: transparent;" class="rank-pill-btn px-3 py-2 sm:py-1.5 text-xs font-bold rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200 transition whitespace-nowrap cursor-pointer">🗓️ Cette année</button>
-              <button type="button" data-rank-mode="all" onclick="setRankPeriodQuick('all')" style="touch-action: manipulation; -webkit-tap-highlight-color: transparent;" class="rank-pill-btn px-3 py-2 sm:py-1.5 text-xs font-bold rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200 transition whitespace-nowrap cursor-pointer">∞ Cumul global</button>
-              <button type="button" data-rank-mode="custom_range" onclick="setRankPeriodQuick('custom_range')" style="touch-action: manipulation; -webkit-tap-highlight-color: transparent;" class="rank-pill-btn px-3 py-2 sm:py-1.5 text-xs font-bold rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200 transition whitespace-nowrap cursor-pointer">🎯 Date sur mesure</button>
+            <div id="rank-quick-pills" class="flex flex-nowrap items-center gap-1.5 overflow-x-auto no-scrollbar pt-2 pb-0.5 border-t border-slate-100">
+              <button type="button" data-rank-mode="this_week" onclick="setRankPeriodQuick('this_week')" style="touch-action: manipulation; -webkit-tap-highlight-color: transparent;" class="rank-pill-btn shrink-0 px-3 py-2 sm:py-1.5 text-xs font-bold rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200 transition whitespace-nowrap cursor-pointer">📆 Cette semaine</button>
+              <button type="button" data-rank-mode="this_month" onclick="setRankPeriodQuick('this_month')" style="touch-action: manipulation; -webkit-tap-highlight-color: transparent;" class="rank-pill-btn shrink-0 px-3 py-2 sm:py-1.5 text-xs font-extrabold rounded-xl bg-indigo-600 text-white shadow-2xs transition whitespace-nowrap cursor-pointer">📅 Ce mois-ci</button>
+              <button type="button" data-rank-mode="this_quarter" onclick="setRankPeriodQuick('this_quarter')" style="touch-action: manipulation; -webkit-tap-highlight-color: transparent;" class="rank-pill-btn shrink-0 px-3 py-2 sm:py-1.5 text-xs font-bold rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200 transition whitespace-nowrap cursor-pointer">📊 Ce trimestre</button>
+              <button type="button" data-rank-mode="this_year" onclick="setRankPeriodQuick('this_year')" style="touch-action: manipulation; -webkit-tap-highlight-color: transparent;" class="rank-pill-btn shrink-0 px-3 py-2 sm:py-1.5 text-xs font-bold rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200 transition whitespace-nowrap cursor-pointer">🗓️ Cette année</button>
+              <button type="button" data-rank-mode="all" onclick="setRankPeriodQuick('all')" style="touch-action: manipulation; -webkit-tap-highlight-color: transparent;" class="rank-pill-btn shrink-0 px-3 py-2 sm:py-1.5 text-xs font-bold rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200 transition whitespace-nowrap cursor-pointer">∞ Cumul global</button>
+              <button type="button" data-rank-mode="custom_range" onclick="setRankPeriodQuick('custom_range')" style="touch-action: manipulation; -webkit-tap-highlight-color: transparent;" class="rank-pill-btn shrink-0 px-3 py-2 sm:py-1.5 text-xs font-bold rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200 transition whitespace-nowrap cursor-pointer">🎯 Date sur mesure</button>
             </div>
 
             <!-- PLAGE DE DATES SUR MESURE (CLASSEMENT) -->
@@ -6645,8 +6645,8 @@
       document.querySelectorAll('.kpi-pill-btn').forEach(btn => {
         const isAct = btn.dataset.kpiMode === activeKpiMode;
         btn.className = isAct
-          ? 'kpi-pill-btn px-3 py-1.5 text-xs font-extrabold rounded-xl bg-indigo-600 text-white shadow-2xs transition whitespace-nowrap'
-          : 'kpi-pill-btn px-3 py-1.5 text-xs font-bold rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200 transition whitespace-nowrap';
+          ? 'kpi-pill-btn shrink-0 px-3 py-2 sm:py-1.5 text-xs font-extrabold rounded-xl bg-indigo-600 text-white shadow-2xs transition whitespace-nowrap cursor-pointer'
+          : 'kpi-pill-btn shrink-0 px-3 py-2 sm:py-1.5 text-xs font-bold rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200 transition whitespace-nowrap cursor-pointer';
       });
       const selMonthEl = document.getElementById('kpi-select-month');
       if (!selMonthEl.value) populateKpiMonthSelect(false);
