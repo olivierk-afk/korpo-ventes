@@ -1203,18 +1203,18 @@
                   <div>
                     <label class="block text-[10px] font-extrabold text-rose-900 mb-1">Qui assume la perte (HIT) ? *</label>
                     <select id="vente-hit-bearer" class="w-full px-2.5 py-1.5 text-xs font-bold bg-white border border-rose-200 rounded-lg text-slate-800 focus:outline-none focus:ring-2 focus:ring-rose-500">
-                      <option value="both">Les deux (Rep + Olivier)</option>
                       <option value="rep">Représentant uniquement</option>
                       <option value="olivier">Olivier uniquement (Moi)</option>
+                      <option value="both">Les deux (Rep + Olivier)</option>
                     </select>
                   </div>
                   <div>
-                    <label class="block text-[10px] font-extrabold text-rose-900 mb-1">Montant remboursé ($ CAD)</label>
-                    <input id="vente-hit-amount" type="number" step="0.01" min="0" placeholder="Auto = commission complète" class="w-full px-2.5 py-1.5 text-xs font-extrabold bg-white border border-rose-200 rounded-lg tabular-nums focus:outline-none focus:ring-2 focus:ring-rose-500" />
+                    <label class="block text-[10px] font-extrabold text-rose-900 mb-1">Montant à déduire ($ CAD)</label>
+                    <input id="vente-hit-amount" type="number" step="0.01" min="0" placeholder="0,00 $" class="w-full px-2.5 py-1.5 text-xs font-extrabold bg-white border border-rose-200 rounded-lg tabular-nums focus:outline-none focus:ring-2 focus:ring-rose-500" />
                   </div>
                 </div>
                 <p id="vente-hit-help" class="text-[10px] text-rose-800 leading-relaxed">
-                  Laissez le montant vide pour déduire 100 % de la commission calculée, ou indiquez un montant précis à rembourser.
+                  La commission normale reste calculée : seul le montant saisi ci-dessus est retranché de la part sélectionnée.
                 </p>
               </div>
             </div>
@@ -3310,7 +3310,12 @@
     });
     document.getElementById('vente-custom-taux-rep')?.addEventListener('input', updateDrawerCommissionPreview);
     document.getElementById('vente-custom-taux-oli')?.addEventListener('input', updateDrawerCommissionPreview);
-    document.getElementById('vente-is-hit')?.addEventListener('change', updateDrawerCommissionPreview);
+    document.getElementById('vente-is-hit')?.addEventListener('change', (e) => {
+      updateDrawerCommissionPreview();
+      if (e.target.checked) {
+        setTimeout(() => document.getElementById('vente-hit-amount')?.focus(), 50);
+      }
+    });
     document.getElementById('vente-hit-bearer')?.addEventListener('change', updateDrawerCommissionPreview);
     document.getElementById('vente-hit-amount')?.addEventListener('input', updateDrawerCommissionPreview);
 
@@ -8696,35 +8701,41 @@
     function computeDrawerCommissions(valeur) {
       const eff = getDrawerComputedRates();
       const isHit = Boolean(document.getElementById('vente-is-hit')?.checked);
-      const hitBearer = document.getElementById('vente-hit-bearer')?.value || 'both';
+      const hitBearer = document.getElementById('vente-hit-bearer')?.value || 'rep';
       const rawHitAmt = parseFloat(document.getElementById('vente-hit-amount')?.value);
-      const hasCustomHitAmt = !isNaN(rawHitAmt) && rawHitAmt > 0;
+      const dedAmt = (!isNaN(rawHitAmt) && rawHitAmt > 0) ? Math.abs(rawHitAmt) : 0;
 
-      let cRep = Math.round(valeur * eff.tRep * 100) / 100;
-      let cOli = Math.round(valeur * eff.tOli * 100) / 100;
+      const baseCRep = Math.round(valeur * eff.tRep * 100) / 100;
+      const baseCOli = Math.round(valeur * eff.tOli * 100) / 100;
+      let cRep = baseCRep;
+      let cOli = baseCOli;
 
-      if (isHit) {
+      // Ne jamais mettre la commission à 0 automatiquement : déduire uniquement le montant saisi
+      if (isHit && dedAmt > 0) {
         if (hitBearer === 'rep') {
-          cRep = -Math.abs(hasCustomHitAmt ? rawHitAmt : cRep);
-          cOli = 0;
+          cRep = Math.round((baseCRep - dedAmt) * 100) / 100;
+          if (Object.is(cRep, -0)) cRep = 0;
+          cOli = baseCOli;
         } else if (hitBearer === 'olivier') {
-          cRep = 0;
-          cOli = -Math.abs(hasCustomHitAmt ? rawHitAmt : cOli);
+          cRep = baseCRep;
+          cOli = Math.round((baseCOli - dedAmt) * 100) / 100;
+          if (Object.is(cOli, -0)) cOli = 0;
         } else {
-          if (hasCustomHitAmt) {
-            const totalBase = Math.abs(cRep) + Math.abs(cOli);
-            if (totalBase > 0) {
-              const ratioRep = Math.abs(cRep) / totalBase;
-              cRep = -Math.round(rawHitAmt * ratioRep * 100) / 100;
-              cOli = -Math.round((rawHitAmt - Math.abs(cRep)) * 100) / 100;
-            } else {
-              cRep = -Math.round((rawHitAmt / 2) * 100) / 100;
-              cOli = -Math.round((rawHitAmt - Math.abs(cRep)) * 100) / 100;
-            }
+          const totalBase = Math.abs(baseCRep) + Math.abs(baseCOli);
+          let dedRep = 0;
+          let dedOli = 0;
+          if (totalBase > 0) {
+            const ratioRep = Math.abs(baseCRep) / totalBase;
+            dedRep = Math.round(dedAmt * ratioRep * 100) / 100;
+            dedOli = Math.round((dedAmt - dedRep) * 100) / 100;
           } else {
-            cRep = -Math.abs(cRep);
-            cOli = -Math.abs(cOli);
+            dedRep = Math.round((dedAmt / 2) * 100) / 100;
+            dedOli = Math.round((dedAmt - dedRep) * 100) / 100;
           }
+          cRep = Math.round((baseCRep - dedRep) * 100) / 100;
+          cOli = Math.round((baseCOli - dedOli) * 100) / 100;
+          if (Object.is(cRep, -0)) cRep = 0;
+          if (Object.is(cOli, -0)) cOli = 0;
         }
       }
 
@@ -8734,7 +8745,7 @@
         cOli,
         isHit,
         hitBearer,
-        hitAmount: hasCustomHitAmt ? Math.abs(rawHitAmt) : 0
+        hitAmount: dedAmt
       };
     }
 
