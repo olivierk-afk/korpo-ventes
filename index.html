@@ -2413,6 +2413,54 @@
           </div>
         </div>
 
+        <!-- SAISIE JOURNALIÈRE DES RENDEZ-VOUS (BOOKÉS & RÉALISÉS — RETOUR À 0 À MINUIT) -->
+        <div id="daily-rdv-tracker-card" data-mobile-group="ventes" class="bg-white rounded-2xl border border-indigo-200/90 p-4 sm:p-5 shadow-xs space-y-3">
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <div class="flex items-center gap-2.5 min-w-0">
+              <span class="w-9 h-9 rounded-xl bg-indigo-50 text-indigo-600 border border-indigo-200/80 flex items-center justify-center text-base font-extrabold shrink-0">📅</span>
+              <div class="min-w-0">
+                <div class="flex flex-wrap items-center gap-2">
+                  <h3 class="text-xs sm:text-sm font-extrabold text-slate-900">Mes rendez-vous du jour</h3>
+                  <span id="daily-rdv-date-badge" class="px-2 py-0.5 text-[10px] font-extrabold rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200">Aujourd'hui</span>
+                </div>
+                <p class="text-[11px] text-slate-500">Comptabilisés en direct dans vos KPI • Remise à 0 automatique chaque jour à minuit</p>
+              </div>
+            </div>
+            <div class="flex items-center gap-2 text-[11px] font-bold text-slate-600 bg-slate-50 px-3 py-1.5 rounded-xl border border-slate-200/80 tabular-nums">
+              <span>Cumul mois :</span>
+              <strong id="daily-rdv-month-summary" class="text-indigo-700">0 bookés • 0 réalisés</strong>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <!-- COMPTEUR 1 : RDV BOOKÉS AUJOURD'HUI -->
+            <div class="bg-slate-50/90 rounded-2xl border border-slate-200/80 p-3 flex items-center justify-between gap-3">
+              <div class="min-w-0">
+                <div class="text-xs font-extrabold text-slate-900">📞 RDV Bookés</div>
+                <div class="text-[10px] text-slate-500">Nouveaux RDV pris aujourd'hui</div>
+              </div>
+              <div class="flex items-center gap-1.5 shrink-0">
+                <button type="button" onclick="adjustDailyRdvCounter('booke', -1)" style="touch-action: manipulation;" class="w-9 h-9 rounded-xl bg-white hover:bg-slate-100 active:scale-95 border border-slate-300 text-slate-700 font-extrabold text-base flex items-center justify-center transition cursor-pointer">−</button>
+                <input id="daily-rdv-booke-input" type="number" min="0" max="99" value="0" onchange="setDailyRdvCounterFromInput('booke', this.value)" class="w-14 h-9 text-center text-base font-extrabold bg-white border border-indigo-200 rounded-xl tabular-nums focus:outline-none focus:ring-2 focus:ring-indigo-600" />
+                <button type="button" onclick="adjustDailyRdvCounter('booke', 1)" style="touch-action: manipulation;" class="w-9 h-9 rounded-xl bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white font-extrabold text-base flex items-center justify-center shadow-2xs transition cursor-pointer">+</button>
+              </div>
+            </div>
+
+            <!-- COMPTEUR 2 : RDV RÉALISÉS AUJOURD'HUI -->
+            <div class="bg-emerald-50/50 rounded-2xl border border-emerald-200/80 p-3 flex items-center justify-between gap-3">
+              <div class="min-w-0">
+                <div class="text-xs font-extrabold text-emerald-950">🤝 RDV Réalisés</div>
+                <div class="text-[10px] text-emerald-800/80">Rendez-vous complétés aujourd'hui</div>
+              </div>
+              <div class="flex items-center gap-1.5 shrink-0">
+                <button type="button" onclick="adjustDailyRdvCounter('rdv', -1)" style="touch-action: manipulation;" class="w-9 h-9 rounded-xl bg-white hover:bg-emerald-50 active:scale-95 border border-emerald-300 text-emerald-800 font-extrabold text-base flex items-center justify-center transition cursor-pointer">−</button>
+                <input id="daily-rdv-realise-input" type="number" min="0" max="99" value="0" onchange="setDailyRdvCounterFromInput('rdv', this.value)" class="w-14 h-9 text-center text-base font-extrabold bg-white border border-emerald-300 rounded-xl tabular-nums focus:outline-none focus:ring-2 focus:ring-emerald-600" />
+                <button type="button" onclick="adjustDailyRdvCounter('rdv', 1)" style="touch-action: manipulation;" class="w-9 h-9 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-extrabold text-base flex items-center justify-center shadow-2xs transition cursor-pointer">+</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <!-- BARRES DE PROGRESSION : OBJECTIF VENTES & TARGET COMMISSION MENSUEL -->
         <div id="monthly-goal-card" class="bg-white rounded-2xl border border-slate-200/80 p-4 sm:p-5 shadow-xs space-y-4">
           <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
@@ -3562,6 +3610,7 @@
       'korpo_client_targets_v1':        { store: 'client_targets',       shared: true,  type: 'array' },
       'korpo_kpi_condensed_v1':         { store: 'kpi_condensed',        shared: true,  type: 'map' },
       'korpo_kpi_monthly_rdv_v1':       { store: 'kpi_monthly_rdv',      shared: true,  type: 'map' },
+      'korpo_daily_rdv_v1':             { store: 'daily_rdv_logs',       shared: true,  type: 'map' },
       'korpo_kpi_team_snapshot_v1':     { store: 'kpi_team_snapshot',    shared: true,  type: 'map' },
       'korpo_wave_company_seq_v1':      { store: 'wave_company_seq',     shared: true,  type: 'map' },
       'korpo_personal_monthly_targets_v1': { store: 'personal_monthly_targets', shared: false, type: 'map' },
@@ -3571,7 +3620,7 @@
       'korpo_chat_last_seen_v1':         { store: 'chat_last_seen',           shared: false, type: 'map' }
     };
     // Magasins qu'un représentant (non admin) peut écrire : les autres sont réservés à l'admin (voir le RLS)
-    const KV_REP_SHARED = new Set(['sale_audit', 'sale_bonus_overrides', 'sale_trash', 'carried_over_sales']);
+    const KV_REP_SHARED = new Set(['sale_audit', 'sale_bonus_overrides', 'sale_trash', 'carried_over_sales', 'daily_rdv_logs']);
     const kvState = { ready: false, uid: null, last: {}, timers: {}, pending: {}, dirty: new Set(), lastHydrate: 0 };
     const kvOwner = (cfg) => (cfg.shared ? 'shared' : kvState.uid);
     const kvAllowed = (cfg) => !cfg.shared || currentProfile?.role === 'admin' || KV_REP_SHARED.has(cfg.store);
@@ -3626,6 +3675,7 @@
     function kvApplyToVariables() {
       condensedBaselineStore = lsGetJson('korpo_kpi_condensed_v1', '{}');
       monthlyRdvOverrides = lsGetJson('korpo_kpi_monthly_rdv_v1', '{}');
+      dailyRdvLogsStore = lsGetJson('korpo_daily_rdv_v1', '{}');
       teamKpiSnapshotStore = lsGetJson('korpo_kpi_team_snapshot_v1', '{}');
       saleAuditStore = lsGetJson('korpo_sale_audit_v1', '{}');
       saleTrashStore = lsGetJson('korpo_sale_trash_v1', '[]');
@@ -3855,9 +3905,127 @@
       lsSet('korpo_kpi_condensed_v1', JSON.stringify(condensedBaselineStore));
     }
 
+    let dailyRdvLogsStore = lsGetJson('korpo_daily_rdv_v1', '{}');
+
     function saveMonthlyRdvOverrides() {
       lsSet('korpo_kpi_monthly_rdv_v1', JSON.stringify(monthlyRdvOverrides));
     }
+
+    function saveDailyRdvLogsStore() {
+      lsSet('korpo_daily_rdv_v1', JSON.stringify(dailyRdvLogsStore));
+    }
+
+    async function persistDailyRdvToCloud(dateStr, repName, entryObj) {
+      if (!sb || !currentProfile) return;
+      const key = `${dateStr}__${repName}`;
+      await safeUpsertKpiHebdoRow({
+        mois_commission: key,
+        semaine_index: -16,
+        representant_nom: JSON.stringify(entryObj),
+        booke: Number(entryObj.booke || 0),
+        rdv_realise: Number(entryObj.rdv || 0),
+        updated_at: new Date().toISOString()
+      });
+    }
+
+    function getActiveDailyRdvRepName() {
+      if (!currentProfile) return '';
+      return resolveKpiRepName(currentProfile.nom || '') || String(currentProfile.nom || '').trim();
+    }
+
+    function getTodayDailyRdvEntry(repName = getActiveDailyRdvRepName()) {
+      const todayKey = localYmd(new Date());
+      const entry = dailyRdvLogsStore[`${todayKey}__${repName}`];
+      return {
+        dateStr: todayKey,
+        booke: Math.max(0, Number(entry?.booke || 0)),
+        rdv: Math.max(0, Number(entry?.rdv || 0))
+      };
+    }
+
+    function renderDailyRdvTrackerCard() {
+      const card = document.getElementById('daily-rdv-tracker-card');
+      if (!card || !currentProfile) return;
+      const repName = getActiveDailyRdvRepName();
+      if (!repName) {
+        card.classList.add('hidden');
+        return;
+      }
+      const todayData = getTodayDailyRdvEntry(repName);
+      const badgeEl = document.getElementById('daily-rdv-date-badge');
+      if (badgeEl) {
+        badgeEl.textContent = `Aujourd'hui (${formatDateLabelFr(todayData.dateStr)})`;
+      }
+      const bookeIn = document.getElementById('daily-rdv-booke-input');
+      const rdvIn = document.getElementById('daily-rdv-realise-input');
+      if (bookeIn && document.activeElement !== bookeIn) bookeIn.value = String(todayData.booke);
+      if (rdvIn && document.activeElement !== rdvIn) rdvIn.value = String(todayData.rdv);
+
+      const ym = todayData.dateStr.slice(0, 7);
+      const mRep = kpiStore[ym]?.reps?.[repName];
+      const monthBooke = Number(mRep?.['Booké']?.cumul || 0);
+      const monthRdv = Number(mRep?.['RDV Réalisé']?.cumul || 0);
+      const sumEl = document.getElementById('daily-rdv-month-summary');
+      if (sumEl) {
+        sumEl.textContent = `${monthBooke} booké(s) • ${monthRdv} réalisé(s)`;
+      }
+    }
+
+    async function saveTodayDailyRdvValues(newBooke, newRdv) {
+      if (!currentProfile) return;
+      const repName = getActiveDailyRdvRepName();
+      if (!repName) return;
+      const todayStr = localYmd(new Date());
+      const safeBooke = Math.max(0, Math.round(Number(newBooke) || 0));
+      const safeRdv = Math.max(0, Math.round(Number(newRdv) || 0));
+      const nowIso = new Date().toISOString();
+
+      const payload = {
+        date: todayStr,
+        rep: repName,
+        booke: safeBooke,
+        rdv: safeRdv,
+        updatedAt: nowIso
+      };
+      dailyRdvLogsStore[`${todayStr}__${repName}`] = payload;
+      saveDailyRdvLogsStore();
+
+      rebuildKpiStore();
+      renderDailyRdvTrackerCard();
+      renderKpiDashboard();
+
+      await persistDailyRdvToCloud(todayStr, repName, payload);
+      toast(`Rendez-vous du jour enregistrés (${safeBooke} bookés, ${safeRdv} réalisés) ✓`);
+    }
+
+    window.adjustDailyRdvCounter = async (field, delta) => {
+      const cur = getTodayDailyRdvEntry();
+      const nextBooke = field === 'booke' ? Math.max(0, cur.booke + delta) : cur.booke;
+      const nextRdv = field === 'rdv' ? Math.max(0, cur.rdv + delta) : cur.rdv;
+      await saveTodayDailyRdvValues(nextBooke, nextRdv);
+    };
+
+    window.setDailyRdvCounterFromInput = async (field, rawVal) => {
+      const cur = getTodayDailyRdvEntry();
+      const parsed = Math.max(0, Math.round(parseFloat(rawVal) || 0));
+      const nextBooke = field === 'booke' ? parsed : cur.booke;
+      const nextRdv = field === 'rdv' ? parsed : cur.rdv;
+      await saveTodayDailyRdvValues(nextBooke, nextRdv);
+    };
+
+    // Vérification automatique du passage à minuit (00:00) pour remettre les compteurs du jour à 0
+    let _lastTrackedDailyRdvDate = localYmd(new Date());
+    setInterval(() => {
+      const nowYmd = localYmd(new Date());
+      if (nowYmd !== _lastTrackedDailyRdvDate) {
+        _lastTrackedDailyRdvDate = nowYmd;
+        if (typeof currentDateStr !== 'undefined') currentDateStr = nowYmd;
+        if (typeof currentMonthStr !== 'undefined') currentMonthStr = nowYmd.slice(0, 7);
+        rebuildKpiStore();
+        renderDailyRdvTrackerCard();
+        renderKpiDashboard();
+      }
+    }, 30000);
 
     function hasActiveCondensedBaseline() {
       if (!condensedBaselineStore || typeof condensedBaselineStore !== 'object') return false;
@@ -4060,6 +4228,17 @@
               const localEntry = condensedBaselineStore[cYm][cRep];
               if (!localEntry || !localEntry.updatedAt || (cData.updatedAt && cData.updatedAt >= localEntry.updatedAt)) {
                 condensedBaselineStore[cYm][cRep] = cData;
+              }
+            }
+          } catch (e) {}
+        } else if (sIdx === -16 && r.mois_commission && r.representant_nom) {
+          try {
+            const dData = JSON.parse(r.representant_nom);
+            const key = String(r.mois_commission);
+            if (dData && typeof dData === 'object') {
+              const localD = dailyRdvLogsStore[key];
+              if (!localD || !localD.updatedAt || (dData.updatedAt && dData.updatedAt >= localD.updatedAt)) {
+                dailyRdvLogsStore[key] = dData;
               }
             }
           } catch (e) {}
@@ -7541,6 +7720,11 @@
         const ym = k.split('_')[0];
         if (isValidYearMonth(ym)) validMonths.add(ym);
       });
+      Object.entries(dailyRdvLogsStore || {}).forEach(([k, entry]) => {
+        const dStr = entry?.date || k.split('__')[0] || '';
+        const ym = dStr.slice(0, 7);
+        if (isValidYearMonth(ym)) validMonths.add(ym);
+      });
       (kpiHebdoRows || []).forEach(r => {
         if (Number(r.semaine_index) >= 0 && isValidYearMonth(r.mois_commission)) {
           validMonths.add(r.mois_commission);
@@ -7586,12 +7770,24 @@
         }
       });
 
-      // 4. Appliquer les RDV saisis manuellement (monthlyRdvOverrides ou kpi_hebdo semaine_index >= 0)
+      // 4. Appliquer les RDV saisis manuellement (monthlyRdvOverrides ou kpi_hebdo semaine_index >= 0) + les saisies journalières des représentants
       Object.entries(monthlyRdvOverrides || {}).forEach(([key, rdvOv]) => {
         const [ym, rn] = key.split('_');
         if (!freshStore[ym] || !freshStore[ym].reps[rn] || !rdvOv) return;
         freshStore[ym].reps[rn]['Booké'].weeks[0] = Math.max(0, (freshStore[ym].reps[rn]['Booké'].weeks[0] || 0) + Number(rdvOv.booke || 0));
         freshStore[ym].reps[rn]['RDV Réalisé'].weeks[0] = Math.max(0, (freshStore[ym].reps[rn]['RDV Réalisé'].weeks[0] || 0) + Number(rdvOv.rdv || 0));
+      });
+
+      Object.entries(dailyRdvLogsStore || {}).forEach(([key, dEntry]) => {
+        if (!dEntry || typeof dEntry !== 'object') return;
+        const parts = key.split('__');
+        const dStr = dEntry.date || parts[0] || '';
+        const rn = resolveKpiRepName(dEntry.rep || parts[1] || '');
+        const ym = dStr.slice(0, 7);
+        if (!isValidYearMonth(ym) || !freshStore[ym] || !freshStore[ym].reps[rn]) return;
+        const wIdx = getWeekIndexFromDate(dStr, freshStore[ym].num_weeks || 4);
+        freshStore[ym].reps[rn]['Booké'].weeks[wIdx] = Math.max(0, (freshStore[ym].reps[rn]['Booké'].weeks[wIdx] || 0) + Number(dEntry.booke || 0));
+        freshStore[ym].reps[rn]['RDV Réalisé'].weeks[wIdx] = Math.max(0, (freshStore[ym].reps[rn]['RDV Réalisé'].weeks[wIdx] || 0) + Number(dEntry.rdv || 0));
       });
 
       (kpiHebdoRows || []).forEach(row => {
@@ -8015,13 +8211,36 @@
         let sumBaseSuivi = 0;
         let sumBaseDol = 0;
 
+        // 1) Additionner les RDV journaliers exacts compris entre rangeStart et rangeEnd
+        const dailyMonthTotals = new Map();
+        Object.entries(dailyRdvLogsStore || {}).forEach(([k, dEntry]) => {
+          if (!dEntry || typeof dEntry !== 'object') return;
+          const parts = k.split('__');
+          const dStr = dEntry.date || parts[0] || '';
+          const entryRep = resolveKpiRepName(dEntry.rep || parts[1] || '');
+          if (entryRep !== rn || !dStr) return;
+          const dYm = dStr.slice(0, 7);
+          const prevM = dailyMonthTotals.get(dYm) || { booke: 0, rdv: 0 };
+          prevM.booke += Number(dEntry.booke || 0);
+          prevM.rdv += Number(dEntry.rdv || 0);
+          dailyMonthTotals.set(dYm, prevM);
+
+          if ((!rangeStart || dStr >= rangeStart) && (!rangeEnd || dStr <= rangeEnd)) {
+            sumBooke += Number(dEntry.booke || 0);
+            sumRdv += Number(dEntry.rdv || 0);
+          }
+        });
+
         bizDaysPerMonth.forEach((selBiz, ym) => {
           const totBiz = Math.max(1, countBusinessDaysInMonth(ym));
           const ratio = selBiz / totBiz;
           const mData = kpiStore[ym]?.reps?.[rn];
+          const dTot = dailyMonthTotals.get(ym) || { booke: 0, rdv: 0 };
           if (mData) {
-            sumBooke += Number(mData['Booké']?.cumul || 0) * ratio;
-            sumRdv += Number(mData['RDV Réalisé']?.cumul || 0) * ratio;
+            const nonDailyBooke = Math.max(0, Number(mData['Booké']?.cumul || 0) - dTot.booke);
+            const nonDailyRdv = Math.max(0, Number(mData['RDV Réalisé']?.cumul || 0) - dTot.rdv);
+            sumBooke += nonDailyBooke * ratio;
+            sumRdv += nonDailyRdv * ratio;
           }
           const cEntry = condensedBaselineStore?.[ym]?.[rn];
           if (cEntry) {
@@ -10847,17 +11066,31 @@
       try {
         const prevSig = teamChatMessages.map(m => `${m.id}:${m.audioRef || ''}:${m.imageRef || ''}`).join('|');
         const rows = await fetchAllRows(() =>
-          sb.from('kpi_hebdo').select('*').in('semaine_index', [-12, -14, -15]).order('id')
+          sb.from('kpi_hebdo').select('*').in('semaine_index', [-12, -14, -15, -16]).order('id')
         );
         const chatRowsOnly = rows.filter(r => Number(r.semaine_index) === -12);
         const fetchedIds = new Set(chatRowsOnly.map(r => String(r.mois_commission)));
         const pendingRows = Array.from(_pendingVoiceUploads.values()).filter(r => !fetchedIds.has(String(r.mois_commission)));
         kpiHebdoRows = [
-          ...(kpiHebdoRows || []).filter(r => ![-12, -14, -15].includes(Number(r.semaine_index))),
+          ...(kpiHebdoRows || []).filter(r => ![-12, -14, -15, -16].includes(Number(r.semaine_index))),
           ...rows,
           ...pendingRows
         ];
         rows.forEach(r => {
+          if (Number(r.semaine_index) === -16 && r.mois_commission && r.representant_nom) {
+            try {
+              const parsedDaily = JSON.parse(r.representant_nom);
+              const dKey = String(r.mois_commission);
+              if (parsedDaily && typeof parsedDaily === 'object') {
+                const locD = dailyRdvLogsStore[dKey];
+                if (!locD || !locD.updatedAt || (parsedDaily.updatedAt && parsedDaily.updatedAt >= locD.updatedAt)) {
+                  dailyRdvLogsStore[dKey] = parsedDaily;
+                  saveDailyRdvLogsStore();
+                  renderDailyRdvTrackerCard();
+                }
+              }
+            } catch (e) {}
+          }
           if (Number(r.semaine_index) === -14 && r.mois_commission === 'red_phone_cfg' && r.representant_nom) {
             try {
               const parsedRp = JSON.parse(r.representant_nom);
@@ -10894,7 +11127,7 @@
           .channel('korpo-team-chat-' + Date.now())
           .on('postgres_changes', { event: '*', schema: 'public', table: 'kpi_hebdo' }, async (payload) => {
             const sIdx = Number(payload?.new?.semaine_index ?? payload?.old?.semaine_index);
-            if (sIdx === -12 || sIdx === -14 || sIdx === -15) {
+            if (sIdx === -12 || sIdx === -14 || sIdx === -15 || sIdx === -16) {
               await refreshTeamChatMessages(activeChatTabOpen);
             }
           })
@@ -12179,6 +12412,7 @@
       syncCommDisplayModeButtons();
       updateRepOnboardingCardVisibility();
       syncRedPhoneUI();
+      renderDailyRdvTrackerCard();
       const isAdmin = currentProfile.role === 'admin';
       const periodState = readPeriodFilterState('filter-rep');
       const futureQuickBtn = document.getElementById('btn-rep-future-comm');
