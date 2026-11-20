@@ -12908,24 +12908,28 @@
       clearTimeout(voiceStepAdvanceTimer);
       clearTimeout(voiceInterimIdleTimer);
       const res = applySingleStepVoiceAnswer(currentVoiceStepIdx, [spokenValue]);
-      if (res.ok) {
-        if (activeVoiceRecognition) {
-          try { activeVoiceRecognition.onend = null; activeVoiceRecognition.stop(); } catch (e) {}
-          activeVoiceRecognition = null;
-        }
-        if (currentVoiceStepIdx < VOICE_SALE_STEPS.length - 1) {
-          currentVoiceStepIdx++;
-          if (isVoiceListening) {
-            startListeningForCurrentStep(true, res.spokenAck);
-          } else {
-            updateVoiceStepUI();
-          }
+      if (!res.ok) return;
+
+      if (activeVoiceRecognition) {
+        try { activeVoiceRecognition.onend = null; activeVoiceRecognition.stop(); } catch (e) {}
+        activeVoiceRecognition = null;
+      }
+
+      if (currentVoiceStepIdx < VOICE_SALE_STEPS.length - 1) {
+        currentVoiceStepIdx++;
+        updateVoiceStepUI();
+        if (isVoiceListening) {
+          startListeningForCurrentStep(true, res.spokenAck);
         } else {
-          stopVoiceSaleDictation(true);
           const statusEl = document.getElementById('voice-sale-status');
-          if (statusEl) statusEl.textContent = '✅ Dictée terminée ! Cliquez sur Enregistrer.';
-          speakVoiceAssistantPrompt(`${res.spokenAck}. Formulaire prêt.`);
+          if (statusEl) statusEl.textContent = `Étape ${currentVoiceStepIdx + 1} / ${VOICE_SALE_STEPS.length} — ${VOICE_SALE_STEPS[currentVoiceStepIdx].hint}`;
+          speakVoiceAssistantPrompt(`${res.spokenAck}. ${VOICE_SALE_STEPS[currentVoiceStepIdx].spokenPrompt}`);
         }
+      } else {
+        stopVoiceSaleDictation(true);
+        const statusEl = document.getElementById('voice-sale-status');
+        if (statusEl) statusEl.textContent = '✅ Dictée terminée ! Cliquez sur Enregistrer.';
+        speakVoiceAssistantPrompt(`${res.spokenAck}. Formulaire prêt.`);
       }
     };
 
@@ -13049,11 +13053,11 @@
       // 3. Type OTS / Suivi
       const kpiSel = document.getElementById('vente-type-kpi');
       if (kpiSel) {
-        if (/(?:suivi|suivis|relance)/i.test(norm)) {
+        if (/\b(?:suivi|suivis|relance)\b/i.test(norm)) {
           kpiSel.value = 'SUIVI';
           flashVoiceFilledField(kpiSel);
           filledSummary.push('Suivi');
-        } else if (/(?:ots|o t s|au ts|hotesse|sur place)/i.test(norm)) {
+        } else if (/\b(?:ots|o t s|au ts|hotesse|sur place)\b/i.test(norm)) {
           kpiSel.value = 'OTS';
           flashVoiceFilledField(kpiSel);
           filledSummary.push('OTS');
@@ -13063,11 +13067,11 @@
       // 4. Statut dépôt
       const depotSel = document.getElementById('vente-statut-depot');
       if (depotSel) {
-        if (/(?:depot recu|recu|paye|virement|interac)/i.test(norm) && !/(?:pas recu|a confirmer)/i.test(norm)) {
+        if (/\b(?:depot recu|recu|paye|virement|interac)\b/i.test(norm) && !/\b(?:pas recu|a confirmer)\b/i.test(norm)) {
           depotSel.value = 'depot_recu';
           flashVoiceFilledField(depotSel);
           filledSummary.push('Dépôt reçu');
-        } else if (/(?:a confirmer|confirmer)/i.test(norm)) {
+        } else if (/\b(?:a confirmer|confirmer)\b/i.test(norm)) {
           depotSel.value = 'a_confirmer';
           flashVoiceFilledField(depotSel);
           filledSummary.push('À confirmer');
@@ -13075,7 +13079,7 @@
       }
 
       // 5. Numéro de contrat (ex. Est3505 / Est 3505 / contrat 1234)
-      const contractMatch = original.match(/(?:est|contrat)\s*[-#:]?\s*([a-z0-9-]{2,15})/i);
+      const contractMatch = original.match(/\b(?:est|contrat)\s*[-#:]?\s*([a-z0-9-]{2,15})\b/i);
       if (contractMatch) {
         const noteEl = document.getElementById('vente-note');
         const cCode = contractMatch[0].replace(/^est\s+/i, 'Est').replace(/^contrat\s*[:#-]?\s*/i, '');
@@ -13088,8 +13092,8 @@
 
       // 6. Client : isoler les mots restants qui ne sont ni la compagnie, ni un nombre, ni un mot-clé
       let clientCandidate = original
-        .replace(/(?:toitex|toit\s*ex|maclim|ma\s*clim|monspray|mon\s*spray|verrevdm|verre\s*vdm|vdm|groupe\s*diamant\s*pro|diamant\s*pro|ornithorynque)/gi, ' ')
-        .replace(/(?:vente|vendu|pour|client|cliente|chez|montant|avant\s*taxes|dollars?|piastres?|cad|ots|o\.t\.s|suivi|depot|dépôt|recu|reçu|a\s*confirmer|à\s*confirmer|contrat|est\s*\d+)/gi, ' ')
+        .replace(/\b(?:toitex|toit\s*ex|maclim|ma\s*clim|monspray|mon\s*spray|verrevdm|verre\s*vdm|vdm|groupe\s*diamant\s*pro|diamant\s*pro|ornithorynque)\b/gi, ' ')
+        .replace(/\b(?:vente|vendu|pour|client|cliente|chez|montant|avant\s*taxes|dollars?|piastres?|cad|ots|o\.t\.s|suivi|depot|dépôt|recu|reçu|a\s*confirmer|à\s*confirmer|contrat|est\s*\d+)\b/gi, ' ')
         .replace(/[\d$.,]+/g, ' ')
         .replace(/\s+/g, ' ')
         .trim();
@@ -13175,16 +13179,32 @@
 
     function parseFrenchSpokenNumbers(text) {
       let s = String(text || '').toLowerCase()
-        .replace(/ /g, ' ')
-        .replace(/(\d+)\s*mille\s*et\s*demi/gi, (_, m) => String(parseInt(m, 10) * 1000 + 500))
-        .replace(/(\d+)\s*mille\s*(\d)(?!\d)/gi, (_, m, c) => String(parseInt(m, 10) * 1000 + parseInt(c, 10) * 100))
-        .replace(/(\d+)\s*k/gi, (_, k) => String(parseInt(k, 10) * 1000))
-        .replace(/dollars?|piastres?|cad|\$/gi, ' $ ')
-        .replace(/(?:et\s+)?(\d{1,2})\s*(?:sous|cents?)/gi, '.$1')
-        .replace(/virgule|point/gi, '.');
+        .replace(/\u00a0|\u202f/g, ' ')
+        // 1. Retirer le symbole $ / dollars / piastres pour éviter toute interférence
+        .replace(/dollars?|piastres?|cad|\$/gi, ' ')
+        // 2. Décimales dictées explicitement (« virgule 50 », « point 75 », « et 50 sous »)
+        .replace(/\b(?:et\s+)?(\d{1,2})\s*(?:sous|cents?)\b/gi, '.$1')
+        .replace(/\s*(?:virgule|point)\s*(\d{1,2})\b/gi, '.$1');
 
-      s = s.replace(/(\d{1,3})\s+(\d{3})/g, '$1$2');
+      // 3. Regrouper les milliers avec espaces/virgules entre chiffres :
+      //    ex. "14 500" -> "14500", "12,500" -> "12500", "1 250 000" -> "1250000"
+      s = s.replace(/\b(\d{1,3})(?:[\s,](\d{3}))+\b/g, (m) => m.replace(/[\s,]+/g, ''));
 
+      // 4. Formes mixtes chiffres + mots en français québécois :
+      //    ex. "14 mille 500" -> "14500", "14 mille 5" -> "14500", "14 mille et demi" -> "14500", "14k" -> "14000"
+      s = s
+        .replace(/(\d+(?:\.\d+)?)\s*mille\s*et\s*demi\b/gi, (_, m) => String(Math.round(parseFloat(m) * 1000 + 500)))
+        .replace(/(\d+)\s*mille\s*(\d{1,3})\b/gi, (_, m, rest) => {
+          const rNum = parseInt(rest, 10);
+          // Au Québec, "14 mille 5" = 14 500 ; "14 mille 50" = 14 050 ; "14 mille 500" = 14 500
+          const add = rest.length === 1 ? rNum * 100 : rNum;
+          return String(parseInt(m, 10) * 1000 + add);
+        })
+        .replace(/(\d+(?:\.\d+)?)\s*mille\b/gi, (_, m) => String(Math.round(parseFloat(m) * 1000)))
+        .replace(/(\d+(?:\.\d+)?)\s*k\b/gi, (_, k) => String(Math.round(parseFloat(k) * 1000)))
+        .replace(/(\d+)\s*cents?\b/gi, (_, c) => String(parseInt(c, 10) * 100));
+
+      // 5. Conversion complète des nombres écrits en toutes lettres (ex. "quatorze mille cinq cents", "neuf mille huit cent cinquante")
       const units = {
         'zero': 0, 'zéro': 0, 'un': 1, 'une': 1, 'deux': 2, 'trois': 3, 'quatre': 4,
         'cinq': 5, 'six': 6, 'sept': 7, 'huit': 8, 'neuf': 9, 'dix': 10,
@@ -13196,7 +13216,7 @@
         'quatre-vingt-dix': 90, 'quatre vingt dix': 90
       };
 
-      const wordGroupRegex = /((?:(?:zero|zéro|un|une|deux|trois|quatre|cinq|six|sept|huit|neuf|dix|onze|douze|treize|quatorze|quinze|seize|vingts?|trente|quarante|cinquante|soixante|quatre-vingts?|quatre\s+vingts?|cents?|mille|et|\d+)[\s-]*)+)/gi;
+      const wordGroupRegex = /\b((?:(?:zero|zéro|un|une|deux|trois|quatre|cinq|six|sept|huit|neuf|dix|onze|douze|treize|quatorze|quinze|seize|vingts?|trente|quarante|cinquante|soixante|quatre-vingts?|quatre\s+vingts?|cents?|mille|et|\d+)[\s-]*)+)\b/gi;
       s = s.replace(wordGroupRegex, (match) => {
         const clean = match.trim();
         if (!/(mille|cent|vingt|trente|quarante|cinquante|soixante|quatorze|quinze|douze|treize|seize|onze|dix|deux|trois|quatre|cinq|six|sept|huit|neuf)/i.test(clean)) {
@@ -13225,6 +13245,10 @@
         }
         return matchedAny ? ` ${total + current} ` : match;
       });
+
+      // 6. Si le micro a transcrit deux morceaux côte à côte pour un montant en milliers
+      //    ex. "14 500" après conversion de "quatorze 500" -> "14500", ou "8 950" -> "8950"
+      s = s.replace(/\b(\d{1,3})\s+(\d{3})\b/g, '$1$2');
 
       return s;
     }
@@ -13356,11 +13380,21 @@
       if (step.key === 'montant') {
         for (const alt of alts) {
           const normalized = parseFrenchSpokenNumbers(alt);
-          const nums = Array.from(normalized.matchAll(/(\d+(?:[.,]\d{1,2})?)/g))
-            .map(m => parseAmount(m[1]))
+          // Capturer aussi les formats avec espaces insécables ou virgules de milliers avant normalisation
+          const rawMatches = Array.from(normalized.matchAll(/(\d+(?:\.\d{1,2})?)/g))
+            .map(m => parseFloat(m[1]))
             .filter(n => !isNaN(n) && n > 0);
-          if (nums.length) {
-            const amount = Math.max(...nums);
+
+          if (rawMatches.length) {
+            // Si deux nombres consécutifs forment un millier + centaines ex: [14, 500] -> 14500
+            let amount = 0;
+            if (rawMatches.length === 2 && rawMatches[0] >= 1 && rawMatches[0] <= 999 && rawMatches[1] >= 100 && rawMatches[1] <= 999) {
+              amount = rawMatches[0] * 1000 + rawMatches[1];
+            } else {
+              amount = Math.max(...rawMatches);
+            }
+            amount = Math.round(amount * 100) / 100;
+
             const valEl = document.getElementById('vente-valeur');
             if (valEl) {
               valEl.value = amount.toFixed(2).replace(/\.00$/, '');
@@ -13380,13 +13414,25 @@
         if (!kpiSel) return { ok: false, spokenAck: '' };
         for (const alt of alts) {
           const n = normalizePhoneticFr(alt);
-          if (/(?:suivi|suivis|relance|suivre|suivie|deuxieme|2e)/i.test(n)) {
+          const compact = n.replace(/\s+/g, '');
+          if (n.includes('suivi') || n.includes('relance') || n.includes('suivre') || compact.includes('suivi')) {
             kpiSel.value = 'SUIVI';
             flashVoiceFilledField(kpiSel);
             if (summaryEl) summaryEl.textContent = '✓ Type : Suivi';
             return { ok: true, spokenAck: 'Suivi' };
           }
-          if (/(?:ots|o t s|au ts|aux ts|au t s|haute s|hotesse|auto|ts|sur place|one time|place|premier|1er)/i.test(n)) {
+          if (
+            compact.includes('ots') ||
+            compact.includes('auts') ||
+            compact.includes('hautes') ||
+            compact.includes('hotesse') ||
+            n.includes('o t s') ||
+            n.includes('au ts') ||
+            n.includes('aux ts') ||
+            n.includes('sur place') ||
+            n.includes('one time') ||
+            /\b(?:ots|ts|auto)\b/i.test(n)
+          ) {
             kpiSel.value = 'OTS';
             flashVoiceFilledField(kpiSel);
             if (summaryEl) summaryEl.textContent = '✓ Type : OTS';
@@ -13401,13 +13447,13 @@
         if (!depotSel) return { ok: false, spokenAck: '' };
         for (const alt of alts) {
           const n = normalizePhoneticFr(alt);
-          if (/(?:confirmer|non|pas|aucun|attente|venir|pas recu)/i.test(n)) {
+          if (/\b(?:confirmer|non|pas|aucun|attente|venir|pas recu)\b/i.test(n)) {
             depotSel.value = 'a_confirmer';
             flashVoiceFilledField(depotSel);
             if (summaryEl) summaryEl.textContent = '✓ Dépôt : À confirmer';
             return { ok: true, spokenAck: 'À confirmer' };
           }
-          if (/(?:recu|recue|fait|paye|oui|virement|interac|cheque|acompte|depot recu|ok)/i.test(n)) {
+          if (/\b(?:recu|recue|fait|paye|oui|virement|interac|cheque|acompte|depot recu|ok)\b/i.test(n)) {
             depotSel.value = 'depot_recu';
             flashVoiceFilledField(depotSel);
             if (summaryEl) summaryEl.textContent = '✓ Dépôt : Dépôt reçu';
