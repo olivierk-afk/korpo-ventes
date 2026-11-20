@@ -786,18 +786,11 @@
           <div class="min-w-0">
             <div class="flex items-center gap-2">
               <h3 class="text-sm sm:text-base font-extrabold tracking-tight truncate">🏆 Korpo Top Earner</h3>
-              <span id="chat-live-pill" class="px-2 py-0.5 text-[10px] font-extrabold rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-400/30">● En direct</span>
             </div>
             <p class="text-[11px] text-slate-300 truncate">Ventes publiées automatiquement • Discussion d'équipe</p>
           </div>
         </div>
         <div class="flex items-center gap-1.5 sm:gap-2 shrink-0">
-          <button type="button" id="btn-chat-filter-sales" onclick="toggleChatSalesOnlyFilter()" class="px-2.5 py-1.5 text-[11px] font-bold rounded-xl bg-white/10 hover:bg-white/20 text-slate-200 transition">
-            💵 Ventes
-          </button>
-          <button type="button" onclick="refreshTeamChatMessages(true)" title="Actualiser le canal" class="w-8 h-8 text-xs font-bold rounded-xl bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition">
-            ↻
-          </button>
           <button type="button" onclick="closeTeamChatModal()" title="Fermer" class="w-9 h-9 rounded-xl bg-white/10 hover:bg-white/20 text-slate-200 hover:text-white flex items-center justify-center transition">
             ✕
           </button>
@@ -4766,6 +4759,7 @@
       activeChatTabOpen = true;
       markTeamChatAsRead();
       renderTeamChatFeed(true);
+      refreshTeamChatMessages(true);
       setTimeout(() => {
         document.getElementById('chat-message-input')?.focus({ preventScroll: true });
       }, 120);
@@ -8323,7 +8317,7 @@
     // =========================================================================
     let teamChatMessages = []; // [{ id, kind: 'sale'|'msg', at, authorId, authorName, authorRole, text, mentions, saleData }]
     let activeChatTabOpen = false;
-    let chatSalesOnlyMode = false;
+    const chatSalesOnlyMode = false;
     let chatRealtimeChannel = null;
     let chatPollingTimer = null;
     function readSavedChatLastSeenTimestamp() {
@@ -9105,7 +9099,21 @@
       }
 
       if (!chatPollingTimer) {
-        chatPollingTimer = setInterval(() => refreshTeamChatMessages(false), 12000);
+        chatPollingTimer = setInterval(() => {
+          if (!chatRealtimeChannel) subscribeToTeamChatRealtime();
+          refreshTeamChatMessages(activeChatTabOpen);
+        }, 4000);
+      }
+      if (!window._chatAutoFocusBound) {
+        window._chatAutoFocusBound = true;
+        document.addEventListener('visibilitychange', () => {
+          if (document.visibilityState === 'visible') {
+            refreshTeamChatMessages(activeChatTabOpen);
+          }
+        });
+        window.addEventListener('focus', () => {
+          refreshTeamChatMessages(activeChatTabOpen);
+        });
       }
     }
 
