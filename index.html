@@ -8,6 +8,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="Korpo Ventes" />
   <meta name="theme-color" content="#0f172a" />
+  <link rel="manifest" href="manifest.json" />
   <script src="https://cdn.tailwindcss.com/3.4.17"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4"></script>
   <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
@@ -1661,14 +1662,19 @@
 
             <!-- MENU DÉROULANT DES MENTIONS @ -->
             <div id="chat-mention-notif-dropdown" class="hidden fixed inset-x-3 top-16 sm:absolute sm:inset-x-auto sm:right-0 sm:top-auto sm:mt-2 w-auto sm:w-96 bg-white text-slate-900 rounded-2xl border border-slate-200 shadow-2xl z-50 overflow-hidden">
-              <div class="px-4 py-3 bg-slate-900 text-white flex items-center justify-between">
-                <div>
+              <div class="px-4 py-3 bg-slate-900 text-white flex items-center justify-between gap-2">
+                <div class="min-w-0">
                   <div class="text-xs font-extrabold">Mentions (@) dans le canal</div>
-                  <div id="chat-mention-notif-subtitle" class="text-[11px] text-slate-400">Messages où l'on vous a identifié</div>
+                  <div id="chat-mention-notif-subtitle" class="text-[11px] text-slate-400 truncate">Messages où l'on vous a identifié</div>
                 </div>
-                <button type="button" onclick="markAllChatMentionsRead()" class="px-2.5 py-1 text-[10px] font-bold rounded-lg bg-white/10 hover:bg-white/20 text-slate-200 transition">
-                  Tout marquer lu
-                </button>
+                <div class="flex items-center gap-1.5 shrink-0">
+                  <button id="btn-enable-mention-push" type="button" onclick="enableMentionPushNotifications()" class="px-2.5 py-1 text-[10px] font-bold rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white transition">
+                    🔔 Activer push
+                  </button>
+                  <button type="button" onclick="markAllChatMentionsRead()" class="px-2 py-1 text-[10px] font-bold rounded-lg bg-white/10 hover:bg-white/20 text-slate-200 transition">
+                    Tout lu
+                  </button>
+                </div>
               </div>
               <div id="chat-mention-notif-list" class="max-h-80 overflow-y-auto divide-y divide-slate-100"></div>
               <div class="px-4 py-2.5 bg-slate-50 border-t border-slate-100 flex items-center justify-between">
@@ -4212,7 +4218,129 @@
       const isDark = document.documentElement.classList.toggle('dark');
       lsSet('korpo_theme_v1', isDark ? 'dark' : 'light');
       syncThemeToggleButtons();
+      initMentionPushServiceWorker();
     };
+
+
+    // =========================================================================
+    // NOTIFICATIONS PUSH POUR LES MENTIONS (@) DANS KORPO TOP EARNER
+    // =========================================================================
+    // Clé publique VAPID (à remplacer par votre clé publique VAPID générée pour le push en arrière-plan)
+    const KORPO_VAPID_PUBLIC_KEY = "";
+    let korpoSwRegistration = null;
+
+    function urlBase64ToUint8Array(base64String) {
+      const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
+      const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+      const rawData = window.atob(base64);
+      const outputArray = new Uint8Array(rawData.length);
+      for (let i = 0; i < rawData.length; ++i) outputArray[i] = rawData.charCodeAt(i);
+      return outputArray;
+    }
+
+    async function initMentionPushServiceWorker() {
+      if ('serviceWorker' in navigator) {
+        try {
+          korpoSwRegistration = await navigator.serviceWorker.register('./sw.js');
+        } catch (e) {
+          console.warn('Service Worker non enregistré :', e && e.message);
+        }
+      }
+      updateMentionPushBtnUI();
+    }
+
+    function updateMentionPushBtnUI() {
+      const btn = document.getElementById('btn-enable-mention-push');
+      if (!btn) return;
+      if (!('Notification' in window)) {
+        btn.textContent = 'Non supporté';
+        btn.disabled = true;
+      } else if (Notification.permission === 'granted') {
+        btn.textContent = '✓ Push actif';
+        btn.classList.remove('bg-indigo-600', 'hover:bg-indigo-500');
+        btn.classList.add('bg-emerald-600', 'hover:bg-emerald-500');
+      }
+    }
+
+    window.enableMentionPushNotifications = async () => {
+      if (!('Notification' in window)) {
+        return toast('Les notifications ne sont pas supportées sur ce navigateur.', 'error');
+      }
+      const perm = await Notification.requestPermission();
+      updateMentionPushBtnUI();
+      if (perm !== 'granted') {
+        return toast('Autorisez les notifications dans les réglages de votre téléphone / navigateur.', 'error');
+      }
+
+      if (!korpoSwRegistration && 'serviceWorker' in navigator) {
+        try { korpoSwRegistration = await navigator.serviceWorker.register('./sw.js'); } catch (e) {}
+      }
+
+      if (korpoSwRegistration && 'PushManager' in window && KORPO_VAPID_PUBLIC_KEY && sb && currentProfile) {
+        try {
+          let sub = await korpoSwRegistration.pushManager.getSubscription();
+          if (!sub) {
+            sub = await korpoSwRegistration.pushManager.subscribe({
+              userVisibleOnly: true,
+              applicationServerKey: urlBase64ToUint8Array(KORPO_VAPID_PUBLIC_KEY)
+            });
+          }
+          await sb.from('push_subscriptions').upsert({
+            representant_id: currentProfile.id,
+            representant_nom: currentProfile.nom,
+            endpoint: sub.endpoint,
+            subscription: sub.toJSON(),
+            updated_at: new Date().toISOString()
+          }, { onConflict: 'endpoint' });
+        } catch (err) {
+          console.warn('Abonnement PushManager:', err && err.message);
+        }
+      }
+
+      toast('Notifications activées ! Vous recevrez une alerte dès qu’on vous mentionne (@) 🔔');
+    };
+
+    function sendChatMentionSystemNotification(msgObj) {
+      if (!('Notification' in window) || Notification.permission !== 'granted') return;
+      const title = `💬 ${msgObj.authorName} vous a mentionné`;
+      const body = String(msgObj.text || '').slice(0, 180);
+      const tag = `korpo-mention-${msgObj.id}`;
+
+      if (korpoSwRegistration && typeof korpoSwRegistration.showNotification === 'function') {
+        korpoSwRegistration.showNotification(title, {
+          body,
+          tag,
+          renotify: true,
+          data: { msgId: msgObj.id, url: './' }
+        }).catch(() => {});
+      } else {
+        try {
+          const n = new Notification(title, { body, tag });
+          n.onclick = () => {
+            window.focus();
+            jumpToChatMessage(msgObj.id);
+            n.close();
+          };
+        } catch (e) {}
+      }
+    }
+
+    async function triggerServerMentionWebPush(chatObj, mentionedNames) {
+      if (!sb || !Array.isArray(mentionedNames) || !mentionedNames.length) return;
+      try {
+        await sb.functions.invoke('send-mention-push', {
+          body: {
+            msgId: chatObj.id,
+            authorId: chatObj.authorId,
+            authorName: chatObj.authorName,
+            text: chatObj.text,
+            mentionedNames
+          }
+        });
+      } catch (e) {
+        // Silencieux tant que la Edge Function n'est pas déployée sur Supabase
+      }
+    }
 
     async function initApp() {
       syncThemeToggleButtons();
@@ -8091,6 +8219,7 @@
             alertedMentionIds.add(mid);
             playNotificationChime();
             toast(`@ ${m.authorName} vous a identifié : "${String(m.text || '').slice(0, 65)}"`);
+            sendChatMentionSystemNotification(m);
           }
         });
       }
@@ -8395,6 +8524,8 @@
       });
       if (res && res.error) {
         toast('Erreur lors de l’envoi du message : ' + res.error.message, 'error');
+      } else if (mentionedNames && mentionedNames.length > 0) {
+        triggerServerMentionWebPush(chatObj, mentionedNames);
       }
     }
 
