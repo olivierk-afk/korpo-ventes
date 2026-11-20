@@ -4405,6 +4405,36 @@
       }
     }
 
+    async function triggerAdminSaleWebPush(chatObj) {
+      if (!sb || !chatObj || !chatObj.saleData) return;
+      // N'envoyer un push admin que si ce n'est pas l'admin lui-même qui vient d'enregistrer sa propre vente
+      if (currentProfile?.role === 'admin' && String(chatObj.authorId) === String(currentProfile.id)) return;
+      const adminNames = (state.representants || [])
+        .filter(r => r.role === 'admin' && r.nom)
+        .map(r => r.nom);
+      if (!adminNames.includes('Olivier')) adminNames.push('Olivier');
+
+      const s = chatObj.saleData;
+      const cliPart = s.clientNom ? ` (${s.clientNom})` : '';
+      const saleSummaryText = `${s.repNom} • ${s.entNom}${cliPart} — ${fmtMoney(s.valeur)} [${s.typeKpi || 'OTS'}]`;
+
+      try {
+        await sb.functions.invoke('send-mention-push', {
+          body: {
+            msgId: chatObj.id,
+            authorId: chatObj.authorId,
+            authorName: chatObj.authorName,
+            text: saleSummaryText,
+            mentionedNames: adminNames,
+            customTitle: `💵 Nouvelle vente — ${s.repNom}`,
+            eventType: 'sale'
+          }
+        });
+      } catch (e) {
+        // Silencieux tant que la Edge Function n'est pas déployée sur Supabase
+      }
+    }
+
     async function initApp() {
       syncThemeToggleButtons();
       initKpiControls();
@@ -5274,7 +5304,16 @@
     }
 
     function sendBrowserPushNotification(title, body) {
-      if (!('Notification' in window)) return;
+      if (!isMentionPushCurrentlyEnabled()) return;
+      if (korpoSwRegistration && typeof korpoSwRegistration.showNotification === 'function') {
+        korpoSwRegistration.showNotification(title, {
+          body,
+          tag: 'korpo-new-sale',
+          renotify: true,
+          data: { url: './' }
+        }).catch(() => {});
+        return;
+      }
       if (Notification.permission === 'granted') {
         const n = new Notification(title, { body, tag: 'korpo-new-sale' });
         n.onclick = () => {
@@ -5931,6 +5970,21 @@
         totalBizDays = 1;
         elapsedBizDays = 1;
         remainingBizDays = 0;
+      } else if (dashPeriod.mode === 'custom_range') {
+        const sR = dashPeriod.startVal <= dashPeriod.endVal ? dashPeriod.startVal : dashPeriod.endVal;
+        const eR = dashPeriod.startVal <= dashPeriod.endVal ? dashPeriod.endVal : dashPeriod.startVal;
+        let rangeBiz = 0;
+        if (sR && eR) {
+          const cD = new Date(sR + 'T00:00:00');
+          const eD = new Date(eR + 'T00:00:00');
+          while (!isNaN(cD.getTime()) && !isNaN(eD.getTime()) && cD <= eD) {
+            if (cD.getDay() !== 0 && cD.getDay() !== 6) rangeBiz++;
+            cD.setDate(cD.getDate() + 1);
+          }
+        }
+        totalBizDays = Math.max(1, rangeBiz);
+        elapsedBizDays = totalBizDays;
+        remainingBizDays = 0;
       } else if (dashPeriod.mode === 'this_week') {
         totalBizDays = 5;
         const dow = today.getDay();
@@ -5959,15 +6013,20 @@
       const totSigned = Math.round((rawSalesSigned + condensedBaselineSum) * 100) / 100;
 
       // Objectif global proportionnel à la période sélectionnée
-      const monthMultiplier = dashPeriod.mode === 'specific_date'
-        ? (1 / Math.max(1, countBusinessDaysInMonth(targetYm)))
-        : (dashPeriod.mode === 'this_week' ? 0.25 : coveredMonths.length);
+      if (dashPeriod.mode === 'custom_range' && dashPeriod.startVal) {
+        targetYm = dashPeriod.startVal.slice(0, 7);
+      }
+      const monthMultiplier = dashPeriod.mode === 'custom_range'
+        ? computeCustomRangeMonthFactor(dashPeriod.startVal, dashPeriod.endVal)
+        : (dashPeriod.mode === 'specific_date'
+          ? (1 / Math.max(1, countBusinessDaysInMonth(targetYm)))
+          : (dashPeriod.mode === 'this_week' ? (5 / Math.max(1, countBusinessDaysInMonth(targetYm))) : coveredMonths.length));
 
       const repTargetsMap = {};
       ALL_KPI_REPS.forEach(rn => {
         if (isSingleMonthMode) {
           repTargetsMap[rn] = getSalesTargetForRep(rn, targetYm);
-        } else if (dashPeriod.mode === 'specific_date' || dashPeriod.mode === 'this_week') {
+        } else if (dashPeriod.mode === 'specific_date' || dashPeriod.mode === 'this_week' || dashPeriod.mode === 'custom_range') {
           repTargetsMap[rn] = Math.round(getSalesTargetForRep(rn, targetYm) * monthMultiplier);
         } else {
           repTargetsMap[rn] = coveredMonths.reduce((s, ym) => s + getSalesTargetForRep(rn, ym), 0);
@@ -8563,6 +8622,7 @@
         rdv_realise: 0,
         updated_at: atIso
       });
+      triggerAdminSaleWebPush(chatObj);
     }
 
     async function postMessageToTeamChat(text) {
@@ -9222,7 +9282,9 @@
         : currentProfile;
       const pMode = periodState?.mode || 'this_month';
       const isMultiMonth = pMode === 'all' || pMode === 'this_year' || pMode === 'this_quarter';
-      const activeYm = periodState?.singleMonth || currentMonthStr;
+      const activeYm = periodState?.singleMonth
+        || (pMode === 'custom_range' && periodState?.startVal ? periodState.startVal.slice(0, 7) : '')
+        || currentMonthStr;
       const inspectedRepName = inspectedRepObj?.nom || currentProfile.nom;
 
       const sourceRows = isInspectingRep
@@ -9250,6 +9312,10 @@
         const dayRatio = 1 / bizDaysInActiveMonth;
         salesTarget = Math.round(salesTarget * dayRatio);
         commTarget = Math.round(commTarget * dayRatio);
+      } else if (pMode === 'custom_range') {
+        const rangeRatio = computeCustomRangeMonthFactor(periodState?.startVal, periodState?.endVal);
+        salesTarget = Math.round(salesTarget * rangeRatio);
+        commTarget = Math.round(commTarget * rangeRatio);
       } else if (pMode === 'this_quarter') {
         salesTarget = salesTarget * 3;
         commTarget = commTarget * 3;
