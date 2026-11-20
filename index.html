@@ -722,6 +722,41 @@
         color: #0f172a !important;
       }
     }
+    /* ===================================================================== */
+    /* NAVIGATION ERGONOMIQUE : BARRE BASSE MOBILE + MENU LATÉRAL DESKTOP    */
+    /* ===================================================================== */
+    @supports (padding-bottom: env(safe-area-inset-bottom)) {
+      #mobile-bottom-nav {
+        padding-bottom: calc(0.45rem + env(safe-area-inset-bottom));
+      }
+      @media (max-width: 1023px) {
+        main {
+          padding-bottom: calc(6.5rem + env(safe-area-inset-bottom)) !important;
+        }
+        #btn-floating-chat-bubble,
+        #btn-mobile-fab-sale {
+          bottom: calc(4.75rem + env(safe-area-inset-bottom)) !important;
+        }
+      }
+    }
+    @media (max-width: 1023px) {
+      #btn-floating-chat-bubble,
+      #btn-mobile-fab-sale {
+        bottom: 4.75rem;
+      }
+    }
+    html.dark #mobile-bottom-nav {
+      background-color: rgba(7, 11, 20, 0.96) !important;
+      border-top-color: #1e293b !important;
+    }
+    html.dark #desktop-sidebar {
+      background-color: #070b14 !important;
+      border-right-color: #1e293b !important;
+    }
+    html.dark #mobile-admin-sheet {
+      background-color: #111827 !important;
+      border-color: #334155 !important;
+    }
   </style>
   <script>
     (function() {
@@ -762,12 +797,12 @@
   </div>
 
   <!-- BOUTON FLOTTANT MOBILE (+ DÉCLARER UNE VENTE) -->
-  <button id="btn-mobile-fab-sale" title="Déclarer une vente" class="hidden sm:hidden fixed bottom-5 right-5 z-30 w-14 h-14 rounded-full bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white shadow-xl shadow-emerald-600/35 flex items-center justify-center text-2xl font-bold transition no-print">
+  <button id="btn-mobile-fab-sale" title="Déclarer une vente" class="hidden sm:hidden fixed bottom-20 right-3.5 z-30 w-12 h-12 rounded-full bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white shadow-xl shadow-emerald-600/35 flex items-center justify-center text-xl font-bold transition no-print">
     💵
   </button>
 
   <!-- BULLE FLOTTANTE EN BAS À GAUCHE : CANAL DE CONVERSATION ÉQUIPE (3 POINTS) -->
-  <button id="btn-floating-chat-bubble" type="button" onclick="openTeamChatModal()" title="Ouvrir Korpo Top Earner 🏆" class="hidden fixed bottom-5 left-5 z-30 w-14 h-14 rounded-full bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white shadow-xl shadow-indigo-600/35 flex items-center justify-center transition no-print group">
+  <button id="btn-floating-chat-bubble" type="button" onclick="openTeamChatModal()" title="Ouvrir Korpo Top Earner 🏆" class="hidden fixed bottom-20 lg:bottom-5 left-3.5 lg:left-5 z-30 w-12 h-12 lg:w-14 lg:h-14 rounded-full bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white shadow-xl shadow-indigo-600/35 flex items-center justify-center transition no-print group">
     <svg class="w-7 h-7 transition-transform group-hover:scale-105" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
       <path d="M12 3C6.477 3 2 6.805 2 11.5c0 2.31 1.084 4.404 2.845 5.936-.234 1.32-.833 2.573-1.456 3.553a.5.5 0 0 0 .485.764c2.01-.245 3.927-.968 5.29-1.716.905.298 1.855.463 2.836.463 5.523 0 10-3.805 10-8.5S17.523 3 12 3Zm-4 9.75a1.25 1.25 0 1 1 0-2.5 1.25 1.25 0 0 1 0 2.5Zm4 0a1.25 1.25 0 1 1 0-2.5 1.25 1.25 0 0 1 0 2.5Zm4 0a1.25 1.25 0 1 1 0-2.5 1.25 1.25 0 0 1 0 2.5Z"/>
     </svg>
@@ -1366,10 +1401,10 @@
             <div class="min-w-0">
               <div class="text-xs font-extrabold text-indigo-950 flex items-center gap-1.5">
                 <span>🎙️</span>
-                <span>Dictée guidée (étape par étape)</span>
+                <span>Assistant vocal mains libres (Mode conduite)</span>
               </div>
               <p class="text-[11px] text-slate-600 leading-snug mt-0.5">
-                L'assistant pose une question à la fois : <strong>Entreprise → Client → Montant → Type → Dépôt → Contrat</strong>
+                L'assistant <strong>dit chaque question à voix haute</strong> et écoute votre réponse sans regarder l'écran
               </p>
             </div>
             <div class="flex items-center gap-1.5 shrink-0">
@@ -1386,7 +1421,10 @@
           <div id="voice-sale-live-box" class="hidden bg-white/95 rounded-xl border border-indigo-200/80 p-3 space-y-2">
             <!-- Barre de progression des 6 étapes -->
             <div class="flex items-center justify-between gap-1 text-[10px] font-extrabold">
-              <span id="voice-step-badge" class="px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-800">Étape 1 / 6</span>
+              <div class="flex items-center gap-1.5 shrink-0">
+                <span id="voice-step-badge" class="px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-800">Étape 1 / 6</span>
+                <button type="button" id="btn-voice-mute-toggle" onclick="toggleVoiceMute()" class="px-2 py-0.5 text-[10px] font-extrabold rounded-lg bg-indigo-100 text-indigo-800 transition">🔊 Voix</button>
+              </div>
               <span id="voice-sale-status" class="text-[11px] font-bold text-indigo-700 truncate">En attente...</span>
               <button type="button" onclick="stopVoiceSaleDictation(); document.getElementById('voice-sale-live-box')?.classList.add('hidden');" class="text-[10px] font-bold text-slate-400 hover:text-slate-600 shrink-0">Fermer</button>
             </div>
@@ -1795,14 +1833,26 @@
         </div>
       </div>
 
-      <!-- BARRE D'ONGLETS -->
-      <div class="bg-slate-900/95 border-t border-slate-800">
-        <div class="max-w-7xl mx-auto px-2 sm:px-6 py-1.5 space-y-1.5" id="nav-tabs"></div>
-      </div>
     </header>
 
-    <!-- CONTENU PRINCIPAL -->
-    <main class="flex-1 max-w-7xl w-full mx-auto px-3 sm:px-6 py-4 sm:py-7 pb-24 sm:pb-8 space-y-5 sm:space-y-6 no-print">
+    <div class="flex-1 flex min-w-0">
+      <!-- MENU LATÉRAL GAUCHE (ORDINATEUR >= 1024px) -->
+      <aside id="desktop-sidebar" class="hidden lg:flex lg:flex-col lg:w-60 xl:w-64 shrink-0 bg-slate-900 text-slate-200 border-r border-slate-800 sticky top-16 h-[calc(100vh-4rem)] overflow-y-auto p-3.5 justify-between no-print">
+        <div id="desktop-sidebar-nav" class="space-y-5"></div>
+        <div class="pt-3 border-t border-slate-800/90 space-y-2">
+          <button type="button" onclick="openNewSaleDrawer()" class="w-full py-2.5 px-3.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 active:scale-[0.99] text-white text-xs font-extrabold shadow-sm flex items-center justify-center gap-2 transition">
+            <span class="text-base leading-none">💵</span>
+            <span>Déclarer une vente</span>
+          </button>
+          <button type="button" onclick="openTeamChatModal()" class="w-full py-2 px-3.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold flex items-center justify-between transition">
+            <span class="flex items-center gap-2"><span>🏆</span><span>Korpo Top Earner</span></span>
+            <span class="chat-unread-badge hidden px-1.5 py-0.2 rounded-full bg-emerald-500 text-slate-950 text-[10px] font-extrabold">0</span>
+          </button>
+        </div>
+      </aside>
+
+      <!-- CONTENU PRINCIPAL -->
+      <main class="flex-1 min-w-0 max-w-7xl w-full mx-auto px-3 sm:px-6 py-4 sm:py-7 pb-28 lg:pb-8 space-y-5 sm:space-y-6 no-print">
       <!-- BANDEAU NOTIFICATION EN HAUT : MENTION @ DANS LE CANAL -->
       <div id="chat-mention-top-banner" class="hidden bg-indigo-50 border border-indigo-300 rounded-2xl px-4 sm:px-5 py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 shadow-xs cursor-pointer transition hover:bg-indigo-100/70" onclick="jumpToLatestUnreadMention()">
         <div class="flex items-center gap-3 min-w-0">
@@ -2924,7 +2974,28 @@
         </div>
       </section>
 
-    </main>
+      </main>
+    </div>
+
+    <!-- BARRE DE NAVIGATION BASSE ERGONOMIQUE (CELLULAIRE & TABLETTE < 1024px) -->
+    <nav id="mobile-bottom-nav" aria-label="Navigation principale mobile" class="lg:hidden fixed bottom-0 inset-x-0 z-30 bg-slate-900/95 backdrop-blur-md border-t border-slate-800 px-1.5 pt-1.5 pb-2 shadow-[0_-6px_20px_rgba(0,0,0,0.28)] no-print">
+      <div id="mobile-bottom-nav-grid" class="grid grid-cols-4 gap-1 max-w-lg mx-auto"></div>
+    </nav>
+
+    <!-- TIROIR COULISSANT MOBILE (ADMIN & OUTILS RAPIDES) -->
+    <div id="mobile-admin-drawer-backdrop" onclick="if(event.target.id==='mobile-admin-drawer-backdrop') closeMobileAdminDrawer();" class="hidden lg:hidden fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-xs flex items-end justify-center no-print">
+      <div id="mobile-admin-sheet" class="bg-white w-full max-w-lg rounded-t-3xl border-t border-slate-200 shadow-2xl p-4 pb-7 space-y-3.5 animate-drawer">
+        <div class="w-10 h-1 rounded-full bg-slate-300 mx-auto"></div>
+        <div class="flex items-center justify-between px-1">
+          <div>
+            <h3 class="text-sm font-extrabold text-slate-900">Administration & Gestion</h3>
+            <p class="text-[11px] text-slate-500">Accès rapide aux outils de direction</p>
+          </div>
+          <button type="button" onclick="closeMobileAdminDrawer()" class="w-8 h-8 rounded-full bg-slate-100 text-slate-600 flex items-center justify-center font-bold">✕</button>
+        </div>
+        <div id="mobile-admin-drawer-items" class="grid grid-cols-2 gap-2.5"></div>
+      </div>
+    </div>
   </div>
 
   <script>
@@ -4603,68 +4674,96 @@
 
     let activeMobilePersonalView = 'ventes'; // 'ventes' | 'commissions'
 
+    window.openMobileAdminDrawer = () => {
+      document.getElementById('mobile-admin-drawer-backdrop')?.classList.remove('hidden');
+    };
+    window.closeMobileAdminDrawer = () => {
+      document.getElementById('mobile-admin-drawer-backdrop')?.classList.add('hidden');
+    };
+
     function buildNavigation() {
-      const nav = document.getElementById('nav-tabs');
       const isAdmin = currentProfile.role === 'admin';
 
-      const mobilePrimaryTabs = [
-        { id: 'tab-mes-ventes', icon: '💵', shortLabel: 'Ventes' },
-        { id: 'tab-mes-commissions', icon: '💰', shortLabel: 'Commissions' },
-        { id: 'tab-kpi', icon: '📊', shortLabel: 'KPI' },
-        { id: 'tab-classement', icon: '🏆', shortLabel: 'Classement' }
+      const primaryItems = [
+        { id: 'tab-mes-ventes', icon: '💵', shortLabel: 'Ventes', label: 'Mes ventes' },
+        { id: 'tab-mes-commissions', icon: '💰', shortLabel: 'Comm.', label: 'Mes commissions' },
+        { id: 'tab-kpi', icon: '📊', shortLabel: 'KPI', label: 'Tableau KPI' },
+        { id: 'tab-classement', icon: '🏆', shortLabel: 'Équipe', label: 'Classement équipe' }
       ];
 
-      const mobileAdminTabs = isAdmin ? [
-        { id: 'tab-admin-ventes', icon: '📋', shortLabel: 'Registre' },
-        { id: 'tab-admin-dashboard', icon: '📈', shortLabel: 'Direction' },
-        { id: 'tab-admin-taux', icon: '⚙️', shortLabel: 'Taux' },
-        { id: 'tab-admin-equipe', icon: '🏢', shortLabel: 'Équipe' }
+      const adminItems = isAdmin ? [
+        { id: 'tab-admin-ventes', icon: '📋', shortLabel: 'Registre', label: 'Toutes les ventes', desc: 'Valider & gérer les dossiers' },
+        { id: 'tab-admin-dashboard', icon: '📈', shortLabel: 'Direction', label: 'Tableau de bord', desc: 'Analytique, paie & courriels' },
+        { id: 'tab-admin-taux', icon: '⚙️', shortLabel: 'Taux', label: 'Grille des taux', desc: 'Commissions & règles clients' },
+        { id: 'tab-admin-equipe', icon: '🏢', shortLabel: 'Équipe', label: 'Entreprises & Équipe', desc: 'Objectifs, reps & partenaires' }
       ] : [];
 
-      const desktopTabs = [
-        { id: 'tab-mes-ventes', icon: '💵', label: 'Mes ventes' },
-        { id: 'tab-mes-commissions', icon: '💰', label: 'Mes commissions' },
-        { id: 'tab-kpi', icon: '📊', label: 'Tableau KPI' },
-        { id: 'tab-classement', icon: '🏆', label: 'Classement équipe' },
-        ...(isAdmin ? [
-          { id: 'tab-admin-ventes', icon: '📋', label: 'Toutes les ventes' },
-          { id: 'tab-admin-dashboard', icon: '📈', label: 'Tableau de bord' },
-          { id: 'tab-admin-taux', icon: '⚙️', label: 'Grille des taux' },
-          { id: 'tab-admin-equipe', icon: '🏢', label: 'Entreprises & Équipe' }
-        ] : [])
-      ];
+      // 1. Barre basse mobile ergonomique (4 boutons pour rep, 5 boutons avec tiroir Admin pour admin)
+      const mobileGrid = document.getElementById('mobile-bottom-nav-grid');
+      if (mobileGrid) {
+        mobileGrid.className = isAdmin
+          ? 'grid grid-cols-5 gap-1 max-w-lg mx-auto'
+          : 'grid grid-cols-4 gap-1 max-w-lg mx-auto';
 
-      const renderMobileGrid = (items, extraCls = '', cols = 4) => `
-        <div class="grid grid-cols-${cols} gap-1 md:hidden ${extraCls}">
-          ${items.map(t => `
-            <button data-tab="${t.id}" class="nav-btn relative flex flex-col items-center justify-center py-1.5 px-1 rounded-xl text-[11px] font-bold transition text-slate-300 hover:text-white hover:bg-slate-800">
-              <span class="text-base leading-none mb-0.5">${t.icon}</span>
-              <span class="truncate max-w-full">${t.shortLabel}</span>
-              ${t.id === 'tab-chat' ? '<span class="chat-unread-badge hidden absolute top-1 right-1.5 min-w-[16px] h-[16px] px-1 rounded-full bg-emerald-500 text-slate-950 text-[9px] font-extrabold flex items-center justify-center">0</span>' : ''}
-            </button>
-          `).join('')}
-        </div>
-      `;
+        const primaryHtml = primaryItems.map(t => `
+          <button type="button" data-tab="${t.id}" style="touch-action: manipulation; -webkit-tap-highlight-color: transparent;" class="nav-btn relative flex flex-col items-center justify-center py-1.5 px-1 rounded-2xl text-[11px] font-bold transition text-slate-300 hover:text-white active:scale-95">
+            <span class="text-lg leading-none mb-0.5">${t.icon}</span>
+            <span class="truncate max-w-full">${t.shortLabel}</span>
+          </button>
+        `).join('');
 
-      const desktopBar = `
-        <div class="hidden md:flex flex-wrap items-center gap-1.5">
-          ${desktopTabs.map(t => `
-            <button data-tab="${t.id}" class="nav-btn px-3.5 py-2 text-xs font-semibold rounded-xl transition whitespace-nowrap inline-flex items-center gap-1.5 text-slate-300 hover:text-white hover:bg-slate-800">
-              <span class="text-sm leading-none">${t.icon}</span>
-              <span>${t.label}</span>
-              ${t.id === 'tab-chat' ? '<span class="chat-unread-badge hidden ml-1 px-1.5 py-0.2 rounded-full bg-emerald-500 text-slate-950 text-[10px] font-extrabold">0</span>' : ''}
-            </button>
-          `).join('')}
-        </div>
-      `;
+        const adminTriggerHtml = isAdmin ? `
+          <button type="button" id="btn-mobile-admin-trigger" onclick="openMobileAdminDrawer()" style="touch-action: manipulation; -webkit-tap-highlight-color: transparent;" class="relative flex flex-col items-center justify-center py-1.5 px-1 rounded-2xl text-[11px] font-bold transition text-amber-300 hover:text-white active:scale-95">
+            <span class="text-lg leading-none mb-0.5">🛡️</span>
+            <span class="truncate max-w-full">Admin</span>
+          </button>
+        ` : '';
 
-      nav.innerHTML =
-        renderMobileGrid(mobilePrimaryTabs, '', 4) +
-        (mobileAdminTabs.length ? renderMobileGrid(mobileAdminTabs, 'pt-1 border-t border-slate-800/90', 4) : '') +
-        desktopBar;
+        mobileGrid.innerHTML = primaryHtml + adminTriggerHtml;
+      }
+
+      // 2. Tiroir mobile Admin (grosses tuiles tactiles)
+      const mobileAdminBox = document.getElementById('mobile-admin-drawer-items');
+      if (mobileAdminBox) {
+        mobileAdminBox.innerHTML = adminItems.map(t => `
+          <button type="button" data-tab="${t.id}" onclick="closeMobileAdminDrawer()" class="nav-btn text-left p-3.5 rounded-2xl border border-slate-200 bg-slate-50 hover:bg-indigo-50 transition flex flex-col gap-1">
+            <div class="flex items-center gap-2">
+              <span class="text-lg">${t.icon}</span>
+              <span class="text-xs font-extrabold text-slate-900">${t.label}</span>
+            </div>
+            <span class="text-[11px] text-slate-500 leading-tight">${t.desc}</span>
+          </button>
+        `).join('');
+      }
+
+      // 3. Menu latéral gauche sur ordinateur (>= 1024px)
+      const desktopNav = document.getElementById('desktop-sidebar-nav');
+      if (desktopNav) {
+        const renderGroup = (title, items) => `
+          <div class="space-y-1">
+            <div class="px-3 text-[10px] font-extrabold uppercase tracking-wider text-slate-400">${title}</div>
+            ${items.map(t => `
+              <button type="button" data-tab="${t.id}" class="nav-btn w-full px-3 py-2.5 text-xs font-bold rounded-xl transition flex items-center gap-2.5 text-slate-300 hover:text-white hover:bg-slate-800">
+                <span class="text-base leading-none">${t.icon}</span>
+                <span class="truncate">${t.label}</span>
+              </button>
+            `).join('')}
+          </div>
+        `;
+        desktopNav.innerHTML =
+          renderGroup('Mon espace', primaryItems.slice(0, 2)) +
+          renderGroup('Performance', primaryItems.slice(2, 4)) +
+          (adminItems.length ? renderGroup('Administration', adminItems) : '');
+      }
 
       document.querySelectorAll('.nav-btn').forEach(btn => {
-        btn.addEventListener('click', () => { if (window._globalClientFilterQuery) { window._globalClientFilterQuery = ''; showActiveClientSearchBanner(''); } switchTab(btn.dataset.tab); });
+        btn.addEventListener('click', () => {
+          if (window._globalClientFilterQuery) {
+            window._globalClientFilterQuery = '';
+            showActiveClientSearchBanner('');
+          }
+          switchTab(btn.dataset.tab);
+        });
       });
       switchTab('tab-mes-ventes');
     }
@@ -4731,14 +4830,29 @@
       document.querySelectorAll('main > section').forEach(sec => {
         sec.classList.toggle('hidden', sec.id !== targetSectionId);
       });
+      const isAdminTabActive = tabId.startsWith('tab-admin-');
+      const mobileAdminTrigger = document.getElementById('btn-mobile-admin-trigger');
+      if (mobileAdminTrigger) {
+        mobileAdminTrigger.classList.toggle('bg-amber-500', isAdminTabActive);
+        mobileAdminTrigger.classList.toggle('text-slate-950', isAdminTabActive);
+        mobileAdminTrigger.classList.toggle('text-amber-300', !isAdminTabActive);
+      }
       document.querySelectorAll('.nav-btn').forEach(btn => {
         const active = btn.dataset.tab === tabId;
-        btn.classList.toggle('bg-indigo-600', active);
-        btn.classList.toggle('text-white', active);
-        btn.classList.toggle('shadow-xs', active);
-        btn.classList.toggle('text-slate-300', !active);
-        btn.classList.toggle('hover:text-white', !active);
-        btn.classList.toggle('hover:bg-slate-800', !active);
+        const isMobileSheetCard = Boolean(btn.closest('#mobile-admin-drawer-items'));
+        if (isMobileSheetCard) {
+          btn.classList.toggle('border-indigo-500', active);
+          btn.classList.toggle('bg-indigo-50', active);
+          btn.classList.toggle('ring-1', active);
+          btn.classList.toggle('ring-indigo-400', active);
+        } else {
+          btn.classList.toggle('bg-indigo-600', active);
+          btn.classList.toggle('text-white', active);
+          btn.classList.toggle('shadow-xs', active);
+          btn.classList.toggle('text-slate-300', !active);
+          btn.classList.toggle('hover:text-white', !active);
+          btn.classList.toggle('hover:bg-slate-800', !active);
+        }
       });
       if (targetSectionId === 'tab-mes-ventes') applyMobilePersonalSplitLayout();
       if (tabId === 'tab-kpi') renderKpiDashboard();
@@ -11369,7 +11483,6 @@
       const dateYm = dStr.length >= 7 ? dStr.slice(0, 7) : '';
       if (isValidYearMonth(commYm) && commYm > currentMonthStr) return commYm;
       if (isValidYearMonth(dateYm) && dateYm > currentMonthStr) return dateYm;
-      if (dStr && dStr.length === 10 && dStr > currentDateStr) return dateYm || currentMonthStr;
       return '';
     }
 
@@ -12593,57 +12706,148 @@
 
 
     // =========================================================================
-    // DICTÉE GUIDÉE ÉTAPE PAR ÉTAPE (1 CHAMP À LA FOIS — ZERO CONFUSION)
+    // DICTÉE VOCALE MAINS LIBRES (QUESTIONS DITES À VOIX HAUTE — MODE CONDUITE)
     // =========================================================================
     let activeVoiceRecognition = null;
     let isVoiceListening = false;
+    let isVoiceSpeaking = false;
+    let voiceMuted = false;
     let currentVoiceStepIdx = 0;
     let voiceStepAdvanceTimer = null;
 
     const VOICE_SALE_STEPS = [
       {
         key: 'entreprise',
-        prompt: '1. Quelle est l’entreprise partenaire ? (ex. Toitex, MaClim, MonSpray, VerreVDM, Diamant Pro)',
+        prompt: '1. Quelle est l’entreprise partenaire ?',
+        spokenPrompt: 'Quelle est l’entreprise partenaire ?',
         hint: 'Dites le nom de la compagnie'
       },
       {
         key: 'client',
-        prompt: '2. Quel est le nom complet du client ? (ex. Jean Tremblay)',
+        prompt: '2. Quel est le nom complet du client ?',
+        spokenPrompt: 'Quel est le nom complet du client ?',
         hint: 'Dites prénom et nom du client'
       },
       {
         key: 'montant',
-        prompt: '3. Quel est le montant de la vente avant taxes ? (ex. 14 500 dollars)',
+        prompt: '3. Quel est le montant de la vente avant taxes ?',
+        spokenPrompt: 'Quel est le montant de la vente avant taxes ?',
         hint: 'Dites uniquement le montant'
       },
       {
         key: 'type_kpi',
-        prompt: '4. Est-ce une vente OTS (sur place) ou un Suivi ?',
+        prompt: '4. Est-ce une vente OTS ou un Suivi ?',
+        spokenPrompt: 'Est-ce une vente O T S ou un suivi ?',
         hint: 'Dites « OTS » ou « Suivi »'
       },
       {
         key: 'depot',
         prompt: '5. Le dépôt est-il reçu ou à confirmer ?',
+        spokenPrompt: 'Le dépôt est-il reçu ou à confirmer ?',
         hint: 'Dites « Dépôt reçu » ou « À confirmer »'
       },
       {
         key: 'note',
-        prompt: '6. Numéro de contrat ou note ? (ex. Est 3505, ou dites « Aucun »)',
+        prompt: '6. Numéro de contrat ou note ? (ou dites « Aucun »)',
+        spokenPrompt: 'Numéro de contrat ou note ? Sinon dites aucun.',
         hint: 'Dites le numéro de contrat ou « Aucun »'
       }
     ];
+
+    function getBestFrenchTtsVoice() {
+      if (!('speechSynthesis' in window)) return null;
+      const voices = window.speechSynthesis.getVoices() || [];
+      return voices.find(v => /^fr[-_]CA/i.test(v.lang))
+        || voices.find(v => /^fr/i.test(v.lang) && /natural|google|amelie|amélie|thomas|siri|microsoft/i.test(v.name))
+        || voices.find(v => /^fr/i.test(v.lang))
+        || null;
+    }
+
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.getVoices();
+      window.speechSynthesis.onvoiceschanged = () => { window.speechSynthesis.getVoices(); };
+    }
+
+    function cancelVoiceAssistantSpeech() {
+      isVoiceSpeaking = false;
+      if ('speechSynthesis' in window) {
+        try { window.speechSynthesis.cancel(); } catch (e) {}
+      }
+    }
+
+    function speakVoiceAssistantPrompt(textToSpeak, onFinishedCallback = null) {
+      const cleanSpeech = String(textToSpeak || '').trim();
+      if (!cleanSpeech || voiceMuted || !('speechSynthesis' in window)) {
+        isVoiceSpeaking = false;
+        if (typeof onFinishedCallback === 'function') onFinishedCallback();
+        return;
+      }
+
+      cancelVoiceAssistantSpeech();
+      isVoiceSpeaking = true;
+
+      const statusEl = document.getElementById('voice-sale-status');
+      if (statusEl) statusEl.textContent = '🔊 L’assistant parle...';
+
+      let callbackCalled = false;
+      const done = () => {
+        if (callbackCalled) return;
+        callbackCalled = true;
+        isVoiceSpeaking = false;
+        if (typeof onFinishedCallback === 'function') onFinishedCallback();
+      };
+
+      try {
+        const utter = new SpeechSynthesisUtterance(cleanSpeech);
+        utter.lang = 'fr-CA';
+        const chosenVoice = getBestFrenchTtsVoice();
+        if (chosenVoice) utter.voice = chosenVoice;
+        utter.rate = 1.04;
+        utter.pitch = 1.0;
+
+        // Sécurité anti-blocage sur certains navigateurs mobiles (iOS Safari / Android)
+        const maxWaitMs = Math.min(9000, Math.max(2200, cleanSpeech.length * 85));
+        const fallbackTimer = setTimeout(done, maxWaitMs);
+
+        utter.onend = () => {
+          clearTimeout(fallbackTimer);
+          setTimeout(done, 160);
+        };
+        utter.onerror = () => {
+          clearTimeout(fallbackTimer);
+          done();
+        };
+
+        window.speechSynthesis.speak(utter);
+      } catch (e) {
+        done();
+      }
+    }
+
+    window.toggleVoiceMute = () => {
+      voiceMuted = !voiceMuted;
+      if (voiceMuted) cancelVoiceAssistantSpeech();
+      const btn = document.getElementById('btn-voice-mute-toggle');
+      if (btn) {
+        btn.textContent = voiceMuted ? '🔇 Muet' : '🔊 Voix';
+        btn.className = voiceMuted
+          ? 'px-2 py-0.5 text-[10px] font-extrabold rounded-lg bg-slate-200 text-slate-600 transition'
+          : 'px-2 py-0.5 text-[10px] font-extrabold rounded-lg bg-indigo-100 text-indigo-800 transition';
+      }
+    };
 
     function updateVoiceStepUI() {
       const step = VOICE_SALE_STEPS[currentVoiceStepIdx] || VOICE_SALE_STEPS[0];
       const badgeEl = document.getElementById('voice-step-badge');
       const promptEl = document.getElementById('voice-step-prompt');
       if (badgeEl) badgeEl.textContent = `Étape ${currentVoiceStepIdx + 1} / ${VOICE_SALE_STEPS.length}`;
-      if (promptEl) promptEl.textContent = step.prompt;
+      if (promptEl) promptEl.textContent = `🔊 ${step.prompt}`;
     }
 
-    function stopVoiceSaleDictation() {
+    function stopVoiceSaleDictation(keepSpeech = false) {
       isVoiceListening = false;
       clearTimeout(voiceStepAdvanceTimer);
+      if (!keepSpeech) cancelVoiceAssistantSpeech();
       if (activeVoiceRecognition) {
         try { activeVoiceRecognition.onend = null; activeVoiceRecognition.stop(); } catch (e) {}
         activeVoiceRecognition = null;
@@ -12685,7 +12889,7 @@
       clearTimeout(voiceStepAdvanceTimer);
       currentVoiceStepIdx = Math.max(0, currentVoiceStepIdx - 1);
       updateVoiceStepUI();
-      if (isVoiceListening) startListeningForCurrentStep();
+      if (isVoiceListening) startListeningForCurrentStep(true);
     };
 
     window.skipVoiceStep = () => {
@@ -12693,11 +12897,12 @@
       if (currentVoiceStepIdx < VOICE_SALE_STEPS.length - 1) {
         currentVoiceStepIdx++;
         updateVoiceStepUI();
-        if (isVoiceListening) startListeningForCurrentStep();
+        if (isVoiceListening) startListeningForCurrentStep(true);
       } else {
-        stopVoiceSaleDictation();
+        stopVoiceSaleDictation(true);
         const stEl = document.getElementById('voice-sale-status');
         if (stEl) stEl.textContent = '✓ Toutes les étapes sont complétées !';
+        speakVoiceAssistantPrompt('Toutes les étapes sont complétées. Vérifiez et appuyez sur enregistrer.');
       }
     };
 
@@ -12706,35 +12911,37 @@
       const tEl = document.getElementById('voice-sale-transcript');
       if (tEl) tEl.textContent = '';
       updateVoiceStepUI();
-      startListeningForCurrentStep();
+      startListeningForCurrentStep(true);
     };
 
     window.applyManualVoiceText = () => {
       const inEl = document.getElementById('voice-sale-manual-input');
       const val = inEl?.value || '';
       if (!val.trim()) return toast('Entrez ou dictez une réponse avant de valider.', 'error');
-      const ok = applySingleStepVoiceAnswer(currentVoiceStepIdx, val.trim());
-      if (ok) {
+      const res = applySingleStepVoiceAnswer(currentVoiceStepIdx, val.trim());
+      if (res.ok) {
         inEl.value = '';
         if (currentVoiceStepIdx < VOICE_SALE_STEPS.length - 1) {
           currentVoiceStepIdx++;
           updateVoiceStepUI();
+          speakVoiceAssistantPrompt(`${res.spokenAck ? res.spokenAck + '. ' : ''}${VOICE_SALE_STEPS[currentVoiceStepIdx].spokenPrompt}`);
         } else {
           const stEl = document.getElementById('voice-sale-status');
           if (stEl) stEl.textContent = '✓ Formulaire complété ! Vérifiez et enregistrez.';
+          speakVoiceAssistantPrompt(`${res.spokenAck ? res.spokenAck + '. ' : ''}Formulaire complété. Vous pouvez enregistrer la vente.`);
         }
       }
     };
 
     function parseFrenchSpokenNumbers(text) {
       let s = String(text || '').toLowerCase()
-        .replace(/\u00a0/g, ' ')
+        .replace(/ /g, ' ')
         .replace(/(\d+)\s*mille\s*et\s*demi/gi, (_, m) => String(parseInt(m, 10) * 1000 + 500))
         .replace(/(\d+)\s*mille\s*(\d)(?!\d)/gi, (_, m, c) => String(parseInt(m, 10) * 1000 + parseInt(c, 10) * 100))
-        .replace(/(\d+)\s*k\b/gi, (_, k) => String(parseInt(k, 10) * 1000))
+        .replace(/(\d+)\s*k/gi, (_, k) => String(parseInt(k, 10) * 1000))
         .replace(/dollars?|piastres?|cad|\$/gi, ' $ ')
-        .replace(/\b(?:et\s+)?(\d{1,2})\s*(?:sous|cents?)\b/gi, '.$1')
-        .replace(/\bvirgule\b|\bpoint\b/gi, '.');
+        .replace(/(?:et\s+)?(\d{1,2})\s*(?:sous|cents?)/gi, '.$1')
+        .replace(/virgule|point/gi, '.');
 
       const units = {
         'zero': 0, 'zéro': 0, 'un': 1, 'une': 1, 'deux': 2, 'trois': 3, 'quatre': 4,
@@ -12747,7 +12954,7 @@
         'quatre-vingt-dix': 90, 'quatre vingt dix': 90
       };
 
-      const wordGroupRegex = /\b((?:(?:zero|zéro|un|une|deux|trois|quatre|cinq|six|sept|huit|neuf|dix|onze|douze|treize|quatorze|quinze|seize|vingts?|trente|quarante|cinquante|soixante|quatre-vingts?|quatre\s+vingts?|cents?|mille|et|\d+)[\s-]*)+)\b/gi;
+      const wordGroupRegex = /((?:(?:zero|zéro|un|une|deux|trois|quatre|cinq|six|sept|huit|neuf|dix|onze|douze|treize|quatorze|quinze|seize|vingts?|trente|quarante|cinquante|soixante|quatre-vingts?|quatre\s+vingts?|cents?|mille|et|\d+)[\s-]*)+)/gi;
       s = s.replace(wordGroupRegex, (match) => {
         const clean = match.trim();
         if (!/(mille|cent|vingt|trente|quarante|cinquante|soixante|quatorze|quinze|douze|treize|seize|onze|dix|deux|trois|quatre|cinq|six|sept|huit|neuf)/i.test(clean)) {
@@ -12762,9 +12969,6 @@
           if (/^\d+$/.test(tok)) {
             current += parseInt(tok, 10);
             matchedAny = true;
-          } else if (units[tok] !== undefined) {
-            current += units[tok];
-            matchedAny = true;
           } else if (tok === 'cent' || tok === 'cents') {
             current = (current === 0 ? 1 : current) * 100;
             matchedAny = true;
@@ -12772,56 +12976,47 @@
             total += (current === 0 ? 1 : current) * 1000;
             current = 0;
             matchedAny = true;
+          } else if (units[tok] !== undefined) {
+            current += units[tok];
+            matchedAny = true;
           }
         }
-        if (!matchedAny) return match;
-        return ` ${total + current} `;
+        return matchedAny ? ` ${total + current} ` : match;
       });
 
-      s = s.replace(/\b(\d{1,3})\s+(\d{3})\b/g, '$1$2');
       return s;
     }
 
     function flashVoiceFilledField(el) {
       if (!el) return;
       el.classList.add('ring-2', 'ring-emerald-500', 'bg-emerald-50/40');
-      setTimeout(() => {
-        el.classList.remove('ring-2', 'ring-emerald-500', 'bg-emerald-50/40');
-      }, 2200);
+      setTimeout(() => el.classList.remove('ring-2', 'ring-emerald-500', 'bg-emerald-50/40'), 1400);
     }
 
     function formatTitleCaseName(raw) {
       return String(raw || '')
         .trim()
-        .replace(/\s+/g, ' ')
-        .split(' ')
+        .split(/\s+/)
         .map(part => part.split('-').map(sub => sub ? (sub[0].toUpperCase() + sub.slice(1).toLowerCase()) : '').join('-'))
         .join(' ');
     }
 
-    function matchExistingClientFuzzy(rawName, entId) {
-      const clean = String(rawName || '').trim();
+    function matchExistingClientFuzzy(spokenClient, entId) {
+      const clean = String(spokenClient || '').trim();
       if (!clean) return '';
-      const normIn = clean.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9\s-]/g, '').trim();
-      if (!normIn) return formatTitleCaseName(clean);
-
+      const normClean = clean.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
       const pool = (state.clients || []).filter(c => !entId || String(c.entreprise_id) === String(entId));
       const allPool = pool.length ? pool : (state.clients || []);
 
       const exact = allPool.find(c => {
-        const cn = String(c.nom || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
-        return cn === normIn;
+        const cn = String(c.nom || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+        return cn === normClean;
       });
       if (exact) return exact.nom;
 
-      const phonetic = (str) => str
-        .replace(/ay\b|et\b|er\b|ez\b|ais\b|ait\b/g, 'e')
-        .replace(/ault\b|aud\b|eau\b|aux\b/g, 'o')
-        .replace(/s\b/g, '');
-      const pIn = phonetic(normIn);
       const fuzzy = allPool.find(c => {
-        const cn = String(c.nom || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
-        return phonetic(cn) === pIn;
+        const cn = String(c.nom || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+        return cn.length >= 4 && (cn.includes(normClean) || normClean.includes(cn));
       });
       if (fuzzy) return fuzzy.nom;
 
@@ -12830,21 +13025,21 @@
 
     function applySingleStepVoiceAnswer(stepIdx, rawSpeech) {
       const step = VOICE_SALE_STEPS[stepIdx];
-      if (!step) return false;
+      if (!step) return { ok: false, spokenAck: '' };
       const original = String(rawSpeech || '').trim();
-      if (!original) return false;
-      const normNoAcc = original.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
+      if (!original) return { ok: false, spokenAck: '' };
+      const normNoAcc = original.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').trim();
       const summaryEl = document.getElementById('voice-sale-summary');
 
       // Commande vocale universelle "Passer" / "Suivant"
       if (/^(?:passer|suivant|prochain|skip)$/i.test(normNoAcc)) {
         if (summaryEl) summaryEl.textContent = 'Étape passée';
-        return true;
+        return { ok: true, spokenAck: 'Étape passée' };
       }
 
       if (step.key === 'entreprise') {
         const entSel = document.getElementById('vente-entreprise');
-        if (!entSel) return false;
+        if (!entSel) return { ok: false, spokenAck: '' };
         const entAliases = [
           { keys: ['toitex', 'toit ex', 'toit x', 'toit tex', 'toit tech', 'toitech', 'toiture'], match: 'toitex' },
           { keys: ['maclim', 'ma clim', 'ma clime', 'mac lim', 'maclime', 'clim'], match: 'maclim' },
@@ -12861,16 +13056,17 @@
           }
         }
         for (const opt of entSel.options) {
-          const optNorm = (opt.textContent || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+          const optNorm = (opt.textContent || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
           if ((targetKey && optNorm.includes(targetKey)) || (optNorm.length >= 3 && normNoAcc.includes(optNorm))) {
             entSel.value = opt.value;
             flashVoiceFilledField(entSel);
             if (typeof updateDrawerCommissionPreview === 'function') updateDrawerCommissionPreview();
-            if (summaryEl) summaryEl.textContent = `✓ Entreprise : ${opt.textContent.trim()}`;
-            return true;
+            const label = opt.textContent.trim();
+            if (summaryEl) summaryEl.textContent = `✓ Entreprise : ${label}`;
+            return { ok: true, spokenAck: label };
           }
         }
-        return false;
+        return { ok: false, spokenAck: '' };
       }
 
       if (step.key === 'client') {
@@ -12878,7 +13074,7 @@
           .replace(/^(?:le\s+client\s+est|client|cliente|nom\s+du\s+client|c'est|pour|chez)\s+/i, '')
           .replace(/[.,!?]+$/g, '')
           .trim();
-        if (cleanedClient.length < 2) return false;
+        if (cleanedClient.length < 2) return { ok: false, spokenAck: '' };
         const entId = document.getElementById('vente-entreprise')?.value || '';
         const formattedClient = matchExistingClientFuzzy(cleanedClient, entId);
         const cliEl = document.getElementById('vente-client-nom');
@@ -12888,7 +13084,7 @@
         }
         if (typeof updateDrawerCommissionPreview === 'function') updateDrawerCommissionPreview();
         if (summaryEl) summaryEl.textContent = `✓ Client : ${formattedClient}`;
-        return true;
+        return { ok: true, spokenAck: formattedClient };
       }
 
       if (step.key === 'montant') {
@@ -12896,7 +13092,7 @@
         const nums = Array.from(normalized.matchAll(/(\d+(?:[.,]\d{1,2})?)/g))
           .map(m => parseAmount(m[1]))
           .filter(n => !isNaN(n) && n > 0);
-        if (!nums.length) return false;
+        if (!nums.length) return { ok: false, spokenAck: '' };
         const amount = Math.max(...nums);
         const valEl = document.getElementById('vente-valeur');
         if (valEl) {
@@ -12905,50 +13101,51 @@
         }
         if (typeof updateDrawerCommissionPreview === 'function') updateDrawerCommissionPreview();
         if (summaryEl) summaryEl.textContent = `✓ Montant : ${fmtMoney(amount)}`;
-        return true;
+        const spokenAmt = `${Math.round(amount) === amount ? amount : amount.toFixed(2).replace('.', ' virgule ')} dollars`;
+        return { ok: true, spokenAck: spokenAmt };
       }
 
       if (step.key === 'type_kpi') {
         const kpiSel = document.getElementById('vente-type-kpi');
-        if (!kpiSel) return false;
-        if (/\b(?:suivi|suivis|relance)\b/i.test(normNoAcc)) {
+        if (!kpiSel) return { ok: false, spokenAck: '' };
+        if (/(?:suivi|suivis|relance)/i.test(normNoAcc)) {
           kpiSel.value = 'SUIVI';
           flashVoiceFilledField(kpiSel);
           if (summaryEl) summaryEl.textContent = '✓ Type : Suivi';
-          return true;
+          return { ok: true, spokenAck: 'Suivi' };
         }
-        if (/\b(?:ots|o\.t\.s|o t s|au ts|sur place|one time|place)\b/i.test(normNoAcc)) {
+        if (/(?:ots|o\.t\.s|o t s|au ts|sur place|one time|place)/i.test(normNoAcc)) {
           kpiSel.value = 'OTS';
           flashVoiceFilledField(kpiSel);
           if (summaryEl) summaryEl.textContent = '✓ Type : OTS';
-          return true;
+          return { ok: true, spokenAck: 'O T S' };
         }
-        return false;
+        return { ok: false, spokenAck: '' };
       }
 
       if (step.key === 'depot') {
         const depotSel = document.getElementById('vente-statut-depot');
-        if (!depotSel) return false;
-        if (/\b(?:recu|fait|paye|oui|virement|interac|cheque|acompte)\b/i.test(normNoAcc) && !/\b(?:pas|non|a confirmer|aucun)\b/i.test(normNoAcc)) {
+        if (!depotSel) return { ok: false, spokenAck: '' };
+        if (/(?:recu|fait|paye|oui|virement|interac|cheque|acompte)/i.test(normNoAcc) && !/(?:pas|non|a confirmer|aucun)/i.test(normNoAcc)) {
           depotSel.value = 'depot_recu';
           flashVoiceFilledField(depotSel);
           if (summaryEl) summaryEl.textContent = '✓ Dépôt : Dépôt reçu';
-          return true;
+          return { ok: true, spokenAck: 'Dépôt reçu' };
         }
-        if (/\b(?:confirmer|non|pas|aucun|attente|venir)\b/i.test(normNoAcc)) {
+        if (/(?:confirmer|non|pas|aucun|attente|venir)/i.test(normNoAcc)) {
           depotSel.value = 'a_confirmer';
           flashVoiceFilledField(depotSel);
           if (summaryEl) summaryEl.textContent = '✓ Dépôt : À confirmer';
-          return true;
+          return { ok: true, spokenAck: 'À confirmer' };
         }
-        return false;
+        return { ok: false, spokenAck: '' };
       }
 
       if (step.key === 'note') {
         const noteEl = document.getElementById('vente-note');
         if (/^(?:aucun|aucune|rien|non|pas de note|pas de contrat)$/i.test(normNoAcc)) {
           if (summaryEl) summaryEl.textContent = '✓ Aucune note ajoutée';
-          return true;
+          return { ok: true, spokenAck: 'Aucune note' };
         }
         let cleanNote = original
           .replace(/^(?:numero\s+de\s+contrat|numéro\s+de\s+contrat|contrat|note)\s*[:\-]?\s*/i, '')
@@ -12961,15 +13158,110 @@
           noteEl.value = cleanNote;
           flashVoiceFilledField(noteEl);
           if (summaryEl) summaryEl.textContent = `✓ Note : ${cleanNote}`;
-          return true;
+          return { ok: true, spokenAck: cleanNote };
         }
-        return false;
+        return { ok: false, spokenAck: '' };
       }
 
-      return false;
+      return { ok: false, spokenAck: '' };
     }
 
-    function startListeningForCurrentStep() {
+    function beginMicrophoneRecognitionForCurrentStep() {
+      const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SpeechRec || !isVoiceListening) return;
+
+      if (activeVoiceRecognition) {
+        try { activeVoiceRecognition.onend = null; activeVoiceRecognition.stop(); } catch (e) {}
+        activeVoiceRecognition = null;
+      }
+
+      const recognition = new SpeechRec();
+      recognition.lang = 'fr-CA';
+      recognition.continuous = false;
+      recognition.interimResults = true;
+      recognition.maxAlternatives = 1;
+
+      activeVoiceRecognition = recognition;
+
+      const statusEl = document.getElementById('voice-sale-status');
+      const transcriptEl = document.getElementById('voice-sale-transcript');
+      if (statusEl) statusEl.textContent = `🔴 À vous : ${VOICE_SALE_STEPS[currentVoiceStepIdx].hint}...`;
+      if (transcriptEl) transcriptEl.textContent = '';
+
+      let stepFinalText = '';
+
+      recognition.onresult = (event) => {
+        if (isVoiceSpeaking) return;
+        let interim = '';
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+          const piece = event.results[i][0].transcript;
+          if (event.results[i].isFinal) {
+            stepFinalText += (stepFinalText ? ' ' : '') + piece;
+          } else {
+            interim += piece;
+          }
+        }
+        const combined = (stepFinalText + ' ' + interim).trim();
+        if (transcriptEl) transcriptEl.textContent = combined ? `« ${combined} »` : '';
+
+        if (stepFinalText.trim()) {
+          const res = applySingleStepVoiceAnswer(currentVoiceStepIdx, stepFinalText.trim());
+          if (res.ok) {
+            try { recognition.onend = null; recognition.stop(); } catch (e) {}
+            activeVoiceRecognition = null;
+            clearTimeout(voiceStepAdvanceTimer);
+            voiceStepAdvanceTimer = setTimeout(() => {
+              if (!isVoiceListening) return;
+              if (currentVoiceStepIdx < VOICE_SALE_STEPS.length - 1) {
+                currentVoiceStepIdx++;
+                startListeningForCurrentStep(true, res.spokenAck);
+              } else {
+                stopVoiceSaleDictation(true);
+                if (statusEl) statusEl.textContent = '✅ Dictée terminée ! Vérifiez les champs et cliquez sur Enregistrer.';
+                const entNom = document.getElementById('vente-entreprise')?.selectedOptions?.[0]?.textContent?.trim() || '';
+                const cliNom = document.getElementById('vente-client-nom')?.value?.trim() || '';
+                const valNum = parseFloat(document.getElementById('vente-valeur')?.value || '0') || 0;
+                const recaps = [];
+                if (res.spokenAck) recaps.push(res.spokenAck + '.');
+                recaps.push(`Vente prête : ${entNom}, client ${cliNom}, ${Math.round(valNum)} dollars. Appuyez sur enregistrer.`);
+                speakVoiceAssistantPrompt(recaps.join(' '));
+              }
+            }, 300);
+          } else {
+            try { recognition.onend = null; recognition.stop(); } catch (e) {}
+            activeVoiceRecognition = null;
+            if (statusEl) statusEl.textContent = `⚠️ Non reconnu — répétez (${VOICE_SALE_STEPS[currentVoiceStepIdx].hint})`;
+            speakVoiceAssistantPrompt(`Je n'ai pas compris. ${VOICE_SALE_STEPS[currentVoiceStepIdx].spokenPrompt}`, () => {
+              if (isVoiceListening) beginMicrophoneRecognitionForCurrentStep();
+            });
+          }
+        }
+      };
+
+      recognition.onerror = (event) => {
+        if (event.error === 'not-allowed') {
+          toast('Autorisez l’accès au microphone dans les réglages de votre navigateur.', 'error');
+          stopVoiceSaleDictation();
+        } else if (event.error === 'no-speech' && isVoiceListening) {
+          if (statusEl) statusEl.textContent = `⏳ Aucune voix détectée — ${VOICE_SALE_STEPS[currentVoiceStepIdx].hint}...`;
+        }
+      };
+
+      recognition.onend = () => {
+        if (isVoiceListening && !isVoiceSpeaking && !stepFinalText.trim()) {
+          try { recognition.start(); } catch (e) { stopVoiceSaleDictation(); }
+        }
+      };
+
+      try {
+        recognition.start();
+      } catch (e) {
+        stopVoiceSaleDictation();
+        toast('Impossible de démarrer le micro : ' + e.message, 'error');
+      }
+    }
+
+    function startListeningForCurrentStep(speakQuestion = true, prefixAck = '') {
       const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
       if (!SpeechRec) {
         toast('Micro direct non supporté : utilisez le champ texte ci-dessous.', 'error');
@@ -12984,20 +13276,12 @@
         activeVoiceRecognition = null;
       }
 
-      const recognition = new SpeechRec();
-      recognition.lang = 'fr-CA';
-      recognition.continuous = false;
-      recognition.interimResults = true;
-      recognition.maxAlternatives = 1;
-
-      activeVoiceRecognition = recognition;
       isVoiceListening = true;
 
       const btn = document.getElementById('btn-voice-sale-toggle');
       const iconEl = document.getElementById('voice-sale-btn-icon');
       const lblEl = document.getElementById('voice-sale-btn-label');
       const liveBox = document.getElementById('voice-sale-live-box');
-      const statusEl = document.getElementById('voice-sale-status');
       const transcriptEl = document.getElementById('voice-sale-transcript');
 
       if (btn) {
@@ -13008,67 +13292,16 @@
       if (lblEl) lblEl.textContent = 'Arrêter';
       if (liveBox) liveBox.classList.remove('hidden');
       updateVoiceStepUI();
-      if (statusEl) statusEl.textContent = `🔴 ${VOICE_SALE_STEPS[currentVoiceStepIdx].hint}...`;
       if (transcriptEl) transcriptEl.textContent = '';
 
-      let stepFinalText = '';
-
-      recognition.onresult = (event) => {
-        let interim = '';
-        for (let i = event.resultIndex; i < event.results.length; i++) {
-          const piece = event.results[i][0].transcript;
-          if (event.results[i].isFinal) {
-            stepFinalText += (stepFinalText ? ' ' : '') + piece;
-          } else {
-            interim += piece;
-          }
-        }
-        const combined = (stepFinalText + ' ' + interim).trim();
-        if (transcriptEl) transcriptEl.textContent = combined ? `« ${combined} »` : '';
-
-        if (stepFinalText.trim()) {
-          const matched = applySingleStepVoiceAnswer(currentVoiceStepIdx, stepFinalText.trim());
-          if (matched) {
-            clearTimeout(voiceStepAdvanceTimer);
-            voiceStepAdvanceTimer = setTimeout(() => {
-              if (!isVoiceListening) return;
-              if (currentVoiceStepIdx < VOICE_SALE_STEPS.length - 1) {
-                currentVoiceStepIdx++;
-                startListeningForCurrentStep();
-              } else {
-                stopVoiceSaleDictation();
-                if (statusEl) statusEl.textContent = '✅ Dictée terminée ! Vérifiez les champs et cliquez sur Enregistrer.';
-              }
-            }, 650);
-          } else {
-            if (statusEl) statusEl.textContent = `⚠️ Non reconnu — répétez (${VOICE_SALE_STEPS[currentVoiceStepIdx].hint})`;
-          }
-        }
-      };
-
-      recognition.onerror = (event) => {
-        if (event.error === 'not-allowed') {
-          toast('Autorisez l’accès au microphone dans les réglages de votre navigateur.', 'error');
-          stopVoiceSaleDictation();
-        } else if (event.error === 'no-speech' && isVoiceListening) {
-          if (statusEl) statusEl.textContent = `⏳ Aucun son — parlez (${VOICE_SALE_STEPS[currentVoiceStepIdx].hint})`;
-        } else if (event.error !== 'aborted') {
-          stopVoiceSaleDictation();
-        }
-      };
-
-      recognition.onend = () => {
-        // Si l'utilisateur n'a pas arrêté et que l'étape n'a pas encore validé, relancer l'écoute pour l'étape courante
-        if (isVoiceListening && !stepFinalText.trim()) {
-          try { recognition.start(); } catch (e) { stopVoiceSaleDictation(); }
-        }
-      };
-
-      try {
-        recognition.start();
-      } catch (e) {
-        stopVoiceSaleDictation();
-        toast('Impossible de démarrer le micro : ' + e.message, 'error');
+      if (speakQuestion && !voiceMuted && 'speechSynthesis' in window) {
+        const stepObj = VOICE_SALE_STEPS[currentVoiceStepIdx];
+        const phrase = prefixAck ? `${prefixAck}. ${stepObj.spokenPrompt}` : stepObj.spokenPrompt;
+        speakVoiceAssistantPrompt(phrase, () => {
+          if (isVoiceListening) beginMicrophoneRecognitionForCurrentStep();
+        });
+      } else {
+        beginMicrophoneRecognitionForCurrentStep();
       }
     }
 
@@ -13080,7 +13313,7 @@
         return;
       }
       if (currentVoiceStepIdx >= VOICE_SALE_STEPS.length) currentVoiceStepIdx = 0;
-      startListeningForCurrentStep();
+      startListeningForCurrentStep(true);
     };
 
     const drawer = document.getElementById('sale-drawer-backdrop');
