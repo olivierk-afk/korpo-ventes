@@ -13328,8 +13328,9 @@
     const today = new Date();
     const currentMonthStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
     const currentDateStr = localYmd(today);
-    document.getElementById('filter-rep-month').value = currentMonthStr;
-    document.getElementById('filter-rep-date').value = currentDateStr;
+    if (document.getElementById('filter-rep-month')) document.getElementById('filter-rep-month').value = currentMonthStr;
+    if (document.getElementById('filter-rep-start')) document.getElementById('filter-rep-start').value = `${currentMonthStr}-01`;
+    if (document.getElementById('filter-rep-end')) document.getElementById('filter-rep-end').value = currentDateStr;
     document.getElementById('vente-date').value = currentDateStr;
     document.getElementById('vente-mois-comm').value = currentMonthStr;
 
@@ -13949,8 +13950,10 @@
       document.getElementById('admin-filter-rep').value = '';
       document.getElementById('admin-filter-ent').value = '';
       document.getElementById('admin-filter-period').value = 'all';
-      document.getElementById('admin-filter-month').value = '';
-      document.getElementById('admin-filter-date').value = '';
+      if (document.getElementById('admin-filter-month')) document.getElementById('admin-filter-month').value = '';
+      if (document.getElementById('admin-filter-start')) document.getElementById('admin-filter-start').value = '';
+      if (document.getElementById('admin-filter-end')) document.getElementById('admin-filter-end').value = '';
+      document.getElementById('admin-filter-custom-box')?.classList.add('hidden');
       document.getElementById('admin-filter-statut').value = '';
       syncAllMonthPickers();
       renderAdminVentes();
