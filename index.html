@@ -1434,6 +1434,9 @@
               1. Quelle est l'entreprise partenaire ?
             </div>
 
+            <!-- Choix rapides en 1 touche pour l'étape en cours -->
+            <div id="voice-quick-chips" class="hidden flex flex-wrap items-center gap-1.5 pt-0.5"></div>
+
             <!-- Ce que le micro entend en direct -->
             <div id="voice-sale-transcript" class="text-xs text-slate-700 italic min-h-[18px] break-words px-1"></div>
 
@@ -12706,7 +12709,7 @@
 
 
     // =========================================================================
-    // DICTÉE VOCALE MAINS LIBRES (QUESTIONS DITES À VOIX HAUTE — MODE CONDUITE)
+    // DICTÉE VOCALE HAUTE PRÉCISION (WEB SPEECH + BOUTONS TACTILES + PARSEUR)
     // =========================================================================
     let activeVoiceRecognition = null;
     let isVoiceListening = false;
@@ -12714,43 +12717,45 @@
     let voiceMuted = false;
     let currentVoiceStepIdx = 0;
     let voiceStepAdvanceTimer = null;
+    let voiceInterimIdleTimer = null;
+    let voiceLastHeardText = '';
 
     const VOICE_SALE_STEPS = [
       {
         key: 'entreprise',
         prompt: '1. Quelle est l’entreprise partenaire ?',
-        spokenPrompt: 'Quelle est l’entreprise partenaire ?',
-        hint: 'Dites le nom de la compagnie'
+        spokenPrompt: 'Quelle entreprise ?',
+        hint: 'Toitex, MaClim, MonSpray, VerreVDM ou Diamant Pro'
       },
       {
         key: 'client',
-        prompt: '2. Quel est le nom complet du client ?',
-        spokenPrompt: 'Quel est le nom complet du client ?',
-        hint: 'Dites prénom et nom du client'
+        prompt: '2. Quel est le nom du client ?',
+        spokenPrompt: 'Nom du client ?',
+        hint: 'Prénom et nom du client'
       },
       {
         key: 'montant',
-        prompt: '3. Quel est le montant de la vente avant taxes ?',
-        spokenPrompt: 'Quel est le montant de la vente avant taxes ?',
-        hint: 'Dites uniquement le montant'
+        prompt: '3. Quel est le montant avant taxes ?',
+        spokenPrompt: 'Quel montant ?',
+        hint: 'Ex. 14 500 dollars'
       },
       {
         key: 'type_kpi',
-        prompt: '4. Est-ce une vente OTS ou un Suivi ?',
-        spokenPrompt: 'Est-ce une vente O T S ou un suivi ?',
+        prompt: '4. Est-ce OTS ou Suivi ?',
+        spokenPrompt: 'O T S ou suivi ?',
         hint: 'Dites « OTS » ou « Suivi »'
       },
       {
         key: 'depot',
         prompt: '5. Le dépôt est-il reçu ou à confirmer ?',
-        spokenPrompt: 'Le dépôt est-il reçu ou à confirmer ?',
-        hint: 'Dites « Dépôt reçu » ou « À confirmer »'
+        spokenPrompt: 'Dépôt reçu ou à confirmer ?',
+        hint: 'Dites « Reçu » ou « À confirmer »'
       },
       {
         key: 'note',
-        prompt: '6. Numéro de contrat ou note ? (ou dites « Aucun »)',
-        spokenPrompt: 'Numéro de contrat ou note ? Sinon dites aucun.',
-        hint: 'Dites le numéro de contrat ou « Aucun »'
+        prompt: '6. Numéro de contrat ou note ? (ou « Aucun »)',
+        spokenPrompt: 'Numéro de contrat ? Sinon dites aucun.',
+        hint: 'Ex. Est 3505 ou « Aucun »'
       }
     ];
 
@@ -12802,16 +12807,16 @@
         utter.lang = 'fr-CA';
         const chosenVoice = getBestFrenchTtsVoice();
         if (chosenVoice) utter.voice = chosenVoice;
-        utter.rate = 1.04;
+        utter.rate = 1.08;
         utter.pitch = 1.0;
 
-        // Sécurité anti-blocage sur certains navigateurs mobiles (iOS Safari / Android)
-        const maxWaitMs = Math.min(9000, Math.max(2200, cleanSpeech.length * 85));
+        // Délai court pour relâcher le canal audio Bluetooth/haut-parleur avant d'ouvrir le micro
+        const maxWaitMs = Math.min(4500, Math.max(1200, cleanSpeech.length * 70));
         const fallbackTimer = setTimeout(done, maxWaitMs);
 
         utter.onend = () => {
           clearTimeout(fallbackTimer);
-          setTimeout(done, 160);
+          setTimeout(done, 260);
         };
         utter.onerror = () => {
           clearTimeout(fallbackTimer);
@@ -12836,17 +12841,86 @@
       }
     };
 
+    function renderVoiceQuickChoiceChips() {
+      const box = document.getElementById('voice-quick-chips');
+      if (!box) return;
+      const step = VOICE_SALE_STEPS[currentVoiceStepIdx];
+      if (!step) { box.innerHTML = ''; return; }
+
+      let chips = [];
+      if (step.key === 'entreprise') {
+        const entSel = document.getElementById('vente-entreprise');
+        chips = Array.from(entSel?.options || []).map(o => ({
+          label: o.textContent.trim(),
+          say: o.textContent.trim()
+        }));
+      } else if (step.key === 'type_kpi') {
+        chips = [
+          { label: '⚡ OTS (Sur place)', say: 'OTS' },
+          { label: '🔄 Suivi', say: 'Suivi' }
+        ];
+      } else if (step.key === 'depot') {
+        chips = [
+          { label: '✅ Dépôt reçu', say: 'Dépôt reçu' },
+          { label: '⏳ À confirmer', say: 'À confirmer' }
+        ];
+      } else if (step.key === 'note') {
+        chips = [
+          { label: 'Aucun', say: 'Aucun' }
+        ];
+      }
+
+      if (!chips.length) {
+        box.classList.add('hidden');
+        box.innerHTML = '';
+        return;
+      }
+      box.classList.remove('hidden');
+      box.innerHTML = chips.map(c => `
+        <button type="button" onclick="pickVoiceQuickChoice('${esc(c.say)}')" class="px-2.5 py-1 text-[11px] font-extrabold rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-900 border border-indigo-200 transition active:scale-95">
+          ${esc(c.label)}
+        </button>
+      `).join('');
+    }
+
+    window.pickVoiceQuickChoice = (spokenValue) => {
+      clearTimeout(voiceStepAdvanceTimer);
+      clearTimeout(voiceInterimIdleTimer);
+      const res = applySingleStepVoiceAnswer(currentVoiceStepIdx, [spokenValue]);
+      if (res.ok) {
+        if (activeVoiceRecognition) {
+          try { activeVoiceRecognition.onend = null; activeVoiceRecognition.stop(); } catch (e) {}
+          activeVoiceRecognition = null;
+        }
+        if (currentVoiceStepIdx < VOICE_SALE_STEPS.length - 1) {
+          currentVoiceStepIdx++;
+          if (isVoiceListening) {
+            startListeningForCurrentStep(true, res.spokenAck);
+          } else {
+            updateVoiceStepUI();
+          }
+        } else {
+          stopVoiceSaleDictation(true);
+          const statusEl = document.getElementById('voice-sale-status');
+          if (statusEl) statusEl.textContent = '✅ Dictée terminée ! Cliquez sur Enregistrer.';
+          speakVoiceAssistantPrompt(`${res.spokenAck}. Formulaire prêt.`);
+        }
+      }
+    };
+
     function updateVoiceStepUI() {
       const step = VOICE_SALE_STEPS[currentVoiceStepIdx] || VOICE_SALE_STEPS[0];
       const badgeEl = document.getElementById('voice-step-badge');
       const promptEl = document.getElementById('voice-step-prompt');
       if (badgeEl) badgeEl.textContent = `Étape ${currentVoiceStepIdx + 1} / ${VOICE_SALE_STEPS.length}`;
       if (promptEl) promptEl.textContent = `🔊 ${step.prompt}`;
+      renderVoiceQuickChoiceChips();
     }
 
     function stopVoiceSaleDictation(keepSpeech = false) {
       isVoiceListening = false;
       clearTimeout(voiceStepAdvanceTimer);
+      clearTimeout(voiceInterimIdleTimer);
       if (!keepSpeech) cancelVoiceAssistantSpeech();
       if (activeVoiceRecognition) {
         try { activeVoiceRecognition.onend = null; activeVoiceRecognition.stop(); } catch (e) {}
@@ -12876,6 +12950,7 @@
 
     window.clearVoiceSaleTranscript = () => {
       currentVoiceStepIdx = 0;
+      voiceLastHeardText = '';
       const tEl = document.getElementById('voice-sale-transcript');
       const sEl = document.getElementById('voice-sale-summary');
       const mEl = document.getElementById('voice-sale-manual-input');
@@ -12887,6 +12962,7 @@
 
     window.prevVoiceStep = () => {
       clearTimeout(voiceStepAdvanceTimer);
+      clearTimeout(voiceInterimIdleTimer);
       currentVoiceStepIdx = Math.max(0, currentVoiceStepIdx - 1);
       updateVoiceStepUI();
       if (isVoiceListening) startListeningForCurrentStep(true);
@@ -12894,6 +12970,7 @@
 
     window.skipVoiceStep = () => {
       clearTimeout(voiceStepAdvanceTimer);
+      clearTimeout(voiceInterimIdleTimer);
       if (currentVoiceStepIdx < VOICE_SALE_STEPS.length - 1) {
         currentVoiceStepIdx++;
         updateVoiceStepUI();
@@ -12902,12 +12979,14 @@
         stopVoiceSaleDictation(true);
         const stEl = document.getElementById('voice-sale-status');
         if (stEl) stEl.textContent = '✓ Toutes les étapes sont complétées !';
-        speakVoiceAssistantPrompt('Toutes les étapes sont complétées. Vérifiez et appuyez sur enregistrer.');
+        speakVoiceAssistantPrompt('Formulaire prêt. Appuyez sur enregistrer.');
       }
     };
 
     window.retryCurrentVoiceStep = () => {
       clearTimeout(voiceStepAdvanceTimer);
+      clearTimeout(voiceInterimIdleTimer);
+      voiceLastHeardText = '';
       const tEl = document.getElementById('voice-sale-transcript');
       if (tEl) tEl.textContent = '';
       updateVoiceStepUI();
@@ -12918,7 +12997,7 @@
       const inEl = document.getElementById('voice-sale-manual-input');
       const val = inEl?.value || '';
       if (!val.trim()) return toast('Entrez ou dictez une réponse avant de valider.', 'error');
-      const res = applySingleStepVoiceAnswer(currentVoiceStepIdx, val.trim());
+      const res = applySingleStepVoiceAnswer(currentVoiceStepIdx, [val.trim()]);
       if (res.ok) {
         inEl.value = '';
         if (currentVoiceStepIdx < VOICE_SALE_STEPS.length - 1) {
@@ -12928,10 +13007,36 @@
         } else {
           const stEl = document.getElementById('voice-sale-status');
           if (stEl) stEl.textContent = '✓ Formulaire complété ! Vérifiez et enregistrez.';
-          speakVoiceAssistantPrompt(`${res.spokenAck ? res.spokenAck + '. ' : ''}Formulaire complété. Vous pouvez enregistrer la vente.`);
+          speakVoiceAssistantPrompt(`${res.spokenAck ? res.spokenAck + '. ' : ''}Formulaire prêt.`);
         }
       }
     };
+
+    function normalizePhoneticFr(str) {
+      return String(str || '')
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[̀-ͯ]/g, '')
+        .replace(/[^a-z0-9\s-]/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+    }
+
+    function levenshteinDistance(a, b) {
+      const s = normalizePhoneticFr(a);
+      const t = normalizePhoneticFr(b);
+      if (!s) return t.length;
+      if (!t) return s.length;
+      const dp = Array.from({ length: s.length + 1 }, (_, i) => [i]);
+      for (let j = 1; j <= t.length; j++) dp[0][j] = j;
+      for (let i = 1; i <= s.length; i++) {
+        for (let j = 1; j <= t.length; j++) {
+          const cost = s[i - 1] === t[j - 1] ? 0 : 1;
+          dp[i][j] = Math.min(dp[i - 1][j] + 1, dp[i][j - 1] + 1, dp[i - 1][j - 1] + cost);
+        }
+      }
+      return dp[s.length][t.length];
+    }
 
     function parseFrenchSpokenNumbers(text) {
       let s = String(text || '').toLowerCase()
@@ -12942,6 +13047,9 @@
         .replace(/dollars?|piastres?|cad|\$/gi, ' $ ')
         .replace(/(?:et\s+)?(\d{1,2})\s*(?:sous|cents?)/gi, '.$1')
         .replace(/virgule|point/gi, '.');
+
+      // Regrouper les chiffres séparés par des espaces prononcés ex: "14 500" ou "8 900"
+      s = s.replace(/(\d{1,3})\s+(\d{3})/g, '$1$2');
 
       const units = {
         'zero': 0, 'zéro': 0, 'un': 1, 'une': 1, 'deux': 2, 'trois': 3, 'quatre': 4,
@@ -13004,74 +13112,101 @@
     function matchExistingClientFuzzy(spokenClient, entId) {
       const clean = String(spokenClient || '').trim();
       if (!clean) return '';
-      const normClean = clean.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+      const normClean = normalizePhoneticFr(clean);
       const pool = (state.clients || []).filter(c => !entId || String(c.entreprise_id) === String(entId));
       const allPool = pool.length ? pool : (state.clients || []);
 
-      const exact = allPool.find(c => {
-        const cn = String(c.nom || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
-        return cn === normClean;
-      });
+      const exact = allPool.find(c => normalizePhoneticFr(c.nom) === normClean);
       if (exact) return exact.nom;
 
       const fuzzy = allPool.find(c => {
-        const cn = String(c.nom || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
-        return cn.length >= 4 && (cn.includes(normClean) || normClean.includes(cn));
+        const cn = normalizePhoneticFr(c.nom);
+        if (cn.length < 4) return false;
+        if (cn.includes(normClean) || normClean.includes(cn)) return true;
+        return levenshteinDistance(cn, normClean) <= 2;
       });
       if (fuzzy) return fuzzy.nom;
 
       return formatTitleCaseName(clean);
     }
 
-    function applySingleStepVoiceAnswer(stepIdx, rawSpeech) {
+    function matchEntrepriseFromAlternatives(alternativesList) {
+      const entSel = document.getElementById('vente-entreprise');
+      if (!entSel) return null;
+
+      const entAliases = [
+        { keys: ['toitex', 'toit ex', 'toit x', 'toit tex', 'toit tech', 'toitech', 'toiture', 'toi tex', 'toit text', 'toit texte', 'toit', 'tex'], match: 'toitex' },
+        { keys: ['maclim', 'ma clim', 'ma clime', 'mac lim', 'maclime', 'clim', 'clime', 'climatisation', 'macleen', 'mcclim', 'ma clean'], match: 'maclim' },
+        { keys: ['monspray', 'mon spray', 'mon spre', 'mons pre', 'spray', 'mon pre', 'mon pret', 'mon sprey', 'mon esprit'], match: 'monspray' },
+        { keys: ['verrevdm', 'verre vdm', 'vers vdm', 'vdm', 'v d m', 'cloture', 'verre', 'vers', 'bden', 'bdm', 'vtm', 'vbm'], match: 'verrevdm' },
+        { keys: ['diamant pro', 'groupe diamant', 'diamant', 'diamants', 'pro'], match: 'diamant' },
+        { keys: ['ornithorynque', 'ornitho'], match: 'ornithorynque' }
+      ];
+
+      // 1. Vérifier les alias phonétiques sur toutes les alternatives retournées par le moteur vocal
+      for (const alt of alternativesList) {
+        const normNoAcc = normalizePhoneticFr(alt);
+        if (!normNoAcc) continue;
+        for (const item of entAliases) {
+          if (item.keys.some(k => normNoAcc.includes(k))) {
+            for (const opt of entSel.options) {
+              const optNorm = normalizePhoneticFr(opt.textContent);
+              if (optNorm.includes(item.match)) return opt;
+            }
+          }
+        }
+      }
+
+      // 2. Comparaison par distance orthographique/phonétique (tolère 1 à 2 lettres d'erreur)
+      for (const alt of alternativesList) {
+        const words = normalizePhoneticFr(alt).split(' ').filter(w => w.length >= 3);
+        for (const opt of entSel.options) {
+          const optNorm = normalizePhoneticFr(opt.textContent);
+          if (!optNorm) continue;
+          if (optNorm.includes(normalizePhoneticFr(alt)) || normalizePhoneticFr(alt).includes(optNorm)) return opt;
+          for (const w of words) {
+            if (levenshteinDistance(w, optNorm) <= 2) return opt;
+          }
+        }
+      }
+
+      return null;
+    }
+
+    function applySingleStepVoiceAnswer(stepIdx, rawAlternatives) {
+      const alts = Array.isArray(rawAlternatives)
+        ? rawAlternatives.map(x => String(x || '').trim()).filter(Boolean)
+        : [String(rawAlternatives || '').trim()].filter(Boolean);
       const step = VOICE_SALE_STEPS[stepIdx];
-      if (!step) return { ok: false, spokenAck: '' };
-      const original = String(rawSpeech || '').trim();
-      if (!original) return { ok: false, spokenAck: '' };
-      const normNoAcc = original.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').trim();
+      if (!step || !alts.length) return { ok: false, spokenAck: '' };
+
+      const primaryOriginal = alts[0];
+      const primaryNorm = normalizePhoneticFr(primaryOriginal);
       const summaryEl = document.getElementById('voice-sale-summary');
 
       // Commande vocale universelle "Passer" / "Suivant"
-      if (/^(?:passer|suivant|prochain|skip)$/i.test(normNoAcc)) {
+      if (alts.some(a => /^(?:passer|passe|suivant|prochain|skip)$/i.test(normalizePhoneticFr(a)))) {
         if (summaryEl) summaryEl.textContent = 'Étape passée';
-        return { ok: true, spokenAck: 'Étape passée' };
+        return { ok: true, spokenAck: 'Passé' };
       }
 
       if (step.key === 'entreprise') {
         const entSel = document.getElementById('vente-entreprise');
-        if (!entSel) return { ok: false, spokenAck: '' };
-        const entAliases = [
-          { keys: ['toitex', 'toit ex', 'toit x', 'toit tex', 'toit tech', 'toitech', 'toiture'], match: 'toitex' },
-          { keys: ['maclim', 'ma clim', 'ma clime', 'mac lim', 'maclime', 'clim'], match: 'maclim' },
-          { keys: ['monspray', 'mon spray', 'mon spre', 'mons pre', 'spray'], match: 'monspray' },
-          { keys: ['verrevdm', 'verre vdm', 'vers vdm', 'vdm', 'v d m', 'cloture', 'verre'], match: 'verrevdm' },
-          { keys: ['diamant pro', 'groupe diamant', 'diamant'], match: 'diamant' },
-          { keys: ['ornithorynque'], match: 'ornithorynque' }
-        ];
-        let targetKey = '';
-        for (const item of entAliases) {
-          if (item.keys.some(k => normNoAcc.includes(k))) {
-            targetKey = item.match;
-            break;
-          }
-        }
-        for (const opt of entSel.options) {
-          const optNorm = (opt.textContent || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
-          if ((targetKey && optNorm.includes(targetKey)) || (optNorm.length >= 3 && normNoAcc.includes(optNorm))) {
-            entSel.value = opt.value;
-            flashVoiceFilledField(entSel);
-            if (typeof updateDrawerCommissionPreview === 'function') updateDrawerCommissionPreview();
-            const label = opt.textContent.trim();
-            if (summaryEl) summaryEl.textContent = `✓ Entreprise : ${label}`;
-            return { ok: true, spokenAck: label };
-          }
+        const matchedOpt = matchEntrepriseFromAlternatives(alts);
+        if (entSel && matchedOpt) {
+          entSel.value = matchedOpt.value;
+          flashVoiceFilledField(entSel);
+          if (typeof updateDrawerCommissionPreview === 'function') updateDrawerCommissionPreview();
+          const label = matchedOpt.textContent.trim();
+          if (summaryEl) summaryEl.textContent = `✓ Entreprise : ${label}`;
+          return { ok: true, spokenAck: label };
         }
         return { ok: false, spokenAck: '' };
       }
 
       if (step.key === 'client') {
-        const cleanedClient = original
-          .replace(/^(?:le\s+client\s+est|client|cliente|nom\s+du\s+client|c'est|pour|chez)\s+/i, '')
+        const cleanedClient = primaryOriginal
+          .replace(/^(?:le\s+client\s+est|client|cliente|nom\s+du\s+client|c'est|pour|chez|monsieur|madame|m\.|mme)\s+/i, '')
           .replace(/[.,!?]+$/g, '')
           .trim();
         if (cleanedClient.length < 2) return { ok: false, spokenAck: '' };
@@ -13088,37 +13223,44 @@
       }
 
       if (step.key === 'montant') {
-        const normalized = parseFrenchSpokenNumbers(original);
-        const nums = Array.from(normalized.matchAll(/(\d+(?:[.,]\d{1,2})?)/g))
-          .map(m => parseAmount(m[1]))
-          .filter(n => !isNaN(n) && n > 0);
-        if (!nums.length) return { ok: false, spokenAck: '' };
-        const amount = Math.max(...nums);
-        const valEl = document.getElementById('vente-valeur');
-        if (valEl) {
-          valEl.value = amount.toFixed(2).replace(/\.00$/, '');
-          flashVoiceFilledField(valEl);
+        for (const alt of alts) {
+          const normalized = parseFrenchSpokenNumbers(alt);
+          const nums = Array.from(normalized.matchAll(/(\d+(?:[.,]\d{1,2})?)/g))
+            .map(m => parseAmount(m[1]))
+            .filter(n => !isNaN(n) && n > 0);
+          if (nums.length) {
+            const amount = Math.max(...nums);
+            const valEl = document.getElementById('vente-valeur');
+            if (valEl) {
+              valEl.value = amount.toFixed(2).replace(/\.00$/, '');
+              flashVoiceFilledField(valEl);
+            }
+            if (typeof updateDrawerCommissionPreview === 'function') updateDrawerCommissionPreview();
+            if (summaryEl) summaryEl.textContent = `✓ Montant : ${fmtMoney(amount)}`;
+            const spokenAmt = `${Math.round(amount) === amount ? amount : amount.toFixed(2).replace('.', ' virgule ')} dollars`;
+            return { ok: true, spokenAck: spokenAmt };
+          }
         }
-        if (typeof updateDrawerCommissionPreview === 'function') updateDrawerCommissionPreview();
-        if (summaryEl) summaryEl.textContent = `✓ Montant : ${fmtMoney(amount)}`;
-        const spokenAmt = `${Math.round(amount) === amount ? amount : amount.toFixed(2).replace('.', ' virgule ')} dollars`;
-        return { ok: true, spokenAck: spokenAmt };
+        return { ok: false, spokenAck: '' };
       }
 
       if (step.key === 'type_kpi') {
         const kpiSel = document.getElementById('vente-type-kpi');
         if (!kpiSel) return { ok: false, spokenAck: '' };
-        if (/(?:suivi|suivis|relance)/i.test(normNoAcc)) {
-          kpiSel.value = 'SUIVI';
-          flashVoiceFilledField(kpiSel);
-          if (summaryEl) summaryEl.textContent = '✓ Type : Suivi';
-          return { ok: true, spokenAck: 'Suivi' };
-        }
-        if (/(?:ots|o\.t\.s|o t s|au ts|sur place|one time|place)/i.test(normNoAcc)) {
-          kpiSel.value = 'OTS';
-          flashVoiceFilledField(kpiSel);
-          if (summaryEl) summaryEl.textContent = '✓ Type : OTS';
-          return { ok: true, spokenAck: 'O T S' };
+        for (const alt of alts) {
+          const n = normalizePhoneticFr(alt);
+          if (/(?:suivi|suivis|relance|suivre|suivie|deuxieme|2e)/i.test(n)) {
+            kpiSel.value = 'SUIVI';
+            flashVoiceFilledField(kpiSel);
+            if (summaryEl) summaryEl.textContent = '✓ Type : Suivi';
+            return { ok: true, spokenAck: 'Suivi' };
+          }
+          if (/(?:ots|o t s|au ts|aux ts|au t s|haute s|hotesse|auto|ts|sur place|one time|place|premier|1er)/i.test(n)) {
+            kpiSel.value = 'OTS';
+            flashVoiceFilledField(kpiSel);
+            if (summaryEl) summaryEl.textContent = '✓ Type : OTS';
+            return { ok: true, spokenAck: 'O T S' };
+          }
         }
         return { ok: false, spokenAck: '' };
       }
@@ -13126,28 +13268,31 @@
       if (step.key === 'depot') {
         const depotSel = document.getElementById('vente-statut-depot');
         if (!depotSel) return { ok: false, spokenAck: '' };
-        if (/(?:recu|fait|paye|oui|virement|interac|cheque|acompte)/i.test(normNoAcc) && !/(?:pas|non|a confirmer|aucun)/i.test(normNoAcc)) {
-          depotSel.value = 'depot_recu';
-          flashVoiceFilledField(depotSel);
-          if (summaryEl) summaryEl.textContent = '✓ Dépôt : Dépôt reçu';
-          return { ok: true, spokenAck: 'Dépôt reçu' };
-        }
-        if (/(?:confirmer|non|pas|aucun|attente|venir)/i.test(normNoAcc)) {
-          depotSel.value = 'a_confirmer';
-          flashVoiceFilledField(depotSel);
-          if (summaryEl) summaryEl.textContent = '✓ Dépôt : À confirmer';
-          return { ok: true, spokenAck: 'À confirmer' };
+        for (const alt of alts) {
+          const n = normalizePhoneticFr(alt);
+          if (/(?:confirmer|non|pas|aucun|attente|venir|pas recu)/i.test(n)) {
+            depotSel.value = 'a_confirmer';
+            flashVoiceFilledField(depotSel);
+            if (summaryEl) summaryEl.textContent = '✓ Dépôt : À confirmer';
+            return { ok: true, spokenAck: 'À confirmer' };
+          }
+          if (/(?:recu|recue|fait|paye|oui|virement|interac|cheque|acompte|depot recu|ok)/i.test(n)) {
+            depotSel.value = 'depot_recu';
+            flashVoiceFilledField(depotSel);
+            if (summaryEl) summaryEl.textContent = '✓ Dépôt : Dépôt reçu';
+            return { ok: true, spokenAck: 'Dépôt reçu' };
+          }
         }
         return { ok: false, spokenAck: '' };
       }
 
       if (step.key === 'note') {
         const noteEl = document.getElementById('vente-note');
-        if (/^(?:aucun|aucune|rien|non|pas de note|pas de contrat)$/i.test(normNoAcc)) {
+        if (/^(?:aucun|aucune|rien|non|pas de note|pas de contrat|zero)$/i.test(primaryNorm)) {
           if (summaryEl) summaryEl.textContent = '✓ Aucune note ajoutée';
-          return { ok: true, spokenAck: 'Aucune note' };
+          return { ok: true, spokenAck: 'Aucun' };
         }
-        let cleanNote = original
+        let cleanNote = primaryOriginal
           .replace(/^(?:numero\s+de\s+contrat|numéro\s+de\s+contrat|contrat|note)\s*[:\-]?\s*/i, '')
           .replace(/[.,!?]+$/g, '')
           .trim();
@@ -13166,6 +13311,47 @@
       return { ok: false, spokenAck: '' };
     }
 
+    function handleStepRecognizedAlternatives(alternativesList) {
+      if (!alternativesList || !alternativesList.length) return;
+      clearTimeout(voiceInterimIdleTimer);
+      const statusEl = document.getElementById('voice-sale-status');
+      const res = applySingleStepVoiceAnswer(currentVoiceStepIdx, alternativesList);
+
+      if (res.ok) {
+        if (activeVoiceRecognition) {
+          try { activeVoiceRecognition.onend = null; activeVoiceRecognition.stop(); } catch (e) {}
+          activeVoiceRecognition = null;
+        }
+        clearTimeout(voiceStepAdvanceTimer);
+        voiceStepAdvanceTimer = setTimeout(() => {
+          if (!isVoiceListening) return;
+          if (currentVoiceStepIdx < VOICE_SALE_STEPS.length - 1) {
+            currentVoiceStepIdx++;
+            startListeningForCurrentStep(true, res.spokenAck);
+          } else {
+            stopVoiceSaleDictation(true);
+            if (statusEl) statusEl.textContent = '✅ Dictée terminée ! Vérifiez et cliquez sur Enregistrer.';
+            const entNom = document.getElementById('vente-entreprise')?.selectedOptions?.[0]?.textContent?.trim() || '';
+            const cliNom = document.getElementById('vente-client-nom')?.value?.trim() || '';
+            const valNum = parseFloat(document.getElementById('vente-valeur')?.value || '0') || 0;
+            const recaps = [];
+            if (res.spokenAck) recaps.push(res.spokenAck + '.');
+            recaps.push(`Vente prête : ${entNom}, client ${cliNom}, ${Math.round(valNum)} dollars.`);
+            speakVoiceAssistantPrompt(recaps.join(' '));
+          }
+        }, 250);
+      } else {
+        if (activeVoiceRecognition) {
+          try { activeVoiceRecognition.onend = null; activeVoiceRecognition.stop(); } catch (e) {}
+          activeVoiceRecognition = null;
+        }
+        if (statusEl) statusEl.textContent = `⚠️ Non compris (« ${alternativesList[0]} ») — répétez ou touchez un choix`;
+        speakVoiceAssistantPrompt(`Je n'ai pas compris. ${VOICE_SALE_STEPS[currentVoiceStepIdx].spokenPrompt}`, () => {
+          if (isVoiceListening) beginMicrophoneRecognitionForCurrentStep();
+        });
+      }
+    }
+
     function beginMicrophoneRecognitionForCurrentStep() {
       const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
       if (!SpeechRec || !isVoiceListening) return;
@@ -13179,66 +13365,59 @@
       recognition.lang = 'fr-CA';
       recognition.continuous = false;
       recognition.interimResults = true;
-      recognition.maxAlternatives = 1;
+      recognition.maxAlternatives = 5;
 
       activeVoiceRecognition = recognition;
+      voiceLastHeardText = '';
 
       const statusEl = document.getElementById('voice-sale-status');
       const transcriptEl = document.getElementById('voice-sale-transcript');
       if (statusEl) statusEl.textContent = `🔴 À vous : ${VOICE_SALE_STEPS[currentVoiceStepIdx].hint}...`;
       if (transcriptEl) transcriptEl.textContent = '';
 
-      let stepFinalText = '';
+      let hasProcessedFinal = false;
 
       recognition.onresult = (event) => {
-        if (isVoiceSpeaking) return;
+        if (isVoiceSpeaking || hasProcessedFinal) return;
         let interim = '';
+        let finalAlternatives = [];
+
         for (let i = event.resultIndex; i < event.results.length; i++) {
-          const piece = event.results[i][0].transcript;
-          if (event.results[i].isFinal) {
-            stepFinalText += (stepFinalText ? ' ' : '') + piece;
+          const resItem = event.results[i];
+          if (resItem.isFinal) {
+            for (let a = 0; a < resItem.length; a++) {
+              const t = String(resItem[a].transcript || '').trim();
+              if (t && !finalAlternatives.includes(t)) finalAlternatives.push(t);
+            }
           } else {
-            interim += piece;
+            interim += resItem[0].transcript;
           }
         }
-        const combined = (stepFinalText + ' ' + interim).trim();
-        if (transcriptEl) transcriptEl.textContent = combined ? `« ${combined} »` : '';
 
-        if (stepFinalText.trim()) {
-          const res = applySingleStepVoiceAnswer(currentVoiceStepIdx, stepFinalText.trim());
-          if (res.ok) {
-            try { recognition.onend = null; recognition.stop(); } catch (e) {}
-            activeVoiceRecognition = null;
-            clearTimeout(voiceStepAdvanceTimer);
-            voiceStepAdvanceTimer = setTimeout(() => {
-              if (!isVoiceListening) return;
-              if (currentVoiceStepIdx < VOICE_SALE_STEPS.length - 1) {
-                currentVoiceStepIdx++;
-                startListeningForCurrentStep(true, res.spokenAck);
-              } else {
-                stopVoiceSaleDictation(true);
-                if (statusEl) statusEl.textContent = '✅ Dictée terminée ! Vérifiez les champs et cliquez sur Enregistrer.';
-                const entNom = document.getElementById('vente-entreprise')?.selectedOptions?.[0]?.textContent?.trim() || '';
-                const cliNom = document.getElementById('vente-client-nom')?.value?.trim() || '';
-                const valNum = parseFloat(document.getElementById('vente-valeur')?.value || '0') || 0;
-                const recaps = [];
-                if (res.spokenAck) recaps.push(res.spokenAck + '.');
-                recaps.push(`Vente prête : ${entNom}, client ${cliNom}, ${Math.round(valNum)} dollars. Appuyez sur enregistrer.`);
-                speakVoiceAssistantPrompt(recaps.join(' '));
-              }
-            }, 300);
-          } else {
-            try { recognition.onend = null; recognition.stop(); } catch (e) {}
-            activeVoiceRecognition = null;
-            if (statusEl) statusEl.textContent = `⚠️ Non reconnu — répétez (${VOICE_SALE_STEPS[currentVoiceStepIdx].hint})`;
-            speakVoiceAssistantPrompt(`Je n'ai pas compris. ${VOICE_SALE_STEPS[currentVoiceStepIdx].spokenPrompt}`, () => {
-              if (isVoiceListening) beginMicrophoneRecognitionForCurrentStep();
-            });
-          }
+        const displayHeard = (finalAlternatives[0] || interim).trim();
+        if (displayHeard) {
+          voiceLastHeardText = displayHeard;
+          if (transcriptEl) transcriptEl.textContent = `« ${displayHeard} »`;
+        }
+
+        if (finalAlternatives.length > 0) {
+          hasProcessedFinal = true;
+          handleStepRecognizedAlternatives(finalAlternatives);
+        } else if (interim.trim()) {
+          // Filet de sécurité mobile : si le navigateur fige le texte intermédiaire sans émettre `isFinal` après 1.4s, le valider automatiquement
+          clearTimeout(voiceInterimIdleTimer);
+          const capturedInterim = interim.trim();
+          voiceInterimIdleTimer = setTimeout(() => {
+            if (!hasProcessedFinal && isVoiceListening && !isVoiceSpeaking && capturedInterim) {
+              hasProcessedFinal = true;
+              handleStepRecognizedAlternatives([capturedInterim]);
+            }
+          }, 1400);
         }
       };
 
       recognition.onerror = (event) => {
+        clearTimeout(voiceInterimIdleTimer);
         if (event.error === 'not-allowed') {
           toast('Autorisez l’accès au microphone dans les réglages de votre navigateur.', 'error');
           stopVoiceSaleDictation();
@@ -13248,7 +13427,13 @@
       };
 
       recognition.onend = () => {
-        if (isVoiceListening && !isVoiceSpeaking && !stepFinalText.trim()) {
+        clearTimeout(voiceInterimIdleTimer);
+        if (!hasProcessedFinal && voiceLastHeardText.trim() && isVoiceListening && !isVoiceSpeaking) {
+          hasProcessedFinal = true;
+          handleStepRecognizedAlternatives([voiceLastHeardText.trim()]);
+          return;
+        }
+        if (isVoiceListening && !isVoiceSpeaking && !hasProcessedFinal) {
           try { recognition.start(); } catch (e) { stopVoiceSaleDictation(); }
         }
       };
@@ -13264,9 +13449,12 @@
     function startListeningForCurrentStep(speakQuestion = true, prefixAck = '') {
       const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
       if (!SpeechRec) {
-        toast('Micro direct non supporté : utilisez le champ texte ci-dessous.', 'error');
+        toast('Micro direct non supporté : utilisez le champ texte ou les boutons rapides ci-dessous.', 'error');
+        const liveBox = document.getElementById('voice-sale-live-box');
         const mBox = document.getElementById('voice-sale-manual-box');
+        if (liveBox) liveBox.classList.remove('hidden');
         if (mBox) mBox.classList.remove('hidden');
+        updateVoiceStepUI();
         document.getElementById('voice-sale-manual-input')?.focus();
         return;
       }
