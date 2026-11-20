@@ -944,64 +944,76 @@
   <!-- TOASTS -->
   <div id="toast-container" class="fixed bottom-20 sm:bottom-5 inset-x-3 sm:inset-x-auto sm:right-5 z-50 flex flex-col gap-2 max-w-md no-print pointer-events-none"></div>
 
-  <!-- ALERTE URGENTE DIRECTEUR (ADMIN) : TÉLÉPHONE ROUGE ENTRANT -->
-  <div id="red-phone-incoming-modal" class="hidden fixed inset-0 z-[60] bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4 no-print">
-    <div class="animate-celebration-card bg-white dark:bg-slate-900 rounded-3xl border-2 border-rose-500 shadow-[0_0_50px_rgba(225,29,72,0.45)] max-w-md w-full p-6 text-center space-y-4 relative overflow-hidden">
-      <div class="w-20 h-20 mx-auto rounded-full bg-gradient-to-br from-rose-600 to-red-700 text-white flex items-center justify-center text-4xl shadow-xl shadow-rose-600/40 red-phone-ring-anim">
-        ☎️
-      </div>
-      <div class="space-y-1.5">
-        <span class="inline-flex items-center gap-1.5 px-3 py-1 text-[11px] font-extrabold uppercase tracking-wider rounded-full bg-rose-100 text-rose-700 border border-rose-300">
-          <span class="w-2 h-2 rounded-full bg-rose-600 animate-ping"></span>
-          <span>Téléphone Rouge — Appel Directeur</span>
-        </span>
-        <h3 id="red-phone-incoming-title" class="text-2xl font-extrabold text-slate-900 dark:text-white pt-1">Un représentant vous appelle !</h3>
-        <p id="red-phone-incoming-subtitle" class="text-sm font-semibold text-rose-700 dark:text-rose-300 leading-relaxed">Besoin d'aide immédiate pour closer un deal</p>
-      </div>
-      <div id="red-phone-incoming-meta" class="bg-rose-50/90 dark:bg-rose-950/50 rounded-2xl border border-rose-200 dark:border-rose-800/70 p-3.5 text-xs text-slate-700 dark:text-slate-200 space-y-1"></div>
-      <div class="flex flex-col sm:flex-row gap-2.5 pt-1">
-        <button type="button" onclick="acknowledgeIncomingRedPhone()" class="flex-1 py-3 px-4 bg-rose-600 hover:bg-rose-700 active:scale-95 text-white text-sm font-extrabold rounded-2xl shadow-lg shadow-rose-600/25 transition cursor-pointer">
-          ✓ J'ai pris l'appel
+  <!-- ALERTE COMPACTE DIRECTEUR (ADMIN) : TÉLÉPHONE ROUGE ENTRANT -->
+  <div id="red-phone-incoming-modal" class="hidden fixed top-16 inset-x-3 sm:inset-x-auto sm:right-5 sm:w-96 z-[60] no-print">
+    <div class="animate-drawer bg-white dark:bg-slate-900 rounded-2xl border-2 border-rose-500 shadow-2xl p-4 space-y-2.5">
+      <div class="flex items-start justify-between gap-2.5">
+        <div class="flex items-center gap-2.5 min-w-0">
+          <span class="w-9 h-9 rounded-xl bg-rose-600 text-white flex items-center justify-center text-lg shrink-0 red-phone-ring-anim">☎️</span>
+          <div class="min-w-0">
+            <div class="text-[10px] font-extrabold uppercase tracking-wider text-rose-600 dark:text-rose-400">Téléphone Rouge • Urgent Deal</div>
+            <h3 id="red-phone-incoming-title" class="text-sm font-extrabold text-slate-900 dark:text-white truncate">Un représentant vous appelle !</h3>
+            <p id="red-phone-incoming-subtitle" class="text-xs text-slate-600 dark:text-slate-300 truncate">Besoin d'aide pour closer un deal</p>
+          </div>
+        </div>
+        <button type="button" onclick="acknowledgeIncomingRedPhone()" class="px-2.5 py-1.5 bg-rose-600 hover:bg-rose-700 text-white text-xs font-extrabold rounded-xl shrink-0 cursor-pointer">
+          ✓ Vu
         </button>
       </div>
+      <div id="red-phone-incoming-meta" class="px-2.5 py-1.5 rounded-xl bg-rose-50/90 dark:bg-rose-950/50 border border-rose-200/80 dark:border-rose-800/60 text-[11px] text-slate-700 dark:text-slate-200 flex items-center justify-between gap-2"></div>
     </div>
   </div>
 
-  <!-- MODALE REPRÉSENTANT : DÉCLENCHER LE TÉLÉPHONE ROUGE (APPEL DIRECTEUR) -->
-  <div id="red-phone-rep-modal" class="hidden fixed inset-0 z-50 bg-slate-950/75 backdrop-blur-sm flex items-center justify-center p-4 no-print">
-    <div class="animate-drawer bg-white dark:bg-slate-900 rounded-3xl border border-rose-200 dark:border-rose-800 shadow-2xl max-w-md w-full overflow-hidden">
-      <div class="px-5 py-4 bg-gradient-to-r from-rose-700 via-red-600 to-rose-700 text-white flex items-center justify-between gap-3">
-        <div class="flex items-center gap-3 min-w-0">
-          <span class="w-10 h-10 rounded-2xl bg-white/20 flex items-center justify-center text-xl shrink-0 red-phone-ring-anim">☎️</span>
-          <div class="min-w-0">
-            <h3 class="text-base font-extrabold truncate">Téléphone Rouge — Appel Directeur</h3>
-            <p class="text-[11px] text-rose-100 truncate">Alerte instantanée + appel direct vers le directeur</p>
-          </div>
+  <!-- MODALE COMPACTE REPRÉSENTANT : TÉLÉPHONE ROUGE (APPEL DIRECTEUR) -->
+  <div id="red-phone-rep-modal" class="hidden fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm flex items-center justify-center p-4 no-print">
+    <div class="animate-drawer bg-white dark:bg-slate-900 rounded-2xl border border-rose-200 dark:border-rose-800 shadow-2xl max-w-sm w-full overflow-hidden">
+      <div class="px-4 py-3 bg-rose-600 text-white flex items-center justify-between gap-2">
+        <div class="flex items-center gap-2 min-w-0">
+          <span class="text-base leading-none">☎️</span>
+          <h3 class="text-sm font-extrabold truncate">Téléphone Rouge — Appel Directeur</h3>
         </div>
-        <button type="button" onclick="closeRedPhoneRepModal()" class="w-8 h-8 rounded-xl bg-white/15 hover:bg-white/25 text-white flex items-center justify-center font-bold shrink-0 cursor-pointer">✕</button>
+        <button type="button" onclick="closeRedPhoneRepModal()" class="w-7 h-7 rounded-lg bg-white/15 hover:bg-white/25 text-white text-xs flex items-center justify-center font-bold shrink-0 cursor-pointer">✕</button>
       </div>
-      <div class="p-5 space-y-4">
-        <p class="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
-          En appuyant sur <strong>Lancer l'appel maintenant</strong>, le directeur reçoit immédiatement une <strong>alerte urgente avec votre nom</strong> sur son téléphone et votre appel démarre automatiquement.
-        </p>
-        <div class="space-y-1.5">
-          <label class="block text-[11px] font-extrabold uppercase tracking-wider text-slate-500">Motif rapide (optionnel)</label>
-          <div class="flex flex-wrap gap-1.5" id="red-phone-reason-chips">
-            <button type="button" onclick="selectRedPhoneReason(this, 'Client prêt à closer maintenant')" class="red-reason-chip px-3 py-1.5 text-xs font-bold rounded-xl bg-rose-600 text-white border border-rose-600 transition cursor-pointer">🔥 Client prêt à closer</button>
-            <button type="button" onclick="selectRedPhoneReason(this, 'Objection prix / négociation')" class="red-reason-chip px-3 py-1.5 text-xs font-bold rounded-xl bg-slate-100 text-slate-700 hover:bg-rose-50 border border-slate-200 transition cursor-pointer">💰 Objection prix</button>
-            <button type="button" onclick="selectRedPhoneReason(this, 'Validation spéciale requise')" class="red-reason-chip px-3 py-1.5 text-xs font-bold rounded-xl bg-slate-100 text-slate-700 hover:bg-rose-50 border border-slate-200 transition cursor-pointer">⚡ Validation spéciale</button>
-          </div>
-          <input id="red-phone-custom-note" type="text" maxlength="140" placeholder="Ou précisez en quelques mots (ex. Client Toitex 18 000 $)..." class="w-full mt-2 px-3.5 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-rose-500" />
+
+      <!-- ÉTAPE 1 : CHOIX DU MOTIF ET ENVOI -->
+      <div id="red-phone-step-compose" class="p-4 space-y-3">
+        <div class="flex flex-wrap gap-1.5" id="red-phone-reason-chips">
+          <button type="button" onclick="selectRedPhoneReason(this, 'Client prêt à closer maintenant')" class="red-reason-chip px-2.5 py-1 text-[11px] font-bold rounded-lg bg-rose-600 text-white border border-rose-600 transition cursor-pointer">🔥 Prêt à closer</button>
+          <button type="button" onclick="selectRedPhoneReason(this, 'Objection prix / négociation')" class="red-reason-chip px-2.5 py-1 text-[11px] font-bold rounded-lg bg-slate-100 text-slate-700 hover:bg-rose-50 border border-slate-200 transition cursor-pointer">💰 Objection prix</button>
+          <button type="button" onclick="selectRedPhoneReason(this, 'Validation spéciale requise')" class="red-reason-chip px-2.5 py-1 text-[11px] font-bold rounded-lg bg-slate-100 text-slate-700 hover:bg-rose-50 border border-slate-200 transition cursor-pointer">⚡ Validation</button>
         </div>
-        <div id="red-phone-target-display" class="px-3.5 py-2.5 rounded-xl bg-rose-50/80 border border-rose-200 text-xs font-bold text-rose-900 flex items-center justify-between">
-          <span>Ligne directe :</span>
+        <input id="red-phone-custom-note" type="text" maxlength="120" placeholder="Note rapide (optionnel)..." class="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-rose-500" />
+        <div id="red-phone-target-display" class="px-3 py-2 rounded-xl bg-rose-50/80 border border-rose-200 text-[11px] font-bold text-rose-900 flex items-center justify-between">
+          <span>Directeur :</span>
           <span id="red-phone-number-preview" class="font-extrabold tabular-nums">Non configuré</span>
         </div>
-        <div class="flex items-center gap-2.5 pt-1">
-          <button type="button" onclick="closeRedPhoneRepModal()" class="flex-1 py-3 px-4 text-xs font-bold text-slate-700 bg-white border border-slate-300 rounded-2xl hover:bg-slate-50 transition cursor-pointer">Annuler</button>
-          <button type="button" id="btn-trigger-red-phone-now" onclick="triggerRedPhoneDirectorCall()" class="flex-[1.6] py-3 px-4 text-xs font-extrabold text-white bg-gradient-to-r from-rose-600 to-red-600 hover:from-rose-700 hover:to-red-700 active:scale-95 rounded-2xl shadow-lg shadow-rose-600/30 flex items-center justify-center gap-2 transition cursor-pointer">
+        <div class="flex items-center gap-2 pt-0.5">
+          <button type="button" onclick="closeRedPhoneRepModal()" class="flex-1 py-2.5 px-3 text-xs font-bold text-slate-700 bg-white border border-slate-300 rounded-xl hover:bg-slate-50 transition cursor-pointer">Annuler</button>
+          <button type="button" id="btn-trigger-red-phone-now" onclick="triggerRedPhoneDirectorCall()" class="flex-[1.5] py-2.5 px-3.5 text-xs font-extrabold text-white bg-rose-600 hover:bg-rose-700 active:scale-95 rounded-xl shadow-sm flex items-center justify-center gap-1.5 transition cursor-pointer">
             <span>☎️</span>
-            <span>Lancer l'appel maintenant</span>
+            <span>Alerter & Appeler (15s)</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- ÉTAPE 2 : COMPTE À REBOURS 15 SECONDES PENDANT QUE LE DIRECTEUR LIT L'ALERTE -->
+      <div id="red-phone-step-countdown" class="hidden p-4 space-y-3 text-center">
+        <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-[11px] font-extrabold">
+          <span>✓ Alerte envoyée au directeur</span>
+        </div>
+        <div class="space-y-1">
+          <div id="red-phone-countdown-timer" class="text-3xl font-extrabold text-rose-600 tabular-nums">15 s</div>
+          <p class="text-xs text-slate-600 dark:text-slate-300 leading-snug">
+            L'appel démarre automatiquement à la fin du décompte pour lui laisser le temps de lire votre alerte.
+          </p>
+        </div>
+        <div class="w-full h-2 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+          <div id="red-phone-countdown-bar" class="h-full bg-rose-600 rounded-full transition-all duration-1000 ease-linear" style="width: 100%"></div>
+        </div>
+        <div class="flex items-center gap-2 pt-1">
+          <button type="button" onclick="closeRedPhoneRepModal()" class="flex-1 py-2 px-3 text-xs font-bold text-slate-700 bg-white border border-slate-300 rounded-xl hover:bg-slate-50 transition cursor-pointer">Fermer</button>
+          <button type="button" onclick="dialRedPhoneNowImmediately()" class="flex-[1.5] py-2 px-3 text-xs font-extrabold text-white bg-rose-600 hover:bg-rose-700 active:scale-95 rounded-xl shadow-sm transition cursor-pointer">
+            ☎️ Appeler tout de suite
           </button>
         </div>
       </div>
@@ -2273,22 +2285,11 @@
       <!-- ONGLET 1 : MES VENTES & COMMISSIONS (REP + ADMIN)            -->
       <!-- ============================================================ -->
       <section id="tab-mes-ventes" class="space-y-6">
-        <!-- BOUTON TÉLÉPHONE ROUGE : APPEL DIRECTEUR URGENT POUR CLOSER UN DEAL (REPRÉSENTANTS) -->
-        <div id="rep-red-phone-banner" class="hidden">
-          <button type="button" onclick="openRedPhoneRepModal()" style="touch-action: manipulation; -webkit-tap-highlight-color: transparent;" class="w-full group relative overflow-hidden rounded-2xl bg-gradient-to-r from-rose-600 via-red-600 to-rose-700 hover:from-rose-500 hover:to-red-600 active:scale-[0.99] text-white p-3.5 sm:px-5 sm:py-3.5 shadow-md shadow-rose-600/25 border border-rose-400/40 flex items-center justify-between gap-3 transition cursor-pointer">
-            <div class="flex items-center gap-3 min-w-0 text-left">
-              <span class="w-10 h-10 rounded-2xl bg-white/20 backdrop-blur-xs flex items-center justify-center text-xl shrink-0 red-phone-ring-anim shadow-inner">☎️</span>
-              <div class="min-w-0">
-                <div class="flex items-center gap-2">
-                  <span class="text-xs sm:text-sm font-extrabold tracking-tight text-white">Téléphone Rouge — Appel Directeur</span>
-                  <span class="px-2 py-0.2 text-[10px] font-extrabold uppercase rounded-full bg-white/20 text-white">Urgent Deal</span>
-                </div>
-                <p class="text-[11px] text-rose-100 truncate mt-0.5">Besoin d'aide immédiate pour fermer un deal ? Cliquez pour alerter et appeler le directeur</p>
-              </div>
-            </div>
-            <span class="px-3.5 py-2 rounded-xl bg-white text-rose-700 group-hover:bg-rose-50 text-xs font-extrabold shrink-0 shadow-xs transition">
-              Appeler →
-            </span>
+        <!-- BOUTON COMPACT TÉLÉPHONE ROUGE : APPEL DIRECTEUR (REPRÉSENTANTS) -->
+        <div id="rep-red-phone-banner" class="hidden flex justify-center">
+          <button type="button" onclick="openRedPhoneRepModal()" style="touch-action: manipulation; -webkit-tap-highlight-color: transparent;" class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-rose-600 hover:bg-rose-700 active:scale-95 text-white text-xs font-extrabold shadow-xs border border-rose-400/40 transition cursor-pointer">
+            <span class="text-sm leading-none">☎️</span>
+            <span>Téléphone Rouge — Appel Directeur</span>
           </button>
         </div>
         <!-- PARCOURS DE PREMIÈRE CONNEXION EN 3 ÉTAPES SÉQUENTIELLES -->
@@ -5177,14 +5178,38 @@
       }
     };
 
+    let _redPhoneCountdownTimer = null;
+    let _redPhonePendingDialNumber = '';
+
+    function clearRedPhoneCountdown() {
+      if (_redPhoneCountdownTimer) {
+        clearInterval(_redPhoneCountdownTimer);
+        _redPhoneCountdownTimer = null;
+      }
+      _redPhonePendingDialNumber = '';
+    }
+
+    window.dialRedPhoneNowImmediately = () => {
+      const targetNum = _redPhonePendingDialNumber || formatPhoneForDial(redPhoneConfig.phone);
+      clearRedPhoneCountdown();
+      document.getElementById('red-phone-rep-modal')?.classList.add('hidden');
+      if (targetNum) {
+        window.location.href = `tel:${targetNum}`;
+      }
+    };
+
     window.openRedPhoneRepModal = () => {
+      clearRedPhoneCountdown();
       syncRedPhoneUI();
       const noteEl = document.getElementById('red-phone-custom-note');
       if (noteEl) noteEl.value = '';
+      document.getElementById('red-phone-step-compose')?.classList.remove('hidden');
+      document.getElementById('red-phone-step-countdown')?.classList.add('hidden');
       document.getElementById('red-phone-rep-modal')?.classList.remove('hidden');
     };
 
     window.closeRedPhoneRepModal = () => {
+      clearRedPhoneCountdown();
       document.getElementById('red-phone-rep-modal')?.classList.add('hidden');
     };
 
@@ -5230,10 +5255,27 @@
         status: 'ringing'
       };
 
-      closeRedPhoneRepModal();
-      toast(`☎️ Alerte envoyée au directeur — Appel de ${redPhoneConfig.phone}...`);
+      // Basculer immédiatement vers l'écran de décompte de 15 secondes
+      clearRedPhoneCountdown();
+      _redPhonePendingDialNumber = dialNumber;
+      let secondsLeft = 15;
+      const timerEl = document.getElementById('red-phone-countdown-timer');
+      const barEl = document.getElementById('red-phone-countdown-bar');
+      if (timerEl) timerEl.textContent = `${secondsLeft} s`;
+      if (barEl) barEl.style.width = '100%';
+      document.getElementById('red-phone-step-compose')?.classList.add('hidden');
+      document.getElementById('red-phone-step-countdown')?.classList.remove('hidden');
 
-      // 1) Enregistrer l'alerte urgente en temps réel dans Supabase (semaine_index = -15)
+      _redPhoneCountdownTimer = setInterval(() => {
+        secondsLeft -= 1;
+        if (timerEl) timerEl.textContent = `${Math.max(0, secondsLeft)} s`;
+        if (barEl) barEl.style.width = `${Math.max(0, Math.round((secondsLeft / 15) * 100))}%`;
+        if (secondsLeft <= 0) {
+          dialRedPhoneNowImmediately();
+        }
+      }, 1000);
+
+      // 1) Enregistrer l'alerte urgente en temps réel dans Supabase (semaine_index = -15) dès 0s
       if (sb) {
         try {
           await safeUpsertKpiHebdoRow({
@@ -5246,7 +5288,7 @@
           });
         } catch (e) {}
 
-        // 2) Déclencher la notification Push serveur vers le téléphone du directeur
+        // 2) Déclencher immédiatement la notification Push serveur vers le téléphone du directeur
         try {
           const adminNames = (state.representants || [])
             .filter(r => r.role === 'admin' && r.nom)
@@ -5257,7 +5299,7 @@
               msgId: callId,
               authorId: String(currentProfile.id),
               authorName: currentProfile.nom,
-              text: `${currentProfile.nom} a besoin de toi MAINTENANT pour un deal (${reason}) !`,
+              text: `${currentProfile.nom} t'appelle dans 15s pour un deal (${reason}) !`,
               mentionedNames: adminNames,
               customTitle: `☎️ TÉLÉPHONE ROUGE — ${currentProfile.nom}`,
               eventType: 'red_phone'
@@ -5265,11 +5307,6 @@
           });
         } catch (ePush) {}
       }
-
-      // 3) Lancer l'appel téléphonique natif sur le cellulaire du représentant
-      setTimeout(() => {
-        window.location.href = `tel:${dialNumber}`;
-      }, 180);
     };
 
     window.acknowledgeIncomingRedPhone = () => {
