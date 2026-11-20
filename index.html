@@ -857,9 +857,11 @@
     .wa-player-wrap {
       display: flex;
       align-items: center;
+      justify-content: center;
       gap: 0.65rem;
       width: 246px;
       max-width: 100%;
+      margin: 0 auto;
       padding: 0.2rem 0.05rem 0.1rem;
     }
     @media (min-width: 640px) {
@@ -10206,9 +10208,9 @@
 
         return dayDividerHtml + unreadDividerHtml + `
           <div id="chat-item-${esc(m.id)}" ondblclick="setChatReplyTarget('${esc(m.id)}')" ontouchstart="handleChatTouchStart(event, this)" ontouchmove="handleChatTouchMove(event)" ontouchend="handleChatTouchEnd(event, '${esc(m.id)}')" class="group flex flex-col ${isMe ? 'items-end' : 'items-start'} ${isGroupedWithPrev ? 'mt-0.5' : 'mt-2'}">
-            <div class="max-w-[86%] sm:max-w-[76%] px-3 py-2 text-[13.5px] leading-snug break-words ${bubbleClass}">
+            <div class="max-w-[86%] sm:max-w-[76%] px-3.5 py-2.5 text-[13.5px] leading-snug break-words text-center flex flex-col items-center ${bubbleClass}">
               ${!isMe && !isGroupedWithPrev ? `
-                <div class="flex items-center gap-1.5 mb-0.5">
+                <div class="flex items-center justify-center gap-1.5 mb-1 w-full">
                   <span class="text-[11px] font-extrabold ${senderColor}">${esc(m.authorName)}</span>
                   ${isAuthorAdmin ? '<span class="text-[9.5px] font-bold text-slate-400">Admin</span>' : ''}
                   ${isMentionedMe ? '<span class="px-1.5 py-0.2 text-[9px] font-extrabold rounded bg-amber-200 text-amber-950">@Vous</span>' : ''}
@@ -10217,15 +10219,15 @@
               ${quotedHtml}
               ${photoHtml}
               ${audioHtml}
-              ${formattedBody ? `<div class="whitespace-pre-wrap">${formattedBody}</div>` : ''}
+              ${formattedBody ? `<div class="whitespace-pre-wrap text-center w-full">${formattedBody}</div>` : ''}
               ${!(audioUrl && !formattedBody && !imgUrl) ? `
-                <div class="flex items-center justify-end gap-1 mt-0.5 text-[9.5px] opacity-70 tabular-nums select-none">
+                <div class="flex items-center justify-center gap-1 mt-1 text-[9.5px] opacity-70 tabular-nums select-none w-full">
                   <span>${esc(formatChatHourOnly(m.at))}</span>
                   ${isMe ? '<span>✓✓</span>' : ''}
                 </div>
               ` : ''}
             </div>
-            <div class="flex items-center gap-2.5 mt-0.5 px-1.5 text-[10.5px] text-slate-400">
+            <div class="flex items-center justify-center gap-2.5 mt-0.5 px-1.5 text-[10.5px] text-slate-400">
               <button type="button" onclick="setChatReplyTarget('${esc(m.id)}')" class="hover:text-indigo-600 dark:hover:text-indigo-300 font-semibold transition cursor-pointer">Répondre</button>
               ${canDel ? `<button type="button" onclick="deleteTeamChatMessage('${esc(m.id)}')" class="hover:text-rose-600 transition cursor-pointer">Supprimer</button>` : ''}
             </div>
