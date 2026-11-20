@@ -1158,6 +1158,42 @@
     </div>
   </div>
 
+  <!-- MODALE RAPPORT HEBDOMADAIRE EXÉCUTIF (VENDREDI 17H / EN 1 CLIC) -->
+  <div id="weekly-digest-modal" class="hidden fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm flex items-center justify-center p-4 no-print">
+    <div class="bg-white rounded-3xl border border-slate-200 shadow-2xl max-w-3xl w-full max-h-[92vh] flex flex-col overflow-hidden animate-drawer">
+      <div class="px-6 py-4 bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white flex items-center justify-between gap-3 shrink-0">
+        <div class="flex items-center gap-3 min-w-0">
+          <span class="w-10 h-10 rounded-2xl bg-emerald-500/20 text-emerald-300 border border-emerald-400/35 flex items-center justify-center text-lg shrink-0">📊</span>
+          <div class="min-w-0">
+            <h3 class="text-base font-extrabold truncate">Bilan hebdomadaire de direction</h3>
+            <p id="weekly-digest-subtitle" class="text-xs text-indigo-200 truncate">Synthèse de la semaine, podium équipe et dépôts à relancer</p>
+          </div>
+        </div>
+        <button type="button" onclick="closeWeeklyDigestModal()" class="w-9 h-9 rounded-xl bg-white/10 hover:bg-white/20 text-slate-200 hover:text-white flex items-center justify-center transition shrink-0">✕</button>
+      </div>
+
+      <div id="weekly-digest-body" class="p-5 sm:p-6 overflow-y-auto space-y-5 flex-1"></div>
+
+      <div class="px-6 py-4 bg-slate-50 border-t border-slate-200 flex flex-wrap items-center justify-between gap-2.5 shrink-0">
+        <label class="inline-flex items-center gap-2 text-xs font-bold text-slate-700 cursor-pointer">
+          <input id="weekly-digest-auto-friday" type="checkbox" onchange="toggleWeeklyDigestAutoFriday(this.checked)" class="rounded border-slate-300 text-indigo-600" />
+          <span>Afficher automatiquement le bilan chaque vendredi dès 17h</span>
+        </label>
+        <div class="flex flex-wrap items-center gap-2">
+          <button type="button" onclick="copyWeeklyDigestText()" class="px-3.5 py-2 text-xs font-extrabold text-slate-800 bg-white hover:bg-slate-100 border border-slate-300 rounded-xl transition cursor-pointer">
+            📋 Copier le résumé
+          </button>
+          <button type="button" onclick="publishWeeklyDigestToTeamChat()" class="px-3.5 py-2 text-xs font-extrabold text-indigo-900 bg-indigo-100 hover:bg-indigo-200 border border-indigo-300 rounded-xl transition cursor-pointer">
+            🏆 Publier dans Korpo Top Earner
+          </button>
+          <button type="button" onclick="sendWeeklyDigestEmail()" class="px-4 py-2 text-xs font-extrabold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl shadow-xs transition cursor-pointer">
+            ✉️ Envoyer par courriel
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- MODALE RELEVÉ DE PAIE IMPRIMABLE / PDF / CSV -->
   <div id="payslip-modal" class="hidden fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-sm flex items-center justify-center p-4">
     <div class="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-3xl w-full max-h-[90vh] flex flex-col overflow-hidden">
@@ -1954,6 +1990,26 @@
           </div>
         </div>
 
+        <!-- BANDEAU RELANCE INTELLIGENTE DES DÉPÔTS EN ATTENTE (REPRÉSENTANT) -->
+        <div id="rep-deposit-reminder-banner" class="hidden bg-amber-50 border border-amber-300 rounded-2xl p-4 shadow-xs space-y-3">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+            <div class="flex items-start sm:items-center gap-3 min-w-0">
+              <span class="w-9 h-9 rounded-xl bg-amber-500 text-white flex items-center justify-center text-base font-extrabold shrink-0">⏳</span>
+              <div class="min-w-0">
+                <div id="rep-deposit-reminder-title" class="text-xs sm:text-sm font-extrabold text-amber-950">Dossier(s) en attente de preuve de dépôt</div>
+                <div id="rep-deposit-reminder-desc" class="text-[11px] text-amber-800">Ajoutez la capture Interac ou photo de chèque pour débloquer votre commission.</div>
+              </div>
+            </div>
+            <div class="flex items-center gap-2 shrink-0">
+              <button type="button" onclick="filterRepPendingDepositsOnly()" class="px-3 py-1.5 text-xs font-extrabold text-amber-950 bg-amber-200/80 hover:bg-amber-300 rounded-xl transition cursor-pointer">
+                Voir mes dossiers en attente
+              </button>
+              <button type="button" onclick="dismissRepDepositReminderBanner()" title="Masquer pour aujourd'hui" class="w-8 h-8 rounded-xl bg-white/80 hover:bg-amber-200/60 text-amber-900 text-xs font-extrabold flex items-center justify-center transition cursor-pointer">✕</button>
+            </div>
+          </div>
+          <div id="rep-deposit-reminder-list" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2"></div>
+        </div>
+
         <div class="space-y-3.5">
           <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
@@ -2675,6 +2731,9 @@
             <p class="text-xs text-slate-500 mt-0.5">Vue consolidée, graphique mensuel et relevés de paie imprimables</p>
           </div>
           <div class="flex flex-wrap items-center gap-2">
+            <button id="btn-open-weekly-digest" type="button" onclick="openWeeklyDigestModal()" class="px-3.5 py-2 text-xs font-extrabold text-emerald-900 bg-emerald-50 hover:bg-emerald-100 border border-emerald-300 rounded-xl transition flex items-center gap-1.5 shadow-2xs cursor-pointer">
+              <span>📊</span> Bilan hebdomadaire
+            </button>
             <button id="btn-open-auto-email-modal" type="button" class="px-3.5 py-2 text-xs font-bold text-indigo-800 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 rounded-xl transition flex items-center gap-1.5">
               <span>✉️</span> Envoyer les relevés par courriel
             </button>
@@ -4740,6 +4799,7 @@
       await loadAllData();
       renderKpiDashboard();
       showScreen('screen-app');
+      maybeTriggerFridayWeeklyDigest();
     }
 
     let activeMobilePersonalView = 'ventes'; // 'ventes' | 'commissions'
@@ -10068,6 +10128,297 @@
       card.classList.toggle('hidden', !shouldShow);
     };
 
+    window.dismissRepDepositReminderBanner = () => {
+      if (!currentProfile) return;
+      try {
+        localStorage.setItem(`korpo_deposit_reminder_dismissed_${currentProfile.id}_${currentDateStr}`, '1');
+      } catch (e) {}
+      document.getElementById('rep-deposit-reminder-banner')?.classList.add('hidden');
+    };
+
+    window.filterRepPendingDepositsOnly = () => {
+      const statSel = document.getElementById('filter-rep-statut');
+      if (statSel) {
+        statSel.value = 'depot_attente';
+        renderMesVentes();
+      }
+    };
+
+    function renderRepDepositReminderBanner(scopeSales, isAdmin, isInspectingRep) {
+      const banner = document.getElementById('rep-deposit-reminder-banner');
+      if (!banner || !currentProfile) return;
+      if (isAdmin && !isInspectingRep) {
+        banner.classList.add('hidden');
+        return;
+      }
+      const dismissedToday = localStorage.getItem(`korpo_deposit_reminder_dismissed_${currentProfile.id}_${currentDateStr}`) === '1';
+      if (dismissedToday) {
+        banner.classList.add('hidden');
+        return;
+      }
+
+      const pendingWithMissingProof = (scopeSales || [])
+        .filter(v => v.statut_depot === 'a_confirmer' && !getProofRef(v))
+        .sort((a, b) => String(a.date_vente || '').localeCompare(String(b.date_vente || '')));
+
+      if (!pendingWithMissingProof.length) {
+        banner.classList.add('hidden');
+        return;
+      }
+
+      const lockedCommTotal = pendingWithMissingProof.reduce((s, v) => s + Number(v.commission_rep || 0), 0);
+      const oldestDays = Math.max(...pendingWithMissingProof.map(v => getDaysSince(v.date_vente)));
+      const titleEl = document.getElementById('rep-deposit-reminder-title');
+      const descEl = document.getElementById('rep-deposit-reminder-desc');
+      const listEl = document.getElementById('rep-deposit-reminder-list');
+
+      if (titleEl) {
+        titleEl.textContent = `${pendingWithMissingProof.length} dossier(s) attendent leur preuve Interac (${fmtMoney(lockedCommTotal)} de commission à débloquer)`;
+      }
+      if (descEl) {
+        descEl.textContent = oldestDays >= 3
+          ? `Le plus ancien date d'il y a ${oldestDays} jour(s). Ajoute la capture du virement ou du chèque en 1 clic ci-dessous :`
+          : 'Ajoute la photo du virement Interac ou du chèque pour accélérer la confirmation de ta commission :';
+      }
+      if (listEl) {
+        listEl.innerHTML = pendingWithMissingProof.slice(0, 6).map(v => {
+          const cli = v.client_nom || state.clients.find(c => String(c.id) === String(v.client_id))?.nom || 'Client';
+          const ent = v.entreprise_nom || state.entreprises.find(e => String(e.id) === String(v.entreprise_id))?.nom || '';
+          const days = getDaysSince(v.date_vente);
+          const inputId = `quick-proof-up-${v.id}`;
+          return `
+            <div class="bg-white rounded-xl border border-amber-200/90 p-2.5 flex items-center justify-between gap-2">
+              <div class="min-w-0">
+                <div class="text-xs font-extrabold text-slate-900 truncate">${esc(cli)} <span class="font-semibold text-slate-500">(${esc(ent)})</span></div>
+                <div class="text-[11px] text-slate-600 tabular-nums">
+                  Comm. : <strong class="text-emerald-700">${fmtMoney(v.commission_rep)}</strong> • ${days > 0 ? `il y a ${days}j` : "aujourd'hui"}
+                </div>
+              </div>
+              <label for="${inputId}" class="px-2.5 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-[11px] font-extrabold shrink-0 cursor-pointer transition">
+                📷 Photo
+                <input id="${inputId}" type="file" accept="image/*" class="sr-only" onchange="if(this.files && this.files[0]) attachProofToExistingSale('${v.id}', this.files[0])" />
+              </label>
+            </div>
+          `;
+        }).join('');
+      }
+      banner.classList.remove('hidden');
+    }
+
+    function buildWeeklyDigestSnapshot() {
+      const wb = getCurrentWeekBounds(today);
+      const weekPeriod = { mode: 'this_week', weekBounds: wb };
+      const weekSales = (state.ventes || []).filter(v => matchesSalePeriod(v, weekPeriod, true));
+      const weekVol = weekSales.reduce((s, v) => s + Number(v.valeur || 0), 0);
+      const weekConfirmedVol = weekSales.filter(v => v.statut_depot === 'depot_recu').reduce((s, v) => s + Number(v.valeur || 0), 0);
+      const weekCommRep = weekSales.reduce((s, v) => s + Number(v.commission_rep || 0), 0);
+      const weekCommOli = weekSales.reduce((s, v) => s + Number(v.commission_olivier || 0), 0);
+
+      const repRanking = (state.representants || []).map(r => {
+        const sub = weekSales.filter(v => String(v.representant_id) === String(r.id));
+        return {
+          nom: r.nom,
+          count: sub.length,
+          vol: sub.reduce((s, v) => s + Number(v.valeur || 0), 0)
+        };
+      }).filter(x => x.vol > 0 || x.count > 0).sort((a, b) => b.vol - a.vol);
+
+      const allPending = (state.ventes || [])
+        .filter(v => v.statut_depot === 'a_confirmer')
+        .sort((a, b) => String(a.date_vente || '').localeCompare(String(b.date_vente || '')));
+      const agedPending = allPending.filter(v => getDaysSince(v.date_vente) >= 3);
+
+      // Projection fin de mois
+      const [yStr, mStr] = currentMonthStr.split('-');
+      const totalDaysInM = new Date(parseInt(yStr, 10), parseInt(mStr, 10), 0).getDate();
+      const totalBiz = Math.max(1, countBusinessDaysInMonth(currentMonthStr));
+      const elapsedBiz = Math.max(1, countBusinessDaysInMonth(currentMonthStr, Math.min(today.getDate(), totalDaysInM)));
+      const monthPeriod = { mode: 'this_month', singleMonth: currentMonthStr };
+      const monthSales = (state.ventes || []).filter(v => matchesSalePeriod(v, monthPeriod, true));
+      const monthVol = monthSales.reduce((s, v) => s + Number(v.valeur || 0), 0);
+      const projectedMonthVol = Math.round((monthVol / elapsedBiz) * totalBiz);
+
+      return {
+        wb,
+        weekSales,
+        weekVol,
+        weekConfirmedVol,
+        weekCommRep,
+        weekCommOli,
+        repRanking,
+        allPending,
+        agedPending,
+        monthVol,
+        projectedMonthVol
+      };
+    }
+
+    function formatWeeklyDigestPlainText(snap) {
+      const lines = [
+        `📊 BILAN HEBDOMADAIRE KORPO SOLUTIONS`,
+        `Période : Du ${formatDateLabelFr(snap.wb.start)} au ${formatDateLabelFr(snap.wb.end)}`,
+        ``,
+        `• Volume signé cette semaine : ${fmtMoney(snap.weekVol)} (${snap.weekSales.length} dossier${snap.weekSales.length > 1 ? 's' : ''})`,
+        `• Volume confirmé (dépôt reçu) : ${fmtMoney(snap.weekConfirmedVol)}`,
+        `• Commissions générées (Olivier) : ${fmtMoney(snap.weekCommOli)}`,
+        `• Projection fin de mois (${formatYearMonthLabelFr(currentMonthStr)}) : ${fmtMoney0(snap.projectedMonthVol)}`,
+        ``,
+        `🏆 TOP REPRÉSENTANTS DE LA SEMAINE :`,
+        ...(snap.repRanking.length
+          ? snap.repRanking.map((r, i) => `  ${i + 1}. ${r.nom} — ${fmtMoney(r.vol)} (${r.count} vente${r.count > 1 ? 's' : ''})`)
+          : [`  Aucune vente enregistrée cette semaine.`]),
+        ``,
+        `⏳ DÉPÔTS À CONFIRMER : ${snap.allPending.length} dossier(s) au total (dont ${snap.agedPending.length} en attente depuis 3+ jours)`
+      ];
+      return lines.join('\n');
+    }
+
+    window.toggleWeeklyDigestAutoFriday = (enabled) => {
+      try {
+        localStorage.setItem('korpo_weekly_digest_auto_friday_v1', enabled ? '1' : '0');
+      } catch (e) {}
+      toast(enabled ? 'Bilan automatique du vendredi 17h activé ✓' : 'Affichage automatique du vendredi désactivé');
+    };
+
+    window.openWeeklyDigestModal = () => {
+      if (currentProfile?.role !== 'admin') return;
+      const snap = buildWeeklyDigestSnapshot();
+      const subEl = document.getElementById('weekly-digest-subtitle');
+      if (subEl) {
+        subEl.textContent = `Semaine du ${formatDateLabelFr(snap.wb.start)} au ${formatDateLabelFr(snap.wb.end)}`;
+      }
+      const autoCb = document.getElementById('weekly-digest-auto-friday');
+      if (autoCb) {
+        autoCb.checked = localStorage.getItem('korpo_weekly_digest_auto_friday_v1') !== '0';
+      }
+
+      const body = document.getElementById('weekly-digest-body');
+      if (body) {
+        const medals = ['🥇', '🥈', '🥉'];
+        body.innerHTML = `
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div class="bg-slate-50 rounded-2xl border border-slate-200/80 p-3.5">
+              <div class="text-[11px] font-semibold text-slate-500">Ventes semaine</div>
+              <div class="text-lg sm:text-xl font-extrabold text-slate-900 mt-1 tabular-nums">${fmtMoney0(snap.weekVol)}</div>
+              <div class="text-[11px] text-slate-400 mt-0.5">${snap.weekSales.length} dossier(s)</div>
+            </div>
+            <div class="bg-emerald-50/70 rounded-2xl border border-emerald-200/80 p-3.5">
+              <div class="text-[11px] font-semibold text-emerald-800">Confirmé semaine</div>
+              <div class="text-lg sm:text-xl font-extrabold text-emerald-700 mt-1 tabular-nums">${fmtMoney0(snap.weekConfirmedVol)}</div>
+              <div class="text-[11px] text-emerald-700/80 mt-0.5">Dépôts reçus</div>
+            </div>
+            <div class="bg-indigo-50/70 rounded-2xl border border-indigo-200/80 p-3.5">
+              <div class="text-[11px] font-semibold text-indigo-800">Projection mois</div>
+              <div class="text-lg sm:text-xl font-extrabold text-indigo-700 mt-1 tabular-nums">${fmtMoney0(snap.projectedMonthVol)}</div>
+              <div class="text-[11px] text-indigo-700/80 mt-0.5">Cadence actuelle</div>
+            </div>
+            <div class="bg-amber-50/70 rounded-2xl border border-amber-200/80 p-3.5">
+              <div class="text-[11px] font-semibold text-amber-800">Dépôts en attente</div>
+              <div class="text-lg sm:text-xl font-extrabold text-amber-700 mt-1 tabular-nums">${snap.allPending.length}</div>
+              <div class="text-[11px] text-amber-800/80 mt-0.5">${snap.agedPending.length} de 3+ jours</div>
+            </div>
+          </div>
+
+          <div class="bg-slate-50 rounded-2xl border border-slate-200/80 p-4 space-y-2.5">
+            <div class="text-xs font-extrabold uppercase tracking-wider text-slate-700">🏆 Podium de la semaine</div>
+            ${snap.repRanking.length
+              ? `<div class="divide-y divide-slate-200/70">
+                  ${snap.repRanking.map((r, i) => `
+                    <div class="py-2 flex items-center justify-between text-xs">
+                      <div class="flex items-center gap-2 font-extrabold text-slate-900">
+                        <span>${medals[i] || `#${i + 1}`}</span>
+                        <span>${esc(r.nom)}</span>
+                        <span class="text-[11px] font-semibold text-slate-400">(${r.count} vente${r.count > 1 ? 's' : ''})</span>
+                      </div>
+                      <span class="font-extrabold text-indigo-700 tabular-nums">${fmtMoney(r.vol)}</span>
+                    </div>
+                  `).join('')}
+                </div>`
+              : `<div class="text-xs text-slate-400 italic">Aucune vente enregistrée cette semaine.</div>`}
+          </div>
+
+          ${snap.agedPending.length ? `
+            <div class="bg-rose-50/60 rounded-2xl border border-rose-200 p-4 space-y-2">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-extrabold text-rose-900">⚠️ Dossiers en attente de dépôt depuis 3+ jours (${snap.agedPending.length})</span>
+                <button type="button" onclick="closeWeeklyDigestModal(); goToPendingSales();" class="text-xs font-extrabold text-rose-700 hover:underline cursor-pointer">Gérer →</button>
+              </div>
+              <div class="space-y-1.5">
+                ${snap.agedPending.slice(0, 5).map(v => {
+                  const repN = state.representants.find(r => String(r.id) === String(v.representant_id))?.nom || '—';
+                  const cliN = state.clients.find(c => String(c.id) === String(v.client_id))?.nom || '—';
+                  const entN = state.entreprises.find(e => String(e.id) === String(v.entreprise_id))?.nom || '';
+                  return `<div class="text-xs text-slate-700 flex items-center justify-between gap-2 bg-white/90 px-3 py-1.5 rounded-xl border border-rose-200/70">
+                    <span class="truncate"><strong>${esc(repN)}</strong> • ${esc(cliN)} (${esc(entN)})</span>
+                    <span class="font-bold text-rose-700 shrink-0 tabular-nums">${fmtMoney(v.valeur)} • ${getDaysSince(v.date_vente)}j</span>
+                  </div>`;
+                }).join('')}
+              </div>
+            </div>
+          ` : ''}
+        `;
+      }
+
+      try {
+        localStorage.setItem(`korpo_weekly_digest_shown_${wbKeyFromDate(snap.wb.start)}`, '1');
+      } catch (e) {}
+      document.getElementById('weekly-digest-modal')?.classList.remove('hidden');
+    };
+
+    function wbKeyFromDate(ymd) {
+      return String(ymd || currentDateStr);
+    }
+
+    window.closeWeeklyDigestModal = () => {
+      document.getElementById('weekly-digest-modal')?.classList.add('hidden');
+    };
+
+    window.copyWeeklyDigestText = async () => {
+      const txt = formatWeeklyDigestPlainText(buildWeeklyDigestSnapshot());
+      try {
+        await navigator.clipboard.writeText(txt);
+        toast('Bilan hebdomadaire copié dans le presse-papiers 📋');
+      } catch (e) {
+        toast('Impossible de copier automatiquement', 'error');
+      }
+    };
+
+    window.publishWeeklyDigestToTeamChat = async () => {
+      const snap = buildWeeklyDigestSnapshot();
+      const topLine = snap.repRanking.length
+        ? snap.repRanking.slice(0, 3).map((r, i) => `${['🥇', '🥈', '🥉'][i]} ${r.nom} (${fmtMoney0(r.vol)})`).join(' • ')
+        : 'Aucune vente enregistrée cette semaine';
+      const msg = `📊 Bilan de la semaine (${formatDateLabelFr(snap.wb.start)} → ${formatDateLabelFr(snap.wb.end)}) : ${fmtMoney0(snap.weekVol)} signés (${snap.weekSales.length} dossiers) ! Podium : ${topLine} 🚀`;
+      const inputEl = document.getElementById('chat-message-input');
+      const formEl = document.getElementById('form-team-chat');
+      if (inputEl && formEl) {
+        inputEl.value = msg;
+        formEl.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
+        closeWeeklyDigestModal();
+        toast('Bilan publié dans Korpo Top Earner 🏆');
+      }
+    };
+
+    window.sendWeeklyDigestEmail = () => {
+      const snap = buildWeeklyDigestSnapshot();
+      const body = formatWeeklyDigestPlainText(snap);
+      const subject = `Bilan hebdomadaire Korpo Solutions — Semaine du ${formatDateLabelFr(snap.wb.start)}`;
+      const adminEmail = currentProfile?.courriel || '';
+      window.open(`mailto:${encodeURIComponent(adminEmail)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`, '_blank');
+    };
+
+    function maybeTriggerFridayWeeklyDigest() {
+      if (!currentProfile || currentProfile.role !== 'admin') return;
+      if (localStorage.getItem('korpo_weekly_digest_auto_friday_v1') === '0') return;
+      const now = new Date();
+      const isFridayAfter5pm = now.getDay() === 5 && now.getHours() >= 17;
+      if (!isFridayAfter5pm) return;
+      const wb = getCurrentWeekBounds(now);
+      const seenKey = `korpo_weekly_digest_shown_${wbKeyFromDate(wb.start)}`;
+      if (localStorage.getItem(seenKey) === '1') return;
+      setTimeout(() => openWeeklyDigestModal(), 900);
+    }
+
     function renderMesVentes() {
       syncCommDisplayModeButtons();
       updateRepOnboardingCardVisibility();
@@ -10124,6 +10475,8 @@
             if (isAdmin && scopeFilter === 'direct' && v.representant_id !== currentProfile.id) return false;
             return true;
           });
+
+      renderRepDepositReminderBanner(scopeFilteredAll, isAdmin, isInspectingRep);
 
       const allFutureRepSales = scopeFilteredAll.filter(v => Boolean(getSaleTargetFutureMonth(v)));
       const repFutureBadge = document.getElementById('rep-future-comm-badge');
