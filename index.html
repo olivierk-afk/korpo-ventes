@@ -1233,46 +1233,6 @@
     </div>
   </div>
 
-  <!-- MODALE DÉTAIL & AJUSTEMENT DES RENDEZ-VOUS DU MOIS (PAR COMPAGNIE) -->
-  <div id="rep-rdv-log-modal" class="hidden fixed inset-0 z-50 bg-slate-950/75 backdrop-blur-sm flex items-center justify-center p-4 no-print">
-    <div class="bg-white rounded-3xl border border-slate-200 shadow-2xl max-w-lg w-full max-h-[88vh] flex flex-col overflow-hidden animate-drawer">
-      <div class="px-5 py-4 bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white flex items-center justify-between gap-3 shrink-0">
-        <div class="flex items-center gap-2.5 min-w-0">
-          <span class="w-9 h-9 rounded-xl bg-indigo-500/25 text-indigo-200 border border-indigo-400/35 flex items-center justify-center text-base shrink-0">📅</span>
-          <div class="min-w-0">
-            <h3 id="rep-rdv-modal-title" class="text-sm sm:text-base font-extrabold truncate">Détail de mes rendez-vous</h3>
-            <p id="rep-rdv-modal-subtitle" class="text-[11px] text-indigo-200 truncate">Ventilation par compagnie et saisie directe</p>
-          </div>
-        </div>
-        <button type="button" onclick="closeRepRdvLogModal()" class="w-8 h-8 rounded-xl bg-white/10 hover:bg-white/20 text-slate-200 hover:text-white flex items-center justify-center transition shrink-0">✕</button>
-      </div>
-
-      <form id="form-rep-rdv-direct" class="p-5 overflow-y-auto space-y-4 flex-1">
-        <div class="bg-indigo-50/70 border border-indigo-200/80 rounded-2xl p-3.5 text-xs text-indigo-950 leading-relaxed">
-          Saisissez directement votre total du mois ou ajustez par compagnie (<strong>Toitex, MaClim, MonSpray, 1SO</strong>). Le Tableau KPI et votre taux de closing se mettent à jour automatiquement.
-        </div>
-
-        <div class="grid grid-cols-2 gap-3">
-          <div>
-            <label class="block text-xs font-extrabold text-slate-700 mb-1">Total RDV Bookés (Mois)</label>
-            <input id="rep-rdv-modal-in-booke" type="number" min="0" required class="w-full px-3.5 py-2.5 text-base font-extrabold bg-slate-50 border border-slate-200 rounded-xl tabular-nums text-center" />
-          </div>
-          <div>
-            <label class="block text-xs font-extrabold text-emerald-800 mb-1">Total RDV Réalisés (Mois)</label>
-            <input id="rep-rdv-modal-in-rdv" type="number" min="0" required class="w-full px-3.5 py-2.5 text-base font-extrabold bg-emerald-50/50 border border-emerald-200 rounded-xl tabular-nums text-center" />
-          </div>
-        </div>
-
-        <div id="rep-rdv-company-breakdown-box" class="space-y-2"></div>
-
-        <div class="pt-3 border-t border-slate-200 flex items-center justify-end gap-2">
-          <button type="button" onclick="closeRepRdvLogModal()" class="px-4 py-2 text-xs font-bold text-slate-700 bg-white hover:bg-slate-100 border border-slate-300 rounded-xl transition">Annuler</button>
-          <button type="submit" class="px-5 py-2 text-xs font-extrabold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl shadow-xs transition">✓ Enregistrer mes RDV</button>
-        </div>
-      </form>
-    </div>
-  </div>
-
   <!-- MODALE RELEVÉ DE PAIE IMPRIMABLE / PDF / CSV -->
   <div id="payslip-modal" class="hidden fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-sm flex items-center justify-center p-4">
     <div class="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-3xl w-full max-h-[90vh] flex flex-col overflow-hidden">
@@ -2114,7 +2074,7 @@
               <option value="non_paye">Commission à recevoir</option>
               <option value="paye">Commission payée</option>
             </select>
-            <button id="btn-rep-future-comm" type="button" onclick="toggleRepFutureCommQuickView()" title="Afficher en 1 clic toutes vos commissions prévues dans les prochains mois" class="w-full sm:w-auto px-3.5 py-2 text-xs font-extrabold text-emerald-900 bg-emerald-50 hover:bg-emerald-100 border border-emerald-300 rounded-xl transition flex items-center justify-center gap-1.5 shadow-2xs">
+            <button id="btn-rep-future-comm" data-mobile-group="commissions" type="button" onclick="toggleRepFutureCommQuickView()" title="Afficher en 1 clic toutes vos commissions prévues dans les prochains mois" class="w-full sm:w-auto px-3.5 py-2 text-xs font-extrabold text-emerald-900 bg-emerald-50 hover:bg-emerald-100 border border-emerald-300 rounded-xl transition flex items-center justify-center gap-1.5 shadow-2xs">
               <span>🔮</span>
               <span>Commissions futures</span>
               <span id="rep-future-comm-badge" class="px-1.5 py-0.2 text-[10px] font-extrabold rounded-full bg-emerald-600 text-white tabular-nums">0</span>
@@ -2140,68 +2100,6 @@
                   <span class="font-bold text-slate-600 shrink-0">Au :</span>
                   <input id="filter-rep-end" type="date" class="w-36 sm:w-40 px-3 py-2 text-xs font-semibold text-center bg-white border border-indigo-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-600 cursor-pointer" />
                 </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- SUIVI RAPIDE DES RENDEZ-VOUS DU MOIS (BOOKÉS & RÉALISÉS) -->
-        <div id="rep-quick-rdv-card" data-mobile-group="ventes" class="bg-white rounded-2xl border border-slate-200/80 p-4 sm:p-5 shadow-xs space-y-3.5">
-          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-            <div class="flex items-center gap-2.5">
-              <span class="w-9 h-9 rounded-xl bg-indigo-50 text-indigo-600 border border-indigo-200/80 flex items-center justify-center text-base font-extrabold shrink-0">📅</span>
-              <div>
-                <div class="flex flex-wrap items-center gap-2">
-                  <span id="rep-rdv-card-title" class="text-xs sm:text-sm font-extrabold text-slate-900">Mes rendez-vous du mois</span>
-                  <span id="rep-rdv-close-pill" class="px-2 py-0.5 text-[10px] font-extrabold rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200 tabular-nums">Close : 0 %</span>
-                </div>
-                <div class="text-[11px] text-slate-500">Enregistre tes RDV bookés et réalisés en 1 touche — synchronisé avec le Tableau KPI</div>
-              </div>
-            </div>
-            <div class="flex items-center gap-2 self-start sm:self-auto">
-              <select id="rep-rdv-company-tag" class="px-2.5 py-1.5 text-xs font-bold bg-slate-50 border border-slate-200 rounded-xl text-slate-700">
-                <option value="Toitex">🏢 Toitex</option>
-                <option value="MaClim">🏢 MaClim</option>
-                <option value="MonSpray">🏢 MonSpray</option>
-                <option value="1SO">🏢 1SO</option>
-                <option value="Autre">🏢 Autre</option>
-              </select>
-              <button type="button" onclick="openRepRdvLogModal()" class="px-2.5 py-1.5 text-[11px] font-bold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 rounded-xl transition cursor-pointer shrink-0">
-                Détail ▾
-              </button>
-            </div>
-          </div>
-
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <!-- COMPTEUR 1 : RDV BOOKÉS -->
-            <div class="bg-slate-50/90 rounded-2xl border border-slate-200/90 p-3.5 flex items-center justify-between gap-3">
-              <div class="min-w-0">
-                <div class="text-[11px] font-extrabold uppercase tracking-wider text-slate-500">RDV Bookés</div>
-                <div class="flex items-baseline gap-2 mt-0.5 tabular-nums">
-                  <span id="rep-rdv-booke-val" class="text-2xl font-extrabold text-slate-900">0</span>
-                  <span id="rep-rdv-booke-obj" class="text-xs font-semibold text-slate-400">/ 80</span>
-                </div>
-                <div id="rep-rdv-booke-breakdown" class="text-[10px] text-slate-500 truncate mt-0.5">Toitex, MaClim, MonSpray, 1SO</div>
-              </div>
-              <div class="flex items-center gap-1.5 shrink-0">
-                <button type="button" onclick="adjustRepMonthlyRdv('booke', -1)" title="Retirer 1 RDV booké" style="touch-action: manipulation;" class="w-10 h-10 rounded-xl bg-white hover:bg-rose-50 active:scale-95 text-slate-700 hover:text-rose-700 border border-slate-300 font-extrabold text-base flex items-center justify-center transition cursor-pointer">−</button>
-                <button type="button" onclick="adjustRepMonthlyRdv('booke', 1)" title="Ajouter 1 RDV booké" style="touch-action: manipulation;" class="h-10 px-3.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white font-extrabold text-xs shadow-xs flex items-center justify-center gap-1 transition cursor-pointer">+1 Booké</button>
-              </div>
-            </div>
-
-            <!-- COMPTEUR 2 : RDV RÉALISÉS -->
-            <div class="bg-emerald-50/60 rounded-2xl border border-emerald-200/90 p-3.5 flex items-center justify-between gap-3">
-              <div class="min-w-0">
-                <div class="text-[11px] font-extrabold uppercase tracking-wider text-emerald-800">RDV Réalisés</div>
-                <div class="flex items-baseline gap-2 mt-0.5 tabular-nums">
-                  <span id="rep-rdv-rea-val" class="text-2xl font-extrabold text-emerald-700">0</span>
-                  <span id="rep-rdv-rea-obj" class="text-xs font-semibold text-emerald-700/70">/ 60</span>
-                </div>
-                <div id="rep-rdv-rea-breakdown" class="text-[10px] text-emerald-800/80 truncate mt-0.5">Rendez-vous complétés sur le terrain</div>
-              </div>
-              <div class="flex items-center gap-1.5 shrink-0">
-                <button type="button" onclick="adjustRepMonthlyRdv('rdv', -1)" title="Retirer 1 RDV réalisé" style="touch-action: manipulation;" class="w-10 h-10 rounded-xl bg-white hover:bg-rose-50 active:scale-95 text-slate-700 hover:text-rose-700 border border-emerald-300 font-extrabold text-base flex items-center justify-center transition cursor-pointer">−</button>
-                <button type="button" onclick="adjustRepMonthlyRdv('rdv', 1)" title="Ajouter 1 RDV réalisé" style="touch-action: manipulation;" class="h-10 px-3.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-extrabold text-xs shadow-xs flex items-center justify-center gap-1 transition cursor-pointer">+1 Réalisé</button>
               </div>
             </div>
           </div>
@@ -3236,6 +3134,21 @@
               <button type="submit" class="px-3.5 py-2.5 bg-indigo-600 text-white text-sm font-semibold rounded-xl hover:bg-indigo-700 transition">Ajouter</button>
             </div>
           </form>
+          <div id="new-rep-setup-banner" class="hidden rounded-2xl border border-emerald-300 bg-emerald-50/80 p-3.5 space-y-2 text-xs">
+            <div class="flex items-start justify-between gap-2">
+              <div class="font-extrabold text-emerald-950" id="new-rep-setup-title">✅ Membre ajouté ! Dernières étapes :</div>
+              <button type="button" onclick="document.getElementById('new-rep-setup-banner').classList.add('hidden')" class="text-slate-400 hover:text-slate-700 font-bold">✕</button>
+            </div>
+            <ol class="list-decimal pl-4 space-y-1 text-emerald-900">
+              <li>Créez son compte de connexion dans <strong>Supabase &gt; Authentication &gt; Users</strong> avec le même courriel (<span id="new-rep-setup-email" class="font-mono font-bold"></span>).</li>
+              <li>Configurez ses taux de commission par entreprise dans <strong>Grille des taux</strong>.</li>
+            </ol>
+            <div class="pt-1">
+              <button type="button" id="btn-new-rep-goto-rates" class="px-3.5 py-1.5 text-xs font-extrabold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl shadow-2xs transition cursor-pointer">
+                ⚙️ Configurer ses taux maintenant →
+              </button>
+            </div>
+          </div>
           <ul id="list-representants" class="divide-y divide-slate-100 border border-slate-200/80 rounded-xl overflow-hidden"></ul>
         </div>
         </div>
@@ -3545,7 +3458,44 @@
     // =========================================================================
     // ARCHITECTURE KPI UNIFIÉE : BASE FICHIER CONDENSÉ + FICHIER DE VENTES
     // =========================================================================
-    const ALL_KPI_REPS = ['Olivier', 'Jean-Sébastien', 'Gabryel', 'Samuel', 'Alexandre'];
+    const DEFAULT_KPI_REPS = ['Olivier', 'Jean-Sébastien', 'Gabryel', 'Samuel', 'Alexandre'];
+    let ALL_KPI_REPS = [...DEFAULT_KPI_REPS];
+
+    function syncAllKpiRepsFromState() {
+      const seen = new Set(DEFAULT_KPI_REPS);
+      const merged = [...DEFAULT_KPI_REPS];
+      (state.representants || []).forEach(r => {
+        const nom = String(r?.nom || '').trim();
+        if (nom && !seen.has(nom)) {
+          seen.add(nom);
+          merged.push(nom);
+        }
+      });
+      ALL_KPI_REPS = merged;
+
+      // Synchroniser aussi toutes les listes déroulantes de représentants dans le Tableau KPI
+      const kpiSelRep = document.getElementById('kpi-select-rep');
+      if (kpiSelRep) {
+        const cur = kpiSelRep.value || 'ALL';
+        kpiSelRep.innerHTML = `<option value="ALL">👥 Toute l'équipe</option>` +
+          ALL_KPI_REPS.map(n => `<option value="${esc(n)}">${esc(n === 'Jean-Sébastien' ? 'Jean-Sébastien (J-S)' : n)}</option>`).join('');
+        if (cur === 'ALL' || ALL_KPI_REPS.includes(cur)) kpiSelRep.value = cur;
+      }
+      ['kpi-edit-rep', 'rep-target-select'].forEach(selId => {
+        const el = document.getElementById(selId);
+        if (!el) return;
+        const cur = el.value;
+        el.innerHTML = ALL_KPI_REPS.map(n => `<option value="${esc(n)}">${esc(n)}</option>`).join('');
+        if (cur && ALL_KPI_REPS.includes(cur)) el.value = cur;
+      });
+      const targetRepSel = document.getElementById('target-rep-select');
+      if (targetRepSel) {
+        const cur = targetRepSel.value || 'ALL';
+        targetRepSel.innerHTML = `<option value="ALL">Toute l'équipe</option>` +
+          ALL_KPI_REPS.map(n => `<option value="${esc(n)}">${esc(n)}</option>`).join('');
+        if (cur === 'ALL' || ALL_KPI_REPS.includes(cur)) targetRepSel.value = cur;
+      }
+    }
     const isValidYearMonth = (ym) => typeof ym === 'string' && /^\d{4}-(0[1-9]|1[0-2])$/.test(ym.trim());
 
     let kpiStore = {};
@@ -4941,7 +4891,6 @@
       renderKpiDashboard();
       showScreen('screen-app');
       maybeTriggerFridayWeeklyDigest();
-      maybeTriggerEveningRdvReminder();
     }
 
     let activeMobilePersonalView = 'ventes'; // 'ventes' | 'commissions'
@@ -5074,6 +5023,8 @@
       sec.querySelectorAll('[data-mobile-group="commissions"]').forEach(el => {
         if (el.id === 'filter-admin-scope') {
           el.classList.toggle('hidden', !isAdmin || !isCommView);
+        } else if (el.id === 'btn-rep-future-comm') {
+          el.classList.toggle('hidden', !isCommView);
         } else if (el.classList.contains('md:hidden')) {
           el.classList.toggle('hidden', isDesktop || !isCommView);
         } else if (el.classList.contains('md:block')) {
@@ -5082,6 +5033,15 @@
           el.classList.toggle('hidden', !isCommView);
         }
       });
+
+      const futureOpt = document.querySelector('#filter-rep-period option[value="future"]');
+      if (futureOpt) {
+        futureOpt.hidden = !isCommView;
+        futureOpt.disabled = !isCommView;
+      }
+      if (!isCommView && document.getElementById('filter-rep-period')?.value === 'future') {
+        document.getElementById('filter-rep-period').value = 'this_month';
+      }
 
       const subEl = document.getElementById('mes-ventes-subtitle');
       if (subEl) {
@@ -9591,6 +9551,7 @@
           fetchAllRows(() => sb.from('ventes').select('*').order('date_vente', { ascending: false }).order('created_at', { ascending: false }).order('id', { ascending: false }))
         ]);
         state.representants = repRows;
+        syncAllKpiRepsFromState();
         state.taux = tauxRows;
         state.ventes = venteRows;
 
@@ -9643,6 +9604,7 @@
         document.getElementById('filter-admin-scope')?.classList.add('hidden');
         document.getElementById('th-rep-col')?.classList.add('hidden');
         state.representants = (allRepsPublicRows && allRepsPublicRows.length) ? allRepsPublicRows : [currentProfile];
+        syncAllKpiRepsFromState();
         state.mesVentes = mesVentesRows;
 
         const ownSalesNormalized = state.mesVentes.map(v => ({
@@ -10747,220 +10709,6 @@
       setTimeout(() => openWeeklyDigestModal(), 900);
     }
 
-    function getActiveRdvRepName(isAdmin, isInspectingRep, inspectedRepObj) {
-      if (isInspectingRep && inspectedRepObj?.nom) return resolveKpiRepName(inspectedRepObj.nom);
-      if (currentProfile?.nom) return resolveKpiRepName(currentProfile.nom);
-      return '';
-    }
-
-    function getActiveRdvMonth() {
-      const periodState = readPeriodFilterState('filter-rep');
-      if ((periodState.mode === 'this_month' || periodState.mode === 'specific_month') && isValidYearMonth(periodState.singleMonth)) {
-        return periodState.singleMonth;
-      }
-      return currentMonthStr;
-    }
-
-    function renderRepQuickRdvCard(isAdmin = currentProfile?.role === 'admin', isInspectingRep = Boolean(window._inspectedRepId), inspectedRepObj = null) {
-      const card = document.getElementById('rep-quick-rdv-card');
-      if (!card || !currentProfile) return;
-
-      const repName = getActiveRdvRepName(isAdmin, isInspectingRep, inspectedRepObj);
-      if (!repName || !ALL_KPI_REPS.includes(repName)) {
-        card.classList.add('hidden');
-        return;
-      }
-
-      const ym = getActiveRdvMonth();
-      const mObj = ensureKpiMonthStructure(ym);
-      const rData = mObj.reps?.[repName];
-      if (!rData) {
-        card.classList.add('hidden');
-        return;
-      }
-
-      const bookeCumul = Number(rData['Booké']?.cumul || 0);
-      const bookeObj = Number(rData['Booké']?.objectif || 80);
-      const rdvCumul = Number(rData['RDV Réalisé']?.cumul || 0);
-      const rdvObj = Number(rData['RDV Réalisé']?.objectif || 60);
-      const ventesTotal = Number(rData['Ventes OTS']?.cumul || 0) + Number(rData['Ventes SUIVI']?.cumul || 0);
-      const closePct = rdvCumul > 0 ? Math.round((ventesTotal / rdvCumul) * 100) : 0;
-
-      const titleEl = document.getElementById('rep-rdv-card-title');
-      if (titleEl) {
-        titleEl.textContent = isInspectingRep
-          ? `Rendez-vous de ${repName} — ${formatYearMonthLabelFr(ym)}`
-          : `Mes rendez-vous — ${formatYearMonthLabelFr(ym)}`;
-      }
-      const closePill = document.getElementById('rep-rdv-close-pill');
-      if (closePill) closePill.textContent = `Close : ${closePct} %`;
-
-      const bValEl = document.getElementById('rep-rdv-booke-val');
-      const bObjEl = document.getElementById('rep-rdv-booke-obj');
-      const rValEl = document.getElementById('rep-rdv-rea-val');
-      const rObjEl = document.getElementById('rep-rdv-rea-obj');
-      if (bValEl) bValEl.textContent = String(bookeCumul);
-      if (bObjEl) bObjEl.textContent = `/ ${bookeObj}`;
-      if (rValEl) rValEl.textContent = String(rdvCumul);
-      if (rObjEl) rObjEl.textContent = `/ ${rdvObj}`;
-
-      // Ventilation par compagnie enregistrée par le rep
-      const ov = monthlyRdvOverrides[`${ym}_${repName}`];
-      const byComp = ov?.byCompany && typeof ov.byCompany === 'object' ? ov.byCompany : {};
-      const parts = Object.entries(byComp)
-        .filter(([, counts]) => Number(counts?.booke || 0) > 0 || Number(counts?.rdv || 0) > 0)
-        .map(([comp, counts]) => `${comp} : ${Number(counts.booke || 0)}B / ${Number(counts.rdv || 0)}R`);
-
-      const bBreakEl = document.getElementById('rep-rdv-booke-breakdown');
-      if (bBreakEl) {
-        bBreakEl.textContent = parts.length ? parts.join(' • ') : 'Toitex, MaClim, MonSpray, 1SO';
-      }
-    }
-
-    window.adjustRepMonthlyRdv = async (field, delta) => {
-      const isAdmin = currentProfile?.role === 'admin';
-      const isInspectingRep = Boolean(window._inspectedRepId);
-      const inspectedRepObj = isInspectingRep ? state.representants.find(r => String(r.id) === String(window._inspectedRepId)) : null;
-      const repName = getActiveRdvRepName(isAdmin, isInspectingRep, inspectedRepObj);
-      if (!repName || !ALL_KPI_REPS.includes(repName)) return;
-
-      const ym = getActiveRdvMonth();
-      const mObj = ensureKpiMonthStructure(ym);
-      const rData = mObj.reps[repName];
-      const curTotal = Number(field === 'booke' ? rData['Booké']?.cumul : rData['RDV Réalisé']?.cumul) || 0;
-      if (delta < 0 && curTotal <= 0) return;
-
-      const compTag = document.getElementById('rep-rdv-company-tag')?.value || 'Toitex';
-      const key = `${ym}_${repName}`;
-      const existing = monthlyRdvOverrides[key] || { booke: 0, rdv: 0, byCompany: {} };
-      const byCompany = { ...(existing.byCompany || {}) };
-      const compStats = { booke: Number(byCompany[compTag]?.booke || 0), rdv: Number(byCompany[compTag]?.rdv || 0) };
-
-      const nextBookeExtra = Number(existing.booke || 0) + (field === 'booke' ? delta : 0);
-      const nextRdvExtra = Number(existing.rdv || 0) + (field === 'rdv' ? delta : 0);
-      if (field === 'booke') compStats.booke = Math.max(0, compStats.booke + delta);
-      if (field === 'rdv') compStats.rdv = Math.max(0, compStats.rdv + delta);
-      byCompany[compTag] = compStats;
-
-      const payload = {
-        booke: nextBookeExtra,
-        rdv: nextRdvExtra,
-        byCompany,
-        updatedAt: new Date().toISOString()
-      };
-      monthlyRdvOverrides[key] = payload;
-      saveMonthlyRdvOverrides();
-
-      rebuildKpiStore();
-      renderRepQuickRdvCard(isAdmin, isInspectingRep, inspectedRepObj);
-      renderKpiDashboard();
-
-      const labelAction = field === 'booke' ? 'RDV booké' : 'RDV réalisé';
-      toast(`${delta > 0 ? '+1' : '-1'} ${labelAction} (${compTag}) enregistré ✓`);
-
-      try {
-        await persistMonthlyRdvToCloud(ym, repName, payload);
-      } catch (e) {}
-    };
-
-    window.openRepRdvLogModal = () => {
-      const isAdmin = currentProfile?.role === 'admin';
-      const isInspectingRep = Boolean(window._inspectedRepId);
-      const inspectedRepObj = isInspectingRep ? state.representants.find(r => String(r.id) === String(window._inspectedRepId)) : null;
-      const repName = getActiveRdvRepName(isAdmin, isInspectingRep, inspectedRepObj);
-      if (!repName || !ALL_KPI_REPS.includes(repName)) return;
-
-      const ym = getActiveRdvMonth();
-      const mObj = ensureKpiMonthStructure(ym);
-      const rData = mObj.reps[repName];
-      document.getElementById('rep-rdv-modal-title').textContent = `Rendez-vous de ${repName} — ${formatYearMonthLabelFr(ym)}`;
-      document.getElementById('rep-rdv-modal-in-booke').value = Number(rData['Booké']?.cumul || 0);
-      document.getElementById('rep-rdv-modal-in-rdv').value = Number(rData['RDV Réalisé']?.cumul || 0);
-
-      const ov = monthlyRdvOverrides[`${ym}_${repName}`];
-      const byComp = ov?.byCompany && typeof ov.byCompany === 'object' ? ov.byCompany : {};
-      const box = document.getElementById('rep-rdv-company-breakdown-box');
-      if (box) {
-        const comps = ['Toitex', 'MaClim', 'MonSpray', '1SO', 'Autre'];
-        box.innerHTML = `
-          <div class="text-[11px] font-extrabold uppercase tracking-wider text-slate-500 pt-1">Répartition enregistrée par compagnie</div>
-          <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
-            ${comps.map(c => {
-              const b = Number(byComp[c]?.booke || 0);
-              const r = Number(byComp[c]?.rdv || 0);
-              return `
-                <div class="p-2.5 rounded-xl border border-slate-200 bg-slate-50 text-xs">
-                  <div class="font-extrabold text-slate-800">${esc(c)}</div>
-                  <div class="text-[11px] text-slate-600 tabular-nums mt-0.5">${b} booké(s) • ${r} réalisé(s)</div>
-                </div>
-              `;
-            }).join('')}
-          </div>
-        `;
-      }
-      document.getElementById('rep-rdv-log-modal')?.classList.remove('hidden');
-    };
-
-    window.closeRepRdvLogModal = () => {
-      document.getElementById('rep-rdv-log-modal')?.classList.add('hidden');
-    };
-
-    document.getElementById('form-rep-rdv-direct')?.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const isAdmin = currentProfile?.role === 'admin';
-      const isInspectingRep = Boolean(window._inspectedRepId);
-      const inspectedRepObj = isInspectingRep ? state.representants.find(r => String(r.id) === String(window._inspectedRepId)) : null;
-      const repName = getActiveRdvRepName(isAdmin, isInspectingRep, inspectedRepObj);
-      if (!repName || !ALL_KPI_REPS.includes(repName)) return;
-
-      const ym = getActiveRdvMonth();
-      const totalBooke = Math.max(0, parseInt(document.getElementById('rep-rdv-modal-in-booke').value, 10) || 0);
-      const totalRdv = Math.max(0, parseInt(document.getElementById('rep-rdv-modal-in-rdv').value, 10) || 0);
-
-      const baseEntry = condensedBaselineStore[ym]?.[repName] || { booke: 0, rdv: 0, ots: 0, suivi: 0, dollars: 0 };
-      const existing = monthlyRdvOverrides[`${ym}_${repName}`] || {};
-      const payload = {
-        booke: totalBooke - Number(baseEntry.booke || 0),
-        rdv: totalRdv - Number(baseEntry.rdv || 0),
-        byCompany: existing.byCompany || {},
-        updatedAt: new Date().toISOString()
-      };
-      monthlyRdvOverrides[`${ym}_${repName}`] = payload;
-      saveMonthlyRdvOverrides();
-
-      rebuildKpiStore();
-      renderRepQuickRdvCard(isAdmin, isInspectingRep, inspectedRepObj);
-      renderKpiDashboard();
-      closeRepRdvLogModal();
-      toast(`Compteurs RDV mis à jour (${totalBooke} bookés / ${totalRdv} réalisés) ✓`);
-
-      try {
-        await persistMonthlyRdvToCloud(ym, repName, payload);
-      } catch (err) {}
-    });
-
-    function maybeTriggerEveningRdvReminder() {
-      if (!currentProfile || currentProfile.role === 'admin') return;
-      const now = new Date();
-      const dow = now.getDay();
-      if (dow === 0 || dow === 6) return; // Lundi à vendredi
-      if (now.getHours() < 17) return;
-      const seenKey = `korpo_evening_rdv_reminder_${currentProfile.id}_${currentDateStr}`;
-      if (localStorage.getItem(seenKey) === '1') return;
-      try { localStorage.setItem(seenKey, '1'); } catch (e) {}
-
-      const title = '📅 Bilan de journée — Rendez-vous';
-      const body = "N'oublie pas d'ajouter tes RDV bookés et réalisés du jour (Toitex, MaClim, MonSpray, 1SO) !";
-      toast(body);
-      if (isMentionPushCurrentlyEnabled() && korpoSwRegistration && typeof korpoSwRegistration.showNotification === 'function') {
-        korpoSwRegistration.showNotification(title, {
-          body,
-          tag: `korpo-rdv-evening-${currentDateStr}`,
-          data: { url: './' }
-        }).catch(() => {});
-      }
-    }
-
     function renderMesVentes() {
       syncCommDisplayModeButtons();
       updateRepOnboardingCardVisibility();
@@ -11019,7 +10767,6 @@
           });
 
       renderRepDepositReminderBanner(scopeFilteredAll, isAdmin, isInspectingRep);
-      renderRepQuickRdvCard(isAdmin, isInspectingRep, inspectedRepObj);
 
       const allFutureRepSales = scopeFilteredAll.filter(v => Boolean(getSaleTargetFutureMonth(v)));
       const repFutureBadge = document.getElementById('rep-future-comm-badge');
@@ -11477,31 +11224,107 @@
           });
         }
 
-        // Enrichir avec les données détaillées disponibles sur ses propres ventes (`state.mesVentes`)
-        const myEntry = Array.from(totalsByRep.values()).find(e => e.nom === currentProfile?.nom);
-        if (myEntry && Array.isArray(state.mesVentes)) {
-          let myConf = 0, myBest = 0, myOts = 0, mySui = 0, myCnt = 0;
-          const myEntMap = new Map();
-          state.mesVentes.forEach(v => {
-            if (!matchesSalePeriod(v, rankPeriod, true)) return;
-            const val = Number(v.valeur || 0);
-            myCnt += 1;
-            if (v.statut_depot === 'depot_recu') myConf += val;
-            if (val > myBest) myBest = val;
-            if ((v.note || '').toUpperCase().includes('[SUIVI]')) mySui += 1;
-            else myOts += 1;
-            const entN = v.entreprise_nom || state.entreprises.find(e => String(e.id) === String(v.entreprise_id))?.nom || '';
-            if (entN) myEntMap.set(entN, (myEntMap.get(entN) || 0) + val);
-          });
-          if (myCnt > 0) {
-            myEntry.confirmedTotal = myConf;
-            myEntry.bestSale = myBest;
-            myEntry.otsCount = myOts;
-            myEntry.suiviCount = mySui;
-            myEntry.dealsCount = Math.max(myEntry.dealsCount, myCnt);
-            myEntry.byEnt = myEntMap;
+        // Enrichir TOUS les représentants avec les détails disponibles (state.ventes + teamChatMessages + kpiStore + state.mesVentes)
+        const detailedSalesPool = new Map();
+        (state.mesVentes || []).forEach(v => {
+          if (v && v.id) detailedSalesPool.set(String(v.id), v);
+        });
+        (state.ventes || []).forEach(v => {
+          if (v && v.id && !detailedSalesPool.has(String(v.id))) detailedSalesPool.set(String(v.id), v);
+        });
+
+        // 1) D'abord utiliser les ventes individuelles accessibles
+        const perRepDetailed = new Map();
+        detailedSalesPool.forEach(v => {
+          if (!matchesSalePeriod(v, rankPeriod, true)) return;
+          const rObj = state.representants.find(r => String(r.id) === String(v.representant_id));
+          const rName = rObj?.nom || v.rep_nom || '';
+          const entry = Array.from(totalsByRep.values()).find(e => resolveKpiRepName(e.nom) === resolveKpiRepName(rName));
+          if (!entry) return;
+          if (!perRepDetailed.has(entry.id)) {
+            perRepDetailed.set(entry.id, { cnt: 0, conf: 0, best: 0, ots: 0, sui: 0, byEnt: new Map(), vol: 0 });
           }
+          const acc = perRepDetailed.get(entry.id);
+          const val = Number(v.valeur || 0);
+          acc.cnt += 1;
+          acc.vol += val;
+          if (v.statut_depot === 'depot_recu') acc.conf += val;
+          if (val > acc.best) acc.best = val;
+          if ((v.note || '').toUpperCase().includes('[SUIVI]')) acc.sui += 1;
+          else acc.ots += 1;
+          const entN = v.entreprise_nom || state.entreprises.find(e => String(e.id) === String(v.entreprise_id))?.nom || '';
+          if (entN) acc.byEnt.set(entN, (acc.byEnt.get(entN) || 0) + val);
+        });
+
+        // 2) Compléter avec les annonces de ventes du canal d'équipe (`teamChatMessages`) pour les collègues dont les lignes `ventes` sont masquées par RLS
+        if (typeof teamChatMessages !== 'undefined' && Array.isArray(teamChatMessages)) {
+          teamChatMessages.forEach(m => {
+            if (!m || m.type !== 'sale' || !m.repNom) return;
+            const dStr = (m.dateVente || m.createdAt || '').slice(0, 10);
+            if (!dStr) return;
+            const fakeSale = { date_vente: dStr, mois_commission: dStr.slice(0, 7) };
+            if (!matchesSalePeriod(fakeSale, rankPeriod, true)) return;
+            const entry = Array.from(totalsByRep.values()).find(e => resolveKpiRepName(e.nom) === resolveKpiRepName(m.repNom));
+            if (!entry) return;
+            // Si on a déjà les ventes individuelles de ce rep (ex: soi-même), ne pas recompter
+            if (String(entry.id) === String(currentProfile?.id)) return;
+            if (!perRepDetailed.has(entry.id)) {
+              perRepDetailed.set(entry.id, { cnt: 0, conf: 0, best: 0, ots: 0, sui: 0, byEnt: new Map(), vol: 0 });
+            }
+            const acc = perRepDetailed.get(entry.id);
+            const val = Number(m.valeur || 0);
+            acc.cnt += 1;
+            acc.vol += val;
+            if (val > acc.best) acc.best = val;
+            if ((m.typeKpi || '').toUpperCase() === 'SUIVI') acc.sui += 1;
+            else acc.ots += 1;
+            if (m.entrepriseNom) acc.byEnt.set(m.entrepriseNom, (acc.byEnt.get(m.entrepriseNom) || 0) + val);
+          });
         }
+
+        // 3) Compléter aussi OTS / Suivi / Entreprises depuis `kpiStore` si disponible sur la période mensuelle
+        if (!isSubMonthMode) {
+          Object.entries(kpiStore || {}).forEach(([ym, mObj]) => {
+            if (!isValidYearMonth(ym) || !mObj?.reps) return;
+            const fakeRow = { mois_commission: ym, date_vente: `${ym}-01` };
+            if (!matchesSalePeriod(fakeRow, rankPeriod, false)) return;
+            totalsByRep.forEach(entry => {
+              const rn = resolveKpiRepName(entry.nom);
+              const rKpi = mObj.reps[rn];
+              if (!rKpi) return;
+              const kOts = Number(rKpi['Ventes OTS']?.cumul || 0);
+              const kSui = Number(rKpi['Ventes SUIVI']?.cumul || 0);
+              if (kOts + kSui > 0) {
+                entry.otsCount += kOts;
+                entry.suiviCount += kSui;
+                entry.dealsCount = Math.max(entry.dealsCount, entry.otsCount + entry.suiviCount);
+              }
+              Object.entries(mObj.entreprises || {}).forEach(([entName, eObj]) => {
+                const eVal = Number(eObj?.reps?.[rn]?.cumul || 0);
+                if (eVal > 0) {
+                  entry.byEnt.set(entName, Math.max(entry.byEnt.get(entName) || 0, eVal));
+                }
+              });
+            });
+          });
+        }
+
+        perRepDetailed.forEach((acc, repId) => {
+          const entry = totalsByRep.get(repId);
+          if (!entry) return;
+          if (acc.cnt > 0) {
+            entry.dealsCount = Math.max(entry.dealsCount, acc.cnt);
+            if (acc.best > entry.bestSale) entry.bestSale = acc.best;
+            if (entry.otsCount === 0 && entry.suiviCount === 0) {
+              entry.otsCount = acc.ots;
+              entry.suiviCount = acc.sui;
+            }
+            if (entry.byEnt.size === 0 && acc.byEnt.size > 0) {
+              entry.byEnt = acc.byEnt;
+            }
+            if (acc.conf > 0) entry.confirmedTotal = acc.conf;
+          }
+        });
       }
 
       const activeYm = rankPeriod.singleMonth || (rankPeriod.mode === 'custom_range' && rankPeriod.startVal ? rankPeriod.startVal.slice(0, 7) : currentMonthStr);
@@ -11951,15 +11774,15 @@
         }
         document.getElementById('preview-taux-label').innerHTML = hasRule
           ? `Règle : <strong>${fmtPct(tRep)}</strong> Rep / <strong>${fmtPct(tOli)}</strong> Olivier${tagHtml}${hitBadge}`
-          : `Aucun taux configuré (0 % par défaut)${hitBadge}`;
+          : `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-amber-100 text-amber-900 border border-amber-300 font-bold text-[11px]">⚠️ Aucun taux configuré pour ce rep/entreprise (0 % par défaut)</span>${hitBadge}`;
         repEl.textContent = `Rep : ${fmtMoney(cRep)}`;
         oliEl.textContent = `Olivier : ${fmtMoney(cOli)}`;
         oliEl.classList.remove('hidden');
       } else {
         document.getElementById('preview-taux-label').innerHTML = hasRule
           ? `Votre taux applicable : <strong>${fmtPct(tRep)}</strong>${bonusActive ? ` <span class="inline-block ml-1 px-1.5 py-0.5 text-[10px] font-extrabold rounded-md bg-emerald-100 text-emerald-800">🔥 Bonus +${bStr} actif</span>` : ''}${hitBadge}`
-          : `Taux calculé automatiquement à l’enregistrement${hitBadge}`;
-        repEl.textContent = `Ma commission : ${fmtMoney(cRep)}`;
+          : `<span class="inline-block px-2 py-1 rounded-lg bg-amber-50 text-amber-900 border border-amber-200 font-semibold text-[11px]">⏳ Taux en attente de configuration par l'administration — ta vente sera bien enregistrée et ta commission recalculée dès validation.</span>${hitBadge}`;
+        repEl.textContent = hasRule ? `Ma commission : ${fmtMoney(cRep)}` : 'En attente du taux';
         oliEl.classList.add('hidden');
       }
     }
@@ -13509,15 +13332,29 @@
         </li>
       `).join('');
 
-      document.getElementById('list-representants').innerHTML = state.representants.map(r => `
-        <li class="px-4 py-3 flex items-center justify-between text-sm bg-white">
-          <div>
-            <div class="font-bold text-slate-900">${esc(r.nom)} <span class="ml-1.5 text-[11px] font-semibold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">${esc(r.role)}</span></div>
-            <div class="text-xs text-slate-500">${esc(r.courriel)}</div>
+      document.getElementById('list-representants').innerHTML = state.representants.map(r => {
+        const ratesCount = (state.taux || []).filter(t => String(t.representant_id) === String(r.id)).length;
+        const rateStatusBadge = r.role === 'admin'
+          ? ''
+          : (ratesCount > 0
+            ? `<span class="ml-1.5 text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">${ratesCount} taux actif(s)</span>`
+            : `<button type="button" onclick="openRatesForRep('${r.id}')" class="ml-1.5 text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-amber-100 text-amber-900 border border-amber-300 hover:bg-amber-200 transition cursor-pointer">⚠️ Configurer taux →</button>`);
+        return `
+        <li class="px-4 py-3 flex items-center justify-between gap-2 text-sm bg-white">
+          <div class="min-w-0">
+            <div class="font-bold text-slate-900 flex flex-wrap items-center">
+              <span>${esc(r.nom)}</span>
+              <span class="ml-1.5 text-[11px] font-semibold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">${esc(r.role)}</span>
+              ${rateStatusBadge}
+            </div>
+            <div class="text-xs text-slate-500 truncate">${esc(r.courriel)}</div>
           </div>
-          ${r.id !== currentProfile.id ? `<button onclick="deleteRepresentant('${r.id}')" class="text-xs font-semibold text-rose-600 hover:underline">Supprimer</button>` : '<span class="text-xs font-medium text-emerald-600">Session active</span>'}
+          <div class="shrink-0">
+            ${r.id !== currentProfile.id ? `<button onclick="deleteRepresentant('${r.id}')" class="text-xs font-semibold text-rose-600 hover:underline">Supprimer</button>` : '<span class="text-xs font-medium text-emerald-600">Session active</span>'}
+          </div>
         </li>
-      `).join('');
+      `;
+      }).join('');
     }
 
     const pendingClientCreations = new Map();
@@ -16212,6 +16049,16 @@
       await loadAllData();
     });
 
+    window.openRatesForRep = (repId) => {
+      switchTab('tab-admin-taux');
+      const tauxRepSel = document.getElementById('taux-rep');
+      if (tauxRepSel && repId) {
+        tauxRepSel.value = String(repId);
+        if (typeof updateTauxClientSelect === 'function') updateTauxClientSelect();
+      }
+      document.getElementById('taux-val-rep')?.focus();
+    };
+
     document.getElementById('form-new-rep')?.addEventListener('submit', async (e) => {
       e.preventDefault();
       const payload = {
@@ -16219,12 +16066,24 @@
         courriel: document.getElementById('new-rep-email').value.trim().toLowerCase(),
         role: document.getElementById('new-rep-role').value
       };
-      const { error } = await sb.from('representants').insert(payload);
+      const { data: insertedRep, error } = await sb.from('representants').insert(payload).select().single();
       if (error) return toast(error.message, 'error');
       document.getElementById('new-rep-nom').value = '';
       document.getElementById('new-rep-email').value = '';
-      toast('Membre ajouté');
+      toast(`${payload.nom} ajouté à l'équipe ✓`);
       await loadAllData();
+
+      const setupBanner = document.getElementById('new-rep-setup-banner');
+      if (setupBanner) {
+        document.getElementById('new-rep-setup-title').textContent = `✅ ${payload.nom} ajouté ! 2 étapes pour activer son profil :`;
+        document.getElementById('new-rep-setup-email').textContent = payload.courriel;
+        const gotoBtn = document.getElementById('btn-new-rep-goto-rates');
+        if (gotoBtn) {
+          const targetId = insertedRep?.id || state.representants.find(r => r.courriel === payload.courriel)?.id || '';
+          gotoBtn.onclick = () => openRatesForRep(targetId);
+        }
+        setupBanner.classList.remove('hidden');
+      }
     });
 
     document.getElementById('btn-csv-export')?.addEventListener('click', () => {
