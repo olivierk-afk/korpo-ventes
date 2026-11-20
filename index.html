@@ -1233,6 +1233,46 @@
     </div>
   </div>
 
+  <!-- MODALE DÉTAIL & AJUSTEMENT DES RENDEZ-VOUS DU MOIS (PAR COMPAGNIE) -->
+  <div id="rep-rdv-log-modal" class="hidden fixed inset-0 z-50 bg-slate-950/75 backdrop-blur-sm flex items-center justify-center p-4 no-print">
+    <div class="bg-white rounded-3xl border border-slate-200 shadow-2xl max-w-lg w-full max-h-[88vh] flex flex-col overflow-hidden animate-drawer">
+      <div class="px-5 py-4 bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white flex items-center justify-between gap-3 shrink-0">
+        <div class="flex items-center gap-2.5 min-w-0">
+          <span class="w-9 h-9 rounded-xl bg-indigo-500/25 text-indigo-200 border border-indigo-400/35 flex items-center justify-center text-base shrink-0">📅</span>
+          <div class="min-w-0">
+            <h3 id="rep-rdv-modal-title" class="text-sm sm:text-base font-extrabold truncate">Détail de mes rendez-vous</h3>
+            <p id="rep-rdv-modal-subtitle" class="text-[11px] text-indigo-200 truncate">Ventilation par compagnie et saisie directe</p>
+          </div>
+        </div>
+        <button type="button" onclick="closeRepRdvLogModal()" class="w-8 h-8 rounded-xl bg-white/10 hover:bg-white/20 text-slate-200 hover:text-white flex items-center justify-center transition shrink-0">✕</button>
+      </div>
+
+      <form id="form-rep-rdv-direct" class="p-5 overflow-y-auto space-y-4 flex-1">
+        <div class="bg-indigo-50/70 border border-indigo-200/80 rounded-2xl p-3.5 text-xs text-indigo-950 leading-relaxed">
+          Saisissez directement votre total du mois ou ajustez par compagnie (<strong>Toitex, MaClim, MonSpray, 1SO</strong>). Le Tableau KPI et votre taux de closing se mettent à jour automatiquement.
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-extrabold text-slate-700 mb-1">Total RDV Bookés (Mois)</label>
+            <input id="rep-rdv-modal-in-booke" type="number" min="0" required class="w-full px-3.5 py-2.5 text-base font-extrabold bg-slate-50 border border-slate-200 rounded-xl tabular-nums text-center" />
+          </div>
+          <div>
+            <label class="block text-xs font-extrabold text-emerald-800 mb-1">Total RDV Réalisés (Mois)</label>
+            <input id="rep-rdv-modal-in-rdv" type="number" min="0" required class="w-full px-3.5 py-2.5 text-base font-extrabold bg-emerald-50/50 border border-emerald-200 rounded-xl tabular-nums text-center" />
+          </div>
+        </div>
+
+        <div id="rep-rdv-company-breakdown-box" class="space-y-2"></div>
+
+        <div class="pt-3 border-t border-slate-200 flex items-center justify-end gap-2">
+          <button type="button" onclick="closeRepRdvLogModal()" class="px-4 py-2 text-xs font-bold text-slate-700 bg-white hover:bg-slate-100 border border-slate-300 rounded-xl transition">Annuler</button>
+          <button type="submit" class="px-5 py-2 text-xs font-extrabold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl shadow-xs transition">✓ Enregistrer mes RDV</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <!-- MODALE RELEVÉ DE PAIE IMPRIMABLE / PDF / CSV -->
   <div id="payslip-modal" class="hidden fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-sm flex items-center justify-center p-4">
     <div class="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-3xl w-full max-h-[90vh] flex flex-col overflow-hidden">
@@ -2100,6 +2140,68 @@
                   <span class="font-bold text-slate-600 shrink-0">Au :</span>
                   <input id="filter-rep-end" type="date" class="w-36 sm:w-40 px-3 py-2 text-xs font-semibold text-center bg-white border border-indigo-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-600 cursor-pointer" />
                 </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- SUIVI RAPIDE DES RENDEZ-VOUS DU MOIS (BOOKÉS & RÉALISÉS) -->
+        <div id="rep-quick-rdv-card" data-mobile-group="ventes" class="bg-white rounded-2xl border border-slate-200/80 p-4 sm:p-5 shadow-xs space-y-3.5">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <div class="flex items-center gap-2.5">
+              <span class="w-9 h-9 rounded-xl bg-indigo-50 text-indigo-600 border border-indigo-200/80 flex items-center justify-center text-base font-extrabold shrink-0">📅</span>
+              <div>
+                <div class="flex flex-wrap items-center gap-2">
+                  <span id="rep-rdv-card-title" class="text-xs sm:text-sm font-extrabold text-slate-900">Mes rendez-vous du mois</span>
+                  <span id="rep-rdv-close-pill" class="px-2 py-0.5 text-[10px] font-extrabold rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200 tabular-nums">Close : 0 %</span>
+                </div>
+                <div class="text-[11px] text-slate-500">Enregistre tes RDV bookés et réalisés en 1 touche — synchronisé avec le Tableau KPI</div>
+              </div>
+            </div>
+            <div class="flex items-center gap-2 self-start sm:self-auto">
+              <select id="rep-rdv-company-tag" class="px-2.5 py-1.5 text-xs font-bold bg-slate-50 border border-slate-200 rounded-xl text-slate-700">
+                <option value="Toitex">🏢 Toitex</option>
+                <option value="MaClim">🏢 MaClim</option>
+                <option value="MonSpray">🏢 MonSpray</option>
+                <option value="1SO">🏢 1SO</option>
+                <option value="Autre">🏢 Autre</option>
+              </select>
+              <button type="button" onclick="openRepRdvLogModal()" class="px-2.5 py-1.5 text-[11px] font-bold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 rounded-xl transition cursor-pointer shrink-0">
+                Détail ▾
+              </button>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <!-- COMPTEUR 1 : RDV BOOKÉS -->
+            <div class="bg-slate-50/90 rounded-2xl border border-slate-200/90 p-3.5 flex items-center justify-between gap-3">
+              <div class="min-w-0">
+                <div class="text-[11px] font-extrabold uppercase tracking-wider text-slate-500">RDV Bookés</div>
+                <div class="flex items-baseline gap-2 mt-0.5 tabular-nums">
+                  <span id="rep-rdv-booke-val" class="text-2xl font-extrabold text-slate-900">0</span>
+                  <span id="rep-rdv-booke-obj" class="text-xs font-semibold text-slate-400">/ 80</span>
+                </div>
+                <div id="rep-rdv-booke-breakdown" class="text-[10px] text-slate-500 truncate mt-0.5">Toitex, MaClim, MonSpray, 1SO</div>
+              </div>
+              <div class="flex items-center gap-1.5 shrink-0">
+                <button type="button" onclick="adjustRepMonthlyRdv('booke', -1)" title="Retirer 1 RDV booké" style="touch-action: manipulation;" class="w-10 h-10 rounded-xl bg-white hover:bg-rose-50 active:scale-95 text-slate-700 hover:text-rose-700 border border-slate-300 font-extrabold text-base flex items-center justify-center transition cursor-pointer">−</button>
+                <button type="button" onclick="adjustRepMonthlyRdv('booke', 1)" title="Ajouter 1 RDV booké" style="touch-action: manipulation;" class="h-10 px-3.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white font-extrabold text-xs shadow-xs flex items-center justify-center gap-1 transition cursor-pointer">+1 Booké</button>
+              </div>
+            </div>
+
+            <!-- COMPTEUR 2 : RDV RÉALISÉS -->
+            <div class="bg-emerald-50/60 rounded-2xl border border-emerald-200/90 p-3.5 flex items-center justify-between gap-3">
+              <div class="min-w-0">
+                <div class="text-[11px] font-extrabold uppercase tracking-wider text-emerald-800">RDV Réalisés</div>
+                <div class="flex items-baseline gap-2 mt-0.5 tabular-nums">
+                  <span id="rep-rdv-rea-val" class="text-2xl font-extrabold text-emerald-700">0</span>
+                  <span id="rep-rdv-rea-obj" class="text-xs font-semibold text-emerald-700/70">/ 60</span>
+                </div>
+                <div id="rep-rdv-rea-breakdown" class="text-[10px] text-emerald-800/80 truncate mt-0.5">Rendez-vous complétés sur le terrain</div>
+              </div>
+              <div class="flex items-center gap-1.5 shrink-0">
+                <button type="button" onclick="adjustRepMonthlyRdv('rdv', -1)" title="Retirer 1 RDV réalisé" style="touch-action: manipulation;" class="w-10 h-10 rounded-xl bg-white hover:bg-rose-50 active:scale-95 text-slate-700 hover:text-rose-700 border border-emerald-300 font-extrabold text-base flex items-center justify-center transition cursor-pointer">−</button>
+                <button type="button" onclick="adjustRepMonthlyRdv('rdv', 1)" title="Ajouter 1 RDV réalisé" style="touch-action: manipulation;" class="h-10 px-3.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-extrabold text-xs shadow-xs flex items-center justify-center gap-1 transition cursor-pointer">+1 Réalisé</button>
               </div>
             </div>
           </div>
@@ -4839,6 +4941,7 @@
       renderKpiDashboard();
       showScreen('screen-app');
       maybeTriggerFridayWeeklyDigest();
+      maybeTriggerEveningRdvReminder();
     }
 
     let activeMobilePersonalView = 'ventes'; // 'ventes' | 'commissions'
@@ -9512,6 +9615,7 @@
           toast(`🔗 ${autoCleanedDups} doublon(s) antérieur(s) non confirmé(s) fusionné(s) automatiquement`);
         }
         await runMonthlyAutoRolloverAndCarryOver();
+        mergeCloudAuditAndTrash();
         syncSalesIntoKpi();
         syncGoogleAgendaIntoKpi();
         populateAdminSelects();
@@ -10643,6 +10747,220 @@
       setTimeout(() => openWeeklyDigestModal(), 900);
     }
 
+    function getActiveRdvRepName(isAdmin, isInspectingRep, inspectedRepObj) {
+      if (isInspectingRep && inspectedRepObj?.nom) return resolveKpiRepName(inspectedRepObj.nom);
+      if (currentProfile?.nom) return resolveKpiRepName(currentProfile.nom);
+      return '';
+    }
+
+    function getActiveRdvMonth() {
+      const periodState = readPeriodFilterState('filter-rep');
+      if ((periodState.mode === 'this_month' || periodState.mode === 'specific_month') && isValidYearMonth(periodState.singleMonth)) {
+        return periodState.singleMonth;
+      }
+      return currentMonthStr;
+    }
+
+    function renderRepQuickRdvCard(isAdmin = currentProfile?.role === 'admin', isInspectingRep = Boolean(window._inspectedRepId), inspectedRepObj = null) {
+      const card = document.getElementById('rep-quick-rdv-card');
+      if (!card || !currentProfile) return;
+
+      const repName = getActiveRdvRepName(isAdmin, isInspectingRep, inspectedRepObj);
+      if (!repName || !ALL_KPI_REPS.includes(repName)) {
+        card.classList.add('hidden');
+        return;
+      }
+
+      const ym = getActiveRdvMonth();
+      const mObj = ensureKpiMonthStructure(ym);
+      const rData = mObj.reps?.[repName];
+      if (!rData) {
+        card.classList.add('hidden');
+        return;
+      }
+
+      const bookeCumul = Number(rData['Booké']?.cumul || 0);
+      const bookeObj = Number(rData['Booké']?.objectif || 80);
+      const rdvCumul = Number(rData['RDV Réalisé']?.cumul || 0);
+      const rdvObj = Number(rData['RDV Réalisé']?.objectif || 60);
+      const ventesTotal = Number(rData['Ventes OTS']?.cumul || 0) + Number(rData['Ventes SUIVI']?.cumul || 0);
+      const closePct = rdvCumul > 0 ? Math.round((ventesTotal / rdvCumul) * 100) : 0;
+
+      const titleEl = document.getElementById('rep-rdv-card-title');
+      if (titleEl) {
+        titleEl.textContent = isInspectingRep
+          ? `Rendez-vous de ${repName} — ${formatYearMonthLabelFr(ym)}`
+          : `Mes rendez-vous — ${formatYearMonthLabelFr(ym)}`;
+      }
+      const closePill = document.getElementById('rep-rdv-close-pill');
+      if (closePill) closePill.textContent = `Close : ${closePct} %`;
+
+      const bValEl = document.getElementById('rep-rdv-booke-val');
+      const bObjEl = document.getElementById('rep-rdv-booke-obj');
+      const rValEl = document.getElementById('rep-rdv-rea-val');
+      const rObjEl = document.getElementById('rep-rdv-rea-obj');
+      if (bValEl) bValEl.textContent = String(bookeCumul);
+      if (bObjEl) bObjEl.textContent = `/ ${bookeObj}`;
+      if (rValEl) rValEl.textContent = String(rdvCumul);
+      if (rObjEl) rObjEl.textContent = `/ ${rdvObj}`;
+
+      // Ventilation par compagnie enregistrée par le rep
+      const ov = monthlyRdvOverrides[`${ym}_${repName}`];
+      const byComp = ov?.byCompany && typeof ov.byCompany === 'object' ? ov.byCompany : {};
+      const parts = Object.entries(byComp)
+        .filter(([, counts]) => Number(counts?.booke || 0) > 0 || Number(counts?.rdv || 0) > 0)
+        .map(([comp, counts]) => `${comp} : ${Number(counts.booke || 0)}B / ${Number(counts.rdv || 0)}R`);
+
+      const bBreakEl = document.getElementById('rep-rdv-booke-breakdown');
+      if (bBreakEl) {
+        bBreakEl.textContent = parts.length ? parts.join(' • ') : 'Toitex, MaClim, MonSpray, 1SO';
+      }
+    }
+
+    window.adjustRepMonthlyRdv = async (field, delta) => {
+      const isAdmin = currentProfile?.role === 'admin';
+      const isInspectingRep = Boolean(window._inspectedRepId);
+      const inspectedRepObj = isInspectingRep ? state.representants.find(r => String(r.id) === String(window._inspectedRepId)) : null;
+      const repName = getActiveRdvRepName(isAdmin, isInspectingRep, inspectedRepObj);
+      if (!repName || !ALL_KPI_REPS.includes(repName)) return;
+
+      const ym = getActiveRdvMonth();
+      const mObj = ensureKpiMonthStructure(ym);
+      const rData = mObj.reps[repName];
+      const curTotal = Number(field === 'booke' ? rData['Booké']?.cumul : rData['RDV Réalisé']?.cumul) || 0;
+      if (delta < 0 && curTotal <= 0) return;
+
+      const compTag = document.getElementById('rep-rdv-company-tag')?.value || 'Toitex';
+      const key = `${ym}_${repName}`;
+      const existing = monthlyRdvOverrides[key] || { booke: 0, rdv: 0, byCompany: {} };
+      const byCompany = { ...(existing.byCompany || {}) };
+      const compStats = { booke: Number(byCompany[compTag]?.booke || 0), rdv: Number(byCompany[compTag]?.rdv || 0) };
+
+      const nextBookeExtra = Number(existing.booke || 0) + (field === 'booke' ? delta : 0);
+      const nextRdvExtra = Number(existing.rdv || 0) + (field === 'rdv' ? delta : 0);
+      if (field === 'booke') compStats.booke = Math.max(0, compStats.booke + delta);
+      if (field === 'rdv') compStats.rdv = Math.max(0, compStats.rdv + delta);
+      byCompany[compTag] = compStats;
+
+      const payload = {
+        booke: nextBookeExtra,
+        rdv: nextRdvExtra,
+        byCompany,
+        updatedAt: new Date().toISOString()
+      };
+      monthlyRdvOverrides[key] = payload;
+      saveMonthlyRdvOverrides();
+
+      rebuildKpiStore();
+      renderRepQuickRdvCard(isAdmin, isInspectingRep, inspectedRepObj);
+      renderKpiDashboard();
+
+      const labelAction = field === 'booke' ? 'RDV booké' : 'RDV réalisé';
+      toast(`${delta > 0 ? '+1' : '-1'} ${labelAction} (${compTag}) enregistré ✓`);
+
+      try {
+        await persistMonthlyRdvToCloud(ym, repName, payload);
+      } catch (e) {}
+    };
+
+    window.openRepRdvLogModal = () => {
+      const isAdmin = currentProfile?.role === 'admin';
+      const isInspectingRep = Boolean(window._inspectedRepId);
+      const inspectedRepObj = isInspectingRep ? state.representants.find(r => String(r.id) === String(window._inspectedRepId)) : null;
+      const repName = getActiveRdvRepName(isAdmin, isInspectingRep, inspectedRepObj);
+      if (!repName || !ALL_KPI_REPS.includes(repName)) return;
+
+      const ym = getActiveRdvMonth();
+      const mObj = ensureKpiMonthStructure(ym);
+      const rData = mObj.reps[repName];
+      document.getElementById('rep-rdv-modal-title').textContent = `Rendez-vous de ${repName} — ${formatYearMonthLabelFr(ym)}`;
+      document.getElementById('rep-rdv-modal-in-booke').value = Number(rData['Booké']?.cumul || 0);
+      document.getElementById('rep-rdv-modal-in-rdv').value = Number(rData['RDV Réalisé']?.cumul || 0);
+
+      const ov = monthlyRdvOverrides[`${ym}_${repName}`];
+      const byComp = ov?.byCompany && typeof ov.byCompany === 'object' ? ov.byCompany : {};
+      const box = document.getElementById('rep-rdv-company-breakdown-box');
+      if (box) {
+        const comps = ['Toitex', 'MaClim', 'MonSpray', '1SO', 'Autre'];
+        box.innerHTML = `
+          <div class="text-[11px] font-extrabold uppercase tracking-wider text-slate-500 pt-1">Répartition enregistrée par compagnie</div>
+          <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
+            ${comps.map(c => {
+              const b = Number(byComp[c]?.booke || 0);
+              const r = Number(byComp[c]?.rdv || 0);
+              return `
+                <div class="p-2.5 rounded-xl border border-slate-200 bg-slate-50 text-xs">
+                  <div class="font-extrabold text-slate-800">${esc(c)}</div>
+                  <div class="text-[11px] text-slate-600 tabular-nums mt-0.5">${b} booké(s) • ${r} réalisé(s)</div>
+                </div>
+              `;
+            }).join('')}
+          </div>
+        `;
+      }
+      document.getElementById('rep-rdv-log-modal')?.classList.remove('hidden');
+    };
+
+    window.closeRepRdvLogModal = () => {
+      document.getElementById('rep-rdv-log-modal')?.classList.add('hidden');
+    };
+
+    document.getElementById('form-rep-rdv-direct')?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const isAdmin = currentProfile?.role === 'admin';
+      const isInspectingRep = Boolean(window._inspectedRepId);
+      const inspectedRepObj = isInspectingRep ? state.representants.find(r => String(r.id) === String(window._inspectedRepId)) : null;
+      const repName = getActiveRdvRepName(isAdmin, isInspectingRep, inspectedRepObj);
+      if (!repName || !ALL_KPI_REPS.includes(repName)) return;
+
+      const ym = getActiveRdvMonth();
+      const totalBooke = Math.max(0, parseInt(document.getElementById('rep-rdv-modal-in-booke').value, 10) || 0);
+      const totalRdv = Math.max(0, parseInt(document.getElementById('rep-rdv-modal-in-rdv').value, 10) || 0);
+
+      const baseEntry = condensedBaselineStore[ym]?.[repName] || { booke: 0, rdv: 0, ots: 0, suivi: 0, dollars: 0 };
+      const existing = monthlyRdvOverrides[`${ym}_${repName}`] || {};
+      const payload = {
+        booke: totalBooke - Number(baseEntry.booke || 0),
+        rdv: totalRdv - Number(baseEntry.rdv || 0),
+        byCompany: existing.byCompany || {},
+        updatedAt: new Date().toISOString()
+      };
+      monthlyRdvOverrides[`${ym}_${repName}`] = payload;
+      saveMonthlyRdvOverrides();
+
+      rebuildKpiStore();
+      renderRepQuickRdvCard(isAdmin, isInspectingRep, inspectedRepObj);
+      renderKpiDashboard();
+      closeRepRdvLogModal();
+      toast(`Compteurs RDV mis à jour (${totalBooke} bookés / ${totalRdv} réalisés) ✓`);
+
+      try {
+        await persistMonthlyRdvToCloud(ym, repName, payload);
+      } catch (err) {}
+    });
+
+    function maybeTriggerEveningRdvReminder() {
+      if (!currentProfile || currentProfile.role === 'admin') return;
+      const now = new Date();
+      const dow = now.getDay();
+      if (dow === 0 || dow === 6) return; // Lundi à vendredi
+      if (now.getHours() < 17) return;
+      const seenKey = `korpo_evening_rdv_reminder_${currentProfile.id}_${currentDateStr}`;
+      if (localStorage.getItem(seenKey) === '1') return;
+      try { localStorage.setItem(seenKey, '1'); } catch (e) {}
+
+      const title = '📅 Bilan de journée — Rendez-vous';
+      const body = "N'oublie pas d'ajouter tes RDV bookés et réalisés du jour (Toitex, MaClim, MonSpray, 1SO) !";
+      toast(body);
+      if (isMentionPushCurrentlyEnabled() && korpoSwRegistration && typeof korpoSwRegistration.showNotification === 'function') {
+        korpoSwRegistration.showNotification(title, {
+          body,
+          tag: `korpo-rdv-evening-${currentDateStr}`,
+          data: { url: './' }
+        }).catch(() => {});
+      }
+    }
+
     function renderMesVentes() {
       syncCommDisplayModeButtons();
       updateRepOnboardingCardVisibility();
@@ -10701,6 +11019,7 @@
           });
 
       renderRepDepositReminderBanner(scopeFilteredAll, isAdmin, isInspectingRep);
+      renderRepQuickRdvCard(isAdmin, isInspectingRep, inspectedRepObj);
 
       const allFutureRepSales = scopeFilteredAll.filter(v => Boolean(getSaleTargetFutureMonth(v)));
       const repFutureBadge = document.getElementById('rep-future-comm-badge');
