@@ -844,6 +844,17 @@
       0%, 100% { transform: scale(1); opacity: 1; }
       50% { transform: scale(1.25); opacity: 0.65; }
     }
+    @keyframes redPhoneRing {
+      0%, 100% { transform: rotate(0deg) scale(1); }
+      15% { transform: rotate(-14deg) scale(1.08); }
+      30% { transform: rotate(14deg) scale(1.08); }
+      45% { transform: rotate(-10deg) scale(1.05); }
+      60% { transform: rotate(10deg) scale(1.05); }
+      75% { transform: rotate(0deg) scale(1); }
+    }
+    .red-phone-ring-anim {
+      animation: redPhoneRing 1.35s ease-in-out infinite;
+    }
     .wa-rec-dot {
       animation: waMicPulse 1.1s ease-in-out infinite;
     }
@@ -932,6 +943,70 @@
 
   <!-- TOASTS -->
   <div id="toast-container" class="fixed bottom-20 sm:bottom-5 inset-x-3 sm:inset-x-auto sm:right-5 z-50 flex flex-col gap-2 max-w-md no-print pointer-events-none"></div>
+
+  <!-- ALERTE URGENTE DIRECTEUR (ADMIN) : TÉLÉPHONE ROUGE ENTRANT -->
+  <div id="red-phone-incoming-modal" class="hidden fixed inset-0 z-[60] bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4 no-print">
+    <div class="animate-celebration-card bg-white dark:bg-slate-900 rounded-3xl border-2 border-rose-500 shadow-[0_0_50px_rgba(225,29,72,0.45)] max-w-md w-full p-6 text-center space-y-4 relative overflow-hidden">
+      <div class="w-20 h-20 mx-auto rounded-full bg-gradient-to-br from-rose-600 to-red-700 text-white flex items-center justify-center text-4xl shadow-xl shadow-rose-600/40 red-phone-ring-anim">
+        ☎️
+      </div>
+      <div class="space-y-1.5">
+        <span class="inline-flex items-center gap-1.5 px-3 py-1 text-[11px] font-extrabold uppercase tracking-wider rounded-full bg-rose-100 text-rose-700 border border-rose-300">
+          <span class="w-2 h-2 rounded-full bg-rose-600 animate-ping"></span>
+          <span>Téléphone Rouge — Appel Directeur</span>
+        </span>
+        <h3 id="red-phone-incoming-title" class="text-2xl font-extrabold text-slate-900 dark:text-white pt-1">Un représentant vous appelle !</h3>
+        <p id="red-phone-incoming-subtitle" class="text-sm font-semibold text-rose-700 dark:text-rose-300 leading-relaxed">Besoin d'aide immédiate pour closer un deal</p>
+      </div>
+      <div id="red-phone-incoming-meta" class="bg-rose-50/90 dark:bg-rose-950/50 rounded-2xl border border-rose-200 dark:border-rose-800/70 p-3.5 text-xs text-slate-700 dark:text-slate-200 space-y-1"></div>
+      <div class="flex flex-col sm:flex-row gap-2.5 pt-1">
+        <button type="button" onclick="acknowledgeIncomingRedPhone()" class="flex-1 py-3 px-4 bg-rose-600 hover:bg-rose-700 active:scale-95 text-white text-sm font-extrabold rounded-2xl shadow-lg shadow-rose-600/25 transition cursor-pointer">
+          ✓ J'ai pris l'appel
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODALE REPRÉSENTANT : DÉCLENCHER LE TÉLÉPHONE ROUGE (APPEL DIRECTEUR) -->
+  <div id="red-phone-rep-modal" class="hidden fixed inset-0 z-50 bg-slate-950/75 backdrop-blur-sm flex items-center justify-center p-4 no-print">
+    <div class="animate-drawer bg-white dark:bg-slate-900 rounded-3xl border border-rose-200 dark:border-rose-800 shadow-2xl max-w-md w-full overflow-hidden">
+      <div class="px-5 py-4 bg-gradient-to-r from-rose-700 via-red-600 to-rose-700 text-white flex items-center justify-between gap-3">
+        <div class="flex items-center gap-3 min-w-0">
+          <span class="w-10 h-10 rounded-2xl bg-white/20 flex items-center justify-center text-xl shrink-0 red-phone-ring-anim">☎️</span>
+          <div class="min-w-0">
+            <h3 class="text-base font-extrabold truncate">Téléphone Rouge — Appel Directeur</h3>
+            <p class="text-[11px] text-rose-100 truncate">Alerte instantanée + appel direct vers le directeur</p>
+          </div>
+        </div>
+        <button type="button" onclick="closeRedPhoneRepModal()" class="w-8 h-8 rounded-xl bg-white/15 hover:bg-white/25 text-white flex items-center justify-center font-bold shrink-0 cursor-pointer">✕</button>
+      </div>
+      <div class="p-5 space-y-4">
+        <p class="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
+          En appuyant sur <strong>Lancer l'appel maintenant</strong>, le directeur reçoit immédiatement une <strong>alerte urgente avec votre nom</strong> sur son téléphone et votre appel démarre automatiquement.
+        </p>
+        <div class="space-y-1.5">
+          <label class="block text-[11px] font-extrabold uppercase tracking-wider text-slate-500">Motif rapide (optionnel)</label>
+          <div class="flex flex-wrap gap-1.5" id="red-phone-reason-chips">
+            <button type="button" onclick="selectRedPhoneReason(this, 'Client prêt à closer maintenant')" class="red-reason-chip px-3 py-1.5 text-xs font-bold rounded-xl bg-rose-600 text-white border border-rose-600 transition cursor-pointer">🔥 Client prêt à closer</button>
+            <button type="button" onclick="selectRedPhoneReason(this, 'Objection prix / négociation')" class="red-reason-chip px-3 py-1.5 text-xs font-bold rounded-xl bg-slate-100 text-slate-700 hover:bg-rose-50 border border-slate-200 transition cursor-pointer">💰 Objection prix</button>
+            <button type="button" onclick="selectRedPhoneReason(this, 'Validation spéciale requise')" class="red-reason-chip px-3 py-1.5 text-xs font-bold rounded-xl bg-slate-100 text-slate-700 hover:bg-rose-50 border border-slate-200 transition cursor-pointer">⚡ Validation spéciale</button>
+          </div>
+          <input id="red-phone-custom-note" type="text" maxlength="140" placeholder="Ou précisez en quelques mots (ex. Client Toitex 18 000 $)..." class="w-full mt-2 px-3.5 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-rose-500" />
+        </div>
+        <div id="red-phone-target-display" class="px-3.5 py-2.5 rounded-xl bg-rose-50/80 border border-rose-200 text-xs font-bold text-rose-900 flex items-center justify-between">
+          <span>Ligne directe :</span>
+          <span id="red-phone-number-preview" class="font-extrabold tabular-nums">Non configuré</span>
+        </div>
+        <div class="flex items-center gap-2.5 pt-1">
+          <button type="button" onclick="closeRedPhoneRepModal()" class="flex-1 py-3 px-4 text-xs font-bold text-slate-700 bg-white border border-slate-300 rounded-2xl hover:bg-slate-50 transition cursor-pointer">Annuler</button>
+          <button type="button" id="btn-trigger-red-phone-now" onclick="triggerRedPhoneDirectorCall()" class="flex-[1.6] py-3 px-4 text-xs font-extrabold text-white bg-gradient-to-r from-rose-600 to-red-600 hover:from-rose-700 hover:to-red-700 active:scale-95 rounded-2xl shadow-lg shadow-rose-600/30 flex items-center justify-center gap-2 transition cursor-pointer">
+            <span>☎️</span>
+            <span>Lancer l'appel maintenant</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
 
   <!-- OVERLAY DE FÉLICITATIONS LORS D'UNE NOUVELLE VENTE -->
   <div id="sale-celebration-overlay" class="hidden fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-sm flex items-center justify-center p-4 no-print">
@@ -2198,6 +2273,24 @@
       <!-- ONGLET 1 : MES VENTES & COMMISSIONS (REP + ADMIN)            -->
       <!-- ============================================================ -->
       <section id="tab-mes-ventes" class="space-y-6">
+        <!-- BOUTON TÉLÉPHONE ROUGE : APPEL DIRECTEUR URGENT POUR CLOSER UN DEAL (REPRÉSENTANTS) -->
+        <div id="rep-red-phone-banner" class="hidden">
+          <button type="button" onclick="openRedPhoneRepModal()" style="touch-action: manipulation; -webkit-tap-highlight-color: transparent;" class="w-full group relative overflow-hidden rounded-2xl bg-gradient-to-r from-rose-600 via-red-600 to-rose-700 hover:from-rose-500 hover:to-red-600 active:scale-[0.99] text-white p-3.5 sm:px-5 sm:py-3.5 shadow-md shadow-rose-600/25 border border-rose-400/40 flex items-center justify-between gap-3 transition cursor-pointer">
+            <div class="flex items-center gap-3 min-w-0 text-left">
+              <span class="w-10 h-10 rounded-2xl bg-white/20 backdrop-blur-xs flex items-center justify-center text-xl shrink-0 red-phone-ring-anim shadow-inner">☎️</span>
+              <div class="min-w-0">
+                <div class="flex items-center gap-2">
+                  <span class="text-xs sm:text-sm font-extrabold tracking-tight text-white">Téléphone Rouge — Appel Directeur</span>
+                  <span class="px-2 py-0.2 text-[10px] font-extrabold uppercase rounded-full bg-white/20 text-white">Urgent Deal</span>
+                </div>
+                <p class="text-[11px] text-rose-100 truncate mt-0.5">Besoin d'aide immédiate pour fermer un deal ? Cliquez pour alerter et appeler le directeur</p>
+              </div>
+            </div>
+            <span class="px-3.5 py-2 rounded-xl bg-white text-rose-700 group-hover:bg-rose-50 text-xs font-extrabold shrink-0 shadow-xs transition">
+              Appeler →
+            </span>
+          </button>
+        </div>
         <!-- PARCOURS DE PREMIÈRE CONNEXION EN 3 ÉTAPES SÉQUENTIELLES -->
         <div id="rep-onboarding-card" class="hidden fixed inset-0 z-50 bg-slate-950/75 backdrop-blur-sm flex items-center justify-center p-4 no-print">
           <div class="bg-white w-full max-w-md rounded-3xl border border-slate-200 shadow-2xl overflow-hidden animate-drawer">
@@ -3281,6 +3374,37 @@
       <!-- ONGLET 7 : ENTREPRISES & ÉQUIPE (ADMIN UNIQUEMENT)           -->
       <!-- ============================================================ -->
       <section id="tab-admin-equipe" class="hidden space-y-6">
+        <!-- CONFIGURATION TÉLÉPHONE ROUGE : NUMÉRO DE CELLULAIRE DU DIRECTEUR (ADMIN UNIQUEMENT) -->
+        <div class="bg-white rounded-2xl border border-rose-200/90 p-5 sm:p-6 shadow-xs space-y-4">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div class="flex items-start sm:items-center gap-3">
+              <span class="w-10 h-10 rounded-2xl bg-rose-100 text-rose-600 border border-rose-200 flex items-center justify-center text-xl shrink-0">☎️</span>
+              <div>
+                <div class="flex items-center gap-2">
+                  <h2 class="text-base font-extrabold text-slate-900">Téléphone Rouge — Ligne directe closing</h2>
+                  <span class="px-2.5 py-0.5 text-[10px] font-extrabold rounded-full bg-rose-100 text-rose-700 border border-rose-200">Appel Directeur</span>
+                </div>
+                <p class="text-xs text-slate-500 mt-0.5">Lorsqu'un représentant appuie sur le Téléphone Rouge, vous recevez immédiatement une alerte urgente avec son nom et son appel démarre vers ce numéro.</p>
+              </div>
+            </div>
+          </div>
+          <form id="form-red-phone-config" class="grid grid-cols-1 sm:grid-cols-3 gap-3 items-end pt-1">
+            <div>
+              <label class="block text-xs font-bold text-slate-700 mb-1">Nom affiché aux représentants</label>
+              <input id="red-phone-director-name" type="text" placeholder="Olivier (Directeur)" class="w-full px-3.5 py-2.5 text-sm font-semibold bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-rose-500" />
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-slate-700 mb-1">Votre numéro de cellulaire *</label>
+              <input id="red-phone-director-number" type="tel" required placeholder="Ex. 514-555-1234" class="w-full px-3.5 py-2.5 text-sm font-extrabold bg-slate-50 border border-slate-200 rounded-xl tabular-nums focus:bg-white focus:outline-none focus:ring-2 focus:ring-rose-500" />
+            </div>
+            <div>
+              <button type="submit" class="w-full py-2.5 px-4 text-xs font-extrabold text-white bg-rose-600 hover:bg-rose-700 rounded-xl shadow-xs transition cursor-pointer">
+                ✓ Enregistrer le numéro Téléphone Rouge
+              </button>
+            </div>
+          </form>
+        </div>
+
         <!-- GESTION DES TARGETS MENSUELS PAR REPRÉSENTANT (ADMIN UNIQUEMENT) -->
         <div class="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-xs space-y-4">
           <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -3934,6 +4058,15 @@
               if (!localR || !localR.updatedAt || (rdvData.updatedAt && rdvData.updatedAt >= localR.updatedAt)) {
                 monthlyRdvOverrides[key] = rdvData;
               }
+            }
+          } catch (e) {}
+        } else if (sIdx === -14 && r.mois_commission === 'red_phone_cfg' && r.representant_nom) {
+          try {
+            const parsedRp = JSON.parse(r.representant_nom);
+            if (parsedRp && typeof parsedRp === 'object') {
+              redPhoneConfig = { ...redPhoneConfig, ...parsedRp };
+              lsSet('korpo_red_phone_cfg_v1', JSON.stringify(redPhoneConfig));
+              syncRedPhoneUI();
             }
           } catch (e) {}
         } else if (sIdx === -12 && r.mois_commission === 'wave_company_seq_v1' && r.representant_nom) {
@@ -4998,6 +5131,223 @@
       }
     }
 
+    // =========================================================================
+    // TÉLÉPHONE ROUGE — APPEL DIRECTEUR URGENT POUR CLOSER UN DEAL
+    // =========================================================================
+    let redPhoneConfig = lsGetJson('korpo_red_phone_cfg_v1', '{"directorName":"Olivier (Directeur)","phone":""}');
+    let selectedRedPhoneReason = 'Client prêt à closer maintenant';
+    let seenRedPhoneCallIds = new Set(lsGetJson('korpo_seen_red_calls_v1', '[]'));
+    let activeIncomingRedCallId = null;
+
+    function formatPhoneForDial(rawPhone) {
+      const digits = String(rawPhone || '').replace(/[^\d+]/g, '');
+      if (!digits) return '';
+      if (digits.startsWith('+')) return digits;
+      if (digits.length === 10) return `+1${digits}`;
+      if (digits.length === 11 && digits.startsWith('1')) return `+${digits}`;
+      return digits;
+    }
+
+    function syncRedPhoneUI() {
+      const isRep = currentProfile && currentProfile.role !== 'admin';
+      const banner = document.getElementById('rep-red-phone-banner');
+      if (banner) {
+        banner.classList.toggle('hidden', !isRep);
+      }
+      const nameIn = document.getElementById('red-phone-director-name');
+      const phoneIn = document.getElementById('red-phone-director-number');
+      if (nameIn && document.activeElement !== nameIn) nameIn.value = redPhoneConfig.directorName || 'Olivier (Directeur)';
+      if (phoneIn && document.activeElement !== phoneIn) phoneIn.value = redPhoneConfig.phone || '';
+
+      const previewEl = document.getElementById('red-phone-number-preview');
+      if (previewEl) {
+        previewEl.textContent = redPhoneConfig.phone
+          ? `${redPhoneConfig.directorName || 'Directeur'} • ${redPhoneConfig.phone}`
+          : 'Numéro non encore configuré par le directeur';
+      }
+    }
+
+    window.selectRedPhoneReason = (btnEl, reasonText) => {
+      selectedRedPhoneReason = reasonText;
+      document.querySelectorAll('.red-reason-chip').forEach(b => {
+        b.className = 'red-reason-chip px-3 py-1.5 text-xs font-bold rounded-xl bg-slate-100 text-slate-700 hover:bg-rose-50 border border-slate-200 transition cursor-pointer';
+      });
+      if (btnEl) {
+        btnEl.className = 'red-reason-chip px-3 py-1.5 text-xs font-bold rounded-xl bg-rose-600 text-white border border-rose-600 transition cursor-pointer';
+      }
+    };
+
+    window.openRedPhoneRepModal = () => {
+      syncRedPhoneUI();
+      const noteEl = document.getElementById('red-phone-custom-note');
+      if (noteEl) noteEl.value = '';
+      document.getElementById('red-phone-rep-modal')?.classList.remove('hidden');
+    };
+
+    window.closeRedPhoneRepModal = () => {
+      document.getElementById('red-phone-rep-modal')?.classList.add('hidden');
+    };
+
+    function playRedPhoneRingtone() {
+      try {
+        const ctx = sharedAudioCtx || new (window.AudioContext || window.webkitAudioContext)();
+        if (ctx.state === 'suspended') ctx.resume();
+        const pattern = [0, 0.16, 0.32, 0.65, 0.81, 0.97];
+        pattern.forEach((offset, idx) => {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = 'triangle';
+          const startAt = ctx.currentTime + offset;
+          osc.frequency.setValueAtTime(idx % 2 === 0 ? 987.77 : 1318.51, startAt);
+          gain.gain.setValueAtTime(0.22, startAt);
+          gain.gain.exponentialRampToValueAtTime(0.001, startAt + 0.14);
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start(startAt);
+          osc.stop(startAt + 0.14);
+        });
+      } catch (e) {}
+    }
+
+    window.triggerRedPhoneDirectorCall = async () => {
+      if (!currentProfile) return;
+      const dialNumber = formatPhoneForDial(redPhoneConfig.phone);
+      if (!dialNumber) {
+        return toast('Le numéro du directeur n’est pas encore configuré. Demandez-lui de l’ajouter dans Entreprises & Équipe.', 'error');
+      }
+
+      const customNote = document.getElementById('red-phone-custom-note')?.value.trim() || '';
+      const reason = customNote || selectedRedPhoneReason || 'Besoin d’aide pour closer un deal';
+      const callId = `redcall_${Date.now()}_${currentProfile.id}`;
+      const nowIso = new Date().toISOString();
+
+      const payloadObj = {
+        id: callId,
+        at: nowIso,
+        repId: String(currentProfile.id),
+        repNom: currentProfile.nom,
+        reason,
+        status: 'ringing'
+      };
+
+      closeRedPhoneRepModal();
+      toast(`☎️ Alerte envoyée au directeur — Appel de ${redPhoneConfig.phone}...`);
+
+      // 1) Enregistrer l'alerte urgente en temps réel dans Supabase (semaine_index = -15)
+      if (sb) {
+        try {
+          await safeUpsertKpiHebdoRow({
+            mois_commission: callId,
+            semaine_index: -15,
+            representant_nom: JSON.stringify(payloadObj),
+            booke: 0,
+            rdv_realise: 0,
+            updated_at: nowIso
+          });
+        } catch (e) {}
+
+        // 2) Déclencher la notification Push serveur vers le téléphone du directeur
+        try {
+          const adminNames = (state.representants || [])
+            .filter(r => r.role === 'admin' && r.nom)
+            .map(r => r.nom);
+          if (!adminNames.includes('Olivier')) adminNames.push('Olivier');
+          await sb.functions.invoke('send-mention-push', {
+            body: {
+              msgId: callId,
+              authorId: String(currentProfile.id),
+              authorName: currentProfile.nom,
+              text: `${currentProfile.nom} a besoin de toi MAINTENANT pour un deal (${reason}) !`,
+              mentionedNames: adminNames,
+              customTitle: `☎️ TÉLÉPHONE ROUGE — ${currentProfile.nom}`,
+              eventType: 'red_phone'
+            }
+          });
+        } catch (ePush) {}
+      }
+
+      // 3) Lancer l'appel téléphonique natif sur le cellulaire du représentant
+      setTimeout(() => {
+        window.location.href = `tel:${dialNumber}`;
+      }, 180);
+    };
+
+    window.acknowledgeIncomingRedPhone = () => {
+      if (activeIncomingRedCallId) {
+        seenRedPhoneCallIds.add(String(activeIncomingRedCallId));
+        lsSet('korpo_seen_red_calls_v1', JSON.stringify(Array.from(seenRedPhoneCallIds).slice(-60)));
+        activeIncomingRedCallId = null;
+      }
+      document.getElementById('red-phone-incoming-modal')?.classList.add('hidden');
+      renderUnifiedBellNotifications();
+    };
+
+    function getRecentRedPhoneCallsForAdmin() {
+      if (!currentProfile || currentProfile.role !== 'admin') return [];
+      const cutoffMs = Date.now() - 24 * 3600 * 1000;
+      const calls = [];
+      (kpiHebdoRows || []).forEach(r => {
+        if (Number(r.semaine_index) !== -15 || !r.representant_nom) return;
+        try {
+          const c = JSON.parse(r.representant_nom);
+          if (c && c.id && c.at && new Date(c.at).getTime() >= cutoffMs) {
+            calls.push(c);
+          }
+        } catch (e) {}
+      });
+      return calls.sort((a, b) => String(b.at || '').localeCompare(String(a.at || '')));
+    }
+
+    function checkIncomingRedPhoneAlerts() {
+      if (!currentProfile || currentProfile.role !== 'admin') return;
+      const calls = getRecentRedPhoneCallsForAdmin();
+      const freshCutoff = Date.now() - 4 * 60 * 1000; // Alerte modale active pour les appels des 4 dernières minutes
+      const unacknowledged = calls.find(c => !seenRedPhoneCallIds.has(String(c.id)) && new Date(c.at).getTime() >= freshCutoff);
+      if (!unacknowledged) return;
+
+      activeIncomingRedCallId = String(unacknowledged.id);
+      document.getElementById('red-phone-incoming-title').textContent = `☎️ ${unacknowledged.repNom} vous appelle !`;
+      document.getElementById('red-phone-incoming-subtitle').textContent = `${unacknowledged.repNom} a besoin de vous MAINTENANT pour closer un deal`;
+      document.getElementById('red-phone-incoming-meta').innerHTML = `
+        <div><strong>Motif :</strong> ${esc(unacknowledged.reason || 'Aide closing deal')}</div>
+        <div class="text-[11px] opacity-80">Déclenché à ${esc(formatChatHourOnly(unacknowledged.at))}</div>
+      `;
+      document.getElementById('red-phone-incoming-modal')?.classList.remove('hidden');
+      playRedPhoneRingtone();
+      sendBrowserPushNotification(
+        `☎️ TÉLÉPHONE ROUGE — ${unacknowledged.repNom}`,
+        `${unacknowledged.repNom} a besoin de vous MAINTENANT pour closer un deal (${unacknowledged.reason || ''})`
+      );
+    }
+
+    document.getElementById('form-red-phone-config')?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      if (currentProfile?.role !== 'admin') return;
+      const directorName = document.getElementById('red-phone-director-name')?.value.trim() || 'Olivier (Directeur)';
+      const phone = document.getElementById('red-phone-director-number')?.value.trim() || '';
+      if (!formatPhoneForDial(phone)) {
+        return toast('Veuillez saisir un numéro de téléphone valide.', 'error');
+      }
+      redPhoneConfig = { directorName, phone, updatedAt: new Date().toISOString() };
+      lsSet('korpo_red_phone_cfg_v1', JSON.stringify(redPhoneConfig));
+      syncRedPhoneUI();
+
+      if (sb) {
+        const res = await safeUpsertKpiHebdoRow({
+          mois_commission: 'red_phone_cfg',
+          semaine_index: -14,
+          representant_nom: JSON.stringify(redPhoneConfig),
+          booke: 0,
+          rdv_realise: 0,
+          updated_at: new Date().toISOString()
+        });
+        if (res && res.error) {
+          return toast('Erreur sauvegarde réseau : ' + res.error.message, 'error');
+        }
+      }
+      toast(`Numéro Téléphone Rouge enregistré (${phone}) ✓`);
+    });
+
     async function initApp() {
       syncThemeToggleButtons();
       initKpiControls();
@@ -5971,13 +6321,16 @@
         .sort((a, b) => String(b.at || '').localeCompare(String(a.at || '')));
       const unreadMentions = myMentions.filter(m => !readMentionIds.has(String(m.id)));
 
+      const recentRedCalls = isAdmin ? getRecentRedPhoneCallsForAdmin() : [];
+      const unreadRedCalls = recentRedCalls.filter(c => !seenRedPhoneCallIds.has(String(c.id)));
+
       const pendingSales = isAdmin
         ? (state.ventes || [])
             .filter(v => v.statut_depot === 'a_confirmer')
             .sort((a, b) => (b.created_at || b.date_vente || '').localeCompare(a.created_at || a.date_vente || ''))
         : [];
 
-      const totalBadgeCount = unreadMentions.length + pendingSales.length;
+      const totalBadgeCount = unreadMentions.length + pendingSales.length + unreadRedCalls.length;
       if (totalBadgeCount > 0) {
         badge.textContent = totalBadgeCount > 99 ? '99+' : String(totalBadgeCount);
         badge.classList.remove('hidden');
@@ -6010,6 +6363,31 @@
         : 'Aucune nouvelle notification';
 
       const sectionsHtml = [];
+
+      if (isAdmin && recentRedCalls.length > 0) {
+        sectionsHtml.push(`
+          <div class="px-3.5 py-2 bg-rose-50 text-[10px] font-extrabold uppercase tracking-wider text-rose-800 flex items-center justify-between">
+            <span>☎️ Appels Directeur (Téléphone Rouge)</span>
+            <span>${recentRedCalls.length} récent(s)</span>
+          </div>
+          ${recentRedCalls.slice(0, 6).map(c => {
+            const isFresh = !seenRedPhoneCallIds.has(String(c.id));
+            return `
+              <div class="p-3.5 ${isFresh ? 'bg-rose-50/60' : ''} flex items-start justify-between gap-3">
+                <div class="min-w-0 space-y-0.5">
+                  <div class="flex items-center gap-1.5">
+                    ${isFresh ? '<span class="w-2 h-2 rounded-full bg-rose-600 shrink-0"></span>' : ''}
+                    <span class="text-xs font-extrabold text-rose-900">☎️ ${esc(c.repNom)}</span>
+                    <span class="text-[10px] text-slate-400">• ${esc(formatChatTime(c.at))}</span>
+                  </div>
+                  <div class="text-xs text-slate-700 break-words">${esc(c.reason || 'Aide closing deal')}</div>
+                </div>
+                ${isFresh ? `<button type="button" onclick="seenRedPhoneCallIds.add('${esc(c.id)}'); lsSet('korpo_seen_red_calls_v1', JSON.stringify(Array.from(seenRedPhoneCallIds).slice(-60))); renderUnifiedBellNotifications();" class="px-2.5 py-1 text-[10px] font-bold bg-rose-600 text-white rounded-lg shrink-0 cursor-pointer">Vu ✓</button>` : ''}
+              </div>
+            `;
+          }).join('')}
+        `);
+      }
 
       if (myMentions.length > 0) {
         sectionsHtml.push(`
@@ -10379,15 +10757,29 @@
       try {
         const prevSig = teamChatMessages.map(m => `${m.id}:${m.audioRef || ''}:${m.imageRef || ''}`).join('|');
         const rows = await fetchAllRows(() =>
-          sb.from('kpi_hebdo').select('*').eq('semaine_index', -12).order('id')
+          sb.from('kpi_hebdo').select('*').in('semaine_index', [-12, -14, -15]).order('id')
         );
-        const fetchedIds = new Set(rows.map(r => String(r.mois_commission)));
+        const chatRowsOnly = rows.filter(r => Number(r.semaine_index) === -12);
+        const fetchedIds = new Set(chatRowsOnly.map(r => String(r.mois_commission)));
         const pendingRows = Array.from(_pendingVoiceUploads.values()).filter(r => !fetchedIds.has(String(r.mois_commission)));
         kpiHebdoRows = [
-          ...(kpiHebdoRows || []).filter(r => Number(r.semaine_index) !== -12),
+          ...(kpiHebdoRows || []).filter(r => ![-12, -14, -15].includes(Number(r.semaine_index))),
           ...rows,
           ...pendingRows
         ];
+        rows.forEach(r => {
+          if (Number(r.semaine_index) === -14 && r.mois_commission === 'red_phone_cfg' && r.representant_nom) {
+            try {
+              const parsedRp = JSON.parse(r.representant_nom);
+              if (parsedRp && typeof parsedRp === 'object') {
+                redPhoneConfig = { ...redPhoneConfig, ...parsedRp };
+                lsSet('korpo_red_phone_cfg_v1', JSON.stringify(redPhoneConfig));
+                syncRedPhoneUI();
+              }
+            } catch (e) {}
+          }
+        });
+        checkIncomingRedPhoneAlerts();
         buildTeamChatMessagesFromState();
         await resolveChatMediaSignedUrls();
         const nextSig = teamChatMessages.map(m => `${m.id}:${m.audioRef || ''}:${m.imageRef || ''}`).join('|');
@@ -10412,7 +10804,7 @@
           .channel('korpo-team-chat-' + Date.now())
           .on('postgres_changes', { event: '*', schema: 'public', table: 'kpi_hebdo' }, async (payload) => {
             const sIdx = Number(payload?.new?.semaine_index ?? payload?.old?.semaine_index);
-            if (sIdx === -12) {
+            if (sIdx === -12 || sIdx === -14 || sIdx === -15) {
               await refreshTeamChatMessages(activeChatTabOpen);
             }
           })
@@ -11696,6 +12088,7 @@
     function renderMesVentes() {
       syncCommDisplayModeButtons();
       updateRepOnboardingCardVisibility();
+      syncRedPhoneUI();
       const isAdmin = currentProfile.role === 'admin';
       const periodState = readPeriodFilterState('filter-rep');
       const futureQuickBtn = document.getElementById('btn-rep-future-comm');
@@ -14308,6 +14701,7 @@
     }
 
     function renderAdminEquipe() {
+      syncRedPhoneUI();
       renderEquipeTargetsTable();
       document.getElementById('list-entreprises').innerHTML = state.entreprises.map(e => `
         <li class="px-4 py-3 flex items-center justify-between text-sm bg-white">
