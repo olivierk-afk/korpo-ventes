@@ -1180,6 +1180,9 @@
           <span>Afficher automatiquement le bilan chaque vendredi dès 17h</span>
         </label>
         <div class="flex flex-wrap items-center gap-2">
+          <button type="button" onclick="triggerUnconfirmedMonthEndPushNow()" title="Envoyer dès maintenant un push à chaque représentant ayant un dossier non confirmé ce mois-ci" class="px-3.5 py-2 text-xs font-extrabold text-amber-950 bg-amber-100 hover:bg-amber-200 border border-amber-300 rounded-xl transition cursor-pointer">
+            🔔 Relancer dépôts (Push)
+          </button>
           <button type="button" onclick="copyWeeklyDigestText()" class="px-3.5 py-2 text-xs font-extrabold text-slate-800 bg-white hover:bg-slate-100 border border-slate-300 rounded-xl transition cursor-pointer">
             📋 Copier le résumé
           </button>
@@ -10144,6 +10147,91 @@
       }
     };
 
+    function isPenultimateDayOfMonth(dateObj = new Date()) {
+      const y = dateObj.getFullYear();
+      const m = dateObj.getMonth();
+      const lastDay = new Date(y, m + 1, 0).getDate();
+      return dateObj.getDate() === (lastDay - 1);
+    }
+
+    function maybeSendPenultimateDayUnconfirmedPush(unconfirmedMonthSales) {
+      if (!currentProfile || currentProfile.role === 'admin') return;
+      if (!Array.isArray(unconfirmedMonthSales) || !unconfirmedMonthSales.length) return;
+      const now = new Date();
+      if (!isPenultimateDayOfMonth(now)) return;
+
+      const sentKey = `korpo_penultimate_push_sent_${currentProfile.id}_${currentMonthStr}`;
+      if (localStorage.getItem(sentKey) === '1') return;
+
+      const clientNames = unconfirmedMonthSales.map(v => {
+        const cli = v.client_nom || state.clients.find(c => String(c.id) === String(v.client_id))?.nom || 'Client';
+        return `${cli} (${fmtMoney0(v.valeur)})`;
+      });
+      const previewClients = clientNames.slice(0, 3).join(', ') + (clientNames.length > 3 ? ` +${clientNames.length - 3}` : '');
+      const title = `⏳ Fin de mois demain — ${unconfirmedMonthSales.length} dossier(s) non confirmé(s)`;
+      const body = `Dépôt à confirmer pour ${formatYearMonthLabelFr(currentMonthStr)} : ${previewClients}. Ajoute la preuve avant la clôture !`;
+
+      try {
+        localStorage.setItem(sentKey, '1');
+      } catch (e) {}
+
+      if (isMentionPushCurrentlyEnabled()) {
+        if (korpoSwRegistration && typeof korpoSwRegistration.showNotification === 'function') {
+          korpoSwRegistration.showNotification(title, {
+            body,
+            tag: `korpo-month-end-${currentMonthStr}`,
+            renotify: true,
+            data: { url: './' }
+          }).catch(() => {});
+        } else if (Notification.permission === 'granted') {
+          try {
+            const n = new Notification(title, { body, tag: `korpo-month-end-${currentMonthStr}` });
+            n.onclick = () => { window.focus(); filterRepPendingDepositsOnly(); n.close(); };
+          } catch (e) {}
+        }
+      }
+      toast(`${title} : ${previewClients}`);
+    }
+
+    window.triggerUnconfirmedMonthEndPushNow = async () => {
+      if (currentProfile?.role !== 'admin') return;
+      const monthUnconfirmed = (state.ventes || []).filter(v =>
+        v.statut_depot === 'a_confirmer' && getSaleStatsMonth(v) === currentMonthStr
+      );
+      if (!monthUnconfirmed.length) {
+        return toast(`Aucun dossier non confirmé pour ${formatYearMonthLabelFr(currentMonthStr)} ✓`);
+      }
+      const byRep = new Map();
+      monthUnconfirmed.forEach(v => {
+        const repObj = state.representants.find(r => String(r.id) === String(v.representant_id));
+        const rName = repObj?.nom || v.rep_nom || '';
+        if (!rName) return;
+        if (!byRep.has(rName)) byRep.set(rName, []);
+        const cli = v.client_nom || state.clients.find(c => String(c.id) === String(v.client_id))?.nom || 'Client';
+        byRep.get(rName).push(`${cli} (${fmtMoney0(v.valeur)})`);
+      });
+
+      let invokedCount = 0;
+      for (const [repName, dossiers] of byRep.entries()) {
+        const summary = `⏳ Rappel fin de mois (${formatYearMonthLabelFr(currentMonthStr)}) — ${dossiers.length} dossier(s) non confirmé(s) : ${dossiers.join(', ')}`;
+        try {
+          await sb.functions.invoke('send-mention-push', {
+            body: {
+              msgId: `month-end-${currentMonthStr}-${repName}`,
+              authorId: currentProfile.id,
+              authorName: currentProfile.nom,
+              text: summary,
+              mentionedNames: [repName],
+              customTitle: `⏳ Dossier(s) non confirmé(s) — ${formatYearMonthLabelFr(currentMonthStr)}`,
+              eventType: 'month_end_reminder'
+            }
+          });
+          invokedCount++;
+        } catch (e) {}
+      }
+      toast(`🔔 Relance push envoyée à ${invokedCount} représentant(s) (${monthUnconfirmed.length} dossier(s)) !`);
+    };
+
     function renderRepDepositReminderBanner(scopeSales, isAdmin, isInspectingRep) {
       const banner = document.getElementById('rep-deposit-reminder-banner');
       if (!banner || !currentProfile) return;
@@ -10151,21 +10239,34 @@
         banner.classList.add('hidden');
         return;
       }
+
+      const isPenultimate = isPenultimateDayOfMonth(new Date());
+      const allUnconfirmedThisMonth = (scopeSales || [])
+        .filter(v => v.statut_depot === 'a_confirmer' && getSaleStatsMonth(v) === currentMonthStr)
+        .sort((a, b) => String(a.date_vente || '').localeCompare(String(b.date_vente || '')));
+
+      if (isPenultimate && !isInspectingRep && allUnconfirmedThisMonth.length > 0) {
+        maybeSendPenultimateDayUnconfirmedPush(allUnconfirmedThisMonth);
+      }
+
       const dismissedToday = localStorage.getItem(`korpo_deposit_reminder_dismissed_${currentProfile.id}_${currentDateStr}`) === '1';
       if (dismissedToday) {
         banner.classList.add('hidden');
         return;
       }
 
-      const pendingWithMissingProof = (scopeSales || [])
-        .filter(v => v.statut_depot === 'a_confirmer' && !getProofRef(v))
-        .sort((a, b) => String(a.date_vente || '').localeCompare(String(b.date_vente || '')));
+      const targetList = isPenultimate
+        ? allUnconfirmedThisMonth
+        : (scopeSales || [])
+            .filter(v => v.statut_depot === 'a_confirmer' && !getProofRef(v))
+            .sort((a, b) => String(a.date_vente || '').localeCompare(String(b.date_vente || '')));
 
-      if (!pendingWithMissingProof.length) {
+      if (!targetList.length) {
         banner.classList.add('hidden');
         return;
       }
 
+      const pendingWithMissingProof = targetList;
       const lockedCommTotal = pendingWithMissingProof.reduce((s, v) => s + Number(v.commission_rep || 0), 0);
       const oldestDays = Math.max(...pendingWithMissingProof.map(v => getDaysSince(v.date_vente)));
       const titleEl = document.getElementById('rep-deposit-reminder-title');
@@ -10173,12 +10274,16 @@
       const listEl = document.getElementById('rep-deposit-reminder-list');
 
       if (titleEl) {
-        titleEl.textContent = `${pendingWithMissingProof.length} dossier(s) attendent leur preuve Interac (${fmtMoney(lockedCommTotal)} de commission à débloquer)`;
+        titleEl.textContent = isPenultimate
+          ? `🚨 Avant-dernier jour du mois : ${pendingWithMissingProof.length} dossier(s) non confirmé(s) (${fmtMoney(lockedCommTotal)} de comm.)`
+          : `${pendingWithMissingProof.length} dossier(s) attendent leur preuve Interac (${fmtMoney(lockedCommTotal)} de commission à débloquer)`;
       }
       if (descEl) {
-        descEl.textContent = oldestDays >= 3
-          ? `Le plus ancien date d'il y a ${oldestDays} jour(s). Ajoute la capture du virement ou du chèque en 1 clic ci-dessous :`
-          : 'Ajoute la photo du virement Interac ou du chèque pour accélérer la confirmation de ta commission :';
+        descEl.textContent = isPenultimate
+          ? `Demain est le dernier jour de ${formatYearMonthLabelFr(currentMonthStr)} : tout dossier non confirmé sera reporté au mois prochain.`
+          : (oldestDays >= 3
+            ? `Le plus ancien date d'il y a ${oldestDays} jour(s). Ajoute la capture du virement ou du chèque en 1 clic ci-dessous :`
+            : 'Ajoute la photo du virement Interac ou du chèque pour accélérer la confirmation de ta commission :');
       }
       if (listEl) {
         listEl.innerHTML = pendingWithMissingProof.slice(0, 6).map(v => {
