@@ -5138,6 +5138,7 @@
     let redPhoneConfig = lsGetJson('korpo_red_phone_cfg_v1', '{"directorName":"Olivier (Directeur)","phone":""}');
     let selectedRedPhoneReason = 'Client prêt à closer maintenant';
     let seenRedPhoneCallIds = new Set(lsGetJson('korpo_seen_red_calls_v1', '[]'));
+    let notifiedRedPhoneCallIds = new Set(lsGetJson('korpo_notified_red_calls_v1', '[]'));
     let activeIncomingRedCallId = null;
 
     function formatPhoneForDial(rawPhone) {
@@ -5342,7 +5343,8 @@
       const unacknowledged = calls.find(c => !seenRedPhoneCallIds.has(String(c.id)) && new Date(c.at).getTime() >= freshCutoff);
       if (!unacknowledged) return;
 
-      activeIncomingRedCallId = String(unacknowledged.id);
+      const callIdStr = String(unacknowledged.id);
+      activeIncomingRedCallId = callIdStr;
       document.getElementById('red-phone-incoming-title').textContent = `☎️ ${unacknowledged.repNom} vous appelle !`;
       document.getElementById('red-phone-incoming-subtitle').textContent = `${unacknowledged.repNom} a besoin de vous MAINTENANT pour closer un deal`;
       document.getElementById('red-phone-incoming-meta').innerHTML = `
@@ -5350,11 +5352,13 @@
         <div class="text-[11px] opacity-80">Déclenché à ${esc(formatChatHourOnly(unacknowledged.at))}</div>
       `;
       document.getElementById('red-phone-incoming-modal')?.classList.remove('hidden');
-      playRedPhoneRingtone();
-      sendBrowserPushNotification(
-        `☎️ TÉLÉPHONE ROUGE — ${unacknowledged.repNom}`,
-        `${unacknowledged.repNom} a besoin de vous MAINTENANT pour closer un deal (${unacknowledged.reason || ''})`
-      );
+
+      // Ne jouer la sonnerie qu'UNE SEULE fois par appel (la notification Push serveur avec la raison est déjà envoyée par Supabase)
+      if (!notifiedRedPhoneCallIds.has(callIdStr)) {
+        notifiedRedPhoneCallIds.add(callIdStr);
+        lsSet('korpo_notified_red_calls_v1', JSON.stringify(Array.from(notifiedRedPhoneCallIds).slice(-60)));
+        playRedPhoneRingtone();
+      }
     }
 
     document.getElementById('form-red-phone-config')?.addEventListener('submit', async (e) => {
