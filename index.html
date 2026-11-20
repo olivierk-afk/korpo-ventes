@@ -2978,7 +2978,8 @@
       'korpo_personal_monthly_targets_v1': { store: 'personal_monthly_targets', shared: false, type: 'map' },
       'korpo_personal_comm_targets_v1':    { store: 'personal_comm_targets',    shared: false, type: 'map' },
       'korpo_personal_bonus_pct_v1':       { store: 'personal_bonus_pct',       shared: false, type: 'map' },
-      'korpo_read_mention_ids_v1':         { store: 'read_mention_ids',         shared: false, type: 'array' }
+      'korpo_read_mention_ids_v1':         { store: 'read_mention_ids',         shared: false, type: 'array' },
+      'korpo_chat_last_seen_v1':         { store: 'chat_last_seen',           shared: false, type: 'map' }
     };
     // Magasins qu'un représentant (non admin) peut écrire : les autres sont réservés à l'admin (voir le RLS)
     const KV_REP_SHARED = new Set(['sale_audit', 'sale_bonus_overrides', 'sale_trash', 'carried_over_sales']);
@@ -3045,6 +3046,7 @@
       companyTargetsMetaStore = lsGetJson('korpo_company_targets_meta_v1', '{}');
       repTargetsOverrides = lsGetJson('korpo_rep_targets_v1', '{}');
       readMentionIds = new Set(lsGetJson('korpo_read_mention_ids_v1', '[]'));
+      lastSeenChatTimestamp = readSavedChatLastSeenTimestamp();
       personalMonthlyTargets = lsGetJson('korpo_personal_monthly_targets_v1', '{}');
       personalCommTargets = lsGetJson('korpo_personal_comm_targets_v1', '{}');
       personalBonusPctTargets = lsGetJson('korpo_personal_bonus_pct_v1', '{}');
@@ -3088,7 +3090,7 @@
     function kvReset() {
       Object.values(kvState.timers).forEach(clearTimeout);
       kvState.ready = false; kvState.uid = null; kvState.last = {}; kvState.timers = {}; kvState.pending = {}; kvState.dirty = new Set();
-      ['korpo_personal_monthly_targets_v1', 'korpo_personal_comm_targets_v1', 'korpo_personal_bonus_pct_v1', 'korpo_read_mention_ids_v1']
+      ['korpo_personal_monthly_targets_v1', 'korpo_personal_comm_targets_v1', 'korpo_personal_bonus_pct_v1', 'korpo_read_mention_ids_v1', 'korpo_chat_last_seen_v1']
         .forEach(k => { try { localStorage.removeItem(k); } catch (e) {} }); // pas de fuite entre comptes sur un même appareil
     }
     document.addEventListener('visibilitychange', async () => {
@@ -4758,6 +4760,7 @@
     window.openTeamChatModal = () => {
       const backdrop = document.getElementById('chat-modal-backdrop');
       if (!backdrop) return;
+      window._chatOpenedPrevSeenTs = lastSeenChatTimestamp || '';
       backdrop.classList.remove('hidden');
       setChatBackgroundScrollLocked(true);
       activeChatTabOpen = true;
@@ -4769,11 +4772,17 @@
     };
 
     window.closeTeamChatModal = () => {
+      if (activeChatTabOpen) {
+        markTeamChatAsRead();
+      }
       const backdrop = document.getElementById('chat-modal-backdrop');
       if (backdrop) backdrop.classList.add('hidden');
       setChatBackgroundScrollLocked(false);
       activeChatTabOpen = false;
     };
+    window.addEventListener('pagehide', () => {
+      if (activeChatTabOpen) markTeamChatAsRead();
+    });
 
     document.getElementById('chat-modal-backdrop')?.addEventListener('click', (e) => {
       if (e.target.id === 'chat-modal-backdrop') closeTeamChatModal();
@@ -8317,7 +8326,20 @@
     let chatSalesOnlyMode = false;
     let chatRealtimeChannel = null;
     let chatPollingTimer = null;
-    let lastSeenChatTimestamp = localStorage.getItem('korpo_chat_last_seen_v1') || '';
+    function readSavedChatLastSeenTimestamp() {
+      try {
+        const raw = localStorage.getItem('korpo_chat_last_seen_v1') || '';
+        if (!raw) return '';
+        if (raw.startsWith('{')) {
+          const obj = JSON.parse(raw);
+          return String(obj?.ts || '');
+        }
+        return raw;
+      } catch (e) {
+        return '';
+      }
+    }
+    let lastSeenChatTimestamp = readSavedChatLastSeenTimestamp();
     let readMentionIds = new Set(lsGetJson('korpo_read_mention_ids_v1', '[]'));
     let alertedMentionIds = new Set();
     let hasInitializedMentionsBaseline = false;
@@ -8550,9 +8572,13 @@
       const latestAt = teamChatMessages.length
         ? teamChatMessages[teamChatMessages.length - 1].at
         : new Date().toISOString();
+      let changedSeen = false;
       if (latestAt && (!lastSeenChatTimestamp || latestAt > lastSeenChatTimestamp)) {
         lastSeenChatTimestamp = latestAt;
-        lsSet('korpo_chat_last_seen_v1', lastSeenChatTimestamp);
+        changedSeen = true;
+      }
+      if (lastSeenChatTimestamp) {
+        lsSet('korpo_chat_last_seen_v1', JSON.stringify({ ts: lastSeenChatTimestamp }));
       }
       teamChatMessages.forEach(m => {
         if (isCurrentUserMentionedInMsg(m)) {
@@ -8560,6 +8586,9 @@
         }
       });
       saveReadMentionIds();
+      if (changedSeen && typeof kvFlush === 'function') {
+        kvFlush().catch(() => {});
+      }
       updateChatUnreadBadges();
       renderChatMentionNotifications();
     }
@@ -8761,6 +8790,34 @@
       await postMessageToTeamChat(`🔥 Félicitations @${repNom} pour la vente ${entNom} (${fmtMoney0(montant)}) ! 👏`);
     };
 
+    function formatChatDayDividerLabel(isoStr) {
+      if (!isoStr) return '';
+      try {
+        const d = new Date(isoStr);
+        const now = new Date();
+        const todayStr = localYmd(now);
+        const yest = new Date(now);
+        yest.setDate(now.getDate() - 1);
+        const yestStr = localYmd(yest);
+        const msgDayStr = localYmd(d);
+        if (msgDayStr === todayStr) return "Aujourd'hui";
+        if (msgDayStr === yestStr) return 'Hier';
+        const raw = d.toLocaleDateString('fr-CA', { weekday: 'long', day: 'numeric', month: 'long' });
+        return raw.charAt(0).toUpperCase() + raw.slice(1);
+      } catch (e) {
+        return '';
+      }
+    }
+
+    function formatChatHourOnly(isoStr) {
+      if (!isoStr) return '';
+      try {
+        return new Date(isoStr).toLocaleTimeString('fr-CA', { hour: '2-digit', minute: '2-digit' });
+      } catch (e) {
+        return '';
+      }
+    }
+
     function renderTeamChatFeed(scrollToBottom = false) {
       const feed = document.getElementById('chat-messages-feed');
       if (!feed) return;
@@ -8780,29 +8837,60 @@
         return;
       }
 
-      feed.innerHTML = list.map(m => {
+      const prevSeenCutoff = window._chatOpenedPrevSeenTs || '';
+      let insertedUnreadDivider = false;
+      let lastDayKey = '';
+
+      feed.innerHTML = list.map((m, idx) => {
         const isMe = String(m.authorId) === String(currentProfile?.id);
         const canDel = isAdminUser || (m.kind === 'msg' && isMe);
         const isMentionedMe = isCurrentUserMentionedInMsg(m);
 
+        let dayDividerHtml = '';
+        const dayKey = m.at ? localYmd(new Date(m.at)) : '';
+        if (dayKey && dayKey !== lastDayKey) {
+          lastDayKey = dayKey;
+          dayDividerHtml = `
+            <div class="flex items-center justify-center my-3">
+              <span class="px-3.5 py-1 text-[11px] font-extrabold uppercase tracking-wider rounded-full bg-slate-200/80 dark:bg-slate-800 text-slate-600 dark:text-slate-300 shadow-2xs">
+                ${esc(formatChatDayDividerLabel(m.at))}
+              </span>
+            </div>
+          `;
+        }
+
+        let unreadDividerHtml = '';
+        if (!insertedUnreadDivider && prevSeenCutoff && !isMe && String(m.at || '') > prevSeenCutoff) {
+          insertedUnreadDivider = true;
+          unreadDividerHtml = `
+            <div id="chat-unread-divider" class="flex items-center gap-3 my-3">
+              <div class="flex-1 h-px bg-rose-400/60"></div>
+              <span class="px-3 py-0.5 text-[10px] font-extrabold uppercase tracking-wider rounded-full bg-rose-500 text-white shadow-2xs">
+                Nouveaux messages
+              </span>
+              <div class="flex-1 h-px bg-rose-400/60"></div>
+            </div>
+          `;
+        }
+
         if (m.kind === 'sale') {
           const sd = m.saleData || {};
           const showClient = (isAdminUser || isMe) && sd.clientNom && sd.clientNom !== 'Client confidentiel';
-          return `
-            <div id="chat-item-${esc(m.id)}" class="chat-sale-card bg-gradient-to-r from-emerald-50/90 via-white to-indigo-50/70 border border-emerald-200/90 rounded-2xl p-3.5 sm:p-4 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          return dayDividerHtml + unreadDividerHtml + `
+            <div id="chat-item-${esc(m.id)}" class="chat-sale-card bg-white border-l-4 border-l-emerald-500 border border-emerald-200/90 rounded-2xl p-3.5 sm:p-4 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div class="flex items-start gap-3 min-w-0">
                 <div class="w-10 h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center text-lg font-extrabold shrink-0 shadow-xs">
                   💵
                 </div>
                 <div class="min-w-0 space-y-1">
                   <div class="flex items-center flex-wrap gap-1.5">
-                    <span class="px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wider rounded-full bg-emerald-100 text-emerald-800">Nouvelle vente</span>
-                    <span class="text-xs sm:text-sm font-extrabold text-slate-900">${esc(sd.repNom || m.authorName)}</span>
-                    <span class="text-[11px] text-slate-400">• ${esc(formatChatTime(m.at))}</span>
+                    <span class="px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wider rounded-full bg-emerald-100 text-emerald-800">Vente</span>
+                    <span class="text-sm font-extrabold text-slate-900">${esc(sd.repNom || m.authorName)}</span>
+                    <span class="text-[11px] font-medium text-slate-400">${esc(formatChatHourOnly(m.at))}</span>
                   </div>
                   <div class="flex items-center flex-wrap gap-1.5 text-xs text-slate-700">
                     ${entBadge(sd.entNom || 'Entreprise')}
-                    <span class="px-1.5 py-0.5 text-[10px] font-extrabold rounded border ${sd.typeKpi === 'SUIVI' ? 'bg-purple-50 text-purple-700 border-purple-200' : 'bg-sky-50 text-sky-700 border-sky-200'}">${esc(sd.typeKpi || 'OTS')}</span>
+                    <span class="px-2 py-0.5 text-[10px] font-extrabold rounded-md border ${sd.typeKpi === 'SUIVI' ? 'bg-purple-50 text-purple-700 border-purple-200' : 'bg-sky-50 text-sky-700 border-sky-200'}">${esc(sd.typeKpi || 'OTS')}</span>
                     ${showClient ? `<span class="font-bold text-slate-800">• ${esc(sd.clientNom)}</span>` : ''}
                   </div>
                 </div>
@@ -8811,38 +8899,51 @@
                 <div class="text-right tabular-nums">
                   <div class="text-base sm:text-lg font-extrabold text-emerald-700">${fmtMoney(sd.valeur)}</div>
                 </div>
-                ${!isMe ? `<button type="button" onclick="sendQuickBravoInChat('${esc(sd.repNom || m.authorName)}', '${esc(sd.entNom || '')}', ${Number(sd.valeur || 0)})" title="Féliciter dans le canal" class="px-2.5 py-1.5 text-xs font-extrabold bg-amber-100 hover:bg-amber-200 text-amber-900 rounded-xl transition">👏 Bravo</button>` : ''}
+                ${!isMe ? `<button type="button" onclick="sendQuickBravoInChat('${esc(sd.repNom || m.authorName)}', '${esc(sd.entNom || '')}', ${Number(sd.valeur || 0)})" title="Féliciter dans le canal" class="px-3 py-1.5 text-xs font-extrabold bg-amber-100 hover:bg-amber-200 text-amber-900 rounded-xl transition">👏 Bravo</button>` : ''}
               </div>
             </div>
           `;
         }
 
+        const prevMsg = idx > 0 ? list[idx - 1] : null;
+        const prevDayKey = prevMsg?.at ? localYmd(new Date(prevMsg.at)) : '';
+        const isGroupedWithPrev = prevMsg && prevMsg.kind === 'msg' && String(prevMsg.authorId) === String(m.authorId) && prevDayKey === dayKey && !unreadDividerHtml;
+
         const initials = String(m.authorName || '?').slice(0, 2).toUpperCase();
         const isAuthorAdmin = m.authorRole === 'admin';
         const formattedBody = formatChatMessageWithMentions(m.text, isMe);
-        return `
-          <div id="chat-item-${esc(m.id)}" class="flex items-start gap-2.5 ${isMe ? 'flex-row-reverse' : ''}">
-            <div class="w-8 h-8 rounded-full ${isAuthorAdmin ? 'bg-slate-900 text-amber-300' : (isMe ? 'bg-indigo-600 text-white' : 'bg-slate-200 text-slate-700')} text-[11px] font-extrabold flex items-center justify-center shrink-0 mt-0.5">
-              ${esc(initials)}
-            </div>
-            <div class="max-w-[82%] sm:max-w-[70%] space-y-1 ${isMe ? 'items-end text-right' : ''}">
-              <div class="flex items-center gap-1.5 text-[11px] ${isMe ? 'justify-end' : ''}">
-                <span class="font-extrabold text-slate-800">${esc(m.authorName)}</span>
-                ${isAuthorAdmin ? '<span class="px-1.5 py-0.2 text-[9px] font-extrabold rounded bg-amber-100 text-amber-800">Direction</span>' : ''}
-                ${isMentionedMe ? '<span class="px-1.5 py-0.2 text-[9px] font-extrabold rounded bg-indigo-100 text-indigo-800">@Vous</span>' : ''}
-                <span class="text-slate-400">${esc(formatChatTime(m.at))}</span>
+        return dayDividerHtml + unreadDividerHtml + `
+          <div id="chat-item-${esc(m.id)}" class="flex items-end gap-2.5 ${isMe ? 'flex-row-reverse' : ''} ${isGroupedWithPrev ? 'mt-1' : 'mt-3'}">
+            ${isGroupedWithPrev
+              ? '<div class="w-8 shrink-0"></div>'
+              : `<div class="w-8 h-8 rounded-full ${isAuthorAdmin ? 'bg-slate-900 text-amber-300 ring-2 ring-amber-400/40' : (isMe ? 'bg-indigo-600 text-white' : 'bg-slate-200 text-slate-800')} text-[11px] font-extrabold flex items-center justify-center shrink-0 shadow-2xs">${esc(initials)}</div>`
+            }
+            <div class="max-w-[84%] sm:max-w-[74%] flex flex-col ${isMe ? 'items-end' : 'items-start'}">
+              ${!isGroupedWithPrev ? `
+                <div class="flex items-center gap-1.5 text-[11px] mb-1 px-1 ${isMe ? 'justify-end' : ''}">
+                  <span class="font-extrabold text-slate-800">${esc(m.authorName)}</span>
+                  ${isAuthorAdmin ? '<span class="px-1.5 py-0.2 text-[9px] font-extrabold rounded bg-amber-100 text-amber-800">Direction</span>' : ''}
+                  ${isMentionedMe ? '<span class="px-1.5 py-0.2 text-[9px] font-extrabold rounded bg-indigo-100 text-indigo-800">@Vous</span>' : ''}
+                  <span class="text-slate-400 font-medium">${esc(formatChatHourOnly(m.at))}</span>
+                </div>
+              ` : ''}
+              <div class="group relative inline-block text-left px-4 py-2.5 rounded-2xl text-sm leading-relaxed break-words shadow-xs ${isMe ? 'chat-msg-bubble-me bg-indigo-600 text-white rounded-br-sm' : `chat-msg-bubble-other bg-white border ${isMentionedMe ? 'border-indigo-400 ring-2 ring-indigo-300/60' : 'border-slate-200/90'} text-slate-800 rounded-bl-sm`}">
+                <span>${formattedBody}</span>
+                <span class="inline-block ml-2 text-[10px] opacity-65 align-bottom tabular-nums">${esc(formatChatHourOnly(m.at))}</span>
               </div>
-              <div class="inline-block text-left px-3.5 py-2.5 rounded-2xl text-xs sm:text-sm leading-relaxed break-words shadow-2xs ${isMe ? 'chat-msg-bubble-me bg-indigo-600 text-white rounded-tr-sm' : `chat-msg-bubble-other bg-white border ${isMentionedMe ? 'border-indigo-400 ring-1 ring-indigo-300' : 'border-slate-200/90'} text-slate-800 rounded-tl-sm`}">
-                ${formattedBody}
-              </div>
-              ${canDel ? `<div><button type="button" onclick="deleteTeamChatMessage('${esc(m.id)}')" class="text-[10px] text-slate-400 hover:text-rose-600 transition">Supprimer</button></div>` : ''}
+              ${canDel ? `<button type="button" onclick="deleteTeamChatMessage('${esc(m.id)}')" class="mt-0.5 px-1 text-[10px] text-slate-400 hover:text-rose-600 transition">Supprimer</button>` : ''}
             </div>
           </div>
         `;
       }).join('');
 
       if (scrollToBottom) {
-        feed.scrollTop = feed.scrollHeight;
+        const unreadDiv = document.getElementById('chat-unread-divider');
+        if (unreadDiv) {
+          unreadDiv.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        } else {
+          feed.scrollTop = feed.scrollHeight;
+        }
       }
     }
 
