@@ -5895,47 +5895,88 @@
     let chatVoiceCancelled = false;
     const chatMediaUrlCache = new Map();
 
+    // Stockage fiable des médias du chat (vocaux & photos) :
+    // 1) Tente Supabase Storage, sinon enregistre dans `korpo_store` (`store = 'chat_media'`) sans aucune limite d'index B-tree
     async function uploadChatMediaBlob(blob, ext, mimeType) {
+      const mediaId = `cm_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+      const dataUrl = await new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(String(reader.result || ''));
+        reader.readAsDataURL(blob);
+      });
+      if (!dataUrl) return '';
+
+      // Cache immédiat pour lecture instantanée sans attendre le réseau
+      chatMediaUrlCache.set(`media:${mediaId}`, { url: dataUrl, exp: Date.now() + 24 * 3600 * 1000 });
+
       try {
-        const path = `chat/${currentUser?.id || 'anon'}/${Date.now()}-${Math.random().toString(36).slice(2, 7)}.${ext}`;
-        const { error } = await sb.storage.from(PROOF_BUCKET).upload(path, blob, { contentType: mimeType, upsert: false });
+        const { error } = await sb.from(KV_TABLE).upsert({
+          store: 'chat_media',
+          item_key: mediaId,
+          owner: 'shared',
+          value: { dataUrl, mimeType, ext, at: new Date().toISOString() },
+          updated_at: new Date().toISOString()
+        }, { onConflict: 'store,item_key,owner' });
         if (error) throw error;
-        return path;
+        return `media:${mediaId}`;
       } catch (e) {
-        return await new Promise((resolve) => {
-          const reader = new FileReader();
-          reader.onloadend = () => resolve(String(reader.result || ''));
-          reader.readAsDataURL(blob);
-        });
+        return dataUrl;
       }
     }
 
     async function resolveChatMediaSignedUrls() {
       const now = Date.now();
-      const paths = [];
+      const mediaKeys = [];
+      const storagePaths = [];
       (teamChatMessages || []).forEach(m => {
-        if (m.imageRef && isProofPath(m.imageRef) && !(chatMediaUrlCache.get(m.imageRef)?.exp > now + 60000)) {
-          paths.push(m.imageRef);
-        }
-        if (m.audioRef && isProofPath(m.audioRef) && !(chatMediaUrlCache.get(m.audioRef)?.exp > now + 60000)) {
-          paths.push(m.audioRef);
-        }
+        [m.imageRef, m.audioRef].forEach(ref => {
+          if (!ref) return;
+          if (chatMediaUrlCache.get(ref)?.exp > now + 60000) return;
+          if (String(ref).startsWith('media:')) {
+            mediaKeys.push(String(ref).slice(6));
+          } else if (isProofPath(ref)) {
+            storagePaths.push(ref);
+          }
+        });
       });
-      const uniquePaths = [...new Set(paths)];
-      if (!uniquePaths.length || !sb) return;
-      try {
-        const { data, error } = await sb.storage.from(PROOF_BUCKET).createSignedUrls(uniquePaths, 3600);
-        if (!error && Array.isArray(data)) {
-          data.forEach(d => {
-            if (d.signedUrl) chatMediaUrlCache.set(d.path, { url: d.signedUrl, exp: now + 3600 * 1000 });
-          });
-        }
-      } catch (e) {}
+
+      const uniqMediaKeys = [...new Set(mediaKeys)];
+      if (uniqMediaKeys.length && sb) {
+        try {
+          const { data, error } = await sb
+            .from(KV_TABLE)
+            .select('item_key,value')
+            .eq('store', 'chat_media')
+            .eq('owner', 'shared')
+            .in('item_key', uniqMediaKeys);
+          if (!error && Array.isArray(data)) {
+            data.forEach(row => {
+              const url = row?.value?.dataUrl;
+              if (url) chatMediaUrlCache.set(`media:${row.item_key}`, { url, exp: now + 24 * 3600 * 1000 });
+            });
+          }
+        } catch (e) {}
+      }
+
+      const uniqStoragePaths = [...new Set(storagePaths)];
+      if (uniqStoragePaths.length && sb) {
+        try {
+          const { data, error } = await sb.storage.from(PROOF_BUCKET).createSignedUrls(uniqStoragePaths, 3600);
+          if (!error && Array.isArray(data)) {
+            data.forEach(d => {
+              if (d.signedUrl) chatMediaUrlCache.set(d.path, { url: d.signedUrl, exp: now + 3600 * 1000 });
+            });
+          }
+        } catch (e) {}
+      }
     }
 
     function getChatMediaUrl(ref) {
       if (!ref) return '';
-      return isProofPath(ref) ? (chatMediaUrlCache.get(ref)?.url || '') : ref;
+      if (String(ref).startsWith('media:') || isProofPath(ref)) {
+        return chatMediaUrlCache.get(ref)?.url || '';
+      }
+      return ref;
     }
 
     function autoResizeChatTextarea() {
@@ -5967,7 +6008,7 @@
       const bar = document.getElementById('chat-reply-preview-bar');
       const authEl = document.getElementById('chat-reply-preview-author');
       const snipEl = document.getElementById('chat-reply-preview-snippet');
-      if (authEl) authEl.textContent = `Réponse à ${chatReplyTarget.authorName}`;
+      if (authEl) authEl.textContent = `Répondre à ${chatReplyTarget.authorName}`;
       if (snipEl) snipEl.textContent = chatReplyTarget.snippet;
       bar?.classList.remove('hidden');
       document.getElementById('chat-message-input')?.focus();
@@ -5982,7 +6023,7 @@
       const file = inputEl?.files?.[0];
       if (!file) return;
       try {
-        const dataUrl = await compressImageToDataUrl(file, 1024, 0.72);
+        const dataUrl = await compressImageToDataUrl(file, 900, 0.68);
         pendingChatPhotoDataUrl = dataUrl;
         const img = document.getElementById('chat-photo-preview-img');
         if (img) img.src = dataUrl;
@@ -6020,13 +6061,22 @@
         return toast('L’enregistrement vocal n’est pas supporté sur ce navigateur.', 'error');
       }
       try {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        const stream = await navigator.mediaDevices.getUserMedia({
+          audio: { echoCancellation: true, noiseSuppression: true, channelCount: 1 }
+        });
         chatAudioChunks = [];
         chatVoiceCancelled = false;
         const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
           ? 'audio/webm;codecs=opus'
           : (MediaRecorder.isTypeSupported('audio/mp4') ? 'audio/mp4' : '');
-        chatMediaRecorder = mimeType ? new MediaRecorder(stream, { mimeType }) : new MediaRecorder(stream);
+        const recOpts = mimeType
+          ? { mimeType, audioBitsPerSecond: 16000 }
+          : { audioBitsPerSecond: 16000 };
+        try {
+          chatMediaRecorder = new MediaRecorder(stream, recOpts);
+        } catch (errOpt) {
+          chatMediaRecorder = mimeType ? new MediaRecorder(stream, { mimeType }) : new MediaRecorder(stream);
+        }
 
         chatMediaRecorder.ondataavailable = (ev) => {
           if (ev.data && ev.data.size > 0) chatAudioChunks.push(ev.data);
@@ -6047,7 +6097,6 @@
           const ext = finalType.includes('mp4') ? 'm4a' : 'webm';
           const audioBlob = new Blob(chatAudioChunks, { type: finalType });
 
-          toast('Envoi du message vocal...');
           const audioRef = await uploadChatMediaBlob(audioBlob, ext, finalType);
           await postMessageToTeamChat('', { audioRef, audioDuration: durationLabel });
         };
@@ -6064,7 +6113,7 @@
           if (sec >= 90) stopAndSendChatVoiceRecording();
         }, 400);
 
-        chatMediaRecorder.start();
+        chatMediaRecorder.start(250);
       } catch (err) {
         toast('Autorisez l’accès au microphone pour envoyer un message vocal.', 'error');
       }
@@ -6212,6 +6261,48 @@
       setTimeout(() => el.classList.remove('ring-2', 'ring-indigo-400'), 1800);
     };
 
+    // Glisser vers la droite sur un message (mobile/tactile) pour y répondre directement
+    let _chatSwipeStartX = 0;
+    let _chatSwipeStartY = 0;
+    let _chatSwipeEl = null;
+
+    window.handleChatTouchStart = (e, el) => {
+      const t = e.touches && e.touches[0];
+      if (!t) return;
+      _chatSwipeStartX = t.clientX;
+      _chatSwipeStartY = t.clientY;
+      _chatSwipeEl = el;
+    };
+
+    window.handleChatTouchMove = (e) => {
+      if (!_chatSwipeEl) return;
+      const t = e.touches && e.touches[0];
+      if (!t) return;
+      const dx = t.clientX - _chatSwipeStartX;
+      const dy = Math.abs(t.clientY - _chatSwipeStartY);
+      if (dy > 28) {
+        _chatSwipeEl.style.transform = '';
+        _chatSwipeEl = null;
+        return;
+      }
+      if (dx > 6 && dx < 72) {
+        _chatSwipeEl.style.transform = `translateX(${dx}px)`;
+      }
+    };
+
+    window.handleChatTouchEnd = (e, msgId) => {
+      if (!_chatSwipeEl) return;
+      const t = e.changedTouches && e.changedTouches[0];
+      const dx = t ? (t.clientX - _chatSwipeStartX) : 0;
+      _chatSwipeEl.style.transition = 'transform 0.18s ease';
+      _chatSwipeEl.style.transform = '';
+      setTimeout(() => { if (_chatSwipeEl) _chatSwipeEl.style.transition = ''; }, 200);
+      _chatSwipeEl = null;
+      if (dx >= 46) {
+        setChatReplyTarget(msgId);
+      }
+    };
+
     const CHAT_SENDER_COLORS = [
       'text-indigo-700 dark:text-indigo-300',
       'text-emerald-700 dark:text-emerald-300',
@@ -6296,8 +6387,8 @@
           const sd = m.saleData || {};
           const showClient = (isAdminUser || isMe) && sd.clientNom && sd.clientNom !== 'Client confidentiel';
           return dayDividerHtml + unreadDividerHtml + `
-            <div id="chat-item-${esc(m.id)}" class="my-1.5 flex justify-center">
-              <div class="chat-sale-pill max-w-[92%] sm:max-w-md px-3 py-1.5 flex items-center gap-2 text-xs shadow-2xs">
+            <div id="chat-item-${esc(m.id)}" ontouchstart="handleChatTouchStart(event, this)" ontouchmove="handleChatTouchMove(event)" ontouchend="handleChatTouchEnd(event, '${esc(m.id)}')" class="my-1.5 flex justify-center">
+              <div class="chat-sale-pill max-w-[94%] sm:max-w-md px-3 py-1.5 flex items-center gap-2 text-xs shadow-2xs">
                 <span class="text-sm shrink-0">💵</span>
                 <div class="min-w-0 flex-1 truncate text-slate-700 dark:text-slate-200">
                   <strong class="font-extrabold text-slate-900 dark:text-white">${esc(sd.repNom || m.authorName)}</strong>
@@ -6307,8 +6398,8 @@
                   <span class="text-slate-400 mx-1">•</span>
                   <strong class="font-extrabold text-emerald-700 dark:text-emerald-300 tabular-nums">${fmtMoney(sd.valeur)}</strong>
                 </div>
-                <div class="flex items-center gap-1 shrink-0">
-                  <button type="button" onclick="setChatReplyTarget('${esc(m.id)}')" title="Répondre" class="px-1.5 py-0.5 text-[10px] font-bold rounded-md bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-300 cursor-pointer">↩</button>
+                <div class="flex items-center gap-1.5 shrink-0">
+                  <button type="button" onclick="setChatReplyTarget('${esc(m.id)}')" class="text-[10.5px] font-bold text-indigo-600 dark:text-indigo-300 hover:underline cursor-pointer">Répondre</button>
                   ${!isMe ? `<button type="button" onclick="sendQuickBravoInChat('${esc(sd.repNom || m.authorName)}', '${esc(sd.entNom || '')}', ${Number(sd.valeur || 0)})" class="px-2 py-0.5 text-[10px] font-extrabold rounded-md bg-amber-100 hover:bg-amber-200 text-amber-900 transition cursor-pointer">👏 Bravo</button>` : ''}
                   <span class="text-[10px] text-slate-400 tabular-nums">${esc(formatChatHourOnly(m.at))}</span>
                 </div>
@@ -6345,37 +6436,35 @@
             <span class="text-sm shrink-0">🎤</span>
             <audio controls preload="metadata" src="${esc(audioUrl)}" class="h-8 w-full max-w-[220px]"></audio>
           </div>
-        ` : '';
+        ` : (m.audioRef ? `<div class="py-1 text-xs italic opacity-75">🎤 Chargement du vocal...</div>` : '');
 
         const bubbleClass = isMe
           ? 'chat-bubble-out'
           : `chat-bubble-in ${isMentionedMe ? 'ring-2 ring-amber-400' : ''}`;
 
         return dayDividerHtml + unreadDividerHtml + `
-          <div id="chat-item-${esc(m.id)}" class="group flex flex-col ${isMe ? 'items-end' : 'items-start'} ${isGroupedWithPrev ? 'mt-0.5' : 'mt-2'}">
-            <div class="flex items-end gap-1.5 max-w-[88%] sm:max-w-[78%] ${isMe ? 'flex-row-reverse' : ''}">
-              <div class="px-3 py-2 text-[13.5px] leading-snug break-words ${bubbleClass}">
-                ${!isMe && !isGroupedWithPrev ? `
-                  <div class="flex items-center gap-1.5 mb-0.5">
-                    <span class="text-[11px] font-extrabold ${senderColor}">${esc(m.authorName)}</span>
-                    ${isAuthorAdmin ? '<span class="text-[9.5px] font-bold text-slate-400">Admin</span>' : ''}
-                    ${isMentionedMe ? '<span class="px-1.5 py-0.2 text-[9px] font-extrabold rounded bg-amber-200 text-amber-950">@Vous</span>' : ''}
-                  </div>
-                ` : ''}
-                ${quotedHtml}
-                ${photoHtml}
-                ${audioHtml}
-                ${formattedBody ? `<div class="whitespace-pre-wrap">${formattedBody}</div>` : ''}
-                <div class="flex items-center justify-end gap-1 mt-0.5 text-[9.5px] opacity-70 tabular-nums select-none">
-                  <span>${esc(formatChatHourOnly(m.at))}</span>
-                  ${isMe ? '<span>✓✓</span>' : ''}
+          <div id="chat-item-${esc(m.id)}" ondblclick="setChatReplyTarget('${esc(m.id)}')" ontouchstart="handleChatTouchStart(event, this)" ontouchmove="handleChatTouchMove(event)" ontouchend="handleChatTouchEnd(event, '${esc(m.id)}')" class="group flex flex-col ${isMe ? 'items-end' : 'items-start'} ${isGroupedWithPrev ? 'mt-0.5' : 'mt-2'}">
+            <div class="max-w-[86%] sm:max-w-[76%] px-3 py-2 text-[13.5px] leading-snug break-words ${bubbleClass}">
+              ${!isMe && !isGroupedWithPrev ? `
+                <div class="flex items-center gap-1.5 mb-0.5">
+                  <span class="text-[11px] font-extrabold ${senderColor}">${esc(m.authorName)}</span>
+                  ${isAuthorAdmin ? '<span class="text-[9.5px] font-bold text-slate-400">Admin</span>' : ''}
+                  ${isMentionedMe ? '<span class="px-1.5 py-0.2 text-[9px] font-extrabold rounded bg-amber-200 text-amber-950">@Vous</span>' : ''}
                 </div>
+              ` : ''}
+              ${quotedHtml}
+              ${photoHtml}
+              ${audioHtml}
+              ${formattedBody ? `<div class="whitespace-pre-wrap">${formattedBody}</div>` : ''}
+              <div class="flex items-center justify-end gap-1 mt-0.5 text-[9.5px] opacity-70 tabular-nums select-none">
+                <span>${esc(formatChatHourOnly(m.at))}</span>
+                ${isMe ? '<span>✓✓</span>' : ''}
               </div>
-              <button type="button" onclick="setChatReplyTarget('${esc(m.id)}')" title="Répondre à ce message" class="opacity-60 sm:opacity-0 group-hover:opacity-100 focus:opacity-100 w-7 h-7 rounded-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-500 hover:text-indigo-600 text-xs flex items-center justify-center shrink-0 transition cursor-pointer">
-                ↩
-              </button>
             </div>
-            ${canDel ? `<button type="button" onclick="deleteTeamChatMessage('${esc(m.id)}')" class="opacity-65 hover:opacity-100 mt-0.5 px-2 text-[10px] text-slate-400 hover:text-rose-600 transition cursor-pointer">Supprimer</button>` : ''}
+            <div class="flex items-center gap-2.5 mt-0.5 px-1.5 text-[10.5px] text-slate-400">
+              <button type="button" onclick="setChatReplyTarget('${esc(m.id)}')" class="hover:text-indigo-600 dark:hover:text-indigo-300 font-semibold transition cursor-pointer">Répondre</button>
+              ${canDel ? `<button type="button" onclick="deleteTeamChatMessage('${esc(m.id)}')" class="hover:text-rose-600 transition cursor-pointer">Supprimer</button>` : ''}
+            </div>
           </div>
         `;
       }).join('');
