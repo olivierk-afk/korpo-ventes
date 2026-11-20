@@ -6109,115 +6109,107 @@
       modal.classList.remove('hidden');
     };
 
-    // Compresse n'importe quel enregistrement audio en WAV mono 11 kHz ultra-léger (~11 Ko/sec)
-    // lisible nativement sur iPhone Safari, Android et ordinateur sans erreur de format ni de taille
-    async function compressAudioBlobToCompactWav(rawBlob) {
-      try {
-        const AudioCtx = window.AudioContext || window.webkitAudioContext;
-        if (!AudioCtx) return { blob: rawBlob, ext: 'webm', mime: rawBlob.type || 'audio/webm' };
-        const ctx = new AudioCtx();
-        const arrayBuf = await rawBlob.arrayBuffer();
-        const decoded = await ctx.decodeAudioData(arrayBuf);
-        const targetRate = 11025;
-        const duration = Math.min(decoded.duration, 90);
-        const targetLen = Math.max(1, Math.floor(duration * targetRate));
-        const offline = new OfflineAudioContext(1, targetLen, targetRate);
-        const src = offline.createBufferSource();
-        src.buffer = decoded;
-        src.connect(offline.destination);
-        src.start(0);
-        const rendered = await offline.startRendering();
-        try { ctx.close(); } catch (e) {}
-
-        const samples = rendered.getChannelData(0);
-        const buffer = new ArrayBuffer(44 + samples.length * 2);
-        const view = new DataView(buffer);
-        const writeStr = (off, str) => { for (let i = 0; i < str.length; i++) view.setUint8(off + i, str.charCodeAt(i)); };
-        writeStr(0, 'RIFF');
-        view.setUint32(4, 36 + samples.length * 2, true);
-        writeStr(8, 'WAVE');
-        writeStr(12, 'fmt ');
-        view.setUint32(16, 16, true);
-        view.setUint16(20, 1, true); // PCM
-        view.setUint16(22, 1, true); // Mono
-        view.setUint32(24, targetRate, true);
-        view.setUint32(28, targetRate * 2, true);
-        view.setUint16(32, 2, true);
-        view.setUint16(34, 16, true);
-        writeStr(36, 'data');
-        view.setUint32(40, samples.length * 2, true);
-        let offset = 44;
-        for (let i = 0; i < samples.length; i++, offset += 2) {
-          const s = Math.max(-1, Math.min(1, samples[i]));
-          view.setInt16(offset, s < 0 ? s * 0x8000 : s * 0x7FFF, true);
-        }
-        return { blob: new Blob([buffer], { type: 'audio/wav' }), ext: 'wav', mime: 'audio/wav' };
-      } catch (e) {
-        const mime = rawBlob.type || 'audio/webm';
-        const ext = mime.includes('mp4') ? 'm4a' : 'webm';
-        return { blob: rawBlob, ext, mime };
+    // Encodeur PCM -> WAV mono 11 025 Hz ultra-léger (~11 Ko/s) universel (iPhone Safari, PWA, Android, Desktop)
+    function encodeFloat32SamplesToWavBlob(floatChunks, inputSampleRate) {
+      const targetRate = 11025;
+      let totalLen = 0;
+      for (const c of floatChunks) totalLen += c.length;
+      const merged = new Float32Array(totalLen);
+      let pos = 0;
+      for (const c of floatChunks) {
+        merged.set(c, pos);
+        pos += c.length;
       }
+
+      const ratio = Math.max(1, inputSampleRate / targetRate);
+      const outLen = Math.max(1, Math.floor(merged.length / ratio));
+      const buffer = new ArrayBuffer(44 + outLen * 2);
+      const view = new DataView(buffer);
+      const writeStr = (off, str) => { for (let i = 0; i < str.length; i++) view.setUint8(off + i, str.charCodeAt(i)); };
+
+      writeStr(0, 'RIFF');
+      view.setUint32(4, 36 + outLen * 2, true);
+      writeStr(8, 'WAVE');
+      writeStr(12, 'fmt ');
+      view.setUint32(16, 16, true);
+      view.setUint16(20, 1, true); // PCM
+      view.setUint16(22, 1, true); // Mono
+      view.setUint32(24, targetRate, true);
+      view.setUint32(28, targetRate * 2, true);
+      view.setUint16(32, 2, true);
+      view.setUint16(34, 16, true);
+      writeStr(36, 'data');
+      view.setUint32(40, outLen * 2, true);
+
+      let offset = 44;
+      for (let i = 0; i < outLen; i++, offset += 2) {
+        const srcIdx = Math.min(merged.length - 1, Math.floor(i * ratio));
+        const s = Math.max(-1, Math.min(1, merged[srcIdx]));
+        view.setInt16(offset, s < 0 ? s * 0x8000 : s * 0x7FFF, true);
+      }
+      return new Blob([buffer], { type: 'audio/wav' });
+    }
+
+    let chatVoiceStream = null;
+    let chatVoiceAudioCtx = null;
+    let chatVoiceProcessor = null;
+    let chatVoicePcmChunks = [];
+    let chatVoiceInputRate = 44100;
+
+    function cleanupChatVoiceHardware() {
+      clearInterval(chatVoiceTimerInterval);
+      if (chatVoiceProcessor) {
+        try { chatVoiceProcessor.disconnect(); } catch (e) {}
+        chatVoiceProcessor.onaudioprocess = null;
+        chatVoiceProcessor = null;
+      }
+      if (chatVoiceAudioCtx) {
+        try { chatVoiceAudioCtx.close(); } catch (e) {}
+        chatVoiceAudioCtx = null;
+      }
+      if (chatVoiceStream) {
+        try { chatVoiceStream.getTracks().forEach(t => t.stop()); } catch (e) {}
+        chatVoiceStream = null;
+      }
+      document.getElementById('chat-voice-recording-bar')?.classList.add('hidden');
+      document.getElementById('form-team-chat')?.classList.remove('hidden');
     }
 
     window.startChatVoiceRecording = async () => {
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-        return toast('Le microphone n’est pas disponible sur ce navigateur (vérifiez HTTPS).', 'error');
+        return toast('Microphone indisponible sur ce navigateur (HTTPS requis).', 'error');
       }
-      if (typeof MediaRecorder === 'undefined') {
-        return toast('L’enregistrement vocal n’est pas supporté sur cette version de navigateur.', 'error');
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      if (!AudioCtx) {
+        return toast('AudioContext non supporté sur cet appareil.', 'error');
       }
+
       try {
+        cleanupChatVoiceHardware();
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        chatAudioChunks = [];
+        chatVoiceStream = stream;
+        chatVoicePcmChunks = [];
         chatVoiceCancelled = false;
 
-        let chosenMime = '';
-        const candidates = ['audio/mp4', 'audio/webm;codecs=opus', 'audio/webm', 'audio/ogg;codecs=opus'];
-        for (const c of candidates) {
-          try {
-            if (MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported(c)) {
-              chosenMime = c;
-              break;
-            }
-          } catch (e) {}
+        const ctx = new AudioCtx();
+        if (ctx.state === 'suspended') {
+          await ctx.resume();
         }
+        chatVoiceAudioCtx = ctx;
+        chatVoiceInputRate = ctx.sampleRate || 44100;
 
-        try {
-          chatMediaRecorder = chosenMime ? new MediaRecorder(stream, { mimeType: chosenMime }) : new MediaRecorder(stream);
-        } catch (errRec) {
-          chatMediaRecorder = new MediaRecorder(stream);
-        }
+        const source = ctx.createMediaStreamSource(stream);
+        const processor = ctx.createScriptProcessor(4096, 1, 1);
+        chatVoiceProcessor = processor;
 
-        chatMediaRecorder.ondataavailable = (ev) => {
-          if (ev.data && ev.data.size > 0) chatAudioChunks.push(ev.data);
-        };
-
-        chatMediaRecorder.onstop = async () => {
-          try { stream.getTracks().forEach(t => t.stop()); } catch (e) {}
-          clearInterval(chatVoiceTimerInterval);
-          document.getElementById('chat-voice-recording-bar')?.classList.add('hidden');
-          document.getElementById('form-team-chat')?.classList.remove('hidden');
-
+        processor.onaudioprocess = (e) => {
           if (chatVoiceCancelled) return;
-          if (!chatAudioChunks.length) {
-            return toast('Aucun son capté par le micro. Réessayez en parlant plus près.', 'error');
-          }
-
-          const elapsedSec = Math.max(1, Math.round((Date.now() - chatVoiceStartTs) / 1000));
-          const mins = Math.floor(elapsedSec / 60);
-          const secs = String(elapsedSec % 60).padStart(2, '0');
-          const durationLabel = `${mins}:${secs}`;
-          const finalType = chatMediaRecorder.mimeType || chosenMime || 'audio/webm';
-          const rawBlob = new Blob(chatAudioChunks, { type: finalType });
-
-          toast('Traitement & envoi du message vocal...');
-          const packed = await compressAudioBlobToCompactWav(rawBlob);
-          const audioRef = await uploadChatMediaBlob(packed.blob, packed.ext, packed.mime);
-          if (!audioRef) {
-            return toast('Impossible d’enregistrer le fichier vocal. Vérifiez votre connexion.', 'error');
-          }
-          await postMessageToTeamChat('', { audioRef, audioDuration: durationLabel });
+          const input = e.inputBuffer.getChannelData(0);
+          chatVoicePcmChunks.push(new Float32Array(input));
         };
+
+        source.connect(processor);
+        processor.connect(ctx.destination);
 
         chatVoiceStartTs = Date.now();
         const timerEl = document.getElementById('chat-voice-timer');
@@ -6230,12 +6222,11 @@
           if (timerEl) timerEl.textContent = `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, '0')}`;
           if (sec >= 60) stopAndSendChatVoiceRecording();
         }, 400);
-
-        chatMediaRecorder.start();
       } catch (err) {
+        cleanupChatVoiceHardware();
         const msg = String(err?.name || err?.message || '');
         if (msg.includes('NotAllowed') || msg.includes('Permission')) {
-          toast('Accès au micro refusé : autorisez le microphone dans les réglages de Safari / Chrome.', 'error');
+          toast('Accès au micro refusé : autorisez le microphone dans les réglages.', 'error');
         } else {
           toast('Erreur micro : ' + (err?.message || 'vérifiez les permissions audio'), 'error');
         }
@@ -6244,23 +6235,34 @@
 
     window.cancelChatVoiceRecording = () => {
       chatVoiceCancelled = true;
-      if (chatMediaRecorder && chatMediaRecorder.state !== 'inactive') {
-        try { chatMediaRecorder.stop(); } catch (e) {}
-      } else {
-        clearInterval(chatVoiceTimerInterval);
-        document.getElementById('chat-voice-recording-bar')?.classList.add('hidden');
-        document.getElementById('form-team-chat')?.classList.remove('hidden');
-      }
+      chatVoicePcmChunks = [];
+      cleanupChatVoiceHardware();
     };
 
-    window.stopAndSendChatVoiceRecording = () => {
+    window.stopAndSendChatVoiceRecording = async () => {
       chatVoiceCancelled = false;
-      if (chatMediaRecorder && chatMediaRecorder.state !== 'inactive') {
-        try {
-          if (typeof chatMediaRecorder.requestData === 'function') chatMediaRecorder.requestData();
-        } catch (e) {}
-        try { chatMediaRecorder.stop(); } catch (e) {}
+      const chunksCopy = chatVoicePcmChunks.slice();
+      const sampleRate = chatVoiceInputRate;
+      const elapsedSec = Math.max(1, Math.round((Date.now() - chatVoiceStartTs) / 1000));
+      chatVoicePcmChunks = [];
+      cleanupChatVoiceHardware();
+
+      if (!chunksCopy.length) {
+        return toast('Aucun son capté. Maintenez l’enregistrement au moins 1 seconde.', 'error');
       }
+
+      const mins = Math.floor(elapsedSec / 60);
+      const secs = String(elapsedSec % 60).padStart(2, '0');
+      const durationLabel = `${mins}:${secs}`;
+
+      toast('Envoi du message vocal...');
+      const wavBlob = encodeFloat32SamplesToWavBlob(chunksCopy, sampleRate);
+      const audioRef = await uploadChatMediaBlob(wavBlob, 'wav', 'audio/wav');
+      if (!audioRef) {
+        return toast('Échec de l’envoi du vocal (vérifiez la connexion réseau).', 'error');
+      }
+      await postMessageToTeamChat('', { audioRef, audioDuration: durationLabel });
+      toast('Message vocal envoyé ✓');
     };
 
     async function postMessageToTeamChat(text, extraMedia = {}) {
