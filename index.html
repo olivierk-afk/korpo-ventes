@@ -1197,6 +1197,42 @@
     </div>
   </div>
 
+  <!-- MODALE SÉLECTION DES REPRÉSENTANTS POUR RELANCE PUSH DÉPÔTS -->
+  <div id="push-relance-modal" class="hidden fixed inset-0 z-50 bg-slate-950/75 backdrop-blur-sm flex items-center justify-center p-4 no-print">
+    <div class="bg-white rounded-3xl border border-slate-200 shadow-2xl max-w-lg w-full max-h-[88vh] flex flex-col overflow-hidden animate-drawer">
+      <div class="px-5 py-4 bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white flex items-center justify-between gap-3 shrink-0">
+        <div class="flex items-center gap-2.5 min-w-0">
+          <span class="w-9 h-9 rounded-xl bg-amber-500/25 text-amber-300 border border-amber-400/35 flex items-center justify-center text-base shrink-0">🔔</span>
+          <div class="min-w-0">
+            <h3 class="text-sm sm:text-base font-extrabold truncate">Relance push — Dépôts à confirmer</h3>
+            <p id="push-relance-subtitle" class="text-[11px] text-indigo-200 truncate">Choisissez les représentants à notifier</p>
+          </div>
+        </div>
+        <button type="button" onclick="closePushRelanceModal()" class="w-8 h-8 rounded-xl bg-white/10 hover:bg-white/20 text-slate-200 hover:text-white flex items-center justify-center transition shrink-0">✕</button>
+      </div>
+
+      <div class="px-5 py-2.5 bg-slate-50 border-b border-slate-200/80 flex items-center justify-between gap-2 text-xs shrink-0">
+        <span id="push-relance-selected-count" class="font-bold text-slate-700">0 sélectionné(s)</span>
+        <div class="flex items-center gap-2">
+          <button type="button" onclick="toggleAllPushRelanceCheckboxes(true)" class="text-xs font-extrabold text-indigo-600 hover:underline cursor-pointer">Tout cocher</button>
+          <span class="text-slate-300">•</span>
+          <button type="button" onclick="toggleAllPushRelanceCheckboxes(false)" class="text-xs font-semibold text-slate-500 hover:underline cursor-pointer">Tout décocher</button>
+        </div>
+      </div>
+
+      <div id="push-relance-reps-list" class="p-4 overflow-y-auto space-y-2.5 flex-1"></div>
+
+      <div class="px-5 py-3.5 bg-slate-50 border-t border-slate-200 flex items-center justify-end gap-2.5 shrink-0">
+        <button type="button" onclick="closePushRelanceModal()" class="px-4 py-2 text-xs font-bold text-slate-700 bg-white hover:bg-slate-100 border border-slate-300 rounded-xl transition cursor-pointer">
+          Annuler
+        </button>
+        <button type="button" id="btn-confirm-send-push-relance" onclick="executeSelectedPushRelance()" class="px-4 py-2 text-xs font-extrabold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl shadow-xs transition cursor-pointer">
+          🔔 Envoyer la notification
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- MODALE RELEVÉ DE PAIE IMPRIMABLE / PDF / CSV -->
   <div id="payslip-modal" class="hidden fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-sm flex items-center justify-center p-4">
     <div class="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-3xl w-full max-h-[90vh] flex flex-col overflow-hidden">
@@ -10193,7 +10229,32 @@
       toast(`${title} : ${previewClients}`);
     }
 
-    window.triggerUnconfirmedMonthEndPushNow = async () => {
+    window._pushRelanceMap = new Map();
+
+    window.closePushRelanceModal = () => {
+      document.getElementById('push-relance-modal')?.classList.add('hidden');
+    };
+
+    window.updatePushRelanceSelectionCount = () => {
+      const checked = document.querySelectorAll('.push-relance-rep-cb:checked').length;
+      const lbl = document.getElementById('push-relance-selected-count');
+      const btn = document.getElementById('btn-confirm-send-push-relance');
+      if (lbl) lbl.textContent = `${checked} représentant(s) sélectionné(s)`;
+      if (btn) {
+        btn.disabled = checked === 0;
+        btn.classList.toggle('opacity-50', checked === 0);
+        btn.classList.toggle('cursor-not-allowed', checked === 0);
+      }
+    };
+
+    window.toggleAllPushRelanceCheckboxes = (checkedState) => {
+      document.querySelectorAll('.push-relance-rep-cb').forEach(cb => {
+        cb.checked = Boolean(checkedState);
+      });
+      updatePushRelanceSelectionCount();
+    };
+
+    window.triggerUnconfirmedMonthEndPushNow = () => {
       if (currentProfile?.role !== 'admin') return;
       const monthUnconfirmed = (state.ventes || []).filter(v =>
         v.statut_depot === 'a_confirmer' && getSaleStatsMonth(v) === currentMonthStr
@@ -10201,23 +10262,75 @@
       if (!monthUnconfirmed.length) {
         return toast(`Aucun dossier non confirmé pour ${formatYearMonthLabelFr(currentMonthStr)} ✓`);
       }
+
       const byRep = new Map();
       monthUnconfirmed.forEach(v => {
         const repObj = state.representants.find(r => String(r.id) === String(v.representant_id));
         const rName = repObj?.nom || v.rep_nom || '';
         if (!rName) return;
-        if (!byRep.has(rName)) byRep.set(rName, []);
+        if (!byRep.has(rName)) byRep.set(rName, { dossiers: [], totalVol: 0, totalComm: 0 });
         const cli = v.client_nom || state.clients.find(c => String(c.id) === String(v.client_id))?.nom || 'Client';
-        byRep.get(rName).push(`${cli} (${fmtMoney0(v.valeur)})`);
+        const entry = byRep.get(rName);
+        entry.dossiers.push(`${cli} (${fmtMoney0(v.valeur)})`);
+        entry.totalVol += Number(v.valeur || 0);
+        entry.totalComm += Number(v.commission_rep || 0);
       });
 
+      window._pushRelanceMap = byRep;
+      const subEl = document.getElementById('push-relance-subtitle');
+      if (subEl) {
+        subEl.textContent = `${formatYearMonthLabelFr(currentMonthStr)} • ${monthUnconfirmed.length} dossier(s) en attente au total`;
+      }
+
+      const listEl = document.getElementById('push-relance-reps-list');
+      if (listEl) {
+        listEl.innerHTML = Array.from(byRep.entries()).map(([repName, info]) => `
+          <label class="flex items-start gap-3 p-3.5 rounded-2xl border border-slate-200 bg-slate-50/70 hover:bg-indigo-50/50 cursor-pointer transition select-none">
+            <input type="checkbox" value="${esc(repName)}" checked onchange="updatePushRelanceSelectionCount()" class="push-relance-rep-cb mt-0.5 w-4 h-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-600" />
+            <div class="min-w-0 flex-1 space-y-1">
+              <div class="flex items-center justify-between gap-2">
+                <span class="text-xs sm:text-sm font-extrabold text-slate-900">${esc(repName)}</span>
+                <span class="px-2 py-0.5 text-[10px] font-extrabold rounded-full bg-amber-100 text-amber-900 border border-amber-200 shrink-0">
+                  ${info.dossiers.length} dossier(s) • ${fmtMoney0(info.totalVol)}
+                </span>
+              </div>
+              <div class="text-[11px] text-slate-600 leading-snug break-words">
+                ${esc(info.dossiers.join(', '))}
+              </div>
+            </div>
+          </label>
+        `).join('');
+      }
+
+      updatePushRelanceSelectionCount();
+      document.getElementById('push-relance-modal')?.classList.remove('hidden');
+    };
+
+    window.executeSelectedPushRelance = async () => {
+      if (currentProfile?.role !== 'admin') return;
+      const selectedReps = Array.from(document.querySelectorAll('.push-relance-rep-cb:checked')).map(cb => cb.value);
+      if (!selectedReps.length) {
+        return toast('Sélectionnez au moins un représentant.', 'error');
+      }
+
+      const btn = document.getElementById('btn-confirm-send-push-relance');
+      const origTxt = btn ? btn.innerHTML : '';
+      if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '⏳ Envoi en cours...';
+      }
+
       let invokedCount = 0;
-      for (const [repName, dossiers] of byRep.entries()) {
-        const summary = `⏳ Rappel fin de mois (${formatYearMonthLabelFr(currentMonthStr)}) — ${dossiers.length} dossier(s) non confirmé(s) : ${dossiers.join(', ')}`;
+      let totalDossiers = 0;
+      for (const repName of selectedReps) {
+        const info = window._pushRelanceMap?.get(repName);
+        if (!info) continue;
+        totalDossiers += info.dossiers.length;
+        const summary = `⏳ Rappel fin de mois (${formatYearMonthLabelFr(currentMonthStr)}) — ${info.dossiers.length} dossier(s) non confirmé(s) : ${info.dossiers.join(', ')}`;
         try {
           await sb.functions.invoke('send-mention-push', {
             body: {
-              msgId: `month-end-${currentMonthStr}-${repName}`,
+              msgId: `month-end-${currentMonthStr}-${repName}-${Date.now()}`,
               authorId: currentProfile.id,
               authorName: currentProfile.nom,
               text: summary,
@@ -10229,7 +10342,13 @@
           invokedCount++;
         } catch (e) {}
       }
-      toast(`🔔 Relance push envoyée à ${invokedCount} représentant(s) (${monthUnconfirmed.length} dossier(s)) !`);
+
+      if (btn) {
+        btn.disabled = false;
+        btn.innerHTML = origTxt;
+      }
+      closePushRelanceModal();
+      toast(`🔔 Notification push envoyée à ${invokedCount} représentant(s) (${totalDossiers} dossier(s)) !`);
     };
 
     function renderRepDepositReminderBanner(scopeSales, isAdmin, isInspectingRep) {
