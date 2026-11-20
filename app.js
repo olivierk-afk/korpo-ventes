@@ -5886,12 +5886,228 @@
       triggerAdminSaleWebPush(chatObj);
     }
 
-    async function postMessageToTeamChat(text) {
+    let chatReplyTarget = null; // { id, authorName, snippet }
+    let pendingChatPhotoDataUrl = '';
+    let chatMediaRecorder = null;
+    let chatAudioChunks = [];
+    let chatVoiceStartTs = 0;
+    let chatVoiceTimerInterval = null;
+    let chatVoiceCancelled = false;
+    const chatMediaUrlCache = new Map();
+
+    async function uploadChatMediaBlob(blob, ext, mimeType) {
+      try {
+        const path = `chat/${currentUser?.id || 'anon'}/${Date.now()}-${Math.random().toString(36).slice(2, 7)}.${ext}`;
+        const { error } = await sb.storage.from(PROOF_BUCKET).upload(path, blob, { contentType: mimeType, upsert: false });
+        if (error) throw error;
+        return path;
+      } catch (e) {
+        return await new Promise((resolve) => {
+          const reader = new FileReader();
+          reader.onloadend = () => resolve(String(reader.result || ''));
+          reader.readAsDataURL(blob);
+        });
+      }
+    }
+
+    async function resolveChatMediaSignedUrls() {
+      const now = Date.now();
+      const paths = [];
+      (teamChatMessages || []).forEach(m => {
+        if (m.imageRef && isProofPath(m.imageRef) && !(chatMediaUrlCache.get(m.imageRef)?.exp > now + 60000)) {
+          paths.push(m.imageRef);
+        }
+        if (m.audioRef && isProofPath(m.audioRef) && !(chatMediaUrlCache.get(m.audioRef)?.exp > now + 60000)) {
+          paths.push(m.audioRef);
+        }
+      });
+      const uniquePaths = [...new Set(paths)];
+      if (!uniquePaths.length || !sb) return;
+      try {
+        const { data, error } = await sb.storage.from(PROOF_BUCKET).createSignedUrls(uniquePaths, 3600);
+        if (!error && Array.isArray(data)) {
+          data.forEach(d => {
+            if (d.signedUrl) chatMediaUrlCache.set(d.path, { url: d.signedUrl, exp: now + 3600 * 1000 });
+          });
+        }
+      } catch (e) {}
+    }
+
+    function getChatMediaUrl(ref) {
+      if (!ref) return '';
+      return isProofPath(ref) ? (chatMediaUrlCache.get(ref)?.url || '') : ref;
+    }
+
+    function autoResizeChatTextarea() {
+      const ta = document.getElementById('chat-message-input');
+      if (!ta) return;
+      ta.style.height = 'auto';
+      ta.style.height = Math.min(ta.scrollHeight, 112) + 'px';
+    }
+
+    window.setChatReplyTarget = (msgId) => {
+      const target = teamChatMessages.find(m => String(m.id) === String(msgId));
+      if (!target) return;
+      let snippet = '';
+      if (target.kind === 'sale') {
+        const sd = target.saleData || {};
+        snippet = `💵 Vente ${sd.entNom || ''} — ${fmtMoney(sd.valeur)}`;
+      } else if (target.audioRef) {
+        snippet = `🎤 Message vocal${target.audioDuration ? ` (${target.audioDuration})` : ''}`;
+      } else if (target.imageRef && !target.text) {
+        snippet = '📷 Photo';
+      } else {
+        snippet = (target.imageRef ? '📷 ' : '') + String(target.text || '');
+      }
+      chatReplyTarget = {
+        id: String(target.id),
+        authorName: target.authorName || target.saleData?.repNom || 'Membre',
+        snippet: snippet.slice(0, 120)
+      };
+      const bar = document.getElementById('chat-reply-preview-bar');
+      const authEl = document.getElementById('chat-reply-preview-author');
+      const snipEl = document.getElementById('chat-reply-preview-snippet');
+      if (authEl) authEl.textContent = `Réponse à ${chatReplyTarget.authorName}`;
+      if (snipEl) snipEl.textContent = chatReplyTarget.snippet;
+      bar?.classList.remove('hidden');
+      document.getElementById('chat-message-input')?.focus();
+    };
+
+    window.clearChatReplyTarget = () => {
+      chatReplyTarget = null;
+      document.getElementById('chat-reply-preview-bar')?.classList.add('hidden');
+    };
+
+    window.handleChatPhotoSelected = async (inputEl) => {
+      const file = inputEl?.files?.[0];
+      if (!file) return;
+      try {
+        const dataUrl = await compressImageToDataUrl(file, 1024, 0.72);
+        pendingChatPhotoDataUrl = dataUrl;
+        const img = document.getElementById('chat-photo-preview-img');
+        if (img) img.src = dataUrl;
+        document.getElementById('chat-photo-preview-bar')?.classList.remove('hidden');
+        document.getElementById('chat-message-input')?.focus();
+      } catch (e) {
+        toast('Impossible de charger cette photo.', 'error');
+      } finally {
+        inputEl.value = '';
+      }
+    };
+
+    window.clearPendingChatPhoto = () => {
+      pendingChatPhotoDataUrl = '';
+      const img = document.getElementById('chat-photo-preview-img');
+      if (img) img.src = '';
+      document.getElementById('chat-photo-preview-bar')?.classList.add('hidden');
+    };
+
+    window.openChatImageLightbox = (src) => {
+      if (!src) return;
+      const modal = document.getElementById('proof-modal');
+      const body = document.getElementById('proof-modal-body');
+      const delBtn = document.getElementById('btn-delete-proof-modal');
+      if (!modal || !body) return;
+      document.getElementById('proof-modal-title').textContent = 'Photo partagée — Korpo Top Earner';
+      document.getElementById('proof-modal-subtitle').textContent = '';
+      if (delBtn) delBtn.classList.add('hidden');
+      body.innerHTML = `<img src="${esc(src)}" alt="Photo partagée" class="max-h-[75vh] rounded-xl shadow-md object-contain" />`;
+      modal.classList.remove('hidden');
+    };
+
+    window.startChatVoiceRecording = async () => {
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia || typeof MediaRecorder === 'undefined') {
+        return toast('L’enregistrement vocal n’est pas supporté sur ce navigateur.', 'error');
+      }
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        chatAudioChunks = [];
+        chatVoiceCancelled = false;
+        const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
+          ? 'audio/webm;codecs=opus'
+          : (MediaRecorder.isTypeSupported('audio/mp4') ? 'audio/mp4' : '');
+        chatMediaRecorder = mimeType ? new MediaRecorder(stream, { mimeType }) : new MediaRecorder(stream);
+
+        chatMediaRecorder.ondataavailable = (ev) => {
+          if (ev.data && ev.data.size > 0) chatAudioChunks.push(ev.data);
+        };
+
+        chatMediaRecorder.onstop = async () => {
+          stream.getTracks().forEach(t => t.stop());
+          clearInterval(chatVoiceTimerInterval);
+          document.getElementById('chat-voice-recording-bar')?.classList.add('hidden');
+          document.getElementById('form-team-chat')?.classList.remove('hidden');
+
+          if (chatVoiceCancelled || !chatAudioChunks.length) return;
+          const elapsedSec = Math.max(1, Math.round((Date.now() - chatVoiceStartTs) / 1000));
+          const mins = Math.floor(elapsedSec / 60);
+          const secs = String(elapsedSec % 60).padStart(2, '0');
+          const durationLabel = `${mins}:${secs}`;
+          const finalType = chatMediaRecorder.mimeType || 'audio/webm';
+          const ext = finalType.includes('mp4') ? 'm4a' : 'webm';
+          const audioBlob = new Blob(chatAudioChunks, { type: finalType });
+
+          toast('Envoi du message vocal...');
+          const audioRef = await uploadChatMediaBlob(audioBlob, ext, finalType);
+          await postMessageToTeamChat('', { audioRef, audioDuration: durationLabel });
+        };
+
+        chatVoiceStartTs = Date.now();
+        const timerEl = document.getElementById('chat-voice-timer');
+        if (timerEl) timerEl.textContent = '0:00';
+        document.getElementById('form-team-chat')?.classList.add('hidden');
+        document.getElementById('chat-voice-recording-bar')?.classList.remove('hidden');
+
+        chatVoiceTimerInterval = setInterval(() => {
+          const sec = Math.floor((Date.now() - chatVoiceStartTs) / 1000);
+          if (timerEl) timerEl.textContent = `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, '0')}`;
+          if (sec >= 90) stopAndSendChatVoiceRecording();
+        }, 400);
+
+        chatMediaRecorder.start();
+      } catch (err) {
+        toast('Autorisez l’accès au microphone pour envoyer un message vocal.', 'error');
+      }
+    };
+
+    window.cancelChatVoiceRecording = () => {
+      chatVoiceCancelled = true;
+      if (chatMediaRecorder && chatMediaRecorder.state !== 'inactive') {
+        chatMediaRecorder.stop();
+      } else {
+        clearInterval(chatVoiceTimerInterval);
+        document.getElementById('chat-voice-recording-bar')?.classList.add('hidden');
+        document.getElementById('form-team-chat')?.classList.remove('hidden');
+      }
+    };
+
+    window.stopAndSendChatVoiceRecording = () => {
+      chatVoiceCancelled = false;
+      if (chatMediaRecorder && chatMediaRecorder.state !== 'inactive') {
+        chatMediaRecorder.stop();
+      }
+    };
+
+    async function postMessageToTeamChat(text, extraMedia = {}) {
       const cleanText = String(text || '').trim();
-      if (!cleanText || !sb || !currentProfile) return;
+      const hasPhoto = Boolean(pendingChatPhotoDataUrl);
+      const hasAudio = Boolean(extraMedia.audioRef);
+      if (!cleanText && !hasPhoto && !hasAudio) return;
+      if (!sb || !currentProfile) return;
+
       const nowIso = new Date().toISOString();
       const msgId = `msg_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
       const mentionedNames = extractMentionedNamesFromText(cleanText);
+      const replyPayload = chatReplyTarget ? { ...chatReplyTarget } : null;
+
+      let imageRef = '';
+      if (hasPhoto) {
+        const photoData = pendingChatPhotoDataUrl;
+        clearPendingChatPhoto();
+        imageRef = await uploadChatMediaBlob(dataUrlToBlob(photoData), 'jpg', 'image/jpeg');
+      }
+      clearChatReplyTarget();
+
       const chatObj = {
         id: msgId,
         kind: 'msg',
@@ -5900,7 +6116,10 @@
         authorName: currentProfile.nom,
         authorRole: currentProfile.role || 'representant',
         text: cleanText,
-        mentions: mentionedNames
+        mentions: mentionedNames,
+        ...(replyPayload ? { replyTo: replyPayload } : {}),
+        ...(imageRef ? { imageRef } : {}),
+        ...(hasAudio ? { audioRef: extraMedia.audioRef, audioDuration: extraMedia.audioDuration || '' } : {})
       };
 
       kpiHebdoRows.push({
@@ -5912,6 +6131,7 @@
         updated_at: nowIso
       });
       buildTeamChatMessagesFromState();
+      await resolveChatMediaSignedUrls();
       renderTeamChatFeed(true);
 
       const res = await safeUpsertKpiHebdoRow({
@@ -5984,13 +6204,21 @@
       }
     };
 
-    const WA_SENDER_COLORS = [
+    window.scrollToQuotedChatMessage = (targetId) => {
+      const el = document.getElementById(`chat-item-${String(targetId)}`);
+      if (!el) return;
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      el.classList.add('ring-2', 'ring-indigo-400', 'rounded-2xl', 'transition-all');
+      setTimeout(() => el.classList.remove('ring-2', 'ring-indigo-400'), 1800);
+    };
+
+    const CHAT_SENDER_COLORS = [
+      'text-indigo-700 dark:text-indigo-300',
       'text-emerald-700 dark:text-emerald-300',
       'text-sky-700 dark:text-sky-300',
       'text-amber-700 dark:text-amber-300',
       'text-purple-700 dark:text-purple-300',
-      'text-rose-700 dark:text-rose-300',
-      'text-teal-700 dark:text-teal-300'
+      'text-rose-700 dark:text-rose-300'
     ];
 
     function getWaSenderColorClass(name) {
@@ -6000,7 +6228,7 @@
         hash = ((hash << 5) - hash) + str.charCodeAt(i);
         hash |= 0;
       }
-      return WA_SENDER_COLORS[Math.abs(hash) % WA_SENDER_COLORS.length];
+      return CHAT_SENDER_COLORS[Math.abs(hash) % CHAT_SENDER_COLORS.length];
     }
 
     function renderTeamChatFeed(scrollToBottom = false) {
@@ -6008,7 +6236,6 @@
       if (!feed) return;
       const isAdminUser = currentProfile?.role === 'admin';
 
-      // Mettre à jour le sous-titre avec les prénoms des membres de l'équipe
       const subEl = document.getElementById('wa-chat-members-subtitle');
       if (subEl) {
         const names = getMentionableTeamMembers().map(m => m.nom.split(' ')[0]);
@@ -6022,8 +6249,8 @@
       if (!list.length) {
         feed.innerHTML = `
           <div class="py-16 text-center space-y-2">
-            <div class="inline-block px-4 py-2 rounded-xl bg-white/90 dark:bg-[#202c33] text-xs font-semibold text-slate-600 dark:text-slate-300 shadow-2xs">
-              🔒 Aucun message pour le moment. Les ventes et messages de l'équipe apparaîtront ici.
+            <div class="inline-block px-4 py-2 rounded-2xl bg-white dark:bg-slate-800 text-xs font-semibold text-slate-500 dark:text-slate-300 border border-slate-200/80 dark:border-slate-700">
+              Aucun message pour le moment. Écrivez ci-dessous ou envoyez un vocal !
             </div>
           </div>
         `;
@@ -6045,7 +6272,7 @@
           lastDayKey = dayKey;
           dayDividerHtml = `
             <div class="flex items-center justify-center my-2.5">
-              <span class="px-3 py-1 text-[11px] font-bold rounded-lg bg-white/90 dark:bg-[#182229] text-slate-600 dark:text-slate-300 shadow-2xs">
+              <span class="px-3 py-0.5 text-[10.5px] font-bold rounded-full bg-slate-200/80 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
                 ${esc(formatChatDayDividerLabel(m.at))}
               </span>
             </div>
@@ -6057,41 +6284,33 @@
           insertedUnreadDivider = true;
           unreadDividerHtml = `
             <div id="chat-unread-divider" class="flex items-center justify-center my-2.5">
-              <span class="px-3.5 py-1 text-[11px] font-extrabold rounded-full bg-white dark:bg-[#202c33] text-emerald-700 dark:text-emerald-300 shadow-xs border border-emerald-200 dark:border-emerald-700/50">
-                Messages non lus
+              <span class="px-3 py-0.5 text-[10.5px] font-extrabold rounded-full bg-indigo-600 text-white shadow-2xs">
+                Nouveaux messages
               </span>
             </div>
           `;
         }
 
+        // CARTE DE NOUVELLE VENTE COMPACTE (MÊME TAILLE QU'UN MESSAGE NORMAL)
         if (m.kind === 'sale') {
           const sd = m.saleData || {};
           const showClient = (isAdminUser || isMe) && sd.clientNom && sd.clientNom !== 'Client confidentiel';
           return dayDividerHtml + unreadDividerHtml + `
-            <div id="chat-item-${esc(m.id)}" class="my-2 flex justify-center">
-              <div class="wa-sale-bubble w-full max-w-md px-3.5 py-2.5 flex items-center justify-between gap-3">
-                <div class="flex items-center gap-2.5 min-w-0">
-                  <div class="w-9 h-9 rounded-full bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 flex items-center justify-center text-base font-extrabold shrink-0">
-                    💵
-                  </div>
-                  <div class="min-w-0">
-                    <div class="flex items-center gap-1.5 flex-wrap">
-                      <span class="text-xs font-extrabold text-slate-900 dark:text-white">${esc(sd.repNom || m.authorName)}</span>
-                      <span class="text-[10px] font-bold px-1.5 py-0.2 rounded bg-emerald-100 text-emerald-800 dark:bg-emerald-500/20 dark:text-emerald-300">Nouvelle vente</span>
-                    </div>
-                    <div class="flex items-center flex-wrap gap-1.5 text-[11px] text-slate-600 dark:text-slate-300 mt-0.5">
-                      ${entBadge(sd.entNom || 'Entreprise')}
-                      <span class="font-bold">${esc(sd.typeKpi || 'OTS')}</span>
-                      ${showClient ? `<span class="truncate">• ${esc(sd.clientNom)}</span>` : ''}
-                    </div>
-                  </div>
+            <div id="chat-item-${esc(m.id)}" class="my-1.5 flex justify-center">
+              <div class="chat-sale-pill max-w-[92%] sm:max-w-md px-3 py-1.5 flex items-center gap-2 text-xs shadow-2xs">
+                <span class="text-sm shrink-0">💵</span>
+                <div class="min-w-0 flex-1 truncate text-slate-700 dark:text-slate-200">
+                  <strong class="font-extrabold text-slate-900 dark:text-white">${esc(sd.repNom || m.authorName)}</strong>
+                  <span class="text-slate-400 mx-1">•</span>
+                  <span class="font-bold text-indigo-700 dark:text-indigo-300">${esc(sd.entNom || '')}</span>
+                  ${showClient ? `<span class="text-slate-500 dark:text-slate-400"> (${esc(sd.clientNom)})</span>` : ''}
+                  <span class="text-slate-400 mx-1">•</span>
+                  <strong class="font-extrabold text-emerald-700 dark:text-emerald-300 tabular-nums">${fmtMoney(sd.valeur)}</strong>
                 </div>
-                <div class="text-right shrink-0 flex flex-col items-end gap-1">
-                  <div class="text-sm font-extrabold text-emerald-700 dark:text-emerald-300 tabular-nums">${fmtMoney(sd.valeur)}</div>
-                  <div class="flex items-center gap-1.5">
-                    ${!isMe ? `<button type="button" onclick="sendQuickBravoInChat('${esc(sd.repNom || m.authorName)}', '${esc(sd.entNom || '')}', ${Number(sd.valeur || 0)})" class="px-2 py-0.5 text-[10px] font-extrabold rounded-full bg-amber-100 hover:bg-amber-200 text-amber-900 transition cursor-pointer">👏 Bravo</button>` : ''}
-                    <span class="text-[10px] text-slate-400 tabular-nums">${esc(formatChatHourOnly(m.at))}</span>
-                  </div>
+                <div class="flex items-center gap-1 shrink-0">
+                  <button type="button" onclick="setChatReplyTarget('${esc(m.id)}')" title="Répondre" class="px-1.5 py-0.5 text-[10px] font-bold rounded-md bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-300 cursor-pointer">↩</button>
+                  ${!isMe ? `<button type="button" onclick="sendQuickBravoInChat('${esc(sd.repNom || m.authorName)}', '${esc(sd.entNom || '')}', ${Number(sd.valeur || 0)})" class="px-2 py-0.5 text-[10px] font-extrabold rounded-md bg-amber-100 hover:bg-amber-200 text-amber-900 transition cursor-pointer">👏 Bravo</button>` : ''}
+                  <span class="text-[10px] text-slate-400 tabular-nums">${esc(formatChatHourOnly(m.at))}</span>
                 </div>
               </div>
             </div>
@@ -6104,30 +6323,59 @@
 
         const isAuthorAdmin = m.authorRole === 'admin';
         const senderColor = getWaSenderColorClass(m.authorName);
-        const formattedBody = formatChatMessageWithMentions(m.text, isMe);
+        const formattedBody = m.text ? formatChatMessageWithMentions(m.text, isMe) : '';
+        const imgUrl = getChatMediaUrl(m.imageRef);
+        const audioUrl = getChatMediaUrl(m.audioRef);
+
+        const quotedHtml = m.replyTo ? `
+          <div onclick="scrollToQuotedChatMessage('${esc(m.replyTo.id)}')" class="mb-1.5 px-2.5 py-1.5 rounded-xl text-[11px] cursor-pointer border-l-3 ${isMe ? 'bg-white/15 border-l-white text-indigo-100' : 'bg-slate-100 dark:bg-slate-800/90 border-l-indigo-500 text-slate-600 dark:text-slate-300'}">
+            <div class="font-extrabold truncate">${esc(m.replyTo.authorName || '')}</div>
+            <div class="truncate opacity-90">${esc(m.replyTo.snippet || '')}</div>
+          </div>
+        ` : '';
+
+        const photoHtml = imgUrl ? `
+          <div class="${m.text ? 'mb-1.5' : 'mb-0.5'}">
+            <img src="${esc(imgUrl)}" alt="Photo" onclick="openChatImageLightbox('${esc(imgUrl)}')" class="max-h-56 w-auto rounded-xl object-cover cursor-pointer hover:opacity-95 transition" />
+          </div>
+        ` : '';
+
+        const audioHtml = audioUrl ? `
+          <div class="py-1 flex items-center gap-2 min-w-[210px] sm:min-w-[240px]">
+            <span class="text-sm shrink-0">🎤</span>
+            <audio controls preload="metadata" src="${esc(audioUrl)}" class="h-8 w-full max-w-[220px]"></audio>
+          </div>
+        ` : '';
+
         const bubbleClass = isMe
-          ? `wa-bubble-out ${isGroupedWithPrev ? 'wa-bubble-grouped' : ''}`
-          : `wa-bubble-in ${isGroupedWithPrev ? 'wa-bubble-grouped' : ''} ${isMentionedMe ? 'ring-2 ring-amber-400' : ''}`;
+          ? 'chat-bubble-out'
+          : `chat-bubble-in ${isMentionedMe ? 'ring-2 ring-amber-400' : ''}`;
 
         return dayDividerHtml + unreadDividerHtml + `
-          <div id="chat-item-${esc(m.id)}" class="flex flex-col ${isMe ? 'items-end' : 'items-start'} ${isGroupedWithPrev ? 'mt-0.5' : 'mt-2'}">
-            <div class="group relative max-w-[85%] sm:max-w-[75%] px-3 py-1.5 text-[13.5px] leading-snug break-words ${bubbleClass}">
-              ${!isMe && !isGroupedWithPrev ? `
-                <div class="flex items-center gap-1.5 mb-0.5">
-                  <span class="text-[11.5px] font-extrabold ${senderColor}">${esc(m.authorName)}</span>
-                  ${isAuthorAdmin ? '<span class="text-[9.5px] font-bold text-slate-400">~ Admin</span>' : ''}
-                  ${isMentionedMe ? '<span class="px-1.5 py-0.2 text-[9px] font-extrabold rounded bg-amber-200 text-amber-950">@Vous</span>' : ''}
-                </div>
-              ` : ''}
-              <div class="inline">
-                <span>${formattedBody}</span>
-                <span class="inline-flex items-center gap-0.5 float-right ml-2.5 mt-1.5 text-[10px] opacity-60 tabular-nums select-none">
+          <div id="chat-item-${esc(m.id)}" class="group flex flex-col ${isMe ? 'items-end' : 'items-start'} ${isGroupedWithPrev ? 'mt-0.5' : 'mt-2'}">
+            <div class="flex items-end gap-1.5 max-w-[88%] sm:max-w-[78%] ${isMe ? 'flex-row-reverse' : ''}">
+              <div class="px-3 py-2 text-[13.5px] leading-snug break-words ${bubbleClass}">
+                ${!isMe && !isGroupedWithPrev ? `
+                  <div class="flex items-center gap-1.5 mb-0.5">
+                    <span class="text-[11px] font-extrabold ${senderColor}">${esc(m.authorName)}</span>
+                    ${isAuthorAdmin ? '<span class="text-[9.5px] font-bold text-slate-400">Admin</span>' : ''}
+                    ${isMentionedMe ? '<span class="px-1.5 py-0.2 text-[9px] font-extrabold rounded bg-amber-200 text-amber-950">@Vous</span>' : ''}
+                  </div>
+                ` : ''}
+                ${quotedHtml}
+                ${photoHtml}
+                ${audioHtml}
+                ${formattedBody ? `<div class="whitespace-pre-wrap">${formattedBody}</div>` : ''}
+                <div class="flex items-center justify-end gap-1 mt-0.5 text-[9.5px] opacity-70 tabular-nums select-none">
                   <span>${esc(formatChatHourOnly(m.at))}</span>
-                  ${isMe ? '<span class="text-sky-600 dark:text-sky-300 font-bold leading-none">✓✓</span>' : ''}
-                </span>
+                  ${isMe ? '<span>✓✓</span>' : ''}
+                </div>
               </div>
+              <button type="button" onclick="setChatReplyTarget('${esc(m.id)}')" title="Répondre à ce message" class="opacity-60 sm:opacity-0 group-hover:opacity-100 focus:opacity-100 w-7 h-7 rounded-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-500 hover:text-indigo-600 text-xs flex items-center justify-center shrink-0 transition cursor-pointer">
+                ↩
+              </button>
             </div>
-            ${canDel ? `<button type="button" onclick="deleteTeamChatMessage('${esc(m.id)}')" class="opacity-70 hover:opacity-100 mt-0.5 px-1.5 text-[10px] text-slate-500 hover:text-rose-600 transition cursor-pointer">Supprimer</button>` : ''}
+            ${canDel ? `<button type="button" onclick="deleteTeamChatMessage('${esc(m.id)}')" class="opacity-65 hover:opacity-100 mt-0.5 px-2 text-[10px] text-slate-400 hover:text-rose-600 transition cursor-pointer">Supprimer</button>` : ''}
           </div>
         `;
       }).join('');
@@ -6182,6 +6430,7 @@
       const newPos = replacedBefore.length;
       input.focus();
       input.setSelectionRange(newPos, newPos);
+      autoResizeChatTextarea();
       hideMentionAutocomplete();
     };
 
@@ -6191,12 +6440,14 @@
       const needsSpace = input.value.length > 0 && !/\s$/.test(input.value);
       input.value += (needsSpace ? ' @' : '@');
       input.focus();
+      autoResizeChatTextarea();
       input.dispatchEvent(new Event('input'));
     };
 
     const chatInputEl = document.getElementById('chat-message-input');
     if (chatInputEl) {
       chatInputEl.addEventListener('input', () => {
+        autoResizeChatTextarea();
         const curPos = chatInputEl.selectionStart ?? chatInputEl.value.length;
         const before = chatInputEl.value.slice(0, curPos);
         const match = before.match(/(?:^|\s)@([A-Za-zÀ-ÖØ-öø-ÿ0-9_-]*)$/);
@@ -6214,21 +6465,31 @@
       });
 
       chatInputEl.addEventListener('keydown', (e) => {
-        if (!mentionAcCandidates.length) return;
-        if (e.key === 'ArrowDown') {
+        if (mentionAcCandidates.length) {
+          if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            mentionAcSelectedIndex = (mentionAcSelectedIndex + 1) % mentionAcCandidates.length;
+            renderMentionAutocompleteList();
+            return;
+          } else if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            mentionAcSelectedIndex = (mentionAcSelectedIndex - 1 + mentionAcCandidates.length) % mentionAcCandidates.length;
+            renderMentionAutocompleteList();
+            return;
+          } else if (e.key === 'Enter' || e.key === 'Tab') {
+            e.preventDefault();
+            applyMentionAutocomplete(mentionAcSelectedIndex);
+            return;
+          } else if (e.key === 'Escape') {
+            e.stopPropagation();
+            hideMentionAutocomplete();
+            return;
+          }
+        }
+        // Envoyer avec Entrée (Shift+Entrée pour sauter une ligne)
+        if (e.key === 'Enter' && !e.shiftKey) {
           e.preventDefault();
-          mentionAcSelectedIndex = (mentionAcSelectedIndex + 1) % mentionAcCandidates.length;
-          renderMentionAutocompleteList();
-        } else if (e.key === 'ArrowUp') {
-          e.preventDefault();
-          mentionAcSelectedIndex = (mentionAcSelectedIndex - 1 + mentionAcCandidates.length) % mentionAcCandidates.length;
-          renderMentionAutocompleteList();
-        } else if (e.key === 'Enter' || e.key === 'Tab') {
-          e.preventDefault();
-          applyMentionAutocomplete(mentionAcSelectedIndex);
-        } else if (e.key === 'Escape') {
-          e.stopPropagation();
-          hideMentionAutocomplete();
+          document.getElementById('form-team-chat')?.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
         }
       });
 
@@ -6267,6 +6528,7 @@
           ...rows
         ];
         buildTeamChatMessagesFromState();
+        await resolveChatMediaSignedUrls();
         renderTeamChatFeed(forceScroll);
       } catch (e) {
         console.warn('Actualisation canal:', e.message);
@@ -6278,7 +6540,7 @@
     function subscribeToTeamChatRealtime() {
       if (!sb || !currentProfile) return;
       buildTeamChatMessagesFromState();
-      renderTeamChatFeed(true);
+      resolveChatMediaSignedUrls().then(() => renderTeamChatFeed(true));
 
       if (!chatRealtimeChannel) {
         chatRealtimeChannel = sb
@@ -6354,6 +6616,7 @@
       const nextPos = start + emoji.length;
       input.focus();
       input.setSelectionRange(nextPos, nextPos);
+      autoResizeChatTextarea();
     };
 
     document.addEventListener('click', (e) => {
@@ -6371,8 +6634,9 @@
       const input = document.getElementById('chat-message-input');
       if (!input) return;
       const val = input.value.trim();
-      if (!val) return;
+      if (!val && !pendingChatPhotoDataUrl) return;
       input.value = '';
+      autoResizeChatTextarea();
       await postMessageToTeamChat(val);
     });
 

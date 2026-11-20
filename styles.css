@@ -12,25 +12,63 @@
       min-height: 2.75rem;
       text-align: center;
     }
+    /* Menus déroulants (<select>) modernes, épurés et uniformes */
     select {
+      -webkit-appearance: none;
+      -moz-appearance: none;
+      appearance: none;
       max-width: 100%;
       min-width: 0;
-      text-align: center;
-      text-align-last: center;
-      -moz-text-align-last: center;
+      text-align: left !important;
+      text-align-last: left !important;
+      -moz-text-align-last: left !important;
+      padding-left: 0.875rem !important;
+      padding-right: 2.35rem !important;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23475569' stroke-width='2.3'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E") !important;
+      background-repeat: no-repeat !important;
+      background-position: right 0.75rem center !important;
+      background-size: 0.95rem 0.95rem !important;
+      cursor: pointer;
+      transition: border-color 0.16s ease, box-shadow 0.16s ease, background-color 0.16s ease;
+    }
+    select:hover:not(:disabled) {
+      border-color: #6366f1 !important;
+    }
+    select:focus {
+      border-color: #4f46e5 !important;
+      box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.16) !important;
+      outline: none !important;
+    }
+    select:disabled {
+      opacity: 0.65;
+      cursor: not-allowed;
     }
     select option {
-      text-align: center;
+      text-align: left;
+      font-weight: 600;
+      padding: 0.4rem 0.6rem;
     }
-    /* Uniformisation globale de l'alignement centré, de la hauteur et de la taille des contrôles & options */
+    html.dark select {
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23cbd5e1' stroke-width='2.3'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E") !important;
+    }
+    html.dark select:hover:not(:disabled) {
+      border-color: #818cf8 !important;
+    }
+    html.dark select option {
+      background-color: #0f172a;
+      color: #f8fafc;
+    }
+    /* Hauteur et lisibilité des contrôles dans la zone principale */
     main select:not(.hidden),
     main input[type="date"]:not(.hidden),
     main input[type="month"]:not(.hidden) {
-      min-height: 2.5rem;
-      font-size: 0.75rem !important;
+      min-height: 2.55rem;
+      font-size: 0.78rem !important;
       line-height: 1.25rem !important;
+    }
+    main input[type="date"]:not(.hidden),
+    main input[type="month"]:not(.hidden) {
       text-align: center !important;
-      text-align-last: center !important;
       justify-content: center !important;
     }
     @media (max-width: 639px) {
@@ -382,86 +420,70 @@
       border-color: #334155 !important;
     }
 
-    /* Canal de conversation style WhatsApp (Clair & Sombre authentiques) */
-    .wa-chat-wallpaper {
-      background-color: #efeae2 !important;
-      background-image: radial-gradient(rgba(11, 20, 26, 0.055) 1px, transparent 1px),
-                        radial-gradient(rgba(11, 20, 26, 0.035) 1px, #efeae2 1px) !important;
-      background-size: 24px 24px !important;
-      background-position: 0 0, 12px 12px !important;
-    }
-    .wa-chat-input-pill input.wa-chat-raw-input {
+    /* Canal de conversation moderne et fluide (Clair & Sombre) */
+    .chat-input-box textarea.chat-fluid-textarea {
       background: transparent !important;
       border: none !important;
       box-shadow: none !important;
+      min-height: 2rem !important;
+      line-height: 1.35rem !important;
     }
-    .wa-bubble-out {
-      background-color: #d9fdd3 !important;
-      color: #111b21 !important;
-      border-radius: 14px 4px 14px 14px !important;
-      box-shadow: 0 1px 1.5px rgba(11, 20, 26, 0.13) !important;
+    .chat-bubble-out {
+      background-color: #4f46e5 !important;
+      color: #ffffff !important;
+      border-radius: 18px 18px 4px 18px !important;
+      box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08) !important;
     }
-    .wa-bubble-in {
+    .chat-bubble-in {
       background-color: #ffffff !important;
-      color: #111b21 !important;
-      border-radius: 4px 14px 14px 14px !important;
-      box-shadow: 0 1px 1.5px rgba(11, 20, 26, 0.11) !important;
+      color: #0f172a !important;
+      border: 1px solid #e2e8f0 !important;
+      border-radius: 18px 18px 18px 4px !important;
+      box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04) !important;
     }
-    .wa-bubble-grouped {
-      border-radius: 14px !important;
-    }
-    .wa-sale-bubble {
+    .chat-sale-pill {
       background-color: #ffffff !important;
-      border: 1px solid rgba(0, 168, 132, 0.28) !important;
-      border-left: 4px solid #00a884 !important;
-      border-radius: 14px !important;
-      box-shadow: 0 1px 2px rgba(11, 20, 26, 0.10) !important;
+      border: 1px solid #a7f3d0 !important;
+      border-left: 3px solid #10b981 !important;
+      border-radius: 12px !important;
     }
-
-    /* Mode sombre style WhatsApp Dark (#0b141a / #202c33 / #005c4b) */
-    html.dark .wa-chat-shell {
-      background-color: #0b141a !important;
-      border-color: #222e35 !important;
+    html.dark .chat-shell {
+      background-color: #111827 !important;
+      border-color: #26334a !important;
     }
-    html.dark .wa-chat-header {
-      background-color: #202c33 !important;
-      border-bottom: 1px solid #2a3942 !important;
+    html.dark .chat-header {
+      background-color: #090e1a !important;
+      border-bottom-color: #1e293b !important;
     }
-    html.dark .wa-chat-wallpaper {
-      background-color: #0b141a !important;
-      background-image: radial-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 1px),
-                        radial-gradient(rgba(255, 255, 255, 0.025) 1px, #0b141a 1px) !important;
-      background-size: 24px 24px !important;
-      background-position: 0 0, 12px 12px !important;
+    html.dark .chat-feed-area {
+      background-color: #0b111e !important;
     }
-    html.dark .wa-bubble-out {
-      background-color: #005c4b !important;
-      color: #e9edef !important;
-      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.35) !important;
+    html.dark .chat-bubble-out {
+      background-color: #4338ca !important;
+      color: #ffffff !important;
     }
-    html.dark .wa-bubble-in {
-      background-color: #202c33 !important;
-      color: #e9edef !important;
-      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.35) !important;
+    html.dark .chat-bubble-in {
+      background-color: #1a2436 !important;
+      border-color: #2d3b55 !important;
+      color: #f1f5f9 !important;
     }
-    html.dark .wa-sale-bubble {
-      background-color: #182229 !important;
-      border-color: rgba(0, 168, 132, 0.35) !important;
-      border-left: 4px solid #00a884 !important;
-      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35) !important;
+    html.dark .chat-sale-pill {
+      background-color: #14222c !important;
+      border-color: rgba(16, 185, 129, 0.35) !important;
+      border-left: 3px solid #10b981 !important;
     }
-    html.dark .wa-chat-composer {
-      background-color: #202c33 !important;
-      border-top-color: #2a3942 !important;
+    html.dark .chat-composer-bar {
+      background-color: #111827 !important;
+      border-top-color: #243047 !important;
     }
-    html.dark .wa-chat-input-pill {
-      background-color: #2a3942 !important;
-      border-color: #374853 !important;
+    html.dark .chat-input-box {
+      background-color: #1a2436 !important;
+      border-color: #334155 !important;
     }
-    html.dark .wa-chat-input-pill input.wa-chat-raw-input {
+    html.dark .chat-input-box textarea.chat-fluid-textarea {
       background: transparent !important;
       border: none !important;
-      color: #e9edef !important;
+      color: #ffffff !important;
     }
     html.dark #chat-messages-feed .chat-mention-pill-me {
       background-color: rgba(245, 158, 11, 0.25) !important;
@@ -469,17 +491,17 @@
       box-shadow: inset 0 0 0 1px rgba(251, 191, 36, 0.45) !important;
     }
     html.dark #chat-messages-feed .chat-mention-pill-other {
-      background-color: rgba(83, 189, 235, 0.20) !important;
-      color: #7dd3fc !important;
+      background-color: rgba(99, 102, 241, 0.28) !important;
+      color: #c7d2fe !important;
     }
     html.dark #chat-messages-feed .chat-mention-pill-own-bubble {
-      background-color: rgba(255, 255, 255, 0.16) !important;
+      background-color: rgba(255, 255, 255, 0.22) !important;
       color: #ffffff !important;
     }
     html.dark #chat-mention-autocomplete,
     html.dark #chat-emoji-picker {
-      background-color: #233138 !important;
-      border-color: #32434d !important;
+      background-color: #182234 !important;
+      border-color: #334155 !important;
     }
 
     /* Barre supérieure et en-têtes de fenêtres modales */
