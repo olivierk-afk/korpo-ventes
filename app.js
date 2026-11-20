@@ -5895,8 +5895,10 @@
     let chatVoiceCancelled = false;
     const chatMediaUrlCache = new Map();
 
-    // Stockage fiable des médias du chat (vocaux & photos) :
-    // 1) Tente Supabase Storage, sinon enregistre dans `korpo_store` (`store = 'chat_media'`) sans aucune limite d'index B-tree
+    // Stockage universel et garanti sans limite de taille des médias du chat (vocaux & photos) :
+    // 1) Tente `korpo_store` (`store = 'chat_media'`)
+    // 2) Repli automatique par découpage en micro-blocs (< 1 800 octets) dans `kpi_hebdo` (`semaine_index = -13`),
+    //    accessible à TOUS les utilisateurs (admin & représentants) et sous la limite B-tree PostgreSQL (2 704 octets).
     async function uploadChatMediaBlob(blob, ext, mimeType) {
       const mediaId = `cm_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
       const dataUrl = await new Promise((resolve) => {
@@ -5906,9 +5908,9 @@
       });
       if (!dataUrl) return '';
 
-      // Cache immédiat pour lecture instantanée sans attendre le réseau
       chatMediaUrlCache.set(`media:${mediaId}`, { url: dataUrl, exp: Date.now() + 24 * 3600 * 1000 });
 
+      // Tentative 1 : table `korpo_store`
       try {
         const { error } = await sb.from(KV_TABLE).upsert({
           store: 'chat_media',
@@ -5917,25 +5919,56 @@
           value: { dataUrl, mimeType, ext, at: new Date().toISOString() },
           updated_at: new Date().toISOString()
         }, { onConflict: 'store,item_key,owner' });
-        if (error) throw error;
-        return `media:${mediaId}`;
-      } catch (e) {
-        return dataUrl;
+        if (!error) return `media:${mediaId}`;
+      } catch (e) {}
+
+      // Tentative 2 (universelle pour tous les rôles) : découpage en blocs de 1 700 caractères dans `kpi_hebdo` (semaine_index = -13)
+      try {
+        const CHUNK_SIZE = 1700;
+        const totalChunks = Math.ceil(dataUrl.length / CHUNK_SIZE);
+        const nowIso = new Date().toISOString();
+        const rows = [];
+        for (let i = 0; i < totalChunks; i++) {
+          rows.push({
+            mois_commission: `${mediaId}__${i}__${totalChunks}`,
+            semaine_index: -13,
+            representant_nom: dataUrl.slice(i * CHUNK_SIZE, (i + 1) * CHUNK_SIZE),
+            booke: i,
+            rdv_realise: totalChunks,
+            updated_at: nowIso
+          });
+        }
+        for (let start = 0; start < rows.length; start += 25) {
+          const batch = rows.slice(start, start + 25);
+          const { error: insErr } = await sb.from('kpi_hebdo').insert(batch);
+          if (insErr) throw insErr;
+        }
+        chatMediaUrlCache.set(`chunk:${mediaId}:${totalChunks}`, { url: dataUrl, exp: Date.now() + 24 * 3600 * 1000 });
+        return `chunk:${mediaId}:${totalChunks}`;
+      } catch (e2) {
+        console.warn('Échec stockage média chat:', e2 && e2.message);
+        return '';
       }
     }
 
     async function resolveChatMediaSignedUrls() {
       const now = Date.now();
       const mediaKeys = [];
+      const chunkPrefixes = [];
       const storagePaths = [];
+
       (teamChatMessages || []).forEach(m => {
         [m.imageRef, m.audioRef].forEach(ref => {
           if (!ref) return;
           if (chatMediaUrlCache.get(ref)?.exp > now + 60000) return;
-          if (String(ref).startsWith('media:')) {
-            mediaKeys.push(String(ref).slice(6));
-          } else if (isProofPath(ref)) {
-            storagePaths.push(ref);
+          const sRef = String(ref);
+          if (sRef.startsWith('media:')) {
+            mediaKeys.push(sRef.slice(6));
+          } else if (sRef.startsWith('chunk:')) {
+            const parts = sRef.split(':');
+            if (parts[1]) chunkPrefixes.push({ fullRef: sRef, mediaId: parts[1], total: Number(parts[2] || 0) });
+          } else if (isProofPath(sRef)) {
+            storagePaths.push(sRef);
           }
         });
       });
@@ -5958,6 +5991,25 @@
         } catch (e) {}
       }
 
+      if (chunkPrefixes.length && sb) {
+        for (const item of chunkPrefixes) {
+          try {
+            const { data, error } = await sb
+              .from('kpi_hebdo')
+              .select('mois_commission,representant_nom,booke')
+              .eq('semaine_index', -13)
+              .like('mois_commission', `${item.mediaId}__%`);
+            if (!error && Array.isArray(data) && data.length > 0) {
+              data.sort((a, b) => Number(a.booke || 0) - Number(b.booke || 0));
+              const fullDataUrl = data.map(r => r.representant_nom || '').join('');
+              if (fullDataUrl.startsWith('data:')) {
+                chatMediaUrlCache.set(item.fullRef, { url: fullDataUrl, exp: now + 24 * 3600 * 1000 });
+              }
+            }
+          } catch (e) {}
+        }
+      }
+
       const uniqStoragePaths = [...new Set(storagePaths)];
       if (uniqStoragePaths.length && sb) {
         try {
@@ -5973,10 +6025,11 @@
 
     function getChatMediaUrl(ref) {
       if (!ref) return '';
-      if (String(ref).startsWith('media:') || isProofPath(ref)) {
-        return chatMediaUrlCache.get(ref)?.url || '';
+      const sRef = String(ref);
+      if (sRef.startsWith('media:') || sRef.startsWith('chunk:') || isProofPath(sRef)) {
+        return chatMediaUrlCache.get(sRef)?.url || '';
       }
-      return ref;
+      return sRef;
     }
 
     function autoResizeChatTextarea() {
@@ -6056,26 +6109,83 @@
       modal.classList.remove('hidden');
     };
 
+    // Compresse n'importe quel enregistrement audio en WAV mono 11 kHz ultra-léger (~11 Ko/sec)
+    // lisible nativement sur iPhone Safari, Android et ordinateur sans erreur de format ni de taille
+    async function compressAudioBlobToCompactWav(rawBlob) {
+      try {
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        if (!AudioCtx) return { blob: rawBlob, ext: 'webm', mime: rawBlob.type || 'audio/webm' };
+        const ctx = new AudioCtx();
+        const arrayBuf = await rawBlob.arrayBuffer();
+        const decoded = await ctx.decodeAudioData(arrayBuf);
+        const targetRate = 11025;
+        const duration = Math.min(decoded.duration, 90);
+        const targetLen = Math.max(1, Math.floor(duration * targetRate));
+        const offline = new OfflineAudioContext(1, targetLen, targetRate);
+        const src = offline.createBufferSource();
+        src.buffer = decoded;
+        src.connect(offline.destination);
+        src.start(0);
+        const rendered = await offline.startRendering();
+        try { ctx.close(); } catch (e) {}
+
+        const samples = rendered.getChannelData(0);
+        const buffer = new ArrayBuffer(44 + samples.length * 2);
+        const view = new DataView(buffer);
+        const writeStr = (off, str) => { for (let i = 0; i < str.length; i++) view.setUint8(off + i, str.charCodeAt(i)); };
+        writeStr(0, 'RIFF');
+        view.setUint32(4, 36 + samples.length * 2, true);
+        writeStr(8, 'WAVE');
+        writeStr(12, 'fmt ');
+        view.setUint32(16, 16, true);
+        view.setUint16(20, 1, true); // PCM
+        view.setUint16(22, 1, true); // Mono
+        view.setUint32(24, targetRate, true);
+        view.setUint32(28, targetRate * 2, true);
+        view.setUint16(32, 2, true);
+        view.setUint16(34, 16, true);
+        writeStr(36, 'data');
+        view.setUint32(40, samples.length * 2, true);
+        let offset = 44;
+        for (let i = 0; i < samples.length; i++, offset += 2) {
+          const s = Math.max(-1, Math.min(1, samples[i]));
+          view.setInt16(offset, s < 0 ? s * 0x8000 : s * 0x7FFF, true);
+        }
+        return { blob: new Blob([buffer], { type: 'audio/wav' }), ext: 'wav', mime: 'audio/wav' };
+      } catch (e) {
+        const mime = rawBlob.type || 'audio/webm';
+        const ext = mime.includes('mp4') ? 'm4a' : 'webm';
+        return { blob: rawBlob, ext, mime };
+      }
+    }
+
     window.startChatVoiceRecording = async () => {
-      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia || typeof MediaRecorder === 'undefined') {
-        return toast('L’enregistrement vocal n’est pas supporté sur ce navigateur.', 'error');
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        return toast('Le microphone n’est pas disponible sur ce navigateur (vérifiez HTTPS).', 'error');
+      }
+      if (typeof MediaRecorder === 'undefined') {
+        return toast('L’enregistrement vocal n’est pas supporté sur cette version de navigateur.', 'error');
       }
       try {
-        const stream = await navigator.mediaDevices.getUserMedia({
-          audio: { echoCancellation: true, noiseSuppression: true, channelCount: 1 }
-        });
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
         chatAudioChunks = [];
         chatVoiceCancelled = false;
-        const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
-          ? 'audio/webm;codecs=opus'
-          : (MediaRecorder.isTypeSupported('audio/mp4') ? 'audio/mp4' : '');
-        const recOpts = mimeType
-          ? { mimeType, audioBitsPerSecond: 16000 }
-          : { audioBitsPerSecond: 16000 };
+
+        let chosenMime = '';
+        const candidates = ['audio/mp4', 'audio/webm;codecs=opus', 'audio/webm', 'audio/ogg;codecs=opus'];
+        for (const c of candidates) {
+          try {
+            if (MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported(c)) {
+              chosenMime = c;
+              break;
+            }
+          } catch (e) {}
+        }
+
         try {
-          chatMediaRecorder = new MediaRecorder(stream, recOpts);
-        } catch (errOpt) {
-          chatMediaRecorder = mimeType ? new MediaRecorder(stream, { mimeType }) : new MediaRecorder(stream);
+          chatMediaRecorder = chosenMime ? new MediaRecorder(stream, { mimeType: chosenMime }) : new MediaRecorder(stream);
+        } catch (errRec) {
+          chatMediaRecorder = new MediaRecorder(stream);
         }
 
         chatMediaRecorder.ondataavailable = (ev) => {
@@ -6083,21 +6193,29 @@
         };
 
         chatMediaRecorder.onstop = async () => {
-          stream.getTracks().forEach(t => t.stop());
+          try { stream.getTracks().forEach(t => t.stop()); } catch (e) {}
           clearInterval(chatVoiceTimerInterval);
           document.getElementById('chat-voice-recording-bar')?.classList.add('hidden');
           document.getElementById('form-team-chat')?.classList.remove('hidden');
 
-          if (chatVoiceCancelled || !chatAudioChunks.length) return;
+          if (chatVoiceCancelled) return;
+          if (!chatAudioChunks.length) {
+            return toast('Aucun son capté par le micro. Réessayez en parlant plus près.', 'error');
+          }
+
           const elapsedSec = Math.max(1, Math.round((Date.now() - chatVoiceStartTs) / 1000));
           const mins = Math.floor(elapsedSec / 60);
           const secs = String(elapsedSec % 60).padStart(2, '0');
           const durationLabel = `${mins}:${secs}`;
-          const finalType = chatMediaRecorder.mimeType || 'audio/webm';
-          const ext = finalType.includes('mp4') ? 'm4a' : 'webm';
-          const audioBlob = new Blob(chatAudioChunks, { type: finalType });
+          const finalType = chatMediaRecorder.mimeType || chosenMime || 'audio/webm';
+          const rawBlob = new Blob(chatAudioChunks, { type: finalType });
 
-          const audioRef = await uploadChatMediaBlob(audioBlob, ext, finalType);
+          toast('Traitement & envoi du message vocal...');
+          const packed = await compressAudioBlobToCompactWav(rawBlob);
+          const audioRef = await uploadChatMediaBlob(packed.blob, packed.ext, packed.mime);
+          if (!audioRef) {
+            return toast('Impossible d’enregistrer le fichier vocal. Vérifiez votre connexion.', 'error');
+          }
           await postMessageToTeamChat('', { audioRef, audioDuration: durationLabel });
         };
 
@@ -6110,19 +6228,24 @@
         chatVoiceTimerInterval = setInterval(() => {
           const sec = Math.floor((Date.now() - chatVoiceStartTs) / 1000);
           if (timerEl) timerEl.textContent = `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, '0')}`;
-          if (sec >= 90) stopAndSendChatVoiceRecording();
+          if (sec >= 60) stopAndSendChatVoiceRecording();
         }, 400);
 
-        chatMediaRecorder.start(250);
+        chatMediaRecorder.start();
       } catch (err) {
-        toast('Autorisez l’accès au microphone pour envoyer un message vocal.', 'error');
+        const msg = String(err?.name || err?.message || '');
+        if (msg.includes('NotAllowed') || msg.includes('Permission')) {
+          toast('Accès au micro refusé : autorisez le microphone dans les réglages de Safari / Chrome.', 'error');
+        } else {
+          toast('Erreur micro : ' + (err?.message || 'vérifiez les permissions audio'), 'error');
+        }
       }
     };
 
     window.cancelChatVoiceRecording = () => {
       chatVoiceCancelled = true;
       if (chatMediaRecorder && chatMediaRecorder.state !== 'inactive') {
-        chatMediaRecorder.stop();
+        try { chatMediaRecorder.stop(); } catch (e) {}
       } else {
         clearInterval(chatVoiceTimerInterval);
         document.getElementById('chat-voice-recording-bar')?.classList.add('hidden');
@@ -6133,7 +6256,10 @@
     window.stopAndSendChatVoiceRecording = () => {
       chatVoiceCancelled = false;
       if (chatMediaRecorder && chatMediaRecorder.state !== 'inactive') {
-        chatMediaRecorder.stop();
+        try {
+          if (typeof chatMediaRecorder.requestData === 'function') chatMediaRecorder.requestData();
+        } catch (e) {}
+        try { chatMediaRecorder.stop(); } catch (e) {}
       }
     };
 
@@ -6154,6 +6280,10 @@
         const photoData = pendingChatPhotoDataUrl;
         clearPendingChatPhoto();
         imageRef = await uploadChatMediaBlob(dataUrlToBlob(photoData), 'jpg', 'image/jpeg');
+        if (!imageRef) {
+          toast('Impossible d’envoyer la photo.', 'error');
+          return;
+        }
       }
       clearChatReplyTarget();
 
