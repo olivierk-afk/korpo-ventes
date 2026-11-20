@@ -1422,7 +1422,7 @@
             <!-- Barre de progression des 6 étapes -->
             <div class="flex items-center justify-between gap-1 text-[10px] font-extrabold">
               <div class="flex items-center gap-1.5 shrink-0">
-                <span id="voice-step-badge" class="px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-800">Étape 1 / 6</span>
+                <span id="voice-step-badge" class="px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-800">Étape 1 / 7</span>
                 <button type="button" id="btn-voice-mute-toggle" onclick="toggleVoiceMute()" class="px-2 py-0.5 text-[10px] font-extrabold rounded-lg bg-indigo-100 text-indigo-800 transition">🔊 Voix</button>
               </div>
               <span id="voice-sale-status" class="text-[11px] font-bold text-indigo-700 truncate">En attente...</span>
@@ -12756,8 +12756,14 @@
         hint: 'Dites « Reçu » ou « À confirmer »'
       },
       {
+        key: 'mois_comm',
+        prompt: '6. Mois de paiement de la commission',
+        spokenPrompt: 'Dans quel mois la commission doit-elle être payée ?',
+        hint: 'Ex. « Ce mois-ci », « Décembre », « Janvier »...'
+      },
+      {
         key: 'note',
-        prompt: '6. Contrat ou note (ou « Aucun »)',
+        prompt: '7. Contrat ou note (ou « Aucun »)',
         spokenPrompt: 'Numéro de contrat ? Sinon dites aucun.',
         hint: 'Ex. Est 3505 ou « Aucun »'
       }
@@ -12885,6 +12891,15 @@
           { label: '✅ Dépôt reçu', say: 'Dépôt reçu' },
           { label: '⏳ À confirmer', say: 'À confirmer' }
         ];
+      } else if (step.key === 'mois_comm') {
+        const baseYm = document.getElementById('vente-mois-comm')?.value || currentMonthStr;
+        const [by, bm] = baseYm.split('-').map(Number);
+        for (let offset = 0; offset < 4; offset++) {
+          const d = new Date(by, (bm - 1) + offset, 1);
+          const ym = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+          const lbl = offset === 0 ? `📅 ${formatYearMonthLabelFr(ym)} (Ce mois)` : formatYearMonthLabelFr(ym);
+          chips.push({ label: lbl, say: ym });
+        }
       } else if (step.key === 'note') {
         chips = [
           { label: 'Aucun', say: 'Aucun' }
@@ -13463,10 +13478,72 @@
         return { ok: false, spokenAck: '' };
       }
 
+      if (step.key === 'mois_comm') {
+        const moisEl = document.getElementById('vente-mois-comm');
+        if (!moisEl) return { ok: false, spokenAck: '' };
+        const baseYm = moisEl.value || currentMonthStr;
+        const [curY, curM] = currentMonthStr.split('-').map(Number);
+
+        const monthTokens = [
+          { num: 1, keys: ['janvier', 'janv'] },
+          { num: 2, keys: ['fevrier', 'fevr'] },
+          { num: 3, keys: ['mars'] },
+          { num: 4, keys: ['avril', 'avr'] },
+          { num: 5, keys: ['mai'] },
+          { num: 6, keys: ['juin'] },
+          { num: 7, keys: ['juillet', 'juill'] },
+          { num: 8, keys: ['aout'] },
+          { num: 9, keys: ['septembre', 'sept'] },
+          { num: 10, keys: ['octobre', 'oct'] },
+          { num: 11, keys: ['novembre', 'nov'] },
+          { num: 12, keys: ['decembre', 'dec'] }
+        ];
+
+        for (const alt of alts) {
+          const rawTrim = String(alt || '').trim();
+          const n = normalizePhoneticFr(rawTrim);
+          let resolvedYm = '';
+
+          if (/^\d{4}-(?:0[1-9]|1[0-2])$/.test(rawTrim)) {
+            resolvedYm = rawTrim;
+          } else if (/\b(?:ce mois|mois ci|courant|actuel|maintenant|meme mois)\b/i.test(n)) {
+            resolvedYm = baseYm;
+          } else if (/\b(?:mois prochain|prochain mois|suivant)\b/i.test(n)) {
+            const dNext = new Date(curY, curM, 1);
+            resolvedYm = `${dNext.getFullYear()}-${String(dNext.getMonth() + 1).padStart(2, '0')}`;
+          } else {
+            const foundMonth = monthTokens.find(mt => mt.keys.some(k => new RegExp(`\\b${k}\\b`, 'i').test(n)));
+            if (foundMonth) {
+              const yearMatch = n.match(/\b(20\d{2})\b/);
+              let targetYear = yearMatch ? parseInt(yearMatch[1], 10) : curY;
+              // Si aucun millésime n'est dit et que le mois nommé est déjà passé (ex: en nov 2026 on dit "janvier"), basculer sur l'année suivante (2027)
+              if (!yearMatch && foundMonth.num < curM) {
+                targetYear = curY + 1;
+              }
+              resolvedYm = `${targetYear}-${String(foundMonth.num).padStart(2, '0')}`;
+            }
+          }
+
+          if (resolvedYm) {
+            moisEl.value = resolvedYm;
+            flashVoiceFilledField(moisEl);
+            if (typeof updateDrawerCommissionPreview === 'function') updateDrawerCommissionPreview();
+            const spokenMonth = formatYearMonthLabelFr(resolvedYm);
+            if (summaryEl) summaryEl.textContent = `✓ Paiement : ${spokenMonth}`;
+            return { ok: true, spokenAck: spokenMonth };
+          }
+        }
+        return { ok: false, spokenAck: '' };
+      }
+
       if (step.key === 'note') {
         const noteEl = document.getElementById('vente-note');
-        if (/^(?:aucun|aucune|rien|non|pas de note|pas de contrat|zero)$/i.test(primaryNorm)) {
-          if (summaryEl) summaryEl.textContent = '✓ Aucune note ajoutée';
+        if (alts.some(a => /^(?:aucun|aucune|rien|non|pas de note|pas de contrat|zero|effacer|vider)$/i.test(normalizePhoneticFr(a)))) {
+          if (noteEl) {
+            noteEl.value = '';
+            flashVoiceFilledField(noteEl);
+          }
+          if (summaryEl) summaryEl.textContent = '✓ Aucun contrat / note (champ vidé)';
           return { ok: true, spokenAck: 'Aucun' };
         }
         let cleanNote = primaryOriginal
