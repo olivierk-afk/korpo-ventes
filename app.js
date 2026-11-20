@@ -5977,10 +5977,44 @@
       }
     }
 
+    window.scrollTeamChatToBottom = () => {
+      const feed = document.getElementById('chat-messages-feed');
+      if (feed) {
+        feed.scrollTo({ top: feed.scrollHeight, behavior: 'smooth' });
+      }
+    };
+
+    const WA_SENDER_COLORS = [
+      'text-emerald-700 dark:text-emerald-300',
+      'text-sky-700 dark:text-sky-300',
+      'text-amber-700 dark:text-amber-300',
+      'text-purple-700 dark:text-purple-300',
+      'text-rose-700 dark:text-rose-300',
+      'text-teal-700 dark:text-teal-300'
+    ];
+
+    function getWaSenderColorClass(name) {
+      const str = String(name || '');
+      let hash = 0;
+      for (let i = 0; i < str.length; i++) {
+        hash = ((hash << 5) - hash) + str.charCodeAt(i);
+        hash |= 0;
+      }
+      return WA_SENDER_COLORS[Math.abs(hash) % WA_SENDER_COLORS.length];
+    }
+
     function renderTeamChatFeed(scrollToBottom = false) {
       const feed = document.getElementById('chat-messages-feed');
       if (!feed) return;
       const isAdminUser = currentProfile?.role === 'admin';
+
+      // Mettre à jour le sous-titre avec les prénoms des membres de l'équipe
+      const subEl = document.getElementById('wa-chat-members-subtitle');
+      if (subEl) {
+        const names = getMentionableTeamMembers().map(m => m.nom.split(' ')[0]);
+        subEl.textContent = names.length ? names.join(', ') : 'Équipe Korpo • En direct';
+      }
+
       const list = chatSalesOnlyMode
         ? teamChatMessages.filter(m => m.kind === 'sale')
         : teamChatMessages;
@@ -5988,9 +6022,9 @@
       if (!list.length) {
         feed.innerHTML = `
           <div class="py-16 text-center space-y-2">
-            <div class="text-3xl">💬</div>
-            <div class="text-sm font-extrabold text-slate-700">Aucun message dans le canal pour le moment</div>
-            <p class="text-xs text-slate-400">Dès qu'un représentant enregistrera une vente ou écrira un message, il apparaîtra ici en direct.</p>
+            <div class="inline-block px-4 py-2 rounded-xl bg-white/90 dark:bg-[#202c33] text-xs font-semibold text-slate-600 dark:text-slate-300 shadow-2xs">
+              🔒 Aucun message pour le moment. Les ventes et messages de l'équipe apparaîtront ici.
+            </div>
           </div>
         `;
         return;
@@ -6010,8 +6044,8 @@
         if (dayKey && dayKey !== lastDayKey) {
           lastDayKey = dayKey;
           dayDividerHtml = `
-            <div class="flex items-center justify-center my-3">
-              <span class="px-3.5 py-1 text-[11px] font-extrabold uppercase tracking-wider rounded-full bg-slate-200/80 dark:bg-slate-800 text-slate-600 dark:text-slate-300 shadow-2xs">
+            <div class="flex items-center justify-center my-2.5">
+              <span class="px-3 py-1 text-[11px] font-bold rounded-lg bg-white/90 dark:bg-[#182229] text-slate-600 dark:text-slate-300 shadow-2xs">
                 ${esc(formatChatDayDividerLabel(m.at))}
               </span>
             </div>
@@ -6022,12 +6056,10 @@
         if (!insertedUnreadDivider && prevSeenCutoff && !isMe && String(m.at || '') > prevSeenCutoff) {
           insertedUnreadDivider = true;
           unreadDividerHtml = `
-            <div id="chat-unread-divider" class="flex items-center gap-3 my-3">
-              <div class="flex-1 h-px bg-rose-400/60"></div>
-              <span class="px-3 py-0.5 text-[10px] font-extrabold uppercase tracking-wider rounded-full bg-rose-500 text-white shadow-2xs">
-                Nouveaux messages
+            <div id="chat-unread-divider" class="flex items-center justify-center my-2.5">
+              <span class="px-3.5 py-1 text-[11px] font-extrabold rounded-full bg-white dark:bg-[#202c33] text-emerald-700 dark:text-emerald-300 shadow-xs border border-emerald-200 dark:border-emerald-700/50">
+                Messages non lus
               </span>
-              <div class="flex-1 h-px bg-rose-400/60"></div>
             </div>
           `;
         }
@@ -6036,29 +6068,31 @@
           const sd = m.saleData || {};
           const showClient = (isAdminUser || isMe) && sd.clientNom && sd.clientNom !== 'Client confidentiel';
           return dayDividerHtml + unreadDividerHtml + `
-            <div id="chat-item-${esc(m.id)}" class="chat-sale-card bg-white border-l-4 border-l-emerald-500 border border-emerald-200/90 rounded-2xl p-3.5 sm:p-4 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-              <div class="flex items-start gap-3 min-w-0">
-                <div class="w-10 h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center text-lg font-extrabold shrink-0 shadow-xs">
-                  💵
-                </div>
-                <div class="min-w-0 space-y-1">
-                  <div class="flex items-center flex-wrap gap-1.5">
-                    <span class="px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wider rounded-full bg-emerald-100 text-emerald-800">Vente</span>
-                    <span class="text-sm font-extrabold text-slate-900">${esc(sd.repNom || m.authorName)}</span>
-                    <span class="text-[11px] font-medium text-slate-400">${esc(formatChatHourOnly(m.at))}</span>
+            <div id="chat-item-${esc(m.id)}" class="my-2 flex justify-center">
+              <div class="wa-sale-bubble w-full max-w-md px-3.5 py-2.5 flex items-center justify-between gap-3">
+                <div class="flex items-center gap-2.5 min-w-0">
+                  <div class="w-9 h-9 rounded-full bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 flex items-center justify-center text-base font-extrabold shrink-0">
+                    💵
                   </div>
-                  <div class="flex items-center flex-wrap gap-1.5 text-xs text-slate-700">
-                    ${entBadge(sd.entNom || 'Entreprise')}
-                    <span class="px-2 py-0.5 text-[10px] font-extrabold rounded-md border ${sd.typeKpi === 'SUIVI' ? 'bg-purple-50 text-purple-700 border-purple-200' : 'bg-sky-50 text-sky-700 border-sky-200'}">${esc(sd.typeKpi || 'OTS')}</span>
-                    ${showClient ? `<span class="font-bold text-slate-800">• ${esc(sd.clientNom)}</span>` : ''}
+                  <div class="min-w-0">
+                    <div class="flex items-center gap-1.5 flex-wrap">
+                      <span class="text-xs font-extrabold text-slate-900 dark:text-white">${esc(sd.repNom || m.authorName)}</span>
+                      <span class="text-[10px] font-bold px-1.5 py-0.2 rounded bg-emerald-100 text-emerald-800 dark:bg-emerald-500/20 dark:text-emerald-300">Nouvelle vente</span>
+                    </div>
+                    <div class="flex items-center flex-wrap gap-1.5 text-[11px] text-slate-600 dark:text-slate-300 mt-0.5">
+                      ${entBadge(sd.entNom || 'Entreprise')}
+                      <span class="font-bold">${esc(sd.typeKpi || 'OTS')}</span>
+                      ${showClient ? `<span class="truncate">• ${esc(sd.clientNom)}</span>` : ''}
+                    </div>
                   </div>
                 </div>
-              </div>
-              <div class="flex items-center justify-between sm:justify-end gap-2.5 shrink-0 pl-13 sm:pl-0">
-                <div class="text-right tabular-nums">
-                  <div class="text-base sm:text-lg font-extrabold text-emerald-700">${fmtMoney(sd.valeur)}</div>
+                <div class="text-right shrink-0 flex flex-col items-end gap-1">
+                  <div class="text-sm font-extrabold text-emerald-700 dark:text-emerald-300 tabular-nums">${fmtMoney(sd.valeur)}</div>
+                  <div class="flex items-center gap-1.5">
+                    ${!isMe ? `<button type="button" onclick="sendQuickBravoInChat('${esc(sd.repNom || m.authorName)}', '${esc(sd.entNom || '')}', ${Number(sd.valeur || 0)})" class="px-2 py-0.5 text-[10px] font-extrabold rounded-full bg-amber-100 hover:bg-amber-200 text-amber-900 transition cursor-pointer">👏 Bravo</button>` : ''}
+                    <span class="text-[10px] text-slate-400 tabular-nums">${esc(formatChatHourOnly(m.at))}</span>
+                  </div>
                 </div>
-                ${!isMe ? `<button type="button" onclick="sendQuickBravoInChat('${esc(sd.repNom || m.authorName)}', '${esc(sd.entNom || '')}', ${Number(sd.valeur || 0)})" title="Féliciter dans le canal" class="px-3 py-1.5 text-xs font-extrabold bg-amber-100 hover:bg-amber-200 text-amber-900 rounded-xl transition">👏 Bravo</button>` : ''}
               </div>
             </div>
           `;
@@ -6066,32 +6100,34 @@
 
         const prevMsg = idx > 0 ? list[idx - 1] : null;
         const prevDayKey = prevMsg?.at ? localYmd(new Date(prevMsg.at)) : '';
-        const isGroupedWithPrev = prevMsg && prevMsg.kind === 'msg' && String(prevMsg.authorId) === String(m.authorId) && prevDayKey === dayKey && !unreadDividerHtml;
+        const isGroupedWithPrev = prevMsg && prevMsg.kind === 'msg' && String(prevMsg.authorId) === String(m.authorId) && prevDayKey === dayKey && !unreadDividerHtml && !dayDividerHtml;
 
-        const initials = String(m.authorName || '?').slice(0, 2).toUpperCase();
         const isAuthorAdmin = m.authorRole === 'admin';
+        const senderColor = getWaSenderColorClass(m.authorName);
         const formattedBody = formatChatMessageWithMentions(m.text, isMe);
+        const bubbleClass = isMe
+          ? `wa-bubble-out ${isGroupedWithPrev ? 'wa-bubble-grouped' : ''}`
+          : `wa-bubble-in ${isGroupedWithPrev ? 'wa-bubble-grouped' : ''} ${isMentionedMe ? 'ring-2 ring-amber-400' : ''}`;
+
         return dayDividerHtml + unreadDividerHtml + `
-          <div id="chat-item-${esc(m.id)}" class="flex items-end gap-2.5 ${isMe ? 'flex-row-reverse' : ''} ${isGroupedWithPrev ? 'mt-1' : 'mt-3'}">
-            ${isGroupedWithPrev
-              ? '<div class="w-8 shrink-0"></div>'
-              : `<div class="w-8 h-8 rounded-full ${isAuthorAdmin ? 'bg-slate-900 text-amber-300 ring-2 ring-amber-400/40' : (isMe ? 'bg-indigo-600 text-white' : 'bg-slate-200 text-slate-800')} text-[11px] font-extrabold flex items-center justify-center shrink-0 shadow-2xs">${esc(initials)}</div>`
-            }
-            <div class="max-w-[84%] sm:max-w-[74%] flex flex-col ${isMe ? 'items-end' : 'items-start'}">
-              ${!isGroupedWithPrev ? `
-                <div class="flex items-center gap-1.5 text-[11px] mb-1 px-1 ${isMe ? 'justify-end' : ''}">
-                  <span class="font-extrabold text-slate-800">${esc(m.authorName)}</span>
-                  ${isAuthorAdmin ? '<span class="px-1.5 py-0.2 text-[9px] font-extrabold rounded bg-amber-100 text-amber-800">Direction</span>' : ''}
-                  ${isMentionedMe ? '<span class="px-1.5 py-0.2 text-[9px] font-extrabold rounded bg-indigo-100 text-indigo-800">@Vous</span>' : ''}
-                  <span class="text-slate-400 font-medium">${esc(formatChatHourOnly(m.at))}</span>
+          <div id="chat-item-${esc(m.id)}" class="flex flex-col ${isMe ? 'items-end' : 'items-start'} ${isGroupedWithPrev ? 'mt-0.5' : 'mt-2'}">
+            <div class="group relative max-w-[85%] sm:max-w-[75%] px-3 py-1.5 text-[13.5px] leading-snug break-words ${bubbleClass}">
+              ${!isMe && !isGroupedWithPrev ? `
+                <div class="flex items-center gap-1.5 mb-0.5">
+                  <span class="text-[11.5px] font-extrabold ${senderColor}">${esc(m.authorName)}</span>
+                  ${isAuthorAdmin ? '<span class="text-[9.5px] font-bold text-slate-400">~ Admin</span>' : ''}
+                  ${isMentionedMe ? '<span class="px-1.5 py-0.2 text-[9px] font-extrabold rounded bg-amber-200 text-amber-950">@Vous</span>' : ''}
                 </div>
               ` : ''}
-              <div class="group relative inline-block text-left px-4 py-2.5 rounded-2xl text-sm leading-relaxed break-words shadow-xs ${isMe ? 'chat-msg-bubble-me bg-indigo-600 text-white rounded-br-sm' : `chat-msg-bubble-other bg-white border ${isMentionedMe ? 'border-indigo-400 ring-2 ring-indigo-300/60' : 'border-slate-200/90'} text-slate-800 rounded-bl-sm`}">
+              <div class="inline">
                 <span>${formattedBody}</span>
-                <span class="inline-block ml-2 text-[10px] opacity-65 align-bottom tabular-nums">${esc(formatChatHourOnly(m.at))}</span>
+                <span class="inline-flex items-center gap-0.5 float-right ml-2.5 mt-1.5 text-[10px] opacity-60 tabular-nums select-none">
+                  <span>${esc(formatChatHourOnly(m.at))}</span>
+                  ${isMe ? '<span class="text-sky-600 dark:text-sky-300 font-bold leading-none">✓✓</span>' : ''}
+                </span>
               </div>
-              ${canDel ? `<button type="button" onclick="deleteTeamChatMessage('${esc(m.id)}')" class="mt-0.5 px-1 text-[10px] text-slate-400 hover:text-rose-600 transition">Supprimer</button>` : ''}
             </div>
+            ${canDel ? `<button type="button" onclick="deleteTeamChatMessage('${esc(m.id)}')" class="opacity-70 hover:opacity-100 mt-0.5 px-1.5 text-[10px] text-slate-500 hover:text-rose-600 transition cursor-pointer">Supprimer</button>` : ''}
           </div>
         `;
       }).join('');
