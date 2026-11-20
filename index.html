@@ -983,9 +983,18 @@
           <button type="button" onclick="selectRedPhoneReason(this, 'Validation spéciale requise')" class="red-reason-chip px-2.5 py-1 text-[11px] font-bold rounded-lg bg-slate-100 text-slate-700 hover:bg-rose-50 border border-slate-200 transition cursor-pointer">⚡ Validation</button>
         </div>
         <input id="red-phone-custom-note" type="text" maxlength="120" placeholder="Note rapide (optionnel)..." class="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-rose-500" />
-        <div id="red-phone-target-display" class="px-3 py-2 rounded-xl bg-rose-50/80 border border-rose-200 text-[11px] font-bold text-rose-900 flex items-center justify-between">
-          <span>Directeur :</span>
-          <span id="red-phone-number-preview" class="font-extrabold tabular-nums">Non configuré</span>
+        <div id="red-phone-target-display" class="px-3 py-2 rounded-xl bg-rose-50/80 border border-rose-200 text-[11px] font-bold text-rose-900 space-y-1">
+          <div class="flex items-center justify-between">
+            <span>Directeur :</span>
+            <span id="red-phone-number-preview" class="font-extrabold tabular-nums">Non configuré</span>
+          </div>
+          <div class="flex items-center justify-between text-[10px] opacity-85">
+            <span>Heures permises :</span>
+            <span id="red-phone-hours-preview" class="font-bold tabular-nums">08:00 à 20:00</span>
+          </div>
+        </div>
+        <div id="red-phone-closed-notice" class="hidden px-3 py-2 rounded-xl bg-amber-50 border border-amber-300 text-[11px] font-bold text-amber-900 text-center">
+          ⏰ Le Téléphone Rouge est actuellement fermé en dehors des heures prévues.
         </div>
         <div class="flex items-center gap-2 pt-0.5">
           <button type="button" onclick="closeRedPhoneRepModal()" class="flex-1 py-2.5 px-3 text-xs font-bold text-slate-700 bg-white border border-slate-300 rounded-xl hover:bg-slate-50 transition cursor-pointer">Annuler</button>
@@ -2151,6 +2160,11 @@
             </button>
           </div>
 
+          <!-- BOUTON TÉLÉPHONE ROUGE COMPACT (REPRÉSENTANTS — ACCESSIBLE PARTOUT) -->
+          <button id="btn-header-red-phone" type="button" onclick="openRedPhoneRepModal()" title="Téléphone Rouge — Appel Directeur" style="touch-action: manipulation; -webkit-tap-highlight-color: transparent;" class="hidden w-9 h-9 rounded-xl bg-rose-600 hover:bg-rose-500 active:scale-95 text-white border border-rose-400/50 shadow-xs inline-flex items-center justify-center text-base transition cursor-pointer shrink-0">
+            ☎️
+          </button>
+
           <!-- CLOCHE DE NOTIFICATIONS UNIFIÉE (MENTIONS @ + VENTES À CONFIRMER POUR ADMIN) -->
           <div id="admin-notif-wrapper" class="relative">
             <button id="btn-admin-notif" type="button" title="Centre de notifications" class="relative w-9 h-9 inline-flex items-center justify-center text-slate-200 hover:text-white bg-slate-800/95 hover:bg-slate-700 border border-slate-700/90 rounded-xl shadow-xs transition">
@@ -2285,13 +2299,6 @@
       <!-- ONGLET 1 : MES VENTES & COMMISSIONS (REP + ADMIN)            -->
       <!-- ============================================================ -->
       <section id="tab-mes-ventes" class="space-y-6">
-        <!-- BOUTON COMPACT TÉLÉPHONE ROUGE : APPEL DIRECTEUR (REPRÉSENTANTS) -->
-        <div id="rep-red-phone-banner" class="hidden flex justify-center">
-          <button type="button" onclick="openRedPhoneRepModal()" style="touch-action: manipulation; -webkit-tap-highlight-color: transparent;" class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-rose-600 hover:bg-rose-700 active:scale-95 text-white text-xs font-extrabold shadow-xs border border-rose-400/40 transition cursor-pointer">
-            <span class="text-sm leading-none">☎️</span>
-            <span>Téléphone Rouge — Appel Directeur</span>
-          </button>
-        </div>
         <!-- PARCOURS DE PREMIÈRE CONNEXION EN 3 ÉTAPES SÉQUENTIELLES -->
         <div id="rep-onboarding-card" class="hidden fixed inset-0 z-50 bg-slate-950/75 backdrop-blur-sm flex items-center justify-center p-4 no-print">
           <div class="bg-white w-full max-w-md rounded-3xl border border-slate-200 shadow-2xl overflow-hidden animate-drawer">
@@ -3389,19 +3396,25 @@
               </div>
             </div>
           </div>
-          <form id="form-red-phone-config" class="grid grid-cols-1 sm:grid-cols-3 gap-3 items-end pt-1">
-            <div>
-              <label class="block text-xs font-bold text-slate-700 mb-1">Nom affiché aux représentants</label>
-              <input id="red-phone-director-name" type="text" placeholder="Olivier (Directeur)" class="w-full px-3.5 py-2.5 text-sm font-semibold bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-rose-500" />
+          <form id="form-red-phone-config" class="space-y-3 pt-1">
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 items-end">
+              <div>
+                <label class="block text-xs font-bold text-slate-700 mb-1">Nom affiché aux représentants</label>
+                <input id="red-phone-director-name" type="text" placeholder="Olivier (Directeur)" class="w-full px-3.5 py-2.5 text-sm font-semibold bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-rose-500" />
+              </div>
+              <div>
+                <label class="block text-xs font-bold text-slate-700 mb-1">Votre numéro de cellulaire *</label>
+                <input id="red-phone-director-number" type="tel" required placeholder="Ex. 514-555-1234" class="w-full px-3.5 py-2.5 text-sm font-extrabold bg-slate-50 border border-slate-200 rounded-xl tabular-nums focus:bg-white focus:outline-none focus:ring-2 focus:ring-rose-500" />
+              </div>
+              <div>
+                <button type="submit" class="w-full py-2.5 px-4 text-xs font-extrabold text-white bg-rose-600 hover:bg-rose-700 rounded-xl shadow-xs transition cursor-pointer">
+                  ✓ Enregistrer le numéro Téléphone Rouge
+                </button>
+              </div>
             </div>
-            <div>
-              <label class="block text-xs font-bold text-slate-700 mb-1">Votre numéro de cellulaire *</label>
-              <input id="red-phone-director-number" type="tel" required placeholder="Ex. 514-555-1234" class="w-full px-3.5 py-2.5 text-sm font-extrabold bg-slate-50 border border-slate-200 rounded-xl tabular-nums focus:bg-white focus:outline-none focus:ring-2 focus:ring-rose-500" />
-            </div>
-            <div>
-              <button type="submit" class="w-full py-2.5 px-4 text-xs font-extrabold text-white bg-rose-600 hover:bg-rose-700 rounded-xl shadow-xs transition cursor-pointer">
-                ✓ Enregistrer le numéro Téléphone Rouge
-              </button>
+            <div class="px-3.5 py-2 rounded-xl bg-rose-50/70 border border-rose-200/80 text-[11px] font-bold text-rose-900 flex flex-wrap items-center justify-between gap-2">
+              <span>⏰ Horaire automatique actif :</span>
+              <span>Lun–Ven : 8h00 à 18h00 • Sam–Dim : 8h00 à 12h00</span>
             </div>
           </form>
         </div>
@@ -5150,11 +5163,30 @@
       return digits;
     }
 
+    function isRedPhoneWithinAllowedHours() {
+      const now = new Date();
+      const day = now.getDay(); // 0 = Dimanche, 6 = Samedi, 1..5 = Lundi..Vendredi
+      const nowMins = now.getHours() * 60 + now.getMinutes();
+      const isWeekend = (day === 0 || day === 6);
+      const startMins = 8 * 60; // 08h00
+      const endMins = isWeekend ? (12 * 60) : (18 * 60); // 12h00 fin de semaine, 18h00 semaine
+      return nowMins >= startMins && nowMins <= endMins;
+    }
+
+    function formatRedPhoneScheduleLabel() {
+      return 'Lun–Ven 8h à 18h • Sam–Dim 8h à 12h';
+    }
+
     function syncRedPhoneUI() {
       const isRep = currentProfile && currentProfile.role !== 'admin';
-      const banner = document.getElementById('rep-red-phone-banner');
-      if (banner) {
-        banner.classList.toggle('hidden', !isRep);
+      const isOpenNow = isRedPhoneWithinAllowedHours();
+      const hdrBtn = document.getElementById('btn-header-red-phone');
+      if (hdrBtn) {
+        hdrBtn.classList.toggle('hidden', !isRep);
+        hdrBtn.classList.toggle('opacity-55', isRep && !isOpenNow);
+        hdrBtn.title = isOpenNow
+          ? 'Téléphone Rouge — Appel Directeur'
+          : `Téléphone Rouge (Fermé — ${formatRedPhoneScheduleLabel()})`;
       }
       const nameIn = document.getElementById('red-phone-director-name');
       const phoneIn = document.getElementById('red-phone-director-number');
@@ -5166,6 +5198,19 @@
         previewEl.textContent = redPhoneConfig.phone
           ? `${redPhoneConfig.directorName || 'Directeur'} • ${redPhoneConfig.phone}`
           : 'Numéro non encore configuré par le directeur';
+      }
+      const hoursEl = document.getElementById('red-phone-hours-preview');
+      if (hoursEl) {
+        hoursEl.textContent = formatRedPhoneScheduleLabel();
+      }
+      const closedNotice = document.getElementById('red-phone-closed-notice');
+      const callBtn = document.getElementById('btn-trigger-red-phone-now');
+      if (closedNotice) closedNotice.classList.toggle('hidden', isOpenNow);
+      if (callBtn) {
+        callBtn.disabled = !isOpenNow;
+        callBtn.classList.toggle('opacity-45', !isOpenNow);
+        callBtn.classList.toggle('cursor-not-allowed', !isOpenNow);
+        callBtn.classList.toggle('cursor-pointer', isOpenNow);
       }
     }
 
@@ -5237,6 +5282,10 @@
 
     window.triggerRedPhoneDirectorCall = async () => {
       if (!currentProfile) return;
+      if (!isRedPhoneWithinAllowedHours()) {
+        syncRedPhoneUI();
+        return toast(`⏰ Le Téléphone Rouge est disponible uniquement selon l'horaire : ${formatRedPhoneScheduleLabel()}.`, 'error');
+      }
       const dialNumber = formatPhoneForDial(redPhoneConfig.phone);
       if (!dialNumber) {
         return toast('Le numéro du directeur n’est pas encore configuré. Demandez-lui de l’ajouter dans Entreprises & Équipe.', 'error');
