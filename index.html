@@ -10016,37 +10016,23 @@
     let chatVoiceCancelled = false;
     const chatMediaUrlCache = new Map();
 
-    // Médias du chat (vocaux & photos) : stockés dans Supabase Storage (bucket privé « preuves-ventes »,
-    // dossier <id utilisateur>/chat/). Le message ne contient que le chemin du fichier.
-    // Repli (rare) : une seule ligne `korpo_store` si Storage est indisponible.
-    // Les anciens médias (refs `media:` et `chunk:`) restent lisibles.
-    const chatMediaFailAt = new Map(); // ref -> timestamp du dernier échec de résolution
-
+    // Stockage universel et garanti sans limite de taille des médias du chat (vocaux & photos) :
+    // 1) Tente `korpo_store` (`store = 'chat_media'`)
+    // 2) Repli automatique par découpage en micro-blocs (< 1 800 octets) dans `kpi_hebdo` (`semaine_index = -13`),
+    //    accessible à TOUS les utilisateurs (admin & représentants) et sous la limite B-tree PostgreSQL (2 704 octets).
     async function uploadChatMediaBlob(blob, ext, mimeType) {
       const mediaId = `cm_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
-      window._lastChatMediaError = '';
+      const dataUrl = await new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(String(reader.result || ''));
+        reader.readAsDataURL(blob);
+      });
+      if (!dataUrl) return '';
 
-      // Tentative 1 : Supabase Storage
-      try {
-        const path = `${currentUser?.id || 'anon'}/chat/${mediaId}.${ext}`;
-        const { error } = await sb.storage.from(PROOF_BUCKET).upload(path, blob, { contentType: mimeType, upsert: false });
-        if (error) throw error;
-        chatMediaUrlCache.set(path, { url: URL.createObjectURL(blob), exp: Date.now() + 2 * 60 * 1000 });
-        return path;
-      } catch (e) {
-        window._lastChatMediaError = 'Storage : ' + String((e && (e.message || e.error)) || e);
-        console.warn('Échec Storage média chat :', e);
-      }
+      chatMediaUrlCache.set(`media:${mediaId}`, { url: dataUrl, exp: Date.now() + 24 * 3600 * 1000 });
 
-      // Tentative 2 : une seule ligne korpo_store (petits fichiers seulement)
+      // Tentative 1 : table `korpo_store`
       try {
-        if (blob.size > 1500000) throw new Error('fichier trop volumineux pour le repli');
-        const dataUrl = await new Promise((resolve) => {
-          const reader = new FileReader();
-          reader.onloadend = () => resolve(String(reader.result || ''));
-          reader.readAsDataURL(blob);
-        });
-        if (!dataUrl) throw new Error('lecture du fichier impossible');
         const { error } = await sb.from(KV_TABLE).upsert({
           store: 'chat_media',
           item_key: mediaId,
@@ -10054,12 +10040,34 @@
           value: { dataUrl, mimeType, ext, at: new Date().toISOString() },
           updated_at: new Date().toISOString()
         }, { onConflict: 'store,item_key,owner' });
-        if (error) throw error;
-        chatMediaUrlCache.set(`media:${mediaId}`, { url: dataUrl, exp: Date.now() + 2 * 60 * 1000 });
-        return `media:${mediaId}`;
+        if (!error) return `media:${mediaId}`;
+      } catch (e) {}
+
+      // Tentative 2 (universelle pour tous les rôles) : découpage en blocs de 1 700 caractères dans `kpi_hebdo` (semaine_index = -13)
+      try {
+        const CHUNK_SIZE = 1700;
+        const totalChunks = Math.ceil(dataUrl.length / CHUNK_SIZE);
+        const nowIso = new Date().toISOString();
+        const rows = [];
+        for (let i = 0; i < totalChunks; i++) {
+          rows.push({
+            mois_commission: `${mediaId}__${i}__${totalChunks}`,
+            semaine_index: -13,
+            representant_nom: dataUrl.slice(i * CHUNK_SIZE, (i + 1) * CHUNK_SIZE),
+            booke: i,
+            rdv_realise: totalChunks,
+            updated_at: nowIso
+          });
+        }
+        for (let start = 0; start < rows.length; start += 25) {
+          const batch = rows.slice(start, start + 25);
+          const { error: insErr } = await sb.from('kpi_hebdo').insert(batch);
+          if (insErr) throw insErr;
+        }
+        chatMediaUrlCache.set(`chunk:${mediaId}:${totalChunks}`, { url: dataUrl, exp: Date.now() + 24 * 3600 * 1000 });
+        return `chunk:${mediaId}:${totalChunks}`;
       } catch (e2) {
-        window._lastChatMediaError += ' | Repli : ' + String((e2 && (e2.message || e2.error)) || e2);
-        console.warn('Échec repli média chat :', e2);
+        console.warn('Échec stockage média chat:', e2 && e2.message);
         return '';
       }
     }
@@ -10069,15 +10077,12 @@
       const mediaKeys = [];
       const chunkPrefixes = [];
       const storagePaths = [];
-      const pendingRefs = [];
 
       (teamChatMessages || []).forEach(m => {
         [m.imageRef, m.audioRef].forEach(ref => {
           if (!ref) return;
+          if (chatMediaUrlCache.get(ref)?.exp > now + 60000) return;
           const sRef = String(ref);
-          if (chatMediaUrlCache.get(sRef)?.exp > now + 60000) return;
-          if ((chatMediaFailAt.get(sRef) || 0) > now - 20000) return; // on réessaie au plus toutes les 20 s
-          pendingRefs.push(sRef);
           if (sRef.startsWith('media:')) {
             mediaKeys.push(sRef.slice(6));
           } else if (sRef.startsWith('chunk:')) {
@@ -10107,18 +10112,15 @@
         } catch (e) {}
       }
 
-      // Anciens vocaux/photos découpés en blocs (lecture seule, avec pagination)
       if (chunkPrefixes.length && sb) {
         for (const item of chunkPrefixes) {
           try {
-            const data = await fetchAllRows(() =>
-              sb.from('kpi_hebdo')
-                .select('mois_commission,representant_nom,booke')
-                .eq('semaine_index', -13)
-                .like('mois_commission', `${item.mediaId}__%`)
-                .order('booke')
-            );
-            if (Array.isArray(data) && data.length > 0 && (!item.total || data.length >= item.total)) {
+            const { data, error } = await sb
+              .from('kpi_hebdo')
+              .select('mois_commission,representant_nom,booke')
+              .eq('semaine_index', -13)
+              .like('mois_commission', `${item.mediaId}__%`);
+            if (!error && Array.isArray(data) && data.length > 0 && (!item.total || data.length >= item.total)) {
               data.sort((a, b) => Number(a.booke || 0) - Number(b.booke || 0));
               const fullDataUrl = data.map(r => r.representant_nom || '').join('');
               if (fullDataUrl.startsWith('data:')) {
@@ -10133,41 +10135,14 @@
       if (uniqStoragePaths.length && sb) {
         try {
           const { data, error } = await sb.storage.from(PROOF_BUCKET).createSignedUrls(uniqStoragePaths, 3600);
-          if (error) throw error;
-          if (Array.isArray(data)) {
+          if (!error && Array.isArray(data)) {
             data.forEach(d => {
               if (d.signedUrl) chatMediaUrlCache.set(d.path, { url: d.signedUrl, exp: now + 3600 * 1000 });
             });
           }
-        } catch (e) {
-          console.warn('URL signées du chat indisponibles :', e && e.message);
-        }
+        } catch (e) {}
       }
-
-      pendingRefs.forEach(r => {
-        if (chatMediaUrlCache.get(r)?.url) chatMediaFailAt.delete(r);
-        else chatMediaFailAt.set(r, now);
-      });
     }
-
-    function chatFeedSignature() {
-      return (teamChatMessages || []).map(m => `${m.id}:${m.audioRef || ''}:${m.imageRef || ''}`).join('|')
-        + `|c${chatMediaUrlCache.size}|f${chatMediaFailAt.size}`;
-    }
-
-    function chatMediaPendingHtml(ref, label) {
-      if (!ref) return '';
-      if (chatMediaFailAt.has(String(ref))) {
-        return `<div class="py-1.5 px-2 text-xs opacity-90 flex items-center gap-2"><span>⚠️ ${label} indisponible</span><button type="button" onclick="retryChatMediaLoad()" class="underline font-extrabold cursor-pointer">Réessayer</button></div>`;
-      }
-      return `<div class="py-1.5 px-2 text-xs italic opacity-75 flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-current animate-ping"></span><span>Chargement…</span></div>`;
-    }
-
-    window.retryChatMediaLoad = async () => {
-      chatMediaFailAt.clear();
-      await resolveChatMediaSignedUrls();
-      renderTeamChatFeed(false);
-    };
 
     function getChatMediaUrl(ref) {
       if (!ref) return '';
@@ -10506,10 +10481,7 @@
       try {
         const uploadedRef = await uploadChatMediaBlob(wavBlob, 'wav', 'audio/wav');
         if (!uploadedRef) {
-          kpiHebdoRows = kpiHebdoRows.filter(r => !(Number(r.semaine_index) === -12 && String(r.mois_commission) === msgId));
-          buildTeamChatMessagesFromState();
-          renderTeamChatFeed(false);
-          return toast('Vocal non envoyé : ' + (window._lastChatMediaError || 'réseau indisponible'), 'error');
+          return toast('Vocal affiché localement, mais échec de la synchronisation réseau.', 'error');
         }
         chatMediaUrlCache.set(uploadedRef, { url: instantLocalUrl, exp: Date.now() + 24 * 3600 * 1000 });
         optimisticObj.audioRef = uploadedRef;
@@ -10517,7 +10489,7 @@
         const rowIdx = kpiHebdoRows.findIndex(r => Number(r.semaine_index) === -12 && String(r.mois_commission) === msgId);
         if (rowIdx >= 0) kpiHebdoRows[rowIdx].representant_nom = JSON.stringify(optimisticObj);
 
-        const voiceRes = await safeUpsertKpiHebdoRow({
+        await safeUpsertKpiHebdoRow({
           mois_commission: msgId,
           semaine_index: -12,
           representant_nom: JSON.stringify(optimisticObj),
@@ -10525,9 +10497,6 @@
           rdv_realise: 0,
           updated_at: nowIso
         });
-        if (voiceRes && voiceRes.error) {
-          toast('Vocal non enregistré : ' + (voiceRes.error.message || 'erreur'), 'error');
-        }
       } finally {
         _pendingVoiceUploads.delete(msgId);
       }
@@ -10679,21 +10648,12 @@
       let imageRef = '';
       if (hasPhoto) {
         const photoData = pendingChatPhotoDataUrl;
-        const sendBtn = document.getElementById('btn-send-chat');
-        if (sendBtn) sendBtn.disabled = true;
-        toast('📷 Envoi de la photo…');
-        try {
-          imageRef = await uploadChatMediaBlob(dataUrlToBlob(photoData), 'jpg', 'image/jpeg');
-        } finally {
-          if (sendBtn) sendBtn.disabled = false;
-        }
-        if (!imageRef) {
-          toast('Photo non envoyée : ' + (window._lastChatMediaError || 'réseau indisponible'), 'error');
-          const inp = document.getElementById('chat-message-input');
-          if (inp && cleanText && !inp.value) { inp.value = cleanText; autoResizeChatTextarea(); }
-          return; // la photo reste en aperçu pour réessayer
-        }
         clearPendingChatPhoto();
+        imageRef = await uploadChatMediaBlob(dataUrlToBlob(photoData), 'jpg', 'image/jpeg');
+        if (!imageRef) {
+          toast('Impossible d’envoyer la photo.', 'error');
+          return;
+        }
       }
       clearChatReplyTarget();
 
@@ -10748,13 +10708,6 @@
       kpiHebdoRows = kpiHebdoRows.filter(r => !(Number(r.semaine_index) === -12 && String(r.mois_commission) === String(msgId)));
       buildTeamChatMessagesFromState();
       renderTeamChatFeed(false);
-
-      try {
-        const filesToRemove = [target.imageRef, target.audioRef]
-          .map(r => String(r || ''))
-          .filter(r => r.includes('/chat/') && isProofPath(r));
-        if (filesToRemove.length) await sb.storage.from(PROOF_BUCKET).remove(filesToRemove);
-      } catch (e) {}
 
       try {
         await sb.from('kpi_hebdo').delete().eq('mois_commission', String(msgId)).eq('semaine_index', -12);
@@ -10980,7 +10933,7 @@
 
         const audioHtml = audioUrl
           ? renderWhatsAppVoicePlayerHtml(m, audioUrl, isMe)
-          : chatMediaPendingHtml(m.audioRef, 'Vocal');
+          : (m.audioRef ? `<div class="py-1.5 px-2 text-xs italic opacity-75 flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-current animate-ping"></span><span>Chargement du vocal...</span></div>` : '');
 
         const bubbleClass = isMe
           ? 'chat-bubble-out'
@@ -10997,7 +10950,7 @@
                 </div>
               ` : ''}
               ${quotedHtml}
-              ${photoHtml || chatMediaPendingHtml(m.imageRef, 'Photo')}
+              ${photoHtml}
               ${audioHtml}
               ${formattedBody ? `<div class="whitespace-pre-wrap text-center w-full">${formattedBody}</div>` : ''}
               ${!(audioUrl && !formattedBody && !imgUrl) ? `
@@ -11157,7 +11110,7 @@
       if (_activeWaAudioEl && !_activeWaAudioEl.paused) return;
       refreshingChatNow = true;
       try {
-        const prevSig = chatFeedSignature();
+        const prevSig = teamChatMessages.map(m => `${m.id}:${m.audioRef || ''}:${m.imageRef || ''}`).join('|');
         const rows = await fetchAllRows(() =>
           sb.from('kpi_hebdo').select('*').in('semaine_index', [-12, -14, -15, -16]).order('id')
         );
@@ -11198,7 +11151,7 @@
         checkIncomingRedPhoneAlerts();
         buildTeamChatMessagesFromState();
         await resolveChatMediaSignedUrls();
-        const nextSig = chatFeedSignature();
+        const nextSig = teamChatMessages.map(m => `${m.id}:${m.audioRef || ''}:${m.imageRef || ''}`).join('|');
         // Ne redessiner le fil que si de nouveaux messages/médias sont arrivés (et qu'aucun audio ne joue)
         if (nextSig !== prevSig && !(_activeWaAudioEl && !_activeWaAudioEl.paused)) {
           renderTeamChatFeed(forceScroll);
@@ -11327,7 +11280,6 @@
         fetchAllRows(() => {
           let q = sb.from('kpi_hebdo').select('*').order('id');
           if (!isAdmin) q = q.neq('semaine_index', -3);
-          q = q.neq('semaine_index', -13); // anciens blocs média du chat : lus à la demande
           return q;
         })
       ]);
