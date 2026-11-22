@@ -28,6 +28,27 @@
 </head>
 <body class="bg-slate-50/90 text-slate-900 min-h-screen antialiased selection:bg-indigo-600 selection:text-white">
 
+  <!-- ÉCRAN D'ACCUEIL & CHARGEMENT INITIAL -->
+  <div id="korpo-startup-splash" class="fixed inset-0 z-[100] bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950 text-white flex items-center justify-center p-6 transition-opacity duration-300 no-print">
+    <div class="w-full max-w-sm text-center space-y-5">
+      <div class="relative w-16 h-16 mx-auto">
+        <div class="absolute inset-0 rounded-2xl bg-indigo-500/30 blur-xl animate-pulse"></div>
+        <div class="relative w-16 h-16 rounded-2xl bg-gradient-to-br from-indigo-500 to-emerald-400 text-slate-950 flex items-center justify-center font-extrabold text-3xl shadow-xl">K</div>
+      </div>
+      <div class="space-y-1.5">
+        <div class="text-[11px] font-extrabold uppercase tracking-widest text-indigo-300">Korpo Solutions</div>
+        <h2 id="startup-splash-title" class="text-xl font-extrabold tracking-tight text-white">Bienvenue sur votre portail</h2>
+        <p id="startup-splash-subtitle" class="text-xs text-slate-300">Connexion sécurisée en cours...</p>
+      </div>
+      <div class="space-y-2 pt-1">
+        <div class="w-full h-2 bg-white/10 rounded-full overflow-hidden p-0.5">
+          <div id="startup-splash-bar" class="h-full rounded-full bg-gradient-to-r from-indigo-400 via-sky-400 to-emerald-400 transition-all duration-300 ease-out" style="width: 22%;"></div>
+        </div>
+        <div id="startup-splash-step" class="text-[11px] font-semibold text-slate-400">Vérification de la session...</div>
+      </div>
+    </div>
+  </div>
+
   <!-- TOASTS -->
   <div id="toast-container" class="fixed bottom-20 sm:bottom-5 inset-x-3 sm:inset-x-auto sm:right-5 z-50 flex flex-col gap-2 max-w-md no-print pointer-events-none"></div>
 

@@ -2494,6 +2494,35 @@
       toast(`Numéro Téléphone Rouge enregistré (${phone}) ✓`);
     });
 
+    let _startupSplashDismissed = false;
+    function updateStartupSplash(pct, title, subtitle, stepText) {
+      if (_startupSplashDismissed) return;
+      const bar = document.getElementById('startup-splash-bar');
+      const tEl = document.getElementById('startup-splash-title');
+      const sEl = document.getElementById('startup-splash-subtitle');
+      const stEl = document.getElementById('startup-splash-step');
+      if (bar && typeof pct === 'number') bar.style.width = `${Math.min(100, Math.max(5, pct))}%`;
+      if (tEl && title) tEl.textContent = title;
+      if (sEl && subtitle) sEl.textContent = subtitle;
+      if (stEl && stepText) stEl.textContent = stepText;
+    }
+
+    function hideStartupSplash(delayMs = 180) {
+      if (_startupSplashDismissed) return;
+      _startupSplashDismissed = true;
+      updateStartupSplash(100, null, null, 'Portail prêt ✓');
+      setTimeout(() => {
+        const el = document.getElementById('korpo-startup-splash');
+        if (!el) return;
+        el.style.opacity = '0';
+        el.style.pointerEvents = 'none';
+        setTimeout(() => el.classList.add('hidden'), 320);
+      }, delayMs);
+    }
+
+    // Plafond de sécurité (4,5 s max) pour ne jamais bloquer l'accès si le réseau est très lent
+    setTimeout(() => hideStartupSplash(0), 4500);
+
     async function initApp() {
       ['comm-bar-fill', 'goal-bar-fill'].forEach(fid => {
         const el = document.getElementById(fid);
@@ -2503,6 +2532,7 @@
       initKpiControls();
       const { url, key } = getCredentials();
       if (!url || !key) {
+        hideStartupSplash(0);
         showScreen('screen-config');
         return;
       }
@@ -2518,8 +2548,10 @@
 
       const { data: { session } } = await sb.auth.getSession();
       if (session?.user) {
+        updateStartupSplash(38, null, 'Profil détecté, préparation de votre espace...', 'Chargement du profil...');
         await handleAuthenticatedUser(session.user);
       } else {
+        hideStartupSplash(0);
         showScreen('screen-login');
       }
 
@@ -2589,6 +2621,7 @@
         errBox.textContent = `Profil introuvable dans la table representants pour ${user.email}.`;
         errBox.classList.remove('hidden');
         await sb.auth.signOut();
+        hideStartupSplash(0);
         showScreen('screen-login');
         return;
       }
@@ -2628,19 +2661,30 @@
       renderKpiDashboard();
       showScreen('screen-app');
 
-      // Synchroniser le cloud et charger les dernières données en arrière-plan sans bloquer l'affichage
+      const firstName = String(profile.nom || '').trim().split(/\s+/)[0] || profile.nom;
+      updateStartupSplash(
+        60,
+        `Bonjour ${firstName} 👋`,
+        'Synchronisation de vos ventes, commissions et objectifs...',
+        'Connexion à la base de données...'
+      );
+
+      // Synchroniser le cloud et charger les dernières données avant de lever le rideau
       const refreshBtn = document.getElementById('btn-refresh');
       setRefreshButtonSpinning(refreshBtn, true);
       (async () => {
         try {
           await hydrateKv();
+          updateStartupSplash(82, null, null, 'Mise à jour des ventes et du tableau KPI...');
           await loadAllData();
           window._initialDataSynced = true;
           renderMesVentes();
           renderKpiDashboard();
+          hideStartupSplash(220);
           maybeTriggerFridayWeeklyDigest();
         } catch (bgErr) {
           console.warn('Synchronisation initiale en arrière-plan :', bgErr?.message || bgErr);
+          hideStartupSplash(0);
         } finally {
           setRefreshButtonSpinning(refreshBtn, false);
         }
