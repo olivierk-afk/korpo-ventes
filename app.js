@@ -1739,6 +1739,12 @@
     function askConfirm(title, message) {
       return new Promise((resolve) => {
         const modal = document.getElementById('confirm-modal');
+        if (modal && modal.parentNode !== document.body) {
+          document.body.appendChild(modal);
+        }
+        if (modal) {
+          modal.style.zIndex = '9999';
+        }
         document.getElementById('confirm-title').textContent = title;
         document.getElementById('confirm-message').textContent = message;
         modal.classList.remove('hidden');
