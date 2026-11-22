@@ -2495,6 +2495,23 @@
     });
 
     let _startupSplashDismissed = false;
+    let _startupSafetyTimer = null;
+
+    function showStartupSplash(title = 'Bienvenue sur votre portail', subtitle = 'Connexion sécurisée en cours...') {
+      _startupSplashDismissed = false;
+      clearTimeout(_startupSafetyTimer);
+      clearTimeout(window._korpoSplashWatchdog);
+      const el = document.getElementById('korpo-startup-splash');
+      if (el) {
+        el.style.display = 'flex';
+        el.classList.remove('hidden');
+        el.style.opacity = '1';
+        el.style.pointerEvents = 'auto';
+      }
+      updateStartupSplash(28, title, subtitle, 'Vérification de la session...');
+      _startupSafetyTimer = setTimeout(() => hideStartupSplash(0), 4000);
+    }
+
     function updateStartupSplash(pct, title, subtitle, stepText) {
       if (_startupSplashDismissed) return;
       const bar = document.getElementById('startup-splash-bar');
@@ -2507,21 +2524,28 @@
       if (stEl && stepText) stEl.textContent = stepText;
     }
 
-    function hideStartupSplash(delayMs = 180) {
-      if (_startupSplashDismissed) return;
+    function hideStartupSplash(delayMs = 150) {
       _startupSplashDismissed = true;
-      updateStartupSplash(100, null, null, 'Portail prêt ✓');
+      clearTimeout(_startupSafetyTimer);
+      clearTimeout(window._korpoSplashWatchdog);
+      const bar = document.getElementById('startup-splash-bar');
+      const stEl = document.getElementById('startup-splash-step');
+      if (bar) bar.style.width = '100%';
+      if (stEl) stEl.textContent = 'Portail prêt ✓';
       setTimeout(() => {
-        const el = document.getElementById('korpo-startup-splash');
-        if (!el) return;
-        el.style.opacity = '0';
-        el.style.pointerEvents = 'none';
-        setTimeout(() => el.classList.add('hidden'), 320);
+        if (typeof window._korpoForceHideSplash === 'function') {
+          window._korpoForceHideSplash();
+        } else {
+          const el = document.getElementById('korpo-startup-splash');
+          if (!el) return;
+          el.style.opacity = '0';
+          el.style.pointerEvents = 'none';
+          setTimeout(() => { el.style.display = 'none'; el.classList.add('hidden'); }, 300);
+        }
       }, delayMs);
     }
 
-    // Plafond de sécurité (4,5 s max) pour ne jamais bloquer l'accès si le réseau est très lent
-    setTimeout(() => hideStartupSplash(0), 4500);
+    _startupSafetyTimer = setTimeout(() => hideStartupSplash(0), 4000);
 
     async function initApp() {
       ['comm-bar-fill', 'goal-bar-fill'].forEach(fid => {
@@ -14051,6 +14075,7 @@
         }
 
         if (data?.user) {
+          showStartupSplash('Connexion réussie 👋', 'Préparation de votre espace Korpo...');
           await handleAuthenticatedUser(data.user);
         }
       } finally {

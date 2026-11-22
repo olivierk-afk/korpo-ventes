@@ -46,8 +46,24 @@
         </div>
         <div id="startup-splash-step" class="text-[11px] font-semibold text-slate-400">Vérification de la session...</div>
       </div>
+      <div class="pt-1">
+        <button type="button" onclick="var e=document.getElementById('korpo-startup-splash');if(e){e.style.display='none';e.classList.add('hidden');}" class="text-[11px] font-semibold text-slate-400 hover:text-white underline cursor-pointer">
+          Accéder directement →
+        </button>
+      </div>
     </div>
   </div>
+  <script>
+    // Filet de sécurité autonome : garantit que l'écran de chargement ne peut jamais bloquer la page
+    window._korpoForceHideSplash = function() {
+      var el = document.getElementById('korpo-startup-splash');
+      if (!el) return;
+      el.style.opacity = '0';
+      el.style.pointerEvents = 'none';
+      setTimeout(function() { el.style.display = 'none'; el.classList.add('hidden'); }, 280);
+    };
+    window._korpoSplashWatchdog = setTimeout(window._korpoForceHideSplash, 4000);
+  </script>
 
   <!-- TOASTS -->
   <div id="toast-container" class="fixed bottom-20 sm:bottom-5 inset-x-3 sm:inset-x-auto sm:right-5 z-50 flex flex-col gap-2 max-w-md no-print pointer-events-none"></div>
