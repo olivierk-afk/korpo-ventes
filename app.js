@@ -395,10 +395,12 @@
       if (v.representant_id === null || v.representant_id === undefined || v.representant_id === '') {
         const archivedList = Object.values(archivedRepsStore || {}).filter(e => e && e.nom);
         if (archivedList.length === 1) return archivedList[0].nom;
-        // Sinon chercher dans saleAuditStore ou teamChatMessages
         const auditEvs = sid ? (saleAuditStore[sid] || []) : [];
         const creatorEv = auditEvs.find(ev => ev && ev.by && !state.representants.some(r => r.nom === ev.by));
         if (creatorEv?.by) return creatorEv.by;
+        const activeNamesLow = new Set((state.representants || []).map(r => String(r?.nom || '').trim().toLowerCase()));
+        const missingDefaultReps = DEFAULT_KPI_REPS.filter(n => !activeNamesLow.has(n.toLowerCase()));
+        if (missingDefaultReps.length === 1) return missingDefaultReps[0];
       }
       return '';
     }
@@ -4678,7 +4680,8 @@
             };
           });
           const serialized = JSON.stringify(snapPayload);
-          if (lastSyncedKpiSnapshotHashes[ym] === serialized) continue;
+          const existsInDb = (kpiHebdoRows || []).some(r => Number(r.semaine_index) === -11 && String(r.mois_commission) === ym && r.representant_nom === serialized);
+          if (existsInDb && lastSyncedKpiSnapshotHashes[ym] === serialized) continue;
           lastSyncedKpiSnapshotHashes[ym] = serialized;
           teamKpiSnapshotStore[ym] = snapPayload;
           await safeUpsertKpiHebdoRow({
@@ -8087,6 +8090,14 @@
             }
           });
         });
+        const hasUnassignedSales = (teamVentesPublicRows || []).some(v => v.representant_id === null || v.representant_id === undefined || v.representant_id === '');
+        if (hasUnassignedSales) {
+          DEFAULT_KPI_REPS.forEach(rn => {
+            if (!activeRepNamesLower.has(rn.toLowerCase()) && !isRepArchived(rn)) {
+              archivedRepsStore[rn] = { id: `arch_rep_${rn.toLowerCase()}`, nom: rn, archivedAt: '2026-01-01' };
+            }
+          });
+        }
         syncAllKpiRepsFromState();
 
         const ownSalesNormalized = state.mesVentes.map(v => ({
