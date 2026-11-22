@@ -2394,11 +2394,28 @@
       }
 
       buildNavigation();
-      await hydrateKv();
-      await loadAllData();
+      kvApplyToVariables();
+      syncAllKpiRepsFromState();
+      renderMesVentes();
+      renderClassement();
       renderKpiDashboard();
       showScreen('screen-app');
-      maybeTriggerFridayWeeklyDigest();
+
+      // Synchroniser le cloud et charger les dernières données en arrière-plan sans bloquer l'affichage
+      const refreshBtn = document.getElementById('btn-refresh');
+      if (refreshBtn) refreshBtn.classList.add('animate-pulse');
+      (async () => {
+        try {
+          await hydrateKv();
+          await loadAllData();
+          renderKpiDashboard();
+          maybeTriggerFridayWeeklyDigest();
+        } catch (bgErr) {
+          console.warn('Synchronisation initiale en arrière-plan :', bgErr?.message || bgErr);
+        } finally {
+          if (refreshBtn) refreshBtn.classList.remove('animate-pulse');
+        }
+      })();
     }
 
     let activeMobilePersonalView = 'ventes'; // 'ventes' | 'commissions'
