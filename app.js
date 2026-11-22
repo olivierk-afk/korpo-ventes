@@ -8,6 +8,21 @@
     // =========================================================================
     // UTILITAIRES : échappement HTML, stockage local sûr, dates locales, CSV, pagination
     // =========================================================================
+    let _xlsxLoadPromise = null;
+    function ensureXlsxLoaded() {
+      if (window.XLSX) return Promise.resolve(window.XLSX);
+      if (_xlsxLoadPromise) return _xlsxLoadPromise;
+      _xlsxLoadPromise = new Promise((resolve, reject) => {
+        const s = document.createElement('script');
+        s.src = 'https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js';
+        s.async = true;
+        s.onload = () => resolve(window.XLSX);
+        s.onerror = () => { _xlsxLoadPromise = null; reject(new Error('Impossible de charger le lecteur Excel')); };
+        document.head.appendChild(s);
+      });
+      return _xlsxLoadPromise;
+    }
+
     function esc(s) {
       return String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
     }
@@ -36,8 +51,11 @@
       'korpo_client_targets_v1':        { store: 'client_targets',       shared: true,  type: 'array' },
       'korpo_kpi_condensed_v1':         { store: 'kpi_condensed',        shared: true,  type: 'map' },
       'korpo_kpi_monthly_rdv_v1':       { store: 'kpi_monthly_rdv',      shared: true,  type: 'map' },
+      'korpo_daily_rdv_v1':             { store: 'daily_rdv_logs',       shared: true,  type: 'map' },
       'korpo_kpi_team_snapshot_v1':     { store: 'kpi_team_snapshot',    shared: true,  type: 'map' },
       'korpo_wave_company_seq_v1':      { store: 'wave_company_seq',     shared: true,  type: 'map' },
+      'korpo_archived_reps_v1':         { store: 'archived_reps',        shared: true,  type: 'map' },
+      'korpo_archived_entreprises_v1':  { store: 'archived_entreprises', shared: true,  type: 'map' },
       'korpo_personal_monthly_targets_v1': { store: 'personal_monthly_targets', shared: false, type: 'map' },
       'korpo_personal_comm_targets_v1':    { store: 'personal_comm_targets',    shared: false, type: 'map' },
       'korpo_personal_bonus_pct_v1':       { store: 'personal_bonus_pct',       shared: false, type: 'map' },
@@ -45,7 +63,7 @@
       'korpo_chat_last_seen_v1':         { store: 'chat_last_seen',           shared: false, type: 'map' }
     };
     // Magasins qu'un représentant (non admin) peut écrire : les autres sont réservés à l'admin (voir le RLS)
-    const KV_REP_SHARED = new Set(['sale_audit', 'sale_bonus_overrides', 'sale_trash', 'carried_over_sales']);
+    const KV_REP_SHARED = new Set(['sale_audit', 'sale_bonus_overrides', 'sale_trash', 'carried_over_sales', 'daily_rdv_logs']);
     const kvState = { ready: false, uid: null, last: {}, timers: {}, pending: {}, dirty: new Set(), lastHydrate: 0 };
     const kvOwner = (cfg) => (cfg.shared ? 'shared' : kvState.uid);
     const kvAllowed = (cfg) => !cfg.shared || currentProfile?.role === 'admin' || KV_REP_SHARED.has(cfg.store);
@@ -100,6 +118,7 @@
     function kvApplyToVariables() {
       condensedBaselineStore = lsGetJson('korpo_kpi_condensed_v1', '{}');
       monthlyRdvOverrides = lsGetJson('korpo_kpi_monthly_rdv_v1', '{}');
+      dailyRdvLogsStore = lsGetJson('korpo_daily_rdv_v1', '{}');
       teamKpiSnapshotStore = lsGetJson('korpo_kpi_team_snapshot_v1', '{}');
       saleAuditStore = lsGetJson('korpo_sale_audit_v1', '{}');
       saleTrashStore = lsGetJson('korpo_sale_trash_v1', '[]');
@@ -108,6 +127,8 @@
       clientTargetsStore = lsGetJson('korpo_client_targets_v1', '[]');
       companyTargetsMetaStore = lsGetJson('korpo_company_targets_meta_v1', '{}');
       repTargetsOverrides = lsGetJson('korpo_rep_targets_v1', '{}');
+      archivedRepsStore = lsGetJson('korpo_archived_reps_v1', '{}');
+      archivedEntreprisesStore = lsGetJson('korpo_archived_entreprises_v1', '{}');
       readMentionIds = new Set(lsGetJson('korpo_read_mention_ids_v1', '[]'));
       lastSeenChatTimestamp = readSavedChatLastSeenTimestamp();
       personalMonthlyTargets = lsGetJson('korpo_personal_monthly_targets_v1', '{}');
@@ -272,47 +293,190 @@
     }
 
     // =========================================================================
-    // DONNÉES KPI HISTORIQUES INTÉGRÉES (MARS À NOVEMBRE 2026)
-    // =========================================================================
-    // =========================================================================
     // ARCHITECTURE KPI UNIFIÉE : BASE FICHIER CONDENSÉ + FICHIER DE VENTES
     // =========================================================================
     const DEFAULT_KPI_REPS = ['Olivier', 'Jean-Sébastien', 'Gabryel', 'Samuel', 'Alexandre'];
     let ALL_KPI_REPS = [...DEFAULT_KPI_REPS];
+    let archivedRepsStore = lsGetJson('korpo_archived_reps_v1', '{}');
+    let archivedEntreprisesStore = lsGetJson('korpo_archived_entreprises_v1', '{}');
+
+    function saveArchivedRepsStore() {
+      lsSet('korpo_archived_reps_v1', JSON.stringify(archivedRepsStore));
+    }
+
+    function saveArchivedEntreprisesStore() {
+      lsSet('korpo_archived_entreprises_v1', JSON.stringify(archivedEntreprisesStore));
+    }
+
+    function findArchivedRepEntry(repIdOrName) {
+      if (!repIdOrName) return null;
+      const key = String(repIdOrName).trim().toLowerCase();
+      return Object.values(archivedRepsStore || {}).find(entry => {
+        if (!entry) return false;
+        if (entry.id && String(entry.id) === String(repIdOrName)) return true;
+        if (entry.nom && String(entry.nom).trim().toLowerCase() === key) return true;
+        return false;
+      }) || null;
+    }
+
+    function isRepArchived(repIdOrName) {
+      return Boolean(findArchivedRepEntry(repIdOrName));
+    }
+
+    function getRepArchiveMonthFactor(repIdOrName, ym) {
+      const entry = findArchivedRepEntry(repIdOrName);
+      if (!entry || !entry.archivedAt || !isValidYearMonth(ym)) return 1;
+      const archDate = String(entry.archivedAt).slice(0, 10);
+      const archYm = archDate.slice(0, 7);
+      if (!isValidYearMonth(archYm)) return 0;
+      if (ym < archYm) return 1;
+      if (ym > archYm) return 0;
+      const archDay = parseInt(archDate.slice(8, 10), 10) || 1;
+      const totalBiz = Math.max(1, countBusinessDaysInMonth(ym));
+      const activeBiz = countBusinessDaysInMonth(ym, archDay);
+      return Math.min(1, Math.max(0, activeBiz / totalBiz));
+    }
+
+    function getArchivedRepNameById(repId) {
+      if (!repId) return '';
+      const found = Object.values(archivedRepsStore || {}).find(entry => entry && String(entry.id) === String(repId));
+      return found?.nom || '';
+    }
+
+    function findArchivedEntrepriseEntry(entIdOrName) {
+      if (!entIdOrName) return null;
+      const key = String(entIdOrName).trim().toLowerCase();
+      return Object.values(archivedEntreprisesStore || {}).find(entry => {
+        if (!entry) return false;
+        if (entry.id && String(entry.id) === String(entIdOrName)) return true;
+        if (entry.nom && String(entry.nom).trim().toLowerCase() === key) return true;
+        return false;
+      }) || null;
+    }
+
+    function isEntrepriseArchived(entIdOrName) {
+      return Boolean(findArchivedEntrepriseEntry(entIdOrName));
+    }
+
+    function getEntrepriseArchiveMonthFactor(entIdOrName, ym) {
+      const entry = findArchivedEntrepriseEntry(entIdOrName);
+      if (!entry || !entry.archivedAt || !isValidYearMonth(ym)) return 1;
+      const archDate = String(entry.archivedAt).slice(0, 10);
+      const archYm = archDate.slice(0, 7);
+      if (!isValidYearMonth(archYm)) return 0;
+      if (ym < archYm) return 1;
+      if (ym > archYm) return 0;
+      const archDay = parseInt(archDate.slice(8, 10), 10) || 1;
+      const totalBiz = Math.max(1, countBusinessDaysInMonth(ym));
+      const activeBiz = countBusinessDaysInMonth(ym, archDay);
+      return Math.min(1, Math.max(0, activeBiz / totalBiz));
+    }
+
+    function getArchivedEntrepriseNameById(entId) {
+      if (!entId) return '';
+      const found = Object.values(archivedEntreprisesStore || {}).find(entry => entry && String(entry.id) === String(entId));
+      return found?.nom || '';
+    }
+
+    function resolveSaleArchivedRepName(v) {
+      if (!v) return '';
+      if (v.representant_id) {
+        const byId = getArchivedRepNameById(v.representant_id);
+        if (byId) return byId;
+      }
+      const sid = v.id ? String(v.id) : '';
+      if (sid) {
+        const bySaleId = Object.values(archivedRepsStore || {}).find(entry => Array.isArray(entry?.saleIds) && entry.saleIds.includes(sid));
+        if (bySaleId?.nom) return bySaleId.nom;
+      }
+      const mTag = String(v.note || '').match(/\[REP:([^\]]+)\]/i);
+      if (mTag && mTag[1]) return mTag[1].trim();
+      // Fallback si la vente a representant_id === null et provient d'un représentant archivé (ex. Gabryel)
+      if (v.representant_id === null || v.representant_id === undefined || v.representant_id === '') {
+        const archivedList = Object.values(archivedRepsStore || {}).filter(e => e && e.nom);
+        if (archivedList.length === 1) return archivedList[0].nom;
+        // Sinon chercher dans saleAuditStore ou teamChatMessages
+        const auditEvs = sid ? (saleAuditStore[sid] || []) : [];
+        const creatorEv = auditEvs.find(ev => ev && ev.by && !state.representants.some(r => r.nom === ev.by));
+        if (creatorEv?.by) return creatorEv.by;
+      }
+      return '';
+    }
+
+    function resolveSaleArchivedEntName(v) {
+      if (!v) return '';
+      if (v.entreprise_id) {
+        const byId = getArchivedEntrepriseNameById(v.entreprise_id);
+        if (byId) return byId;
+      }
+      const sid = v.id ? String(v.id) : '';
+      if (sid) {
+        const bySaleId = Object.values(archivedEntreprisesStore || {}).find(entry => Array.isArray(entry?.saleIds) && entry.saleIds.includes(sid));
+        if (bySaleId?.nom) return bySaleId.nom;
+      }
+      const mTag = String(v.note || '').match(/\[ENT:([^\]]+)\]/i);
+      if (mTag && mTag[1]) return mTag[1].trim();
+      if (v.entreprise_id === null || v.entreprise_id === undefined || v.entreprise_id === '') {
+        const archivedEnts = Object.values(archivedEntreprisesStore || {}).filter(e => e && e.nom);
+        if (archivedEnts.length === 1) return archivedEnts[0].nom;
+      }
+      return '';
+    }
+
+    function getActiveKpiReps() {
+      return ALL_KPI_REPS.filter(rn => !isRepArchived(rn));
+    }
 
     function syncAllKpiRepsFromState() {
-      const seen = new Set(DEFAULT_KPI_REPS);
-      const merged = [...DEFAULT_KPI_REPS];
+      const seen = new Set();
+      const merged = [];
       (state.representants || []).forEach(r => {
         const nom = String(r?.nom || '').trim();
+        if (nom && !isRepArchived(nom) && !seen.has(nom)) {
+          seen.add(nom);
+          merged.push(nom);
+        }
+      });
+      DEFAULT_KPI_REPS.forEach(nom => {
+        if (!isRepArchived(nom) && !seen.has(nom)) {
+          seen.add(nom);
+          merged.push(nom);
+        }
+      });
+      Object.values(archivedRepsStore || {}).forEach(entry => {
+        const nom = String(entry?.nom || '').trim();
         if (nom && !seen.has(nom)) {
           seen.add(nom);
           merged.push(nom);
         }
       });
       ALL_KPI_REPS = merged;
+      const activeRepsList = getActiveKpiReps();
 
-      // Synchroniser aussi toutes les listes déroulantes de représentants dans le Tableau KPI
+      // Synchroniser aussi toutes les listes déroulantes de représentants dans le Tableau KPI (uniquement les actifs)
       const kpiSelRep = document.getElementById('kpi-select-rep');
       if (kpiSelRep) {
         const cur = kpiSelRep.value || 'ALL';
+        const archivedWithHistory = Object.values(archivedRepsStore || {}).map(e => String(e?.nom || '').trim()).filter(n => n && !activeRepsList.includes(n));
         kpiSelRep.innerHTML = `<option value="ALL">👥 Toute l'équipe</option>` +
-          ALL_KPI_REPS.map(n => `<option value="${esc(n)}">${esc(n === 'Jean-Sébastien' ? 'Jean-Sébastien (J-S)' : n)}</option>`).join('');
-        if (cur === 'ALL' || ALL_KPI_REPS.includes(cur)) kpiSelRep.value = cur;
+          activeRepsList.map(n => `<option value="${esc(n)}">${esc(n === 'Jean-Sébastien' ? 'Jean-Sébastien (J-S)' : n)}</option>`).join('') +
+          (archivedWithHistory.length ? `<optgroup label="Anciens membres (Historique)">${archivedWithHistory.map(n => `<option value="${esc(n)}">${esc(n)} (Archivé)</option>`).join('')}</optgroup>` : '');
+        const allAllowed = ['ALL', ...activeRepsList, ...archivedWithHistory];
+        kpiSelRep.value = allAllowed.includes(cur) ? cur : 'ALL';
       }
       ['kpi-edit-rep', 'rep-target-select'].forEach(selId => {
         const el = document.getElementById(selId);
         if (!el) return;
         const cur = el.value;
-        el.innerHTML = ALL_KPI_REPS.map(n => `<option value="${esc(n)}">${esc(n)}</option>`).join('');
-        if (cur && ALL_KPI_REPS.includes(cur)) el.value = cur;
+        el.innerHTML = activeRepsList.map(n => `<option value="${esc(n)}">${esc(n)}</option>`).join('');
+        if (cur && activeRepsList.includes(cur)) el.value = cur;
       });
       const targetRepSel = document.getElementById('target-rep-select');
       if (targetRepSel) {
         const cur = targetRepSel.value || 'ALL';
         targetRepSel.innerHTML = `<option value="ALL">Toute l'équipe</option>` +
-          ALL_KPI_REPS.map(n => `<option value="${esc(n)}">${esc(n)}</option>`).join('');
-        if (cur === 'ALL' || ALL_KPI_REPS.includes(cur)) targetRepSel.value = cur;
+          activeRepsList.map(n => `<option value="${esc(n)}">${esc(n)}</option>`).join('');
+        targetRepSel.value = (cur === 'ALL' || activeRepsList.includes(cur)) ? cur : 'ALL';
       }
     }
     const isValidYearMonth = (ym) => typeof ym === 'string' && /^\d{4}-(0[1-9]|1[0-2])$/.test(ym.trim());
@@ -329,9 +493,170 @@
       lsSet('korpo_kpi_condensed_v1', JSON.stringify(condensedBaselineStore));
     }
 
+    let dailyRdvLogsStore = lsGetJson('korpo_daily_rdv_v1', '{}');
+
     function saveMonthlyRdvOverrides() {
       lsSet('korpo_kpi_monthly_rdv_v1', JSON.stringify(monthlyRdvOverrides));
     }
+
+    function saveDailyRdvLogsStore() {
+      lsSet('korpo_daily_rdv_v1', JSON.stringify(dailyRdvLogsStore));
+    }
+
+    async function persistDailyRdvToCloud(dateStr, repName, entryObj) {
+      if (!sb || !currentProfile) return;
+      const key = `${dateStr}__${repName}`;
+      await safeUpsertKpiHebdoRow({
+        mois_commission: key,
+        semaine_index: -16,
+        representant_nom: JSON.stringify(entryObj),
+        booke: Number(entryObj.booke || 0),
+        rdv_realise: Number(entryObj.rdv || 0),
+        updated_at: new Date().toISOString()
+      });
+    }
+
+    function getActiveDailyRdvRepName() {
+      if (!currentProfile) return '';
+      return resolveKpiRepName(currentProfile.nom || '') || String(currentProfile.nom || '').trim();
+    }
+
+    function getTodayDailyRdvEntry(repName = getActiveDailyRdvRepName()) {
+      const todayKey = localYmd(new Date());
+      const entry = dailyRdvLogsStore[`${todayKey}__${repName}`];
+      return {
+        dateStr: todayKey,
+        booke: Math.max(0, Number(entry?.booke || 0)),
+        rdv: Math.max(0, Number(entry?.rdv || 0))
+      };
+    }
+
+    function renderDailyRdvTrackerCard() {
+      const card = document.getElementById('daily-rdv-tracker-card');
+      if (!card || !currentProfile) return;
+      const repName = getActiveDailyRdvRepName();
+      if (!repName) {
+        card.classList.add('hidden');
+        return;
+      }
+      card.classList.remove('hidden');
+      const todayData = getTodayDailyRdvEntry(repName);
+      const badgeEl = document.getElementById('daily-rdv-date-badge');
+      if (badgeEl) {
+        badgeEl.textContent = `Aujourd'hui (${formatDateLabelFr(todayData.dateStr)})`;
+      }
+      const bookeIn = document.getElementById('daily-rdv-booke-input');
+      const rdvIn = document.getElementById('daily-rdv-realise-input');
+      if (bookeIn && document.activeElement !== bookeIn) bookeIn.value = String(todayData.booke);
+      if (rdvIn && document.activeElement !== rdvIn) rdvIn.value = String(todayData.rdv);
+
+      // Cumul du mois calculé STRICTEMENT pour le représentant connecté (ses propres RDV bookés & réalisés du mois)
+      const ym = todayData.dateStr.slice(0, 7);
+      const repNorm = resolveKpiRepName(repName) || repName;
+      let monthBooke = 0;
+      let monthRdv = 0;
+      let hasManualMonthOverride = false;
+
+      Object.entries(monthlyRdvOverrides || {}).forEach(([k, rdvOv]) => {
+        const [kYm, kRep] = k.split('_');
+        if (kYm === ym && (resolveKpiRepName(kRep) || kRep) === repNorm && rdvOv) {
+          monthBooke += Number(rdvOv.booke || 0);
+          monthRdv += Number(rdvOv.rdv || 0);
+          hasManualMonthOverride = true;
+        }
+      });
+
+      if (!hasManualMonthOverride) {
+        (kpiHebdoRows || []).forEach(row => {
+          const wIdx = Number(row.semaine_index);
+          if (wIdx >= 0 && wIdx < 4 && row.mois_commission === ym) {
+            const rNorm = resolveKpiRepName(row.representant_nom) || String(row.representant_nom || '').trim();
+            if (rNorm === repNorm) {
+              monthBooke += Number(row.booke || 0);
+              monthRdv += Number(row.rdv_realise || 0);
+            }
+          }
+        });
+      }
+
+      const condEntry = condensedBaselineStore?.[ym]?.[repNorm];
+      if (condEntry && typeof condEntry === 'object') {
+        monthBooke += Number(condEntry.booke || 0);
+        monthRdv += Number(condEntry.rdv || 0);
+      }
+
+      Object.entries(dailyRdvLogsStore || {}).forEach(([key, dEntry]) => {
+        if (!dEntry || typeof dEntry !== 'object') return;
+        const parts = key.split('__');
+        const dStr = dEntry.date || parts[0] || '';
+        const rNorm = resolveKpiRepName(dEntry.rep || parts[1] || '') || String(dEntry.rep || parts[1] || '').trim();
+        if (dStr.slice(0, 7) === ym && rNorm === repNorm) {
+          monthBooke += Number(dEntry.booke || 0);
+          monthRdv += Number(dEntry.rdv || 0);
+        }
+      });
+
+      const sumEl = document.getElementById('daily-rdv-month-summary');
+      if (sumEl) {
+        sumEl.textContent = `${Math.max(0, monthBooke)} booké(s) • ${Math.max(0, monthRdv)} réalisé(s)`;
+      }
+    }
+
+    async function saveTodayDailyRdvValues(newBooke, newRdv) {
+      if (!currentProfile) return;
+      const repName = getActiveDailyRdvRepName();
+      if (!repName) return;
+      const todayStr = localYmd(new Date());
+      const safeBooke = Math.max(0, Math.round(Number(newBooke) || 0));
+      const safeRdv = Math.max(0, Math.round(Number(newRdv) || 0));
+      const nowIso = new Date().toISOString();
+
+      const payload = {
+        date: todayStr,
+        rep: repName,
+        booke: safeBooke,
+        rdv: safeRdv,
+        updatedAt: nowIso
+      };
+      dailyRdvLogsStore[`${todayStr}__${repName}`] = payload;
+      saveDailyRdvLogsStore();
+
+      rebuildKpiStore();
+      renderDailyRdvTrackerCard();
+      renderKpiDashboard();
+
+      await persistDailyRdvToCloud(todayStr, repName, payload);
+      toast(`Rendez-vous du jour enregistrés (${safeBooke} bookés, ${safeRdv} réalisés) ✓`);
+    }
+
+    window.adjustDailyRdvCounter = async (field, delta) => {
+      const cur = getTodayDailyRdvEntry();
+      const nextBooke = field === 'booke' ? Math.max(0, cur.booke + delta) : cur.booke;
+      const nextRdv = field === 'rdv' ? Math.max(0, cur.rdv + delta) : cur.rdv;
+      await saveTodayDailyRdvValues(nextBooke, nextRdv);
+    };
+
+    window.setDailyRdvCounterFromInput = async (field, rawVal) => {
+      const cur = getTodayDailyRdvEntry();
+      const parsed = Math.max(0, Math.round(parseFloat(rawVal) || 0));
+      const nextBooke = field === 'booke' ? parsed : cur.booke;
+      const nextRdv = field === 'rdv' ? parsed : cur.rdv;
+      await saveTodayDailyRdvValues(nextBooke, nextRdv);
+    };
+
+    // Vérification automatique du passage à minuit (00:00) pour remettre les compteurs du jour à 0
+    let _lastTrackedDailyRdvDate = localYmd(new Date());
+    setInterval(() => {
+      const nowYmd = localYmd(new Date());
+      if (nowYmd !== _lastTrackedDailyRdvDate) {
+        _lastTrackedDailyRdvDate = nowYmd;
+        if (typeof currentDateStr !== 'undefined') currentDateStr = nowYmd;
+        if (typeof currentMonthStr !== 'undefined') currentMonthStr = nowYmd.slice(0, 7);
+        rebuildKpiStore();
+        renderDailyRdvTrackerCard();
+        renderKpiDashboard();
+      }
+    }, 30000);
 
     function hasActiveCondensedBaseline() {
       if (!condensedBaselineStore || typeof condensedBaselineStore !== 'object') return false;
@@ -537,6 +862,17 @@
               }
             }
           } catch (e) {}
+        } else if (sIdx === -16 && r.mois_commission && r.representant_nom) {
+          try {
+            const dData = JSON.parse(r.representant_nom);
+            const key = String(r.mois_commission);
+            if (dData && typeof dData === 'object') {
+              const localD = dailyRdvLogsStore[key];
+              if (!localD || !localD.updatedAt || (dData.updatedAt && dData.updatedAt >= localD.updatedAt)) {
+                dailyRdvLogsStore[key] = dData;
+              }
+            }
+          } catch (e) {}
         } else if (sIdx === -10 && r.mois_commission && r.representant_nom) {
           try {
             const rdvData = JSON.parse(r.representant_nom);
@@ -546,6 +882,15 @@
               if (!localR || !localR.updatedAt || (rdvData.updatedAt && rdvData.updatedAt >= localR.updatedAt)) {
                 monthlyRdvOverrides[key] = rdvData;
               }
+            }
+          } catch (e) {}
+        } else if (sIdx === -14 && r.mois_commission === 'red_phone_cfg' && r.representant_nom) {
+          try {
+            const parsedRp = JSON.parse(r.representant_nom);
+            if (parsedRp && typeof parsedRp === 'object') {
+              redPhoneConfig = { ...redPhoneConfig, ...parsedRp };
+              lsSet('korpo_red_phone_cfg_v1', JSON.stringify(redPhoneConfig));
+              syncRedPhoneUI();
             }
           } catch (e) {}
         } else if (sIdx === -12 && r.mois_commission === 'wave_company_seq_v1' && r.representant_nom) {
@@ -587,6 +932,26 @@
       lsSet('korpo_kpi_team_snapshot_v1', JSON.stringify(teamKpiSnapshotStore));
       applySaleBonusOverridesToState();
       applyCarryOverMetadataToState();
+      // Récupérer l'attribution des ventes déjà détachées (representant_id / entreprise_id null) lors d'une suppression précédente
+      const archivedRepEntries = Object.values(archivedRepsStore || {});
+      const archivedEntEntries = Object.values(archivedEntreprisesStore || {});
+      if (archivedRepEntries.length === 1 || archivedEntEntries.length === 1) {
+        (state.ventes || []).forEach(v => {
+          if (v.representant_id === null && archivedRepEntries.length === 1) {
+            const onlyRep = archivedRepEntries[0];
+            if (onlyRep && Array.isArray(onlyRep.saleIds) && !onlyRep.saleIds.includes(String(v.id))) {
+              onlyRep.saleIds.push(String(v.id));
+            }
+          }
+          if (v.entreprise_id === null && archivedEntEntries.length === 1) {
+            const onlyEnt = archivedEntEntries[0];
+            if (onlyEnt && Array.isArray(onlyEnt.saleIds) && !onlyEnt.saleIds.includes(String(v.id))) {
+              onlyEnt.saleIds.push(String(v.id));
+            }
+          }
+        });
+      }
+
       updateTrashBadges();
     }
 
@@ -620,6 +985,33 @@
       }
     }
 
+    function mapAdminPersonalSaleRow(v) {
+      const cOli = Number(v.commission_olivier || 0);
+      const cRep = Number(v.commission_rep || 0);
+      const isDirectOwnSale = currentProfile && String(v.representant_id) === String(currentProfile.id);
+      const personalComm = (cOli !== 0 || !isDirectOwnSale) ? cOli : cRep;
+      return {
+        ...v,
+        client_nom: state.clients.find(c => c.id === v.client_id)?.nom || '—',
+        entreprise_nom: state.entreprises.find(e => e.id === v.entreprise_id)?.nom || resolveSaleArchivedEntName(v) || '—',
+        rep_nom: state.representants.find(r => r.id === v.representant_id)?.nom || resolveSaleArchivedRepName(v) || '—',
+        commission_rep: personalComm,
+        _repCommAmount: cRep
+      };
+    }
+
+    function normalizeRepPersonalSaleRow(v) {
+      const rawComm = v.commission_rep ?? v.commission ?? v.commission_representant;
+      const resolvedComm = (rawComm !== undefined && rawComm !== null && !Number.isNaN(Number(rawComm)))
+        ? Number(rawComm)
+        : Math.round(Number(v.valeur || 0) * Number(v.taux_rep_applique || 0) * 100) / 100;
+      return {
+        ...v,
+        commission_rep: resolvedComm,
+        _repCommAmount: resolvedComm
+      };
+    }
+
     function applySaleBonusOverridesToState() {
       const isAdmin = currentProfile?.role === 'admin';
       const applyToRow = (row, isMesVentesForAdmin = false) => {
@@ -628,11 +1020,14 @@
         if (!ov) return row;
         const baseR = getRateForSale(row.representant_id, row.entreprise_id, row.client_id);
         const isBonusHigher = baseR ? (Number(ov.tRep) > Number(baseR.taux) + 0.0001) : !ov.noBonus;
+        const isDirectOwn = currentProfile && String(row.representant_id) === String(currentProfile.id);
+        const adminPersonalOv = (Number(ov.cOli) !== 0 || !isDirectOwn) ? Number(ov.cOli) : Number(ov.cRep);
         const updated = {
           ...row,
           taux_rep_applique: Number(ov.tRep),
           taux_olivier_applique: Number(ov.tOli),
-          commission_rep: isMesVentesForAdmin ? Number(ov.cOli) : Number(ov.cRep),
+          commission_rep: isMesVentesForAdmin ? adminPersonalOv : Number(ov.cRep),
+          _repCommAmount: Number(ov.cRep),
           commission_olivier: Number(ov.cOli),
           _isHit: Boolean(ov.isHit || Number(ov.cRep) < 0 || Number(ov.cOli) < 0),
           _hitBearer: ov.hitBearer || null,
@@ -930,7 +1325,7 @@
         <div class="bg-white rounded-xl border border-slate-200/90 p-3.5 flex flex-wrap items-center justify-between gap-2 text-xs">
           <div>
             <span class="text-slate-400">Statut actuel :</span>
-            <strong class="${v.statut_depot === 'depot_recu' ? 'text-emerald-700' : 'text-amber-700'}">${v.statut_depot === 'depot_recu' ? 'Dépôt reçu' : 'À confirmer'}</strong>
+            <strong class="${v.statut_depot === 'depot_recu' ? 'text-emerald-700' : 'text-amber-700'}">${v.statut_depot === 'depot_recu' ? (isNoDepositSale(v) ? 'Sans dépôt requis' : 'Dépôt reçu') : 'À confirmer'}</strong>
             <span class="mx-1 text-slate-300">•</span>
             <strong class="${v.statut_paiement === 'paye' ? 'text-indigo-700' : 'text-slate-700'}">${v.statut_paiement === 'paye' ? 'Payé' : 'Non payé'}</strong>
           </div>
@@ -1401,7 +1796,6 @@
       initMentionPushServiceWorker();
     };
 
-
     // =========================================================================
     // NOTIFICATIONS PUSH POUR LES MENTIONS (@) DANS KORPO TOP EARNER
     // =========================================================================
@@ -1609,6 +2003,299 @@
         // Silencieux tant que la Edge Function n'est pas déployée sur Supabase
       }
     }
+
+    // =========================================================================
+    // TÉLÉPHONE ROUGE — APPEL DIRECTEUR URGENT POUR CLOSER UN DEAL
+    // =========================================================================
+    let redPhoneConfig = lsGetJson('korpo_red_phone_cfg_v1', '{"directorName":"Olivier (Directeur)","phone":""}');
+    let selectedRedPhoneReason = 'Client prêt à closer maintenant';
+    let seenRedPhoneCallIds = new Set(lsGetJson('korpo_seen_red_calls_v1', '[]'));
+    let notifiedRedPhoneCallIds = new Set(lsGetJson('korpo_notified_red_calls_v1', '[]'));
+    let activeIncomingRedCallId = null;
+
+    function formatPhoneForDial(rawPhone) {
+      const digits = String(rawPhone || '').replace(/[^\d+]/g, '');
+      if (!digits) return '';
+      if (digits.startsWith('+')) return digits;
+      if (digits.length === 10) return `+1${digits}`;
+      if (digits.length === 11 && digits.startsWith('1')) return `+${digits}`;
+      return digits;
+    }
+
+    function isRedPhoneWithinAllowedHours() {
+      const now = new Date();
+      const day = now.getDay(); // 0 = Dimanche, 6 = Samedi, 1..5 = Lundi..Vendredi
+      const nowMins = now.getHours() * 60 + now.getMinutes();
+      const isWeekend = (day === 0 || day === 6);
+      const startMins = 8 * 60; // 08h00
+      const endMins = isWeekend ? (12 * 60) : (18 * 60); // 12h00 fin de semaine, 18h00 semaine
+      return nowMins >= startMins && nowMins <= endMins;
+    }
+
+    function formatRedPhoneScheduleLabel() {
+      return 'Lun–Ven 8h à 18h • Sam–Dim 8h à 12h';
+    }
+
+    function syncRedPhoneUI() {
+      const isRep = currentProfile && currentProfile.role !== 'admin';
+      const isOpenNow = isRedPhoneWithinAllowedHours();
+      const hdrBtn = document.getElementById('btn-header-red-phone');
+      if (hdrBtn) {
+        hdrBtn.classList.toggle('hidden', !isRep);
+        hdrBtn.classList.toggle('opacity-55', isRep && !isOpenNow);
+        hdrBtn.title = isOpenNow
+          ? 'Téléphone Rouge — Appel Directeur'
+          : `Téléphone Rouge (Fermé — ${formatRedPhoneScheduleLabel()})`;
+      }
+      const nameIn = document.getElementById('red-phone-director-name');
+      const phoneIn = document.getElementById('red-phone-director-number');
+      if (nameIn && document.activeElement !== nameIn) nameIn.value = redPhoneConfig.directorName || 'Olivier (Directeur)';
+      if (phoneIn && document.activeElement !== phoneIn) phoneIn.value = redPhoneConfig.phone || '';
+
+      const previewEl = document.getElementById('red-phone-number-preview');
+      if (previewEl) {
+        previewEl.textContent = redPhoneConfig.phone
+          ? `${redPhoneConfig.directorName || 'Directeur'} • ${redPhoneConfig.phone}`
+          : 'Numéro non encore configuré par le directeur';
+      }
+      const hoursEl = document.getElementById('red-phone-hours-preview');
+      if (hoursEl) {
+        hoursEl.textContent = formatRedPhoneScheduleLabel();
+      }
+      const closedNotice = document.getElementById('red-phone-closed-notice');
+      const callBtn = document.getElementById('btn-trigger-red-phone-now');
+      if (closedNotice) closedNotice.classList.toggle('hidden', isOpenNow);
+      if (callBtn) {
+        callBtn.disabled = !isOpenNow;
+        callBtn.classList.toggle('opacity-45', !isOpenNow);
+        callBtn.classList.toggle('cursor-not-allowed', !isOpenNow);
+        callBtn.classList.toggle('cursor-pointer', isOpenNow);
+      }
+    }
+
+    window.selectRedPhoneReason = (btnEl, reasonText) => {
+      selectedRedPhoneReason = reasonText;
+      document.querySelectorAll('.red-reason-chip').forEach(b => {
+        b.className = 'red-reason-chip px-3 py-1.5 text-xs font-bold rounded-xl bg-slate-100 text-slate-700 hover:bg-rose-50 border border-slate-200 transition cursor-pointer';
+      });
+      if (btnEl) {
+        btnEl.className = 'red-reason-chip px-3 py-1.5 text-xs font-bold rounded-xl bg-rose-600 text-white border border-rose-600 transition cursor-pointer';
+      }
+    };
+
+    let _redPhoneCountdownTimer = null;
+    let _redPhonePendingDialNumber = '';
+
+    function clearRedPhoneCountdown() {
+      if (_redPhoneCountdownTimer) {
+        clearInterval(_redPhoneCountdownTimer);
+        _redPhoneCountdownTimer = null;
+      }
+      _redPhonePendingDialNumber = '';
+    }
+
+    window.dialRedPhoneNowImmediately = () => {
+      const targetNum = _redPhonePendingDialNumber || formatPhoneForDial(redPhoneConfig.phone);
+      clearRedPhoneCountdown();
+      document.getElementById('red-phone-rep-modal')?.classList.add('hidden');
+      if (targetNum) {
+        window.location.href = `tel:${targetNum}`;
+      }
+    };
+
+    window.openRedPhoneRepModal = () => {
+      clearRedPhoneCountdown();
+      syncRedPhoneUI();
+      const noteEl = document.getElementById('red-phone-custom-note');
+      if (noteEl) noteEl.value = '';
+      document.getElementById('red-phone-step-compose')?.classList.remove('hidden');
+      document.getElementById('red-phone-step-countdown')?.classList.add('hidden');
+      document.getElementById('red-phone-rep-modal')?.classList.remove('hidden');
+    };
+
+    window.closeRedPhoneRepModal = () => {
+      clearRedPhoneCountdown();
+      document.getElementById('red-phone-rep-modal')?.classList.add('hidden');
+    };
+
+    function playRedPhoneRingtone() {
+      try {
+        const ctx = sharedAudioCtx || new (window.AudioContext || window.webkitAudioContext)();
+        if (ctx.state === 'suspended') ctx.resume();
+        const pattern = [0, 0.16, 0.32, 0.65, 0.81, 0.97];
+        pattern.forEach((offset, idx) => {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = 'triangle';
+          const startAt = ctx.currentTime + offset;
+          osc.frequency.setValueAtTime(idx % 2 === 0 ? 987.77 : 1318.51, startAt);
+          gain.gain.setValueAtTime(0.22, startAt);
+          gain.gain.exponentialRampToValueAtTime(0.001, startAt + 0.14);
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start(startAt);
+          osc.stop(startAt + 0.14);
+        });
+      } catch (e) {}
+    }
+
+    window.triggerRedPhoneDirectorCall = async () => {
+      if (!currentProfile) return;
+      if (!isRedPhoneWithinAllowedHours()) {
+        syncRedPhoneUI();
+        return toast(`⏰ Le Téléphone Rouge est disponible uniquement selon l'horaire : ${formatRedPhoneScheduleLabel()}.`, 'error');
+      }
+      const dialNumber = formatPhoneForDial(redPhoneConfig.phone);
+      if (!dialNumber) {
+        return toast('Le numéro du directeur n’est pas encore configuré. Demandez-lui de l’ajouter dans Entreprises & Équipe.', 'error');
+      }
+
+      const customNote = document.getElementById('red-phone-custom-note')?.value.trim() || '';
+      const reason = customNote || selectedRedPhoneReason || 'Besoin d’aide pour closer un deal';
+      const callId = `redcall_${Date.now()}_${currentProfile.id}`;
+      const nowIso = new Date().toISOString();
+
+      const payloadObj = {
+        id: callId,
+        at: nowIso,
+        repId: String(currentProfile.id),
+        repNom: currentProfile.nom,
+        reason,
+        status: 'ringing'
+      };
+
+      // Basculer immédiatement vers l'écran de décompte de 15 secondes
+      clearRedPhoneCountdown();
+      _redPhonePendingDialNumber = dialNumber;
+      let secondsLeft = 15;
+      const timerEl = document.getElementById('red-phone-countdown-timer');
+      const barEl = document.getElementById('red-phone-countdown-bar');
+      if (timerEl) timerEl.textContent = `${secondsLeft} s`;
+      if (barEl) barEl.style.width = '100%';
+      document.getElementById('red-phone-step-compose')?.classList.add('hidden');
+      document.getElementById('red-phone-step-countdown')?.classList.remove('hidden');
+
+      _redPhoneCountdownTimer = setInterval(() => {
+        secondsLeft -= 1;
+        if (timerEl) timerEl.textContent = `${Math.max(0, secondsLeft)} s`;
+        if (barEl) barEl.style.width = `${Math.max(0, Math.round((secondsLeft / 15) * 100))}%`;
+        if (secondsLeft <= 0) {
+          dialRedPhoneNowImmediately();
+        }
+      }, 1000);
+
+      // 1) Enregistrer l'alerte urgente en temps réel dans Supabase (semaine_index = -15) dès 0s
+      if (sb) {
+        try {
+          await safeUpsertKpiHebdoRow({
+            mois_commission: callId,
+            semaine_index: -15,
+            representant_nom: JSON.stringify(payloadObj),
+            booke: 0,
+            rdv_realise: 0,
+            updated_at: nowIso
+          });
+        } catch (e) {}
+
+        // 2) Déclencher immédiatement la notification Push serveur vers le téléphone du directeur
+        try {
+          const adminNames = (state.representants || [])
+            .filter(r => r.role === 'admin' && r.nom)
+            .map(r => r.nom);
+          if (!adminNames.includes('Olivier')) adminNames.push('Olivier');
+          await sb.functions.invoke('send-mention-push', {
+            body: {
+              msgId: callId,
+              authorId: String(currentProfile.id),
+              authorName: currentProfile.nom,
+              text: `${currentProfile.nom} t'appelle dans 15s pour un deal (${reason}) !`,
+              mentionedNames: adminNames,
+              customTitle: `☎️ TÉLÉPHONE ROUGE — ${currentProfile.nom}`,
+              eventType: 'red_phone'
+            }
+          });
+        } catch (ePush) {}
+      }
+    };
+
+    window.acknowledgeIncomingRedPhone = () => {
+      if (activeIncomingRedCallId) {
+        seenRedPhoneCallIds.add(String(activeIncomingRedCallId));
+        lsSet('korpo_seen_red_calls_v1', JSON.stringify(Array.from(seenRedPhoneCallIds).slice(-60)));
+        activeIncomingRedCallId = null;
+      }
+      document.getElementById('red-phone-incoming-modal')?.classList.add('hidden');
+      renderUnifiedBellNotifications();
+    };
+
+    function getRecentRedPhoneCallsForAdmin() {
+      if (!currentProfile || currentProfile.role !== 'admin') return [];
+      const cutoffMs = Date.now() - 24 * 3600 * 1000;
+      const calls = [];
+      (kpiHebdoRows || []).forEach(r => {
+        if (Number(r.semaine_index) !== -15 || !r.representant_nom) return;
+        try {
+          const c = JSON.parse(r.representant_nom);
+          if (c && c.id && c.at && new Date(c.at).getTime() >= cutoffMs) {
+            calls.push(c);
+          }
+        } catch (e) {}
+      });
+      return calls.sort((a, b) => String(b.at || '').localeCompare(String(a.at || '')));
+    }
+
+    function checkIncomingRedPhoneAlerts() {
+      if (!currentProfile || currentProfile.role !== 'admin') return;
+      const calls = getRecentRedPhoneCallsForAdmin();
+      const freshCutoff = Date.now() - 4 * 60 * 1000; // Alerte modale active pour les appels des 4 dernières minutes
+      const unacknowledged = calls.find(c => !seenRedPhoneCallIds.has(String(c.id)) && new Date(c.at).getTime() >= freshCutoff);
+      if (!unacknowledged) return;
+
+      const callIdStr = String(unacknowledged.id);
+      activeIncomingRedCallId = callIdStr;
+      document.getElementById('red-phone-incoming-title').textContent = `☎️ ${unacknowledged.repNom} vous appelle !`;
+      document.getElementById('red-phone-incoming-subtitle').textContent = `${unacknowledged.repNom} a besoin de vous MAINTENANT pour closer un deal`;
+      document.getElementById('red-phone-incoming-meta').innerHTML = `
+        <div><strong>Motif :</strong> ${esc(unacknowledged.reason || 'Aide closing deal')}</div>
+        <div class="text-[11px] opacity-80">Déclenché à ${esc(formatChatHourOnly(unacknowledged.at))}</div>
+      `;
+      document.getElementById('red-phone-incoming-modal')?.classList.remove('hidden');
+
+      // Ne jouer la sonnerie qu'UNE SEULE fois par appel (la notification Push serveur avec la raison est déjà envoyée par Supabase)
+      if (!notifiedRedPhoneCallIds.has(callIdStr)) {
+        notifiedRedPhoneCallIds.add(callIdStr);
+        lsSet('korpo_notified_red_calls_v1', JSON.stringify(Array.from(notifiedRedPhoneCallIds).slice(-60)));
+        playRedPhoneRingtone();
+      }
+    }
+
+    document.getElementById('form-red-phone-config')?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      if (currentProfile?.role !== 'admin') return;
+      const directorName = document.getElementById('red-phone-director-name')?.value.trim() || 'Olivier (Directeur)';
+      const phone = document.getElementById('red-phone-director-number')?.value.trim() || '';
+      if (!formatPhoneForDial(phone)) {
+        return toast('Veuillez saisir un numéro de téléphone valide.', 'error');
+      }
+      redPhoneConfig = { directorName, phone, updatedAt: new Date().toISOString() };
+      lsSet('korpo_red_phone_cfg_v1', JSON.stringify(redPhoneConfig));
+      syncRedPhoneUI();
+
+      if (sb) {
+        const res = await safeUpsertKpiHebdoRow({
+          mois_commission: 'red_phone_cfg',
+          semaine_index: -14,
+          representant_nom: JSON.stringify(redPhoneConfig),
+          booke: 0,
+          rdv_realise: 0,
+          updated_at: new Date().toISOString()
+        });
+        if (res && res.error) {
+          return toast('Erreur sauvegarde réseau : ' + res.error.message, 'error');
+        }
+      }
+      toast(`Numéro Téléphone Rouge enregistré (${phone}) ✓`);
+    });
 
     async function initApp() {
       syncThemeToggleButtons();
@@ -1830,7 +2517,7 @@
       const isDesktop = window.innerWidth >= 768;
       sec.querySelectorAll('[data-mobile-group="ventes"]').forEach(el => {
         if (el.id === 'btn-rep-open-drawer') {
-          el.classList.toggle('hidden', window.innerWidth < 640 || window.innerWidth >= 1024 || isCommView);
+          el.classList.add('hidden');
         } else if (el.classList.contains('md:hidden')) {
           el.classList.toggle('hidden', isDesktop || isCommView);
         } else if (el.classList.contains('md:block')) {
@@ -1979,7 +2666,6 @@
       }
     }
 
-
     // =========================================================================
     // GESTION DES OBJECTIFS PAR CLIENT & COMPAGNIE (ACTIVABLES)
     // =========================================================================
@@ -2088,7 +2774,7 @@
     function populateTargetFormOptions() {
       const entSel = document.getElementById('target-ent-select');
       if (!entSel) return;
-      const entNames = new Set(['Toitex', 'MonSpray', 'VerreVDM', 'Groupe Diamant Pro', 'MaClim', ...state.entreprises.map(e => e.nom)]);
+      const entNames = new Set(['Toitex', 'MonSpray', 'VerreVDM', 'Groupe Diamant Pro', 'MaClim', ...state.entreprises.map(e => e.nom)].filter(en => !isEntrepriseArchived(en)));
       const cur = entSel.value;
       entSel.innerHTML = Array.from(entNames).map(n => `<option value="${esc(n)}">${esc(n)}</option>`).join('');
       if (cur && entNames.has(cur)) entSel.value = cur;
@@ -2208,13 +2894,32 @@
 
     function recalcTeamObjectivesForMonth(mObj) {
       if (!mObj || !mObj.team || !mObj.reps) return;
+      const ym = mObj.ym || '';
       const reps = Object.keys(mObj.reps);
-      mObj.team['Booké'].objectif = reps.reduce((s, rn) => s + Number(mObj.reps[rn]['Booké']?.objectif || 0), 0);
-      mObj.team['RDV RÉA'].objectif = reps.reduce((s, rn) => s + Number(mObj.reps[rn]['RDV Réalisé']?.objectif || 0), 0);
-      mObj.team['VENTE OTS'].objectif = reps.reduce((s, rn) => s + Number(mObj.reps[rn]['Ventes OTS']?.objectif || 0), 0);
-      mObj.team['VENTE SUIVI'].objectif = reps.reduce((s, rn) => s + Number(mObj.reps[rn]['Ventes SUIVI']?.objectif || 0), 0);
+      reps.forEach(rn => {
+        const factor = isRepArchived(rn) ? (isValidYearMonth(ym) ? getRepArchiveMonthFactor(rn, ym) : 0) : 1;
+        if (factor < 1) {
+          const entry = findArchivedRepEntry(rn);
+          const snapObj = entry?.targets || {};
+          const applyFactor = (mk, baseVal) => {
+            if (!mObj.reps[rn][mk]) return;
+            const rawBase = Number(baseVal || mObj.reps[rn][mk].objectif || 0);
+            mObj.reps[rn][mk].objectif = Math.round(rawBase * factor * 100) / 100;
+          };
+          applyFactor('Vente $', snapObj.dollars);
+          applyFactor('Booké', snapObj.booke);
+          applyFactor('RDV Réalisé', snapObj.rdv);
+          applyFactor('Ventes OTS', snapObj.ots);
+          applyFactor('Ventes SUIVI', snapObj.suivi);
+          if (factor === 0 && mObj.reps[rn]['% Close']) mObj.reps[rn]['% Close'].objectif = 0;
+        }
+      });
+      mObj.team['Booké'].objectif = Math.round(reps.reduce((s, rn) => s + Number(mObj.reps[rn]['Booké']?.objectif || 0), 0));
+      mObj.team['RDV RÉA'].objectif = Math.round(reps.reduce((s, rn) => s + Number(mObj.reps[rn]['RDV Réalisé']?.objectif || 0), 0));
+      mObj.team['VENTE OTS'].objectif = Math.round(reps.reduce((s, rn) => s + Number(mObj.reps[rn]['Ventes OTS']?.objectif || 0), 0));
+      mObj.team['VENTE SUIVI'].objectif = Math.round(reps.reduce((s, rn) => s + Number(mObj.reps[rn]['Ventes SUIVI']?.objectif || 0), 0));
       mObj.team['VENTE TOTAL'].objectif = mObj.team['VENTE OTS'].objectif + mObj.team['VENTE SUIVI'].objectif;
-      mObj.team['VENTE $'].objectif = reps.reduce((s, rn) => s + Number(mObj.reps[rn]['Vente $']?.objectif || 0), 0);
+      mObj.team['VENTE $'].objectif = Math.round(reps.reduce((s, rn) => s + Number(mObj.reps[rn]['Vente $']?.objectif || 0), 0) * 100) / 100;
     }
 
     function syncRepTargetInputs() {
@@ -2504,7 +3209,6 @@
       }).join('');
     }
 
-
     // =========================================================================
     // SYSTÈME DE NOTIFICATIONS EN TEMPS RÉEL + SECOURS AUTOMATIQUE (ADMIN)
     // =========================================================================
@@ -2583,13 +3287,16 @@
         .sort((a, b) => String(b.at || '').localeCompare(String(a.at || '')));
       const unreadMentions = myMentions.filter(m => !readMentionIds.has(String(m.id)));
 
+      const recentRedCalls = isAdmin ? getRecentRedPhoneCallsForAdmin() : [];
+      const unreadRedCalls = recentRedCalls.filter(c => !seenRedPhoneCallIds.has(String(c.id)));
+
       const pendingSales = isAdmin
         ? (state.ventes || [])
             .filter(v => v.statut_depot === 'a_confirmer')
             .sort((a, b) => (b.created_at || b.date_vente || '').localeCompare(a.created_at || a.date_vente || ''))
         : [];
 
-      const totalBadgeCount = unreadMentions.length + pendingSales.length;
+      const totalBadgeCount = unreadMentions.length + pendingSales.length + unreadRedCalls.length;
       if (totalBadgeCount > 0) {
         badge.textContent = totalBadgeCount > 99 ? '99+' : String(totalBadgeCount);
         badge.classList.remove('hidden');
@@ -2622,6 +3329,31 @@
         : 'Aucune nouvelle notification';
 
       const sectionsHtml = [];
+
+      if (isAdmin && recentRedCalls.length > 0) {
+        sectionsHtml.push(`
+          <div class="px-3.5 py-2 bg-rose-50 text-[10px] font-extrabold uppercase tracking-wider text-rose-800 flex items-center justify-between">
+            <span>☎️ Appels Directeur (Téléphone Rouge)</span>
+            <span>${recentRedCalls.length} récent(s)</span>
+          </div>
+          ${recentRedCalls.slice(0, 6).map(c => {
+            const isFresh = !seenRedPhoneCallIds.has(String(c.id));
+            return `
+              <div class="p-3.5 ${isFresh ? 'bg-rose-50/60' : ''} flex items-start justify-between gap-3">
+                <div class="min-w-0 space-y-0.5">
+                  <div class="flex items-center gap-1.5">
+                    ${isFresh ? '<span class="w-2 h-2 rounded-full bg-rose-600 shrink-0"></span>' : ''}
+                    <span class="text-xs font-extrabold text-rose-900">☎️ ${esc(c.repNom)}</span>
+                    <span class="text-[10px] text-slate-400">• ${esc(formatChatTime(c.at))}</span>
+                  </div>
+                  <div class="text-xs text-slate-700 break-words">${esc(c.reason || 'Aide closing deal')}</div>
+                </div>
+                ${isFresh ? `<button type="button" onclick="seenRedPhoneCallIds.add('${esc(c.id)}'); lsSet('korpo_seen_red_calls_v1', JSON.stringify(Array.from(seenRedPhoneCallIds).slice(-60))); renderUnifiedBellNotifications();" class="px-2.5 py-1 text-[10px] font-bold bg-rose-600 text-white rounded-lg shrink-0 cursor-pointer">Vu ✓</button>` : ''}
+              </div>
+            `;
+          }).join('')}
+        `);
+      }
 
       if (myMentions.length > 0) {
         sectionsHtml.push(`
@@ -2773,13 +3505,7 @@
         const newPending = latestVentes.filter(v => v.statut_depot === 'a_confirmer' && !knownPendingSaleIds.has(String(v.id)));
         if (newPending.length > 0) {
           state.ventes = latestVentes;
-          state.mesVentes = state.ventes.map(v => ({
-            ...v,
-            client_nom: state.clients.find(c => c.id === v.client_id)?.nom || '—',
-            entreprise_nom: state.entreprises.find(e => e.id === v.entreprise_id)?.nom || '—',
-            rep_nom: state.representants.find(r => r.id === v.representant_id)?.nom || '—',
-            commission_rep: Number(v.commission_olivier || 0)
-          }));
+          state.mesVentes = state.ventes.map(mapAdminPersonalSaleRow);
           applySaleBonusOverridesToState();
           syncSalesIntoKpi();
           renderAdminNotifications();
@@ -2876,7 +3602,6 @@
       }
     }
 
-
     // =========================================================================
     // PREUVES PHOTO DE DÉPÔT / CONTRAT & ANCIENNETÉ DES DOSSIERS (CHANTIER 2)
     // =========================================================================
@@ -2947,7 +3672,7 @@
 
     function cleanDisplaySaleNote(noteStr) {
       return String(noteStr || '')
-        .replace(/^\[(OTS|SUIVI)\]\s*/i, '')
+        .replace(/^\[(OTS|SUIVI)\]\s*/i, '').replace(/\[(REP|ENT):[^\]]+\]\s*/ig, '').replace(/\[SANSDEPOT\]\s*/ig, '')
         .replace(/\[HIT(?::(?:REP|OLIVIER|BOTH))?\]\s*/ig, '')
         .trim();
     }
@@ -3263,6 +3988,7 @@
           ? (1 / Math.max(1, countBusinessDaysInMonth(targetYm)))
           : (dashPeriod.mode === 'this_week' ? (5 / Math.max(1, countBusinessDaysInMonth(targetYm))) : coveredMonths.length));
 
+      const activeForecastReps = getActiveKpiReps();
       const repTargetsMap = {};
       ALL_KPI_REPS.forEach(rn => {
         if (isSingleMonthMode) {
@@ -3305,7 +4031,7 @@
         const repObj = state.representants.find(r => r.nom === rn);
         const repSalesList = periodSales.filter(v => {
           if (repObj && String(v.representant_id) === String(repObj.id)) return true;
-          const rN = state.representants.find(r => String(r.id) === String(v.representant_id))?.nom || v.rep_nom || '';
+          const rN = state.representants.find(r => String(r.id) === String(v.representant_id))?.nom || resolveSaleArchivedRepName(v) || v.rep_nom || '';
           return resolveKpiRepName(rN) === rn;
         });
         const signedFromSales = repSalesList.reduce((s, v) => s + Number(v.valeur || 0), 0);
@@ -3328,7 +4054,7 @@
           : repSalesList.reduce((s, v) => s + Number(v.commission_rep || 0), 0);
 
         return { rn, signed, target, pct, gap, bonusStr, isAdminRep, unlocked, commEarned };
-      }).sort((a, b) => b.pct - a.pct);
+      }).filter(item => !isRepArchived(item.rn) || item.signed > 0 || item.target > 0).sort((a, b) => b.pct - a.pct);
 
       const topBadgeLabel = document.getElementById('forecast-cadence-badge-label');
       if (topBadgeLabel) {
@@ -3380,7 +4106,7 @@
           </div>
           <div class="bg-white/10 rounded-xl p-3.5 border border-white/10 space-y-1">
             <div class="text-[11px] text-indigo-200 font-semibold">4. Bonus débloqués</div>
-            <div class="text-xl font-extrabold text-emerald-400 tabular-nums">${unlockedCount} / ${ALL_KPI_REPS.filter(n => n !== 'Olivier').length} reps</div>
+            <div class="text-xl font-extrabold text-emerald-400 tabular-nums">${unlockedCount} / ${activeForecastReps.filter(n => n !== 'Olivier').length} reps</div>
             <div class="text-[11px] text-slate-300">Bonus actif dès 100 % du target</div>
           </div>
         `;
@@ -3602,6 +4328,7 @@
         total: { weeks: [0, 0, 0, 0], cumul: 0, objectif: 0 }
       });
       return {
+        ym,
         label,
         num_weeks: numWeeks,
         reps: {
@@ -3648,14 +4375,6 @@
       return exact || trimmed;
     }
 
-    function getUniqueClientKpiKey(v) {
-      const cliObj = state.clients.find(c => c.id === v.client_id);
-      const rawName = (cliObj?.nom || v.client_nom || '').trim().toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/\s+/g, ' ');
-      const repKey = String(v.representant_id || '');
-      const ym = getSaleStatsMonth(v);
-      return rawName ? `${ym}__${repKey}__${rawName}` : `sale_${v.id}`;
-    }
-
     function rebuildKpiStore() {
       const allVentes = [...(state.ventes || [])].sort((a, b) => {
         const dA = a.date_vente || `${a.mois_commission || '9999-99'}-01`;
@@ -3663,8 +4382,6 @@
         if (dA !== dB) return dA.localeCompare(dB);
         return String(a.created_at || a.id || '').localeCompare(String(b.created_at || b.id || ''));
       });
-
-      window._kpiCountedFirstSaleIds = new Set(allVentes.map(v => String(v.id)));
 
       // 1. Collecter tous les mois pertinents (fichier condensé + fichier de ventes + RDV saisis + mois courant)
       const validMonths = new Set();
@@ -3683,6 +4400,11 @@
       });
       Object.keys(monthlyRdvOverrides || {}).forEach(k => {
         const ym = k.split('_')[0];
+        if (isValidYearMonth(ym)) validMonths.add(ym);
+      });
+      Object.entries(dailyRdvLogsStore || {}).forEach(([k, entry]) => {
+        const dStr = entry?.date || k.split('__')[0] || '';
+        const ym = dStr.slice(0, 7);
         if (isValidYearMonth(ym)) validMonths.add(ym);
       });
       (kpiHebdoRows || []).forEach(r => {
@@ -3730,12 +4452,24 @@
         }
       });
 
-      // 4. Appliquer les RDV saisis manuellement (monthlyRdvOverrides ou kpi_hebdo semaine_index >= 0)
+      // 4. Appliquer les RDV saisis manuellement (monthlyRdvOverrides ou kpi_hebdo semaine_index >= 0) + les saisies journalières des représentants
       Object.entries(monthlyRdvOverrides || {}).forEach(([key, rdvOv]) => {
         const [ym, rn] = key.split('_');
         if (!freshStore[ym] || !freshStore[ym].reps[rn] || !rdvOv) return;
         freshStore[ym].reps[rn]['Booké'].weeks[0] = Math.max(0, (freshStore[ym].reps[rn]['Booké'].weeks[0] || 0) + Number(rdvOv.booke || 0));
         freshStore[ym].reps[rn]['RDV Réalisé'].weeks[0] = Math.max(0, (freshStore[ym].reps[rn]['RDV Réalisé'].weeks[0] || 0) + Number(rdvOv.rdv || 0));
+      });
+
+      Object.entries(dailyRdvLogsStore || {}).forEach(([key, dEntry]) => {
+        if (!dEntry || typeof dEntry !== 'object') return;
+        const parts = key.split('__');
+        const dStr = dEntry.date || parts[0] || '';
+        const rn = resolveKpiRepName(dEntry.rep || parts[1] || '');
+        const ym = dStr.slice(0, 7);
+        if (!isValidYearMonth(ym) || !freshStore[ym] || !freshStore[ym].reps[rn]) return;
+        const wIdx = getWeekIndexFromDate(dStr, freshStore[ym].num_weeks || 4);
+        freshStore[ym].reps[rn]['Booké'].weeks[wIdx] = Math.max(0, (freshStore[ym].reps[rn]['Booké'].weeks[wIdx] || 0) + Number(dEntry.booke || 0));
+        freshStore[ym].reps[rn]['RDV Réalisé'].weeks[wIdx] = Math.max(0, (freshStore[ym].reps[rn]['RDV Réalisé'].weeks[wIdx] || 0) + Number(dEntry.rdv || 0));
       });
 
       (kpiHebdoRows || []).forEach(row => {
@@ -3759,8 +4493,8 @@
 
         const repObj = state.representants.find(r => String(r.id) === String(v.representant_id));
         const entObj = state.entreprises.find(e => String(e.id) === String(v.entreprise_id));
-        const repName = resolveKpiRepName(repObj?.nom || v.rep_nom || '');
-        const entName = (entObj?.nom || v.entreprise_nom || '').trim();
+        const repName = resolveKpiRepName(repObj?.nom || resolveSaleArchivedRepName(v) || v.rep_nom || '');
+        const entName = (entObj?.nom || resolveSaleArchivedEntName(v) || v.entreprise_nom || '').trim();
         if (!repName) return;
 
         const val = Number(v.valeur || 0);
@@ -3863,7 +4597,16 @@
           rData['% Close'].cumul = totRdv > 0 ? Math.round((totV / totRdv) * 10000) / 100 : 0;
         });
 
-        Object.values(mObj.entreprises).forEach(eObj => {
+        Object.entries(mObj.entreprises).forEach(([eKey, eObj]) => {
+          if (isEntrepriseArchived(eKey)) {
+            const eFactor = getEntrepriseArchiveMonthFactor(eKey, mObj.ym || '');
+            const archEnt = findArchivedEntrepriseEntry(eKey);
+            const baseEntObj = Number(archEnt?.monthlyObjective || eObj.total?.objectif || 0);
+            if (eObj.total) eObj.total.objectif = Math.round(baseEntObj * eFactor * 100) / 100;
+            Object.values(eObj.reps || {}).forEach(rpObj => {
+              if (rpObj) rpObj.objectif = Math.round(Number(rpObj.objectif || 0) * eFactor * 100) / 100;
+            });
+          }
           const sumW = Array(nw).fill(0);
           Object.values(eObj.reps).forEach(rpObj => {
             rpObj.cumul = Math.round(rpObj.weeks.reduce((a, b) => a + b, 0) * 100) / 100;
@@ -4060,6 +4803,7 @@
         };
       };
       const obj = {
+        ym: refYm,
         label,
         num_weeks: nw,
         monthLabels: [label],
@@ -4159,13 +4903,36 @@
         let sumBaseSuivi = 0;
         let sumBaseDol = 0;
 
+        // 1) Additionner les RDV journaliers exacts compris entre rangeStart et rangeEnd
+        const dailyMonthTotals = new Map();
+        Object.entries(dailyRdvLogsStore || {}).forEach(([k, dEntry]) => {
+          if (!dEntry || typeof dEntry !== 'object') return;
+          const parts = k.split('__');
+          const dStr = dEntry.date || parts[0] || '';
+          const entryRep = resolveKpiRepName(dEntry.rep || parts[1] || '');
+          if (entryRep !== rn || !dStr) return;
+          const dYm = dStr.slice(0, 7);
+          const prevM = dailyMonthTotals.get(dYm) || { booke: 0, rdv: 0 };
+          prevM.booke += Number(dEntry.booke || 0);
+          prevM.rdv += Number(dEntry.rdv || 0);
+          dailyMonthTotals.set(dYm, prevM);
+
+          if ((!rangeStart || dStr >= rangeStart) && (!rangeEnd || dStr <= rangeEnd)) {
+            sumBooke += Number(dEntry.booke || 0);
+            sumRdv += Number(dEntry.rdv || 0);
+          }
+        });
+
         bizDaysPerMonth.forEach((selBiz, ym) => {
           const totBiz = Math.max(1, countBusinessDaysInMonth(ym));
           const ratio = selBiz / totBiz;
           const mData = kpiStore[ym]?.reps?.[rn];
+          const dTot = dailyMonthTotals.get(ym) || { booke: 0, rdv: 0 };
           if (mData) {
-            sumBooke += Number(mData['Booké']?.cumul || 0) * ratio;
-            sumRdv += Number(mData['RDV Réalisé']?.cumul || 0) * ratio;
+            const nonDailyBooke = Math.max(0, Number(mData['Booké']?.cumul || 0) - dTot.booke);
+            const nonDailyRdv = Math.max(0, Number(mData['RDV Réalisé']?.cumul || 0) - dTot.rdv);
+            sumBooke += nonDailyBooke * ratio;
+            sumRdv += nonDailyRdv * ratio;
           }
           const cEntry = condensedBaselineStore?.[ym]?.[rn];
           if (cEntry) {
@@ -4468,8 +5235,19 @@
         </div>
       `;
 
-      // 2. Tableau comparatif des représentants
-      const allReps = ALL_KPI_REPS;
+      // 2. Tableau comparatif des représentants : inclure les actifs + les anciens qui ont des stats/objectifs sur la période affichée
+      const allReps = ALL_KPI_REPS.filter(rn => {
+        if (!isRepArchived(rn)) return true;
+        const r = mObj.reps?.[rn];
+        if (!r) return false;
+        const hasActivity = (r['Booké']?.cumul || 0) > 0
+          || (r['RDV Réalisé']?.cumul || 0) > 0
+          || (r['Ventes OTS']?.cumul || 0) > 0
+          || (r['Ventes SUIVI']?.cumul || 0) > 0
+          || (r['Vente $']?.cumul || 0) > 0
+          || (r['Vente $']?.objectif || 0) > 0;
+        return hasActivity;
+      });
       const compareRows = allReps.map(rn => {
         const r = mObj.reps[rn];
         if (!r) return '';
@@ -4491,7 +5269,7 @@
               <div class="flex items-center gap-3">
                 <span class="w-8 h-8 rounded-xl ${isSelected ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-700'} text-xs font-extrabold flex items-center justify-center">${esc(rn.slice(0, 2).toUpperCase())}</span>
                 <div>
-                  <div class="font-bold text-slate-900">${esc(rn)}</div>
+                  <div class="font-bold text-slate-900 flex items-center gap-1.5"><span>${esc(rn)}</span>${isRepArchived(rn) ? `<span class="px-1.5 py-0.2 text-[9px] font-bold rounded bg-slate-100 text-slate-500">Archivé</span>` : ''}</div>
                   <div class="text-[11px] text-slate-400">${isYear ? 'Voir mois par mois →' : 'Voir le détail du mois →'}</div>
                 </div>
               </div>
@@ -4561,7 +5339,7 @@
                 <div class="flex items-center gap-2.5">
                   <span class="w-8 h-8 rounded-xl ${isSelected ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-700'} text-xs font-extrabold flex items-center justify-center">${esc(rn.slice(0, 2).toUpperCase())}</span>
                   <div>
-                    <div class="font-extrabold text-sm text-slate-900">${esc(rn)}</div>
+                    <div class="font-extrabold text-sm text-slate-900 flex items-center gap-1.5"><span>${esc(rn)}</span>${isRepArchived(rn) ? `<span class="px-1.5 py-0.2 text-[9px] font-bold rounded bg-slate-100 text-slate-500">Archivé</span>` : ''}</div>
                     <div class="text-[11px] text-indigo-600 font-semibold">${isSelected ? 'Fermer le détail ↑' : 'Toucher pour le détail ↓'}</div>
                   </div>
                 </div>
@@ -4849,7 +5627,11 @@
       }
 
       const isAdminRole = currentProfile?.role === 'admin';
-      const entList = Object.keys(mObj.entreprises);
+      const entList = Object.keys(mObj.entreprises).filter(en => {
+        if (!isEntrepriseArchived(en)) return true;
+        const eObj = mObj.entreprises[en];
+        return (eObj?.total?.cumul || 0) > 0 || (eObj?.total?.objectif || 0) > 0;
+      });
       document.getElementById('kpi-entreprises-cards').innerHTML = entList.map(entName => {
         const eObj = mObj.entreprises[entName];
         const totVal = repFilter === 'ALL' ? (eObj.total?.cumul || 0) : (eObj.reps[repFilter]?.cumul || 0);
@@ -5245,7 +6027,8 @@
           });
         };
 
-        if ((ext === 'xlsx' || ext === 'xls') && window.XLSX) {
+        if (ext === 'xlsx' || ext === 'xls') {
+          await ensureXlsxLoaded();
           const buf = await file.arrayBuffer();
           const wb = XLSX.read(buf, { type: 'array' });
           wb.SheetNames.forEach(sName => {
@@ -5475,7 +6258,6 @@
       a.click();
       toast('Export CSV condensé téléchargé ✓');
     });
-
 
     // =========================================================================
     // CANAL DE CONVERSATION ÉQUIPE, MENTIONS @ & PUBLICATION AUTOMATIQUE DES VENTES
@@ -5752,18 +6534,6 @@
       renderChatMentionNotifications();
     }
 
-    window.toggleChatSalesOnlyFilter = () => {
-      chatSalesOnlyMode = !chatSalesOnlyMode;
-      const btn = document.getElementById('btn-chat-filter-sales');
-      if (btn) {
-        btn.classList.toggle('bg-emerald-500', chatSalesOnlyMode);
-        btn.classList.toggle('text-slate-950', chatSalesOnlyMode);
-        btn.classList.toggle('bg-white/10', !chatSalesOnlyMode);
-        btn.classList.toggle('text-slate-200', !chatSalesOnlyMode);
-      }
-      renderTeamChatFeed(true);
-    };
-
     function buildTeamChatMessagesFromState() {
       const itemsMap = new Map();
 
@@ -5774,7 +6544,8 @@
           .map(v => `sale_${v.id}`)
       );
 
-      // 1. Messages & annonces stockés dans kpi_hebdo (semaine_index = -12)
+      // 1. Messages & annonces stockés dans kpi_hebdo (semaine_index = -12) — fenêtre glissante des 150 plus récents par défaut
+      const rawChatRecords = [];
       (kpiHebdoRows || []).forEach(r => {
         if (Number(r.semaine_index) !== -12 || !r.representant_nom) return;
         try {
@@ -5783,9 +6554,15 @@
             if (!isAdminViewer && parsed.kind === 'sale' && unconfirmedOtherSaleIds.has(String(parsed.id))) {
               return;
             }
-            itemsMap.set(String(parsed.id), parsed);
+            rawChatRecords.push(parsed);
           }
         } catch (e) {}
+      });
+      rawChatRecords.sort((a, b) => String(a.at || '').localeCompare(String(b.at || '')));
+      const chatLimit = window._chatShowAllHistory ? rawChatRecords.length : 150;
+      window._chatHiddenOlderCount = Math.max(0, rawChatRecords.length - chatLimit);
+      rawChatRecords.slice(-chatLimit).forEach(parsed => {
+        itemsMap.set(String(parsed.id), parsed);
       });
 
       // 2. Garantir que toutes les ventes récentes apparaissent dans le canal (les ventes non confirmées des autres reps restent invisibles pour un représentant)
@@ -5895,23 +6672,37 @@
     let chatVoiceCancelled = false;
     const chatMediaUrlCache = new Map();
 
-    // Stockage universel et garanti sans limite de taille des médias du chat (vocaux & photos) :
-    // 1) Tente `korpo_store` (`store = 'chat_media'`)
-    // 2) Repli automatique par découpage en micro-blocs (< 1 800 octets) dans `kpi_hebdo` (`semaine_index = -13`),
-    //    accessible à TOUS les utilisateurs (admin & représentants) et sous la limite B-tree PostgreSQL (2 704 octets).
+    // Médias du chat (vocaux & photos) : stockés dans Supabase Storage (bucket privé « preuves-ventes »,
+    // dossier <id utilisateur>/chat/). Le message ne contient que le chemin du fichier.
+    // Repli (rare) : une seule ligne `korpo_store` si Storage est indisponible.
+    // Les anciens médias (refs `media:` et `chunk:`) restent lisibles.
+    const chatMediaFailAt = new Map(); // ref -> timestamp du dernier échec de résolution
+
     async function uploadChatMediaBlob(blob, ext, mimeType) {
       const mediaId = `cm_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
-      const dataUrl = await new Promise((resolve) => {
-        const reader = new FileReader();
-        reader.onloadend = () => resolve(String(reader.result || ''));
-        reader.readAsDataURL(blob);
-      });
-      if (!dataUrl) return '';
+      window._lastChatMediaError = '';
 
-      chatMediaUrlCache.set(`media:${mediaId}`, { url: dataUrl, exp: Date.now() + 24 * 3600 * 1000 });
-
-      // Tentative 1 : table `korpo_store`
+      // Tentative 1 : Supabase Storage
       try {
+        const path = `${currentUser?.id || 'anon'}/chat/${mediaId}.${ext}`;
+        const { error } = await sb.storage.from(PROOF_BUCKET).upload(path, blob, { contentType: mimeType, upsert: false });
+        if (error) throw error;
+        chatMediaUrlCache.set(path, { url: URL.createObjectURL(blob), exp: Date.now() + 2 * 60 * 1000 });
+        return path;
+      } catch (e) {
+        window._lastChatMediaError = 'Storage : ' + String((e && (e.message || e.error)) || e);
+        console.warn('Échec Storage média chat :', e);
+      }
+
+      // Tentative 2 : une seule ligne korpo_store (petits fichiers seulement)
+      try {
+        if (blob.size > 1500000) throw new Error('fichier trop volumineux pour le repli');
+        const dataUrl = await new Promise((resolve) => {
+          const reader = new FileReader();
+          reader.onloadend = () => resolve(String(reader.result || ''));
+          reader.readAsDataURL(blob);
+        });
+        if (!dataUrl) throw new Error('lecture du fichier impossible');
         const { error } = await sb.from(KV_TABLE).upsert({
           store: 'chat_media',
           item_key: mediaId,
@@ -5919,34 +6710,12 @@
           value: { dataUrl, mimeType, ext, at: new Date().toISOString() },
           updated_at: new Date().toISOString()
         }, { onConflict: 'store,item_key,owner' });
-        if (!error) return `media:${mediaId}`;
-      } catch (e) {}
-
-      // Tentative 2 (universelle pour tous les rôles) : découpage en blocs de 1 700 caractères dans `kpi_hebdo` (semaine_index = -13)
-      try {
-        const CHUNK_SIZE = 1700;
-        const totalChunks = Math.ceil(dataUrl.length / CHUNK_SIZE);
-        const nowIso = new Date().toISOString();
-        const rows = [];
-        for (let i = 0; i < totalChunks; i++) {
-          rows.push({
-            mois_commission: `${mediaId}__${i}__${totalChunks}`,
-            semaine_index: -13,
-            representant_nom: dataUrl.slice(i * CHUNK_SIZE, (i + 1) * CHUNK_SIZE),
-            booke: i,
-            rdv_realise: totalChunks,
-            updated_at: nowIso
-          });
-        }
-        for (let start = 0; start < rows.length; start += 25) {
-          const batch = rows.slice(start, start + 25);
-          const { error: insErr } = await sb.from('kpi_hebdo').insert(batch);
-          if (insErr) throw insErr;
-        }
-        chatMediaUrlCache.set(`chunk:${mediaId}:${totalChunks}`, { url: dataUrl, exp: Date.now() + 24 * 3600 * 1000 });
-        return `chunk:${mediaId}:${totalChunks}`;
+        if (error) throw error;
+        chatMediaUrlCache.set(`media:${mediaId}`, { url: dataUrl, exp: Date.now() + 2 * 60 * 1000 });
+        return `media:${mediaId}`;
       } catch (e2) {
-        console.warn('Échec stockage média chat:', e2 && e2.message);
+        window._lastChatMediaError += ' | Repli : ' + String((e2 && (e2.message || e2.error)) || e2);
+        console.warn('Échec repli média chat :', e2);
         return '';
       }
     }
@@ -5956,12 +6725,15 @@
       const mediaKeys = [];
       const chunkPrefixes = [];
       const storagePaths = [];
+      const pendingRefs = [];
 
       (teamChatMessages || []).forEach(m => {
         [m.imageRef, m.audioRef].forEach(ref => {
           if (!ref) return;
-          if (chatMediaUrlCache.get(ref)?.exp > now + 60000) return;
           const sRef = String(ref);
+          if (chatMediaUrlCache.get(sRef)?.exp > now + 60000) return;
+          if ((chatMediaFailAt.get(sRef) || 0) > now - 20000) return; // on réessaie au plus toutes les 20 s
+          pendingRefs.push(sRef);
           if (sRef.startsWith('media:')) {
             mediaKeys.push(sRef.slice(6));
           } else if (sRef.startsWith('chunk:')) {
@@ -5991,15 +6763,18 @@
         } catch (e) {}
       }
 
+      // Anciens vocaux/photos découpés en blocs (lecture seule, avec pagination)
       if (chunkPrefixes.length && sb) {
         for (const item of chunkPrefixes) {
           try {
-            const { data, error } = await sb
-              .from('kpi_hebdo')
-              .select('mois_commission,representant_nom,booke')
-              .eq('semaine_index', -13)
-              .like('mois_commission', `${item.mediaId}__%`);
-            if (!error && Array.isArray(data) && data.length > 0) {
+            const data = await fetchAllRows(() =>
+              sb.from('kpi_hebdo')
+                .select('mois_commission,representant_nom,booke')
+                .eq('semaine_index', -13)
+                .like('mois_commission', `${item.mediaId}__%`)
+                .order('booke')
+            );
+            if (Array.isArray(data) && data.length > 0 && (!item.total || data.length >= item.total)) {
               data.sort((a, b) => Number(a.booke || 0) - Number(b.booke || 0));
               const fullDataUrl = data.map(r => r.representant_nom || '').join('');
               if (fullDataUrl.startsWith('data:')) {
@@ -6014,19 +6789,46 @@
       if (uniqStoragePaths.length && sb) {
         try {
           const { data, error } = await sb.storage.from(PROOF_BUCKET).createSignedUrls(uniqStoragePaths, 3600);
-          if (!error && Array.isArray(data)) {
+          if (error) throw error;
+          if (Array.isArray(data)) {
             data.forEach(d => {
               if (d.signedUrl) chatMediaUrlCache.set(d.path, { url: d.signedUrl, exp: now + 3600 * 1000 });
             });
           }
-        } catch (e) {}
+        } catch (e) {
+          console.warn('URL signées du chat indisponibles :', e && e.message);
+        }
       }
+
+      pendingRefs.forEach(r => {
+        if (chatMediaUrlCache.get(r)?.url) chatMediaFailAt.delete(r);
+        else chatMediaFailAt.set(r, now);
+      });
     }
+
+    function chatFeedSignature() {
+      return (teamChatMessages || []).map(m => `${m.id}:${m.audioRef || ''}:${m.imageRef || ''}`).join('|')
+        + `|c${chatMediaUrlCache.size}|f${chatMediaFailAt.size}`;
+    }
+
+    function chatMediaPendingHtml(ref, label) {
+      if (!ref) return '';
+      if (chatMediaFailAt.has(String(ref))) {
+        return `<div class="py-1.5 px-2 text-xs opacity-90 flex items-center gap-2"><span>⚠️ ${label} indisponible</span><button type="button" onclick="retryChatMediaLoad()" class="underline font-extrabold cursor-pointer">Réessayer</button></div>`;
+      }
+      return `<div class="py-1.5 px-2 text-xs italic opacity-75 flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-current animate-ping"></span><span>Chargement…</span></div>`;
+    }
+
+    window.retryChatMediaLoad = async () => {
+      chatMediaFailAt.clear();
+      await resolveChatMediaSignedUrls();
+      renderTeamChatFeed(false);
+    };
 
     function getChatMediaUrl(ref) {
       if (!ref) return '';
       const sRef = String(ref);
-      if (sRef.startsWith('media:') || sRef.startsWith('chunk:') || isProofPath(sRef)) {
+      if (sRef.startsWith('media:') || sRef.startsWith('chunk:') || sRef.startsWith('local_audio_') || isProofPath(sRef)) {
         return chatMediaUrlCache.get(sRef)?.url || '';
       }
       return sRef;
@@ -6109,9 +6911,9 @@
       modal.classList.remove('hidden');
     };
 
-    // Encodeur PCM -> WAV mono 11 025 Hz ultra-léger (~11 Ko/s) universel (iPhone Safari, PWA, Android, Desktop)
+    // Encodeur PCM -> WAV mono 8 000 Hz ultra-léger (~8 Ko/s) + enveloppe visuelle 24 barres façon WhatsApp
     function encodeFloat32SamplesToWavBlob(floatChunks, inputSampleRate) {
-      const targetRate = 11025;
+      const targetRate = 8000;
       let totalLen = 0;
       for (const c of floatChunks) totalLen += c.length;
       const merged = new Float32Array(totalLen);
@@ -6119,6 +6921,29 @@
       for (const c of floatChunks) {
         merged.set(c, pos);
         pos += c.length;
+      }
+
+      const barCount = 24;
+      const wavePeaks = [];
+      const step = Math.max(1, Math.floor(merged.length / barCount));
+      let maxPeak = 0.015;
+      const rawRms = [];
+      for (let b = 0; b < barCount; b++) {
+        let sumSq = 0;
+        const start = b * step;
+        const end = Math.min(merged.length, start + step);
+        const count = Math.max(1, end - start);
+        for (let j = start; j < end; j += 4) {
+          const v = merged[j];
+          sumSq += v * v;
+        }
+        const rms = Math.sqrt(sumSq / Math.max(1, Math.ceil(count / 4)));
+        rawRms.push(rms);
+        if (rms > maxPeak) maxPeak = rms;
+      }
+      for (let b = 0; b < barCount; b++) {
+        const norm = Math.round(18 + Math.min(1, rawRms[b] / maxPeak) * 82);
+        wavePeaks.push(norm);
       }
 
       const ratio = Math.max(1, inputSampleRate / targetRate);
@@ -6147,21 +6972,45 @@
         const s = Math.max(-1, Math.min(1, merged[srcIdx]));
         view.setInt16(offset, s < 0 ? s * 0x8000 : s * 0x7FFF, true);
       }
-      return new Blob([buffer], { type: 'audio/wav' });
+      return { blob: new Blob([buffer], { type: 'audio/wav' }), wavePeaks };
     }
 
     let chatVoiceStream = null;
     let chatVoiceAudioCtx = null;
+    let chatVoiceSource = null;
     let chatVoiceProcessor = null;
+    let chatVoiceSilentGain = null;
+    const _pendingVoiceUploads = new Map();
     let chatVoicePcmChunks = [];
     let chatVoiceInputRate = 44100;
+    let chatVoiceLiveLevels = new Array(22).fill(18);
+
+    function renderLiveVoiceWaveBars(levelPct = null) {
+      const box = document.getElementById('chat-voice-live-wave');
+      if (!box) return;
+      if (levelPct !== null) {
+        chatVoiceLiveLevels.push(levelPct);
+        if (chatVoiceLiveLevels.length > 22) chatVoiceLiveLevels.shift();
+      }
+      box.innerHTML = chatVoiceLiveLevels.map(h =>
+        `<span class="wa-live-bar" style="height:${Math.max(16, Math.min(100, h))}%"></span>`
+      ).join('');
+    }
 
     function cleanupChatVoiceHardware() {
       clearInterval(chatVoiceTimerInterval);
+      if (chatVoiceSource) {
+        try { chatVoiceSource.disconnect(); } catch (e) {}
+        chatVoiceSource = null;
+      }
       if (chatVoiceProcessor) {
         try { chatVoiceProcessor.disconnect(); } catch (e) {}
         chatVoiceProcessor.onaudioprocess = null;
         chatVoiceProcessor = null;
+      }
+      if (chatVoiceSilentGain) {
+        try { chatVoiceSilentGain.disconnect(); } catch (e) {}
+        chatVoiceSilentGain = null;
       }
       if (chatVoiceAudioCtx) {
         try { chatVoiceAudioCtx.close(); } catch (e) {}
@@ -6186,10 +7035,13 @@
 
       try {
         cleanupChatVoiceHardware();
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        const stream = await navigator.mediaDevices.getUserMedia({
+          audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true }
+        });
         chatVoiceStream = stream;
         chatVoicePcmChunks = [];
         chatVoiceCancelled = false;
+        chatVoiceLiveLevels = new Array(22).fill(18);
 
         const ctx = new AudioCtx();
         if (ctx.state === 'suspended') {
@@ -6200,20 +7052,32 @@
 
         const source = ctx.createMediaStreamSource(stream);
         const processor = ctx.createScriptProcessor(4096, 1, 1);
+        const silentGain = ctx.createGain();
+        silentGain.gain.value = 0; // Empêche tout écho / larsen dans le haut-parleur pendant l'enregistrement
+        chatVoiceSource = source;
         chatVoiceProcessor = processor;
+        chatVoiceSilentGain = silentGain;
 
         processor.onaudioprocess = (e) => {
           if (chatVoiceCancelled) return;
           const input = e.inputBuffer.getChannelData(0);
           chatVoicePcmChunks.push(new Float32Array(input));
+          let peak = 0;
+          for (let i = 0; i < input.length; i += 16) {
+            const a = Math.abs(input[i]);
+            if (a > peak) peak = a;
+          }
+          renderLiveVoiceWaveBars(Math.round(18 + Math.min(1, peak * 3.8) * 82));
         };
 
         source.connect(processor);
-        processor.connect(ctx.destination);
+        processor.connect(silentGain);
+        silentGain.connect(ctx.destination);
 
         chatVoiceStartTs = Date.now();
         const timerEl = document.getElementById('chat-voice-timer');
         if (timerEl) timerEl.textContent = '0:00';
+        renderLiveVoiceWaveBars();
         document.getElementById('form-team-chat')?.classList.add('hidden');
         document.getElementById('chat-voice-recording-bar')?.classList.remove('hidden');
 
@@ -6221,7 +7085,7 @@
           const sec = Math.floor((Date.now() - chatVoiceStartTs) / 1000);
           if (timerEl) timerEl.textContent = `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, '0')}`;
           if (sec >= 60) stopAndSendChatVoiceRecording();
-        }, 400);
+        }, 350);
       } catch (err) {
         cleanupChatVoiceHardware();
         const msg = String(err?.name || err?.message || '');
@@ -6248,22 +7112,213 @@
       cleanupChatVoiceHardware();
 
       if (!chunksCopy.length) {
-        return toast('Aucun son capté. Maintenez l’enregistrement au moins 1 seconde.', 'error');
+        return toast('Aucun son capté. Parlez au moins 1 seconde.', 'error');
       }
 
       const mins = Math.floor(elapsedSec / 60);
       const secs = String(elapsedSec % 60).padStart(2, '0');
       const durationLabel = `${mins}:${secs}`;
 
-      toast('Envoi du message vocal...');
-      const wavBlob = encodeFloat32SamplesToWavBlob(chunksCopy, sampleRate);
-      const audioRef = await uploadChatMediaBlob(wavBlob, 'wav', 'audio/wav');
-      if (!audioRef) {
-        return toast('Échec de l’envoi du vocal (vérifiez la connexion réseau).', 'error');
+      const { blob: wavBlob, wavePeaks } = encodeFloat32SamplesToWavBlob(chunksCopy, sampleRate);
+      const instantLocalUrl = URL.createObjectURL(wavBlob);
+      const tempRef = `local_audio_${Date.now()}`;
+      chatMediaUrlCache.set(tempRef, { url: instantLocalUrl, exp: Date.now() + 24 * 3600 * 1000 });
+
+      // 1) Affichage immédiat (0 ms) dans la conversation avec lecture instantanée
+      const msgId = `msg_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+      const nowIso = new Date().toISOString();
+      const replyPayload = chatReplyTarget ? { ...chatReplyTarget } : null;
+      clearChatReplyTarget();
+
+      const optimisticObj = {
+        id: msgId,
+        kind: 'msg',
+        at: nowIso,
+        authorId: String(currentProfile.id),
+        authorName: currentProfile.nom,
+        authorRole: currentProfile.role || 'representant',
+        text: '',
+        mentions: [],
+        ...(replyPayload ? { replyTo: replyPayload } : {}),
+        audioRef: tempRef,
+        audioDuration: durationLabel,
+        wavePeaks
+      };
+
+      const optimisticRow = {
+        mois_commission: msgId,
+        semaine_index: -12,
+        representant_nom: JSON.stringify(optimisticObj),
+        booke: 0,
+        rdv_realise: 0,
+        updated_at: nowIso
+      };
+      _pendingVoiceUploads.set(msgId, optimisticRow);
+      kpiHebdoRows.push(optimisticRow);
+      buildTeamChatMessagesFromState();
+      renderTeamChatFeed(true);
+
+      // 2) Envoi cloud en arrière-plan sans jamais interrompre la lecture locale
+      try {
+        const uploadedRef = await uploadChatMediaBlob(wavBlob, 'wav', 'audio/wav');
+        if (!uploadedRef) {
+          kpiHebdoRows = kpiHebdoRows.filter(r => !(Number(r.semaine_index) === -12 && String(r.mois_commission) === msgId));
+          buildTeamChatMessagesFromState();
+          renderTeamChatFeed(false);
+          return toast('Vocal non envoyé : ' + (window._lastChatMediaError || 'réseau indisponible'), 'error');
+        }
+        chatMediaUrlCache.set(uploadedRef, { url: instantLocalUrl, exp: Date.now() + 24 * 3600 * 1000 });
+        optimisticObj.audioRef = uploadedRef;
+        optimisticRow.representant_nom = JSON.stringify(optimisticObj);
+        const rowIdx = kpiHebdoRows.findIndex(r => Number(r.semaine_index) === -12 && String(r.mois_commission) === msgId);
+        if (rowIdx >= 0) kpiHebdoRows[rowIdx].representant_nom = JSON.stringify(optimisticObj);
+
+        const voiceRes = await safeUpsertKpiHebdoRow({
+          mois_commission: msgId,
+          semaine_index: -12,
+          representant_nom: JSON.stringify(optimisticObj),
+          booke: 0,
+          rdv_realise: 0,
+          updated_at: nowIso
+        });
+        if (voiceRes && voiceRes.error) {
+          toast('Vocal non enregistré : ' + (voiceRes.error.message || 'erreur'), 'error');
+        }
+      } finally {
+        _pendingVoiceUploads.delete(msgId);
       }
-      await postMessageToTeamChat('', { audioRef, audioDuration: durationLabel });
-      toast('Message vocal envoyé ✓');
     };
+
+    // Contrôleur du lecteur vocal WhatsApp (1 seule lecture active à la fois + vitesse 1x / 1.5x / 2x + barre interactive)
+    let _activeWaAudioEl = null;
+    let _activeWaMsgId = null;
+    const _waPlaybackRates = [1, 1.5, 2];
+
+    function fmtAudioSec(sec) {
+      if (!isFinite(sec) || sec < 0) return '0:00';
+      const s = Math.floor(sec);
+      return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+    }
+
+    function syncWaPlayerVisuals(msgId, isPlaying) {
+      const playIcon = document.getElementById(`wa-play-icon-${msgId}`);
+      const pauseIcon = document.getElementById(`wa-pause-icon-${msgId}`);
+      if (playIcon) playIcon.classList.toggle('hidden', isPlaying);
+      if (pauseIcon) pauseIcon.classList.toggle('hidden', !isPlaying);
+    }
+
+    window.toggleWaVoicePlay = (msgId) => {
+      const audio = document.getElementById(`wa-audio-el-${msgId}`);
+      if (!audio) return;
+      if (_activeWaAudioEl && _activeWaAudioEl !== audio) {
+        _activeWaAudioEl.pause();
+        if (_activeWaMsgId) syncWaPlayerVisuals(_activeWaMsgId, false);
+      }
+      if (audio.paused) {
+        _activeWaAudioEl = audio;
+        _activeWaMsgId = msgId;
+        audio.play().then(() => syncWaPlayerVisuals(msgId, true)).catch(() => {
+          toast('Impossible de lire ce message vocal.', 'error');
+        });
+      } else {
+        audio.pause();
+        syncWaPlayerVisuals(msgId, false);
+      }
+    };
+
+    window.cycleWaVoiceSpeed = (msgId, btnEl) => {
+      const audio = document.getElementById(`wa-audio-el-${msgId}`);
+      if (!audio) return;
+      const cur = audio.playbackRate || 1;
+      const idx = _waPlaybackRates.findIndex(r => Math.abs(r - cur) < 0.05);
+      const next = _waPlaybackRates[(idx + 1) % _waPlaybackRates.length];
+      audio.playbackRate = next;
+      if (btnEl) btnEl.textContent = `${next}x`;
+    };
+
+    window.seekWaVoiceWave = (event, msgId) => {
+      const audio = document.getElementById(`wa-audio-el-${msgId}`);
+      const container = event.currentTarget;
+      if (!audio || !container || !isFinite(audio.duration) || audio.duration <= 0) return;
+      const rect = container.getBoundingClientRect();
+      const ratio = Math.max(0, Math.min(1, (event.clientX - rect.left) / Math.max(1, rect.width)));
+      audio.currentTime = ratio * audio.duration;
+      updateWaVoiceProgress(msgId);
+    };
+
+    window.updateWaVoiceProgress = (msgId) => {
+      const audio = document.getElementById(`wa-audio-el-${msgId}`);
+      const barsWrap = document.getElementById(`wa-wave-${msgId}`);
+      const timeEl = document.getElementById(`wa-time-${msgId}`);
+      if (!audio || !barsWrap) return;
+      const dur = isFinite(audio.duration) && audio.duration > 0 ? audio.duration : 0;
+      const cur = audio.currentTime || 0;
+      const pct = dur > 0 ? (cur / dur) : 0;
+      const isMe = barsWrap.dataset.isme === '1';
+      const bars = barsWrap.querySelectorAll('.wa-wave-bar');
+      const activeCount = Math.round(pct * bars.length);
+      bars.forEach((b, i) => {
+        if (i < activeCount) {
+          b.style.backgroundColor = isMe ? '#ffffff' : '#4f46e5';
+        } else {
+          b.style.backgroundColor = isMe ? 'rgba(255,255,255,0.38)' : 'rgba(100,116,139,0.38)';
+        }
+      });
+      if (timeEl) {
+        timeEl.textContent = cur > 0.05 ? fmtAudioSec(cur) : (timeEl.dataset.defaultDur || fmtAudioSec(dur));
+      }
+    };
+
+    window.onWaVoiceEnded = (msgId) => {
+      syncWaPlayerVisuals(msgId, false);
+      const audio = document.getElementById(`wa-audio-el-${msgId}`);
+      if (audio) audio.currentTime = 0;
+      updateWaVoiceProgress(msgId);
+    };
+
+    function renderWhatsAppVoicePlayerHtml(msg, audioUrl, isMe) {
+      const mid = esc(msg.id);
+      const defaultPeaks = [28, 52, 74, 42, 86, 96, 62, 38, 70, 92, 50, 34, 78, 98, 66, 46, 84, 58, 40, 76, 52, 36, 60, 30];
+      const peaks = Array.isArray(msg.wavePeaks) && msg.wavePeaks.length === 24 ? msg.wavePeaks : defaultPeaks;
+      const durLabel = esc(msg.audioDuration || '0:05');
+      const timeLabel = esc(formatChatHourOnly(msg.at));
+      const playBtnCls = isMe
+        ? 'bg-white text-indigo-700 hover:bg-indigo-50 shadow-sm'
+        : 'bg-indigo-600 text-white hover:bg-indigo-700 shadow-sm';
+      const speedPillCls = isMe
+        ? 'bg-white/20 hover:bg-white/30 text-white'
+        : 'bg-slate-100 hover:bg-slate-200 text-slate-700 dark:bg-slate-700/90 dark:text-slate-200 border border-slate-200/80 dark:border-slate-600';
+      const barIdleColor = isMe ? 'rgba(255,255,255,0.40)' : 'rgba(100,116,139,0.38)';
+
+      const barsHtml = peaks.map(h =>
+        `<span class="wa-wave-bar" style="height:${Math.max(20, Math.min(100, Number(h || 40)))}%;background-color:${barIdleColor};"></span>`
+      ).join('');
+
+      return `
+        <div class="wa-player-wrap">
+          <audio id="wa-audio-el-${mid}" preload="metadata" src="${esc(audioUrl)}"
+            ontimeupdate="updateWaVoiceProgress('${mid}')"
+            onloadedmetadata="updateWaVoiceProgress('${mid}')"
+            onended="onWaVoiceEnded('${mid}')"></audio>
+          <button type="button" onclick="toggleWaVoicePlay('${mid}')" aria-label="Lire ou mettre en pause" class="wa-play-btn ${playBtnCls}">
+            <svg id="wa-play-icon-${mid}" class="w-4 h-4 translate-x-0.5" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+            <svg id="wa-pause-icon-${mid}" class="hidden w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
+          </button>
+          <div class="flex-1 min-w-0 flex flex-col gap-1.5">
+            <div id="wa-wave-${mid}" data-isme="${isMe ? '1' : '0'}" onclick="seekWaVoiceWave(event, '${mid}')" class="wa-wave-bars">
+              ${barsHtml}
+            </div>
+            <div class="flex items-center justify-between gap-2 text-[10px] font-bold tabular-nums leading-none">
+              <div class="flex items-center gap-1.5">
+                <span id="wa-time-${mid}" data-default-dur="${durLabel}" class="opacity-90">${durLabel}</span>
+                <button type="button" onclick="cycleWaVoiceSpeed('${mid}', this)" title="Changer la vitesse de lecture" class="wa-speed-pill ${speedPillCls}">1x</button>
+              </div>
+              <span class="opacity-70 font-semibold">${timeLabel}${isMe ? ' ✓✓' : ''}</span>
+            </div>
+          </div>
+        </div>
+      `;
+    }
 
     async function postMessageToTeamChat(text, extraMedia = {}) {
       const cleanText = String(text || '').trim();
@@ -6280,12 +7335,21 @@
       let imageRef = '';
       if (hasPhoto) {
         const photoData = pendingChatPhotoDataUrl;
-        clearPendingChatPhoto();
-        imageRef = await uploadChatMediaBlob(dataUrlToBlob(photoData), 'jpg', 'image/jpeg');
-        if (!imageRef) {
-          toast('Impossible d’envoyer la photo.', 'error');
-          return;
+        const sendBtn = document.getElementById('btn-send-chat');
+        if (sendBtn) sendBtn.disabled = true;
+        toast('📷 Envoi de la photo…');
+        try {
+          imageRef = await uploadChatMediaBlob(dataUrlToBlob(photoData), 'jpg', 'image/jpeg');
+        } finally {
+          if (sendBtn) sendBtn.disabled = false;
         }
+        if (!imageRef) {
+          toast('Photo non envoyée : ' + (window._lastChatMediaError || 'réseau indisponible'), 'error');
+          const inp = document.getElementById('chat-message-input');
+          if (inp && cleanText && !inp.value) { inp.value = cleanText; autoResizeChatTextarea(); }
+          return; // la photo reste en aperçu pour réessayer
+        }
+        clearPendingChatPhoto();
       }
       clearChatReplyTarget();
 
@@ -6300,7 +7364,7 @@
         mentions: mentionedNames,
         ...(replyPayload ? { replyTo: replyPayload } : {}),
         ...(imageRef ? { imageRef } : {}),
-        ...(hasAudio ? { audioRef: extraMedia.audioRef, audioDuration: extraMedia.audioDuration || '' } : {})
+        ...(hasAudio ? { audioRef: extraMedia.audioRef, audioDuration: extraMedia.audioDuration || '', ...(Array.isArray(extraMedia.wavePeaks) ? { wavePeaks: extraMedia.wavePeaks } : {}) } : {})
       };
 
       kpiHebdoRows.push({
@@ -6340,6 +7404,13 @@
       kpiHebdoRows = kpiHebdoRows.filter(r => !(Number(r.semaine_index) === -12 && String(r.mois_commission) === String(msgId)));
       buildTeamChatMessagesFromState();
       renderTeamChatFeed(false);
+
+      try {
+        const filesToRemove = [target.imageRef, target.audioRef]
+          .map(r => String(r || ''))
+          .filter(r => r.includes('/chat/') && isProofPath(r));
+        if (filesToRemove.length) await sb.storage.from(PROOF_BUCKET).remove(filesToRemove);
+      } catch (e) {}
 
       try {
         await sb.from('kpi_hebdo').delete().eq('mois_commission', String(msgId)).eq('semaine_index', -12);
@@ -6484,7 +7555,11 @@
       let insertedUnreadDivider = false;
       let lastDayKey = '';
 
-      feed.innerHTML = list.map((m, idx) => {
+      const olderBannerHtml = (!window._chatShowAllHistory && Number(window._chatHiddenOlderCount || 0) > 0)
+        ? `<div class="text-center py-2"><button type="button" onclick="window._chatShowAllHistory = true; buildTeamChatMessagesFromState(); renderTeamChatFeed(false);" class="px-3.5 py-1.5 text-[11px] font-bold rounded-full bg-white dark:bg-slate-800 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-slate-700 shadow-2xs hover:bg-indigo-50 transition cursor-pointer">⬆️ Charger les ${window._chatHiddenOlderCount} message(s) plus ancien(s)</button></div>`
+        : '';
+
+      feed.innerHTML = olderBannerHtml + list.map((m, idx) => {
         const isMe = String(m.authorId) === String(currentProfile?.id);
         const canDel = isAdminUser || (m.kind === 'msg' && isMe);
         const isMentionedMe = isCurrentUserMentionedInMsg(m);
@@ -6563,12 +7638,9 @@
           </div>
         ` : '';
 
-        const audioHtml = audioUrl ? `
-          <div class="py-1 flex items-center gap-2 min-w-[210px] sm:min-w-[240px]">
-            <span class="text-sm shrink-0">🎤</span>
-            <audio controls preload="metadata" src="${esc(audioUrl)}" class="h-8 w-full max-w-[220px]"></audio>
-          </div>
-        ` : (m.audioRef ? `<div class="py-1 text-xs italic opacity-75">🎤 Chargement du vocal...</div>` : '');
+        const audioHtml = audioUrl
+          ? renderWhatsAppVoicePlayerHtml(m, audioUrl, isMe)
+          : chatMediaPendingHtml(m.audioRef, 'Vocal');
 
         const bubbleClass = isMe
           ? 'chat-bubble-out'
@@ -6576,24 +7648,26 @@
 
         return dayDividerHtml + unreadDividerHtml + `
           <div id="chat-item-${esc(m.id)}" ondblclick="setChatReplyTarget('${esc(m.id)}')" ontouchstart="handleChatTouchStart(event, this)" ontouchmove="handleChatTouchMove(event)" ontouchend="handleChatTouchEnd(event, '${esc(m.id)}')" class="group flex flex-col ${isMe ? 'items-end' : 'items-start'} ${isGroupedWithPrev ? 'mt-0.5' : 'mt-2'}">
-            <div class="max-w-[86%] sm:max-w-[76%] px-3 py-2 text-[13.5px] leading-snug break-words ${bubbleClass}">
+            <div class="max-w-[86%] sm:max-w-[76%] px-3.5 py-2.5 text-[13.5px] leading-snug break-words text-center flex flex-col items-center ${bubbleClass}">
               ${!isMe && !isGroupedWithPrev ? `
-                <div class="flex items-center gap-1.5 mb-0.5">
+                <div class="flex items-center justify-center gap-1.5 mb-1 w-full">
                   <span class="text-[11px] font-extrabold ${senderColor}">${esc(m.authorName)}</span>
                   ${isAuthorAdmin ? '<span class="text-[9.5px] font-bold text-slate-400">Admin</span>' : ''}
                   ${isMentionedMe ? '<span class="px-1.5 py-0.2 text-[9px] font-extrabold rounded bg-amber-200 text-amber-950">@Vous</span>' : ''}
                 </div>
               ` : ''}
               ${quotedHtml}
-              ${photoHtml}
+              ${photoHtml || chatMediaPendingHtml(m.imageRef, 'Photo')}
               ${audioHtml}
-              ${formattedBody ? `<div class="whitespace-pre-wrap">${formattedBody}</div>` : ''}
-              <div class="flex items-center justify-end gap-1 mt-0.5 text-[9.5px] opacity-70 tabular-nums select-none">
-                <span>${esc(formatChatHourOnly(m.at))}</span>
-                ${isMe ? '<span>✓✓</span>' : ''}
-              </div>
+              ${formattedBody ? `<div class="whitespace-pre-wrap text-center w-full">${formattedBody}</div>` : ''}
+              ${!(audioUrl && !formattedBody && !imgUrl) ? `
+                <div class="flex items-center justify-center gap-1 mt-1 text-[9.5px] opacity-70 tabular-nums select-none w-full">
+                  <span>${esc(formatChatHourOnly(m.at))}</span>
+                  ${isMe ? '<span>✓✓</span>' : ''}
+                </div>
+              ` : ''}
             </div>
-            <div class="flex items-center gap-2.5 mt-0.5 px-1.5 text-[10.5px] text-slate-400">
+            <div class="flex items-center justify-center gap-2.5 mt-0.5 px-1.5 text-[10.5px] text-slate-400">
               <button type="button" onclick="setChatReplyTarget('${esc(m.id)}')" class="hover:text-indigo-600 dark:hover:text-indigo-300 font-semibold transition cursor-pointer">Répondre</button>
               ${canDel ? `<button type="button" onclick="deleteTeamChatMessage('${esc(m.id)}')" class="hover:text-rose-600 transition cursor-pointer">Supprimer</button>` : ''}
             </div>
@@ -6739,18 +7813,56 @@
     let refreshingChatNow = false;
     window.refreshTeamChatMessages = async (forceScroll = false) => {
       if (!sb || !currentProfile || refreshingChatNow) return;
+      // Ne jamais reconstruire le DOM pendant qu'un message vocal est en cours d'écoute
+      if (_activeWaAudioEl && !_activeWaAudioEl.paused) return;
       refreshingChatNow = true;
       try {
+        const prevSig = chatFeedSignature();
         const rows = await fetchAllRows(() =>
-          sb.from('kpi_hebdo').select('*').eq('semaine_index', -12).order('id')
+          sb.from('kpi_hebdo').select('*').in('semaine_index', [-12, -14, -15, -16]).order('id')
         );
+        const chatRowsOnly = rows.filter(r => Number(r.semaine_index) === -12);
+        const fetchedIds = new Set(chatRowsOnly.map(r => String(r.mois_commission)));
+        const pendingRows = Array.from(_pendingVoiceUploads.values()).filter(r => !fetchedIds.has(String(r.mois_commission)));
         kpiHebdoRows = [
-          ...(kpiHebdoRows || []).filter(r => Number(r.semaine_index) !== -12),
-          ...rows
+          ...(kpiHebdoRows || []).filter(r => ![-12, -14, -15, -16].includes(Number(r.semaine_index))),
+          ...rows,
+          ...pendingRows
         ];
+        rows.forEach(r => {
+          if (Number(r.semaine_index) === -16 && r.mois_commission && r.representant_nom) {
+            try {
+              const parsedDaily = JSON.parse(r.representant_nom);
+              const dKey = String(r.mois_commission);
+              if (parsedDaily && typeof parsedDaily === 'object') {
+                const locD = dailyRdvLogsStore[dKey];
+                if (!locD || !locD.updatedAt || (parsedDaily.updatedAt && parsedDaily.updatedAt >= locD.updatedAt)) {
+                  dailyRdvLogsStore[dKey] = parsedDaily;
+                  saveDailyRdvLogsStore();
+                  renderDailyRdvTrackerCard();
+                }
+              }
+            } catch (e) {}
+          }
+          if (Number(r.semaine_index) === -14 && r.mois_commission === 'red_phone_cfg' && r.representant_nom) {
+            try {
+              const parsedRp = JSON.parse(r.representant_nom);
+              if (parsedRp && typeof parsedRp === 'object') {
+                redPhoneConfig = { ...redPhoneConfig, ...parsedRp };
+                lsSet('korpo_red_phone_cfg_v1', JSON.stringify(redPhoneConfig));
+                syncRedPhoneUI();
+              }
+            } catch (e) {}
+          }
+        });
+        checkIncomingRedPhoneAlerts();
         buildTeamChatMessagesFromState();
         await resolveChatMediaSignedUrls();
-        renderTeamChatFeed(forceScroll);
+        const nextSig = chatFeedSignature();
+        // Ne redessiner le fil que si de nouveaux messages/médias sont arrivés (et qu'aucun audio ne joue)
+        if (nextSig !== prevSig && !(_activeWaAudioEl && !_activeWaAudioEl.paused)) {
+          renderTeamChatFeed(forceScroll);
+        }
       } catch (e) {
         console.warn('Actualisation canal:', e.message);
       } finally {
@@ -6768,7 +7880,7 @@
           .channel('korpo-team-chat-' + Date.now())
           .on('postgres_changes', { event: '*', schema: 'public', table: 'kpi_hebdo' }, async (payload) => {
             const sIdx = Number(payload?.new?.semaine_index ?? payload?.old?.semaine_index);
-            if (sIdx === -12) {
+            if (sIdx === -12 || sIdx === -14 || sIdx === -15 || sIdx === -16) {
               await refreshTeamChatMessages(activeChatTabOpen);
             }
           })
@@ -6875,6 +7987,7 @@
         fetchAllRows(() => {
           let q = sb.from('kpi_hebdo').select('*').order('id');
           if (!isAdmin) q = q.neq('semaine_index', -3);
+          q = q.neq('semaine_index', -13); // anciens blocs média du chat : lus à la demande
           return q;
         })
       ]);
@@ -6895,13 +8008,7 @@
         state.taux = tauxRows;
         state.ventes = venteRows;
 
-        state.mesVentes = state.ventes.map(v => ({
-          ...v,
-          client_nom: state.clients.find(c => c.id === v.client_id)?.nom || '—',
-          entreprise_nom: state.entreprises.find(e => e.id === v.entreprise_id)?.nom || '—',
-          rep_nom: state.representants.find(r => r.id === v.representant_id)?.nom || '—',
-          commission_rep: Number(v.commission_olivier || 0)
-        }));
+        state.mesVentes = state.ventes.map(mapAdminPersonalSaleRow);
 
         document.getElementById('filter-admin-scope').classList.remove('hidden');
         document.getElementById('th-rep-col').classList.remove('hidden');
@@ -6945,7 +8052,7 @@
         document.getElementById('th-rep-col')?.classList.add('hidden');
         state.representants = (allRepsPublicRows && allRepsPublicRows.length) ? allRepsPublicRows : [currentProfile];
         syncAllKpiRepsFromState();
-        state.mesVentes = mesVentesRows;
+        state.mesVentes = (mesVentesRows || []).map(normalizeRepPersonalSaleRow);
 
         const ownSalesNormalized = state.mesVentes.map(v => ({
           ...v,
@@ -7066,6 +8173,12 @@
     }
 
     function getSalesTargetForRep(repName, ym) {
+      if (isRepArchived(repName)) {
+        const factor = getRepArchiveMonthFactor(repName, ym || currentMonthStr);
+        if (factor <= 0) return 0;
+        const baseD = Number(findArchivedRepEntry(repName)?.targets?.dollars || 0);
+        return Math.round(baseD * factor * 100) / 100;
+      }
       const cloudRow = getCloudRepTargetRow(repName, ym);
       if (cloudRow && Number(cloudRow.booke) > 0) return Number(cloudRow.booke);
       if (personalMonthlyTargets[`${repName}_${ym}`] > 0) return Number(personalMonthlyTargets[`${repName}_${ym}`]);
@@ -7077,7 +8190,74 @@
       return 150000;
     }
 
+    // Vente « sans dépôt requis » : stockée comme dépôt confirmé (aucun report ni relance), repérée par la balise [SANSDEPOT] dans la note.
+    function isNoDepositSale(v) {
+      return /\[SANSDEPOT\]/i.test(String(v?.note || ''));
+    }
+
+    function getSelectedEntreprise() {
+      const id = document.getElementById('vente-entreprise')?.value;
+      return (state.entreprises || []).find(e => String(e.id) === String(id));
+    }
+    function companyNoDeposit(ent) {
+      const e = ent || getSelectedEntreprise();
+      return !!e && e.depot_requis === false;
+    }
+    // La règle de dépôt vient de la fiche de l'entreprise partenaire.
+    function applyCompanyDepositRule() {
+      const sel = document.getElementById('vente-statut-depot');
+      if (!sel) return;
+      const noDep = companyNoDeposit();
+      const opt = sel.querySelector('option[value="sans_depot"]');
+      if (opt) { opt.disabled = !noDep; opt.hidden = !noDep; }
+      if (noDep) {
+        sel.value = 'sans_depot';
+        sel.disabled = true;
+      } else {
+        sel.disabled = false;
+        if (sel.value === 'sans_depot') sel.value = 'a_confirmer';
+      }
+      document.getElementById('drawer-depot-company-note')?.classList.toggle('hidden', !noDep);
+      syncDepositFormUi();
+    }
+    document.getElementById('vente-entreprise')?.addEventListener('change', applyCompanyDepositRule);
+
+    function syncDepositFormUi() {
+      const isNoDep = document.getElementById('vente-statut-depot')?.value === 'sans_depot';
+      document.getElementById('drawer-proof-block')?.classList.toggle('hidden', isNoDep);
+      if (isNoDep) {
+        pendingProofDataUrl = '';
+        const pf = document.getElementById('vente-proof-file'); if (pf) pf.value = '';
+        const cm = document.getElementById('vente-camera-input'); if (cm) cm.value = '';
+        document.getElementById('vente-proof-preview-box')?.classList.add('hidden');
+      }
+    }
+    document.getElementById('vente-statut-depot')?.addEventListener('change', syncDepositFormUi);
+
+    // Vrai si un objectif a réellement été fixé (cloud, local, surcharge admin) ou préréglé pour l'équipe historique.
+    function hasExplicitSalesTarget(repName, ym) {
+      const c = getCloudRepTargetRow(repName, ym);
+      if (c && Number(c.booke) > 0) return true;
+      if (personalMonthlyTargets[`${repName}_${ym}`] > 0 || personalMonthlyTargets[`${repName}_ALL`] > 0) return true;
+      if (repTargetsOverrides[`${ym}_${repName}`]?.dollars > 0 || repTargetsOverrides[`ALL_${repName}`]?.dollars > 0) return true;
+      return DEFAULT_KPI_REPS.includes(repName) && Number(kpiStore[ym]?.reps?.[repName]?.['Vente $']?.objectif) > 0;
+    }
+
+    function hasExplicitCommTarget(repName, ym) {
+      const c = getCloudRepTargetRow(repName, ym);
+      if (c && Number(c.rdv_realise) > 0) return true;
+      if (personalCommTargets[`${repName}_${ym}`] > 0 || personalCommTargets[`${repName}_ALL`] > 0) return true;
+      if (repTargetsOverrides[`${ym}_${repName}`]?.comm > 0 || repTargetsOverrides[`ALL_${repName}`]?.comm > 0) return true;
+      return hasExplicitSalesTarget(repName, ym); // l'estimation (~5,5 %) repose sur un objectif de ventes réel
+    }
+
     function getCommissionTargetForRep(repName, ym) {
+      if (isRepArchived(repName)) {
+        const factor = getRepArchiveMonthFactor(repName, ym || currentMonthStr);
+        if (factor <= 0) return 0;
+        const baseC = Number(findArchivedRepEntry(repName)?.targets?.comm || 0);
+        return Math.round(baseC * factor * 100) / 100;
+      }
       const cloudRow = getCloudRepTargetRow(repName, ym);
       if (cloudRow && Number(cloudRow.rdv_realise) > 0) return Number(cloudRow.rdv_realise);
       if (personalCommTargets[`${repName}_${ym}`] > 0) return Number(personalCommTargets[`${repName}_${ym}`]);
@@ -7214,6 +8394,10 @@
           : (isMultiMonth ? `Mes objectifs — ${periodTag}` : `Mes objectifs — ${periodTag}`);
       }
 
+      const salesExplicit = hasExplicitSalesTarget(inspectedRepName, activeYm);
+      const commExplicit = hasExplicitCommTarget(inspectedRepName, activeYm);
+      const undefinedGoalMsg = isAdmin ? 'À configurer dans Entreprises & Équipe' : 'Votre direction le fixera bientôt';
+
       // 1. Mise à jour de la barre TARGET COMMISSION ($)
       const commPct = commTarget > 0 ? Math.round((achievedComm / commTarget) * 100) : 0;
       const commRem = Math.max(0, commTarget - achievedComm);
@@ -7224,7 +8408,16 @@
       const cRem = document.getElementById('comm-bar-remaining');
       const cMsg = document.getElementById('comm-bar-status-msg');
 
-      if (cTitle && cFill) {
+      if (cTitle && cFill && !commExplicit) {
+        cTitle.textContent = `💵 Target Commission (${inspectedRepName})`;
+        cSub.textContent = `${fmtMoney(achievedComm)} gagnés • objectif non défini`;
+        cBadge.textContent = '—';
+        cBadge.className = 'px-2 py-0.5 text-[11px] font-extrabold rounded-full bg-slate-100 text-slate-500 tabular-nums';
+        cFill.style.width = '0%';
+        cRem.textContent = 'Aucun objectif de commission pour le moment';
+        cMsg.textContent = undefinedGoalMsg;
+        cMsg.className = 'font-semibold text-slate-500';
+      } else if (cTitle && cFill) {
         cTitle.textContent = `💵 Target Commission (${inspectedRepName})`;
         cSub.textContent = `${fmtMoney(achievedComm)} / ${fmtMoney(commTarget)}`;
         cBadge.textContent = `${commPct} %`;
@@ -7259,6 +8452,16 @@
 
       if (!titleEl || !fillEl) return;
       titleEl.textContent = `🎯 Objectif Ventes (${inspectedRepName})`;
+      if (!salesExplicit) {
+        subEl.textContent = `${fmtMoney(achievedSales)} vendus • objectif non défini`;
+        badgeEl.textContent = '—';
+        badgeEl.className = 'px-2 py-0.5 text-[11px] font-extrabold rounded-full bg-slate-100 text-slate-500 tabular-nums';
+        fillEl.style.width = '0%';
+        remEl.textContent = 'Aucun objectif de ventes pour le moment';
+        msgEl.textContent = undefinedGoalMsg;
+        msgEl.className = 'font-semibold text-slate-500';
+        return;
+      }
       subEl.textContent = `${fmtMoney(achievedSales)} / ${fmtMoney(salesTarget)}`;
       badgeEl.textContent = `${salesPct} %`;
       fillEl.style.width = `${Math.min(100, salesPct)}%`;
@@ -7293,9 +8496,9 @@
         return;
       }
       const repNames = Array.from(new Set([
-        ...ALL_KPI_REPS,
+        ...getActiveKpiReps(),
         ...state.representants.map(r => r.nom)
-      ]));
+      ])).filter(rn => !isRepArchived(rn));
 
       tbody.innerHTML = repNames.map(rn => {
         const repObj = state.representants.find(r => r.nom === rn);
@@ -7454,11 +8657,9 @@
       if (openNewSaleAfter) {
         openNewSaleDrawer();
       } else {
-        toast(`Bienvenue sur ton portail personnel, ${currentProfile?.nom || ''} ! 🚀`);
+        toast(`Bienvenue sur votre portail personnel, ${currentProfile?.nom || ''} ! 🚀`);
       }
     };
-
-    window.dismissRepOnboardingCard = () => completeRepOnboarding(false);
 
     window.nextRepOnboardingStep = () => {
       if (currentRepOnboardingStep < 3) {
@@ -7507,28 +8708,28 @@
         body.innerHTML = `
           <div class="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 border border-emerald-200 flex items-center justify-center text-2xl">💵</div>
           <div class="space-y-1.5">
-            <h4 class="text-base font-extrabold text-slate-900">1. Déclare tes ventes en 15 secondes</h4>
+            <h4 class="text-base font-extrabold text-slate-900">1. Déclarez vos ventes en quelques minutes</h4>
             <p class="text-xs text-slate-600 leading-relaxed">
-              Dès qu'un contrat est signé, appuie sur le bouton vert <strong>💵 + Vente</strong> en bas à droite de ton écran (ou sur le menu à gauche sur ordinateur).
+              Dès qu'un contrat est signé, appuyez sur le bouton vert <strong>💵 + Vente</strong> en bas à droite de votre écran (ou sur le menu à gauche sur ordinateur).
             </p>
           </div>
           <div class="bg-slate-50 rounded-2xl border border-slate-200/90 p-3.5 text-xs text-slate-700 space-y-1">
             <div class="font-extrabold text-indigo-700">🎙️ Astuce en voiture :</div>
-            <p>Utilise l'<strong>Assistant vocal mains libres</strong> dans le formulaire : il te pose chaque question à voix haute et remplit ta vente tout seul.</p>
+            <p>Utilisez l'<strong>Assistant vocal mains libres</strong> dans le formulaire : il vous pose chaque question à voix haute et remplit votre vente tout seul.</p>
           </div>
         `;
       } else if (step === 2) {
         body.innerHTML = `
           <div class="w-12 h-12 rounded-2xl bg-indigo-50 text-indigo-600 border border-indigo-200 flex items-center justify-center text-2xl">📸</div>
           <div class="space-y-1.5">
-            <h4 class="text-base font-extrabold text-slate-900">2. Joins la preuve de dépôt Interac</h4>
+            <h4 class="text-base font-extrabold text-slate-900">2. Joignez la preuve de dépôt Interac</h4>
             <p class="text-xs text-slate-600 leading-relaxed">
-              Prends une photo du chèque ou importe la capture d'écran du virement Interac directement dans ta vente pour accélérer sa validation par la direction.
+              Prenez une photo du chèque ou importez la capture d'écran du virement Interac directement dans votre vente pour accélérer sa validation par la direction. Pour les entreprises qui ne demandent aucun dépôt, le formulaire le détecte automatiquement : aucune preuve à fournir.
             </p>
           </div>
           <div class="bg-slate-50 rounded-2xl border border-slate-200/90 p-3.5 text-xs text-slate-700 space-y-1">
-            <div class="font-extrabold text-emerald-700">💰 Suivi de ta paie en direct :</div>
-            <p>Retrouve à tout moment tes gains confirmés, tes paiements reçus et tes <strong>commissions futures</strong> dans l'onglet <strong>Comm.</strong></p>
+            <div class="font-extrabold text-emerald-700">💰 Suivi de votre paie en direct :</div>
+            <p>Retrouvez à tout moment vos gains confirmés, vos paiements reçus et vos <strong>commissions futures</strong> dans l'onglet <strong>Comm.</strong></p>
           </div>
         `;
       } else {
@@ -7536,9 +8737,9 @@
         body.innerHTML = `
           <div class="w-12 h-12 rounded-2xl bg-amber-50 text-amber-600 border border-amber-200 flex items-center justify-center text-2xl">🔔</div>
           <div class="space-y-1.5">
-            <h4 class="text-base font-extrabold text-slate-900">3. Active les alertes d'équipe (@)</h4>
+            <h4 class="text-base font-extrabold text-slate-900">3. Activez les alertes d'équipe (@)</h4>
             <p class="text-xs text-slate-600 leading-relaxed">
-              Reçois une notification instantanée sur ton téléphone dès qu'un collègue ou Olivier te mentionne (<code>@</code>) dans le canal <strong>🏆 Korpo Top Earner</strong>.
+              Recevez une notification instantanée sur votre téléphone dès qu'un collègue ou Olivier vous mentionne (<code>@</code>) dans le canal <strong>🏆 Korpo Top Earner</strong>.
             </p>
           </div>
           <div class="bg-slate-50 rounded-2xl border border-slate-200/90 p-3.5 flex items-center justify-between gap-3">
@@ -7807,8 +9008,8 @@
         descEl.textContent = isPenultimate
           ? `Demain est le dernier jour de ${formatYearMonthLabelFr(currentMonthStr)} : tout dossier non confirmé sera reporté au mois prochain.`
           : (oldestDays >= 3
-            ? `Le plus ancien date d'il y a ${oldestDays} jour(s). Ajoute la capture du virement ou du chèque en 1 clic ci-dessous :`
-            : 'Ajoute la photo du virement Interac ou du chèque pour accélérer la confirmation de ta commission :');
+            ? `Le plus ancien date d'il y a ${oldestDays} jour(s). Ajoutez la capture du virement ou du chèque en 1 clic ci-dessous :`
+            : 'Ajoutez la photo du virement Interac ou du chèque pour accélérer la confirmation de votre commission :');
       }
       if (listEl) {
         listEl.innerHTML = pendingWithMissingProof.slice(0, 6).map(v => {
@@ -8052,6 +9253,8 @@
     function renderMesVentes() {
       syncCommDisplayModeButtons();
       updateRepOnboardingCardVisibility();
+      syncRedPhoneUI();
+      renderDailyRdvTrackerCard();
       const isAdmin = currentProfile.role === 'admin';
       const periodState = readPeriodFilterState('filter-rep');
       const futureQuickBtn = document.getElementById('btn-rep-future-comm');
@@ -8260,7 +9463,7 @@
               <div class="flex items-center justify-between gap-2 pt-2 border-t border-slate-100">
                 <div class="flex items-center flex-wrap gap-1.5">
                   <span class="inline-flex items-center gap-1 px-2 py-0.5 text-[11px] font-semibold rounded-full ${v.statut_depot === 'depot_recu' ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'}">
-                    ${v.statut_depot === 'depot_recu' ? '✓ Dépôt reçu' : '⏳ À confirmer'}
+                    ${v.statut_depot === 'depot_recu' ? (isNoDepositSale(v) ? '✓ Sans dépôt requis' : '✓ Dépôt reçu') : '⏳ À confirmer'}
                   </span>
                   ${agingBadgeForDeposit(v)}
                 </div>
@@ -8285,28 +9488,38 @@
         mobileCommCardsBox.innerHTML = filtered.map(v => {
           const baseR = getRateForSale(v.representant_id, v.entreprise_id, v.client_id);
           const diff = baseR ? Math.max(0, Number(v.taux_rep_applique) - Number(baseR.taux)) : 0.01;
+          const myCommVal = Number(v.commission_rep || 0);
+          const repCommVal = Number(v._repCommAmount || 0);
+          const showTeamRepSub = isAdmin && !isInspectingRep && String(v.representant_id) !== String(currentProfile.id) && repCommVal !== 0;
           return `
-            <div class="bg-white rounded-2xl border border-slate-200/80 p-4 shadow-xs space-y-2.5">
-              <div class="flex items-start justify-between gap-2">
-                <div class="space-y-1 min-w-0">
-                  <div class="flex items-center flex-wrap gap-1.5">
-                    ${entBadge(v.entreprise_nom)}
-                    ${isMonthClosed(v.mois_commission) ? `<span class="inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-extrabold rounded-md bg-slate-800 text-amber-300">🔒 Clôturée</span>` : ''}
-                    <span class="text-[11px] font-medium text-slate-400">${v.date_vente} (${v.mois_commission})</span>
-                  </div>
-                  <div class="font-extrabold text-sm text-slate-900 truncate">${esc(v.client_nom)}</div>
-                  ${isAdmin ? `<div class="text-[11px] font-semibold text-indigo-600">Rep : ${esc(v.rep_nom || '—')}</div>` : ''}
-                  <div class="text-[11px] text-slate-500 tabular-nums">Vente : <strong>${fmtMoney(v.valeur)}</strong></div>
+            <div class="bg-white rounded-2xl border border-slate-200/80 p-4 shadow-xs space-y-3">
+              <div class="space-y-1 min-w-0">
+                <div class="flex items-center flex-wrap gap-1.5">
+                  ${entBadge(v.entreprise_nom)}
+                  ${isMonthClosed(v.mois_commission) ? `<span class="inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-extrabold rounded-md bg-slate-800 text-amber-300">🔒 Clôturée</span>` : ''}
+                  <span class="text-[11px] font-medium text-slate-400">${v.date_vente} (${v.mois_commission})</span>
                 </div>
-                <div class="text-right shrink-0 tabular-nums">
-                  <div class="text-base font-extrabold ${Number(v.commission_rep) < 0 ? 'text-rose-600' : 'text-emerald-600'}">${Number(v.commission_rep) < 0 ? fmtMoney(v.commission_rep) : `+ ${fmtMoney(v.commission_rep)}`}</div>
-                  ${isHitSale(v) ? hitBadgeHtml(v) : (v._bonusApplied ? `<span class="inline-block px-1.5 py-0.5 text-[10px] font-extrabold rounded bg-emerald-100 text-emerald-800">+${formatBonusPctShort(diff || 0.01)} bonus</span>` : '<span class="text-[10px] font-semibold text-slate-400">Commission</span>')}
+                <div class="font-extrabold text-sm text-slate-900 truncate">${esc(v.client_nom)}</div>
+                ${isAdmin ? `<div class="text-[11px] font-semibold text-indigo-600">Rep : ${esc(v.rep_nom || '—')}</div>` : ''}
+              </div>
+
+              <div class="grid grid-cols-2 gap-2.5 p-2.5 rounded-xl bg-slate-50/90 border border-slate-200/70 tabular-nums">
+                <div>
+                  <div class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Montant vente</div>
+                  <div class="text-sm font-extrabold text-slate-800 mt-0.5">${fmtMoney(v.valeur)}</div>
+                </div>
+                <div class="text-right border-l border-slate-200/80 pl-2.5">
+                  <div class="text-[10px] font-bold uppercase tracking-wider text-emerald-700">Ma commission</div>
+                  <div class="text-base font-extrabold mt-0.5 ${myCommVal < 0 ? 'text-rose-600' : 'text-emerald-600'}">${myCommVal < 0 ? fmtMoney(myCommVal) : `+ ${fmtMoney(myCommVal)}`}</div>
+                  ${showTeamRepSub ? `<div class="text-[10px] font-semibold text-slate-500">Comm. Rep : ${fmtMoney(repCommVal)}</div>` : ''}
+                  ${isHitSale(v) ? hitBadgeHtml(v) : (v._bonusApplied ? `<span class="inline-block mt-0.5 px-1.5 py-0.2 text-[10px] font-extrabold rounded bg-emerald-100 text-emerald-800">+${formatBonusPctShort(diff || 0.01)} bonus</span>` : '')}
                 </div>
               </div>
-              <div class="flex items-center justify-between gap-2 pt-2 border-t border-slate-100">
+
+              <div class="flex items-center justify-between gap-2 pt-1">
                 <div class="flex items-center flex-wrap gap-1.5">
                   <span class="inline-flex items-center gap-1 px-2 py-0.5 text-[11px] font-semibold rounded-full ${v.statut_depot === 'depot_recu' ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'}">
-                    ${v.statut_depot === 'depot_recu' ? 'Dépôt reçu' : 'À confirmer'}
+                    ${v.statut_depot === 'depot_recu' ? (isNoDepositSale(v) ? 'Sans dépôt requis' : 'Dépôt reçu') : 'À confirmer'}
                   </span>
                   <span class="px-2 py-0.5 text-[11px] font-semibold rounded-full ${v.statut_paiement === 'paye' ? 'bg-indigo-100 text-indigo-800' : 'bg-slate-100 text-slate-600'}">
                     ${v.statut_paiement === 'paye' ? '✓ Payé' : 'À recevoir'}
@@ -8361,7 +9574,7 @@
             <div class="flex items-center gap-1.5">
               <span class="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded-full ${v.statut_depot === 'depot_recu' ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'}">
                 <span class="w-1.5 h-1.5 rounded-full ${v.statut_depot === 'depot_recu' ? 'bg-emerald-500' : 'bg-amber-500'}"></span>
-                ${v.statut_depot === 'depot_recu' ? 'Dépôt reçu' : 'À confirmer'}
+                ${v.statut_depot === 'depot_recu' ? (isNoDepositSale(v) ? 'Sans dépôt requis' : 'Dépôt reçu') : 'À confirmer'}
               </span>
               ${agingBadgeForDeposit(v)}
             </div>
@@ -8407,12 +9620,13 @@
             <td class="py-3.5 px-4 text-right font-semibold text-slate-700 tabular-nums whitespace-nowrap align-middle">${fmtMoney(v.valeur)}</td>
             <td class="py-3.5 px-4 text-right tabular-nums whitespace-nowrap align-middle">
               <div class="font-extrabold ${Number(v.commission_rep) < 0 ? 'text-rose-600' : 'text-emerald-600'}">${Number(v.commission_rep) < 0 ? fmtMoney(v.commission_rep) : `+ ${fmtMoney(v.commission_rep)}`}</div>
+              ${(isAdmin && !isInspectingRep && String(v.representant_id) !== String(currentProfile.id) && Number(v._repCommAmount || 0) !== 0) ? `<div class="text-[11px] font-semibold text-slate-500">Comm. Rep : ${fmtMoney(v._repCommAmount)}</div>` : ''}
               ${isHitSale(v) ? hitBadgeHtml(v) : (v._bonusApplied ? `<span class="inline-block mt-0.5 px-1.5 py-0.2 text-[10px] font-extrabold rounded bg-emerald-100 text-emerald-800">+${formatBonusPctShort(diff || 0.01)} bonus</span>` : '')}
             </td>
             <td class="py-3.5 px-4 whitespace-nowrap align-middle">
               <div class="flex items-center gap-1.5">
                 <span class="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded-full ${v.statut_depot === 'depot_recu' ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'}">
-                  ${v.statut_depot === 'depot_recu' ? 'Dépôt reçu' : 'À confirmer'}
+                  ${v.statut_depot === 'depot_recu' ? (isNoDepositSale(v) ? 'Sans dépôt requis' : 'Dépôt reçu') : 'À confirmer'}
                 </span>
                 <span class="px-2 py-0.5 text-[11px] font-semibold rounded-full ${v.statut_paiement === 'paye' ? 'bg-indigo-50 text-indigo-700' : 'bg-slate-100 text-slate-500'}">
                   ${v.statut_paiement === 'paye' ? '✓ Payé' : 'À recevoir'}
@@ -8491,8 +9705,11 @@
         state.representants.forEach(r => ensureRepEntry(r.id, r.nom));
         state.ventes.forEach(v => {
           const repObj = state.representants.find(r => String(r.id) === String(v.representant_id));
-          if (!repObj) return;
-          const entry = ensureRepEntry(repObj.id, repObj.nom);
+          const archRepNom = !repObj ? resolveSaleArchivedRepName(v) : '';
+          const resolvedRepId = repObj ? repObj.id : (archRepNom ? `arch_rep_${archRepNom.toLowerCase()}` : '');
+          const resolvedRepNom = repObj ? repObj.nom : archRepNom;
+          if (!resolvedRepNom) return;
+          const entry = ensureRepEntry(resolvedRepId, resolvedRepNom);
           if (matchesSalePeriod(v, rankPeriod, true)) {
             const val = Number(v.valeur || 0);
             const sYm = getSaleStatsMonth(v);
@@ -8502,7 +9719,7 @@
             if (val > entry.bestSale) entry.bestSale = val;
             if ((v.note || '').toUpperCase().includes('[SUIVI]')) entry.suiviCount += 1;
             else entry.otsCount += 1;
-            const entName = state.entreprises.find(e => String(e.id) === String(v.entreprise_id))?.nom || v.entreprise_nom || '';
+            const entName = state.entreprises.find(e => String(e.id) === String(v.entreprise_id))?.nom || resolveSaleArchivedEntName(v) || v.entreprise_nom || '';
             if (entName) entry.byEnt.set(entName, (entry.byEnt.get(entName) || 0) + val);
             if (sYm) entry.monthsCount.add(sYm);
           }
@@ -8578,8 +9795,11 @@
         detailedSalesPool.forEach(v => {
           if (!matchesSalePeriod(v, rankPeriod, true)) return;
           const rObj = state.representants.find(r => String(r.id) === String(v.representant_id));
-          const rName = rObj?.nom || v.rep_nom || '';
-          const entry = Array.from(totalsByRep.values()).find(e => resolveKpiRepName(e.nom) === resolveKpiRepName(rName));
+          const rName = rObj?.nom || resolveSaleArchivedRepName(v) || v.rep_nom || '';
+          const normRName = resolveKpiRepName(rName);
+          if (!normRName) return;
+          const entry = Array.from(totalsByRep.values()).find(e => resolveKpiRepName(e.nom) === normRName)
+            || ensureRepEntry(rObj?.id || `arch_rep_${normRName.toLowerCase()}`, normRName);
           if (!entry) return;
           if (!perRepDetailed.has(entry.id)) {
             perRepDetailed.set(entry.id, { cnt: 0, conf: 0, best: 0, ots: 0, sui: 0, byEnt: new Map(), vol: 0 });
@@ -8681,9 +9901,19 @@
                 ? 12
                 : (rankPeriod.mode === 'all' ? Math.max(1, Object.keys(kpiStore).length || 1) : 1)))));
 
+      const rankCoveredMonths = Object.keys(kpiStore || {}).filter(ym => {
+        if (!isValidYearMonth(ym)) return false;
+        const fakeRow = { mois_commission: ym, date_vente: `${ym}-01` };
+        return matchesSalePeriod(fakeRow, rankPeriod, false);
+      });
       const enriched = Array.from(totalsByRep.values()).map(r => {
-        const unitTarget = getSalesTargetForRep(r.nom, activeYm);
-        const repTarget = Math.round(unitTarget * mult);
+        let repTarget = 0;
+        if (!isSubMonthMode && rankCoveredMonths.length > 0 && (rankPeriod.mode === 'this_year' || rankPeriod.mode === 'this_quarter' || rankPeriod.mode === 'all')) {
+          repTarget = Math.round(rankCoveredMonths.reduce((s, ym) => s + getSalesTargetForRep(r.nom, ym), 0));
+        } else {
+          const unitTarget = getSalesTargetForRep(r.nom, activeYm);
+          repTarget = Math.round(unitTarget * mult);
+        }
         const targetPct = repTarget > 0 ? Math.round((r.total / repTarget) * 100) : 0;
         const remaining = Math.max(0, repTarget - r.total);
         const avgTicket = r.dealsCount > 0 ? (r.total / r.dealsCount) : 0;
@@ -8697,7 +9927,7 @@
           topEntName: topEntEntry ? topEntEntry[0] : '',
           topEntVal: topEntEntry ? topEntEntry[1] : 0
         };
-      }).sort((a, b) => b.total - a.total);
+      }).filter(r => !isRepArchived(r.nom) && !isRepArchived(r.id) || r.total > 0 || r.dealsCount > 0).sort((a, b) => b.total - a.total);
 
       const teamTotalVol = enriched.reduce((s, r) => s + r.total, 0);
       const teamTotalTarget = enriched.reduce((s, r) => s + r.repTarget, 0);
@@ -9121,7 +10351,7 @@
       } else {
         document.getElementById('preview-taux-label').innerHTML = hasRule
           ? `Votre taux applicable : <strong>${fmtPct(tRep)}</strong>${bonusActive ? ` <span class="inline-block ml-1 px-1.5 py-0.5 text-[10px] font-extrabold rounded-md bg-emerald-100 text-emerald-800">🔥 Bonus +${bStr} actif</span>` : ''}${hitBadge}`
-          : `<span class="inline-block px-2 py-1 rounded-lg bg-amber-50 text-amber-900 border border-amber-200 font-semibold text-[11px]">⏳ Taux en attente de configuration par l'administration — ta vente sera bien enregistrée et ta commission recalculée dès validation.</span>${hitBadge}`;
+          : `<span class="inline-block px-2 py-1 rounded-lg bg-amber-50 text-amber-900 border border-amber-200 font-semibold text-[11px]">⏳ Taux en attente de configuration par l'administration — votre vente sera bien enregistrée et votre commission recalculée dès validation.</span>${hitBadge}`;
         repEl.textContent = hasRule ? `Ma commission : ${fmtMoney(cRep)}` : 'En attente du taux';
         oliEl.classList.add('hidden');
       }
@@ -9143,7 +10373,7 @@
       document.getElementById('vente-valeur').value = v.valeur;
       document.getElementById('vente-date').value = duplicate ? localYmd() : v.date_vente;
       document.getElementById('vente-mois-comm').value = v.mois_commission;
-      document.getElementById('vente-statut-depot').value = duplicate ? 'a_confirmer' : v.statut_depot;
+      document.getElementById('vente-statut-depot').value = duplicate ? 'a_confirmer' : ((v.statut_depot === 'depot_recu' && isNoDepositSale(v)) ? 'sans_depot' : v.statut_depot);
       document.getElementById('vente-statut-paiement').value = duplicate ? 'non_paye' : v.statut_paiement;
       const rawN = v.note || '';
       const hasHitTag = /\[HIT(?::(REP|OLIVIER|BOTH))?\]/i.test(rawN) || Number(v.commission_rep) < 0 || Number(v.commission_olivier) < 0;
@@ -9152,7 +10382,7 @@
       applyDrawerRoleErgonomics();
       renderDrawerClientQuickSuggestions();
       document.getElementById('vente-note').value = rawN
-        .replace(/^\[(OTS|SUIVI)\]\s*/i, '')
+        .replace(/^\[(OTS|SUIVI)\]\s*/i, '').replace(/\[(REP|ENT):[^\]]+\]\s*/ig, '').replace(/\[SANSDEPOT\]\s*/ig, '')
         .replace(/\[HIT(?::(?:REP|OLIVIER|BOTH))?\]\s*/ig, '')
         .trim();
 
@@ -9238,6 +10468,7 @@
     };
 
     function applyDrawerRoleErgonomics() {
+      applyCompanyDepositRule();
       const isAdmin = currentProfile?.role === 'admin';
       const repWrap = document.getElementById('drawer-rep-field-wrap');
       const repEntGrid = document.getElementById('drawer-rep-ent-grid');
@@ -9504,8 +10735,8 @@
 
       if (mobileAdminBox) {
         mobileAdminBox.innerHTML = list.map(v => {
-          const rep = state.representants.find(r => r.id === v.representant_id)?.nom || '—';
-          const ent = state.entreprises.find(e => e.id === v.entreprise_id)?.nom || '—';
+          const rep = state.representants.find(r => r.id === v.representant_id)?.nom || resolveSaleArchivedRepName(v) || '—';
+          const ent = state.entreprises.find(e => e.id === v.entreprise_id)?.nom || resolveSaleArchivedEntName(v) || '—';
           const cli = state.clients.find(c => c.id === v.client_id)?.nom || '—';
           const isSuivi = (v.note || '').toUpperCase().includes('[SUIVI]');
           const proofSrc = getProofForSale(v);
@@ -9537,7 +10768,7 @@
               <div class="flex flex-wrap items-center gap-1.5 pt-2 border-t border-slate-100">
                 <button type="button" onclick="toggleVenteKpiType('${v.id}')" class="px-2.5 py-1 text-[11px] font-extrabold rounded-lg border ${isSuivi ? 'bg-purple-50 text-purple-700 border-purple-200' : 'bg-sky-50 text-sky-700 border-sky-200'}">${isSuivi ? 'SUIVI' : 'OTS'}</button>
                 <button type="button" onclick="toggleVenteStatut('${v.id}', 'statut_depot', '${v.statut_depot === 'depot_recu' ? 'a_confirmer' : 'depot_recu'}')" class="px-2.5 py-1 text-[11px] font-bold rounded-full ${v.statut_depot === 'depot_recu' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-amber-50 text-amber-700 border border-amber-200'}">
-                  ${v.statut_depot === 'depot_recu' ? '✓ Dépôt reçu' : '⏳ À confirmer'}
+                  ${v.statut_depot === 'depot_recu' ? (isNoDepositSale(v) ? '✓ Sans dépôt requis' : '✓ Dépôt reçu') : '⏳ À confirmer'}
                 </button>
                 ${agingBadgeForDeposit(v)}
                 <button type="button" onclick="toggleVenteStatut('${v.id}', 'statut_paiement', '${v.statut_paiement === 'paye' ? 'non_paye' : 'paye'}')" class="px-2.5 py-1 text-[11px] font-bold rounded-full ${v.statut_paiement === 'paye' ? 'bg-indigo-50 text-indigo-700 border border-indigo-200' : 'bg-slate-100 text-slate-600'}">
@@ -9560,8 +10791,8 @@
       }
 
       tbody.innerHTML = list.map(v => {
-        const rep = state.representants.find(r => r.id === v.representant_id)?.nom || '—';
-        const ent = state.entreprises.find(e => e.id === v.entreprise_id)?.nom || '—';
+        const rep = state.representants.find(r => r.id === v.representant_id)?.nom || resolveSaleArchivedRepName(v) || '—';
+        const ent = state.entreprises.find(e => e.id === v.entreprise_id)?.nom || resolveSaleArchivedEntName(v) || '—';
         const cli = state.clients.find(c => c.id === v.client_id)?.nom || '—';
         const isChecked = selectedSaleIds.has(v.id);
         const isSuivi = (v.note || '').toUpperCase().includes('[SUIVI]');
@@ -9623,7 +10854,7 @@
               <div class="flex items-center gap-1.5">
                 <button onclick="toggleVenteStatut('${v.id}', 'statut_depot', '${v.statut_depot === 'depot_recu' ? 'a_confirmer' : 'depot_recu'}')"
                   class="px-2.5 py-1 text-xs font-semibold rounded-full transition ${v.statut_depot === 'depot_recu' ? 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100' : 'bg-amber-50 text-amber-700 hover:bg-amber-100'}">
-                  ${v.statut_depot === 'depot_recu' ? 'Dépôt reçu' : 'À confirmer'}
+                  ${v.statut_depot === 'depot_recu' ? (isNoDepositSale(v) ? 'Sans dépôt requis' : 'Dépôt reçu') : 'À confirmer'}
                 </button>
                 <button onclick="toggleVenteStatut('${v.id}', 'statut_paiement', '${v.statut_paiement === 'paye' ? 'non_paye' : 'paye'}')"
                   class="px-2.5 py-1 text-xs font-semibold rounded-full transition ${v.statut_paiement === 'paye' ? 'bg-indigo-50 text-indigo-700 hover:bg-indigo-100' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}">
@@ -9740,20 +10971,31 @@
           }).join('')
         : `<p class="col-span-full text-xs text-slate-400">Aucune donnée mensuelle disponible.</p>`;
 
-      const rankedReps = state.representants.map(r => {
-        const subAll = statsList.filter(v => v.representant_id === r.id);
-        const subComm = activeCommList.filter(v => v.representant_id === r.id);
+      const dashRepEntities = [
+        ...state.representants.map(r => ({ ...r, _isArchived: false })),
+        ...Object.values(archivedRepsStore || {})
+          .filter(a => a && a.nom && !state.representants.some(r => r.nom.toLowerCase() === a.nom.toLowerCase()))
+          .map(a => ({ id: a.id || `arch_rep_${a.nom}`, nom: a.nom, _isArchived: true }))
+      ];
+      const matchDashRepSale = (v, r) => {
+        if (!r._isArchived) return String(v.representant_id) === String(r.id);
+        return resolveSaleArchivedRepName(v).toLowerCase() === r.nom.toLowerCase();
+      };
+      const rankedReps = dashRepEntities.map(r => {
+        const subAll = statsList.filter(v => matchDashRepSale(v, r));
+        const subComm = activeCommList.filter(v => matchDashRepSale(v, r));
         const ventesVol = subAll.reduce((s, v) => s + Number(v.valeur || 0), 0);
         const commRepVol = subComm.reduce((s, v) => s + Number(v.commission_rep || 0), 0);
         const commOliVol = subComm.reduce((s, v) => s + Number(v.commission_olivier || 0), 0);
         const commBaseVol = subComm.reduce((s, v) => s + Number(v.valeur || 0), 0);
         const margePct = commBaseVol > 0 ? ((commOliVol / commBaseVol) * 100) : 0;
         return { r, ventesVol, commRepVol, commOliVol, margePct };
-      }).sort((a, b) => {
-        if (Math.abs(b.commOliVol - a.commOliVol) > 0.005) return b.commOliVol - a.commOliVol;
-        if (Math.abs(b.margePct - a.margePct) > 0.005) return b.margePct - a.margePct;
-        return b.ventesVol - a.ventesVol;
-      });
+      }).filter(item => !item.r._isArchived || item.ventesVol > 0 || item.commRepVol !== 0 || item.commOliVol !== 0)
+        .sort((a, b) => {
+          if (Math.abs(b.commOliVol - a.commOliVol) > 0.005) return b.commOliVol - a.commOliVol;
+          if (Math.abs(b.margePct - a.margePct) > 0.005) return b.margePct - a.margePct;
+          return b.ventesVol - a.ventesVol;
+        });
 
       const repMedals = ['🥇', '🥈', '🥉'];
       document.getElementById('tbody-dash-rep').innerHTML = rankedReps.map((item, idx) => {
@@ -9766,6 +11008,7 @@
               <div class="inline-flex items-center gap-1.5">
                 ${rankTag}
                 <span>${esc(item.r.nom)}</span>
+                ${item.r._isArchived ? `<span class="px-1.5 py-0.2 text-[9px] font-bold rounded bg-slate-100 text-slate-500">Archivé</span>` : ''}
               </div>
             </td>
             <td class="py-2.5 px-2 text-right tabular-nums font-medium whitespace-nowrap align-middle">${fmtMoney(item.ventesVol)}</td>
@@ -9777,22 +11020,33 @@
               </span>
             </td>
             <td class="py-2.5 pl-2 text-right whitespace-nowrap align-middle">
-              <button onclick="openPayslipModal('${item.r.id}')" class="px-2.5 py-1 text-[11px] font-semibold bg-slate-100 hover:bg-indigo-600 hover:text-white text-slate-700 rounded-lg transition">Relevé</button>
+              ${item.r._isArchived ? '<span class="text-[11px] text-slate-400">—</span>' : `<button onclick="openPayslipModal('${item.r.id}')" class="px-2.5 py-1 text-[11px] font-semibold bg-slate-100 hover:bg-indigo-600 hover:text-white text-slate-700 rounded-lg transition">Relevé</button>`}
             </td>
           </tr>
         `;
       }).join('');
 
-      const rankedEntreprises = state.entreprises.map(e => {
-        const subAll = statsList.filter(v => v.entreprise_id === e.id);
-        const subComm = activeCommList.filter(v => v.entreprise_id === e.id);
+      const dashEntEntities = [
+        ...state.entreprises.map(e => ({ ...e, _isArchived: false })),
+        ...Object.values(archivedEntreprisesStore || {})
+          .filter(a => a && a.nom && !state.entreprises.some(e => e.nom.toLowerCase() === a.nom.toLowerCase()))
+          .map(a => ({ id: a.id || `arch_ent_${a.nom}`, nom: a.nom, _isArchived: true }))
+      ];
+      const matchDashEntSale = (v, e) => {
+        if (!e._isArchived) return String(v.entreprise_id) === String(e.id);
+        return resolveSaleArchivedEntName(v).toLowerCase() === e.nom.toLowerCase();
+      };
+      const rankedEntreprises = dashEntEntities.map(e => {
+        const subAll = statsList.filter(v => matchDashEntSale(v, e));
+        const subComm = activeCommList.filter(v => matchDashEntSale(v, e));
         const ventesVol = subAll.reduce((s, v) => s + Number(v.valeur || 0), 0);
         const commRepVol = subComm.reduce((s, v) => s + Number(v.commission_rep || 0), 0);
         const commOliVol = subComm.reduce((s, v) => s + Number(v.commission_olivier || 0), 0);
         const commBaseVol = subComm.reduce((s, v) => s + Number(v.valeur || 0), 0);
         const margePct = commBaseVol > 0 ? ((commOliVol / commBaseVol) * 100) : 0;
         return { e, ventesVol, commRepVol, commOliVol, margePct };
-      }).sort((a, b) => {
+      }).filter(item => !item.e._isArchived || item.ventesVol > 0 || item.commRepVol !== 0 || item.commOliVol !== 0)
+        .sort((a, b) => {
         if (Math.abs(b.commOliVol - a.commOliVol) > 0.005) return b.commOliVol - a.commOliVol;
         if (Math.abs(b.margePct - a.margePct) > 0.005) return b.margePct - a.margePct;
         return b.ventesVol - a.ventesVol;
@@ -10085,7 +11339,7 @@
           </thead>
           <tbody class="divide-y divide-slate-100">
             ${sales.map(v => {
-              const ent = state.entreprises.find(e => e.id === v.entreprise_id)?.nom || '—';
+              const ent = state.entreprises.find(e => e.id === v.entreprise_id)?.nom || resolveSaleArchivedEntName(v) || '—';
               const cli = state.clients.find(c => c.id === v.client_id)?.nom || '—';
               const comm = isOlivier ? v.commission_olivier : v.commission_rep;
               return `
@@ -10259,7 +11513,7 @@
         const taux = Number(isOlivier ? v.taux_olivier_applique : v.taux_rep_applique);
         const rawNote = String(v.note || '');
         const typeKpi = rawNote.toUpperCase().includes('[SUIVI]') ? 'SUIVI' : 'OTS';
-        const cleanNote = rawNote.replace(/^\[(OTS|SUIVI)\]\s*/i, '').trim();
+        const cleanNote = rawNote.replace(/^\[(OTS|SUIVI)\]\s*/i, '').replace(/\[(REP|ENT):[^\]]+\]\s*/ig, '').replace(/\[SANSDEPOT\]\s*/ig, '').trim();
         return {
           date: v.date_vente,
           entreprise: ent,
@@ -10515,76 +11769,6 @@
       toast(`📄 Fichier Wave téléchargé (${codesSummary || st.dossiers.length + ' ligne(s)'}) pour ${rep.nom} ✓`);
     };
 
-    window.downloadCurrentUserWaveCsv = () => {
-      if (!currentProfile) return;
-      const periodState = readPeriodFilterState('filter-rep');
-      const statutFilter = document.getElementById('filter-rep-statut')?.value || '';
-      const isConfirmedOnly = commDisplayMode === 'confirme' || statutFilter === 'depot_recu';
-
-      const sourceList = (state.mesVentes || []).filter(v => {
-        if (!matchesSalePeriod(v, periodState, true)) return false;
-        if (isConfirmedOnly && v.statut_depot !== 'depot_recu') return false;
-        if (statutFilter === 'non_paye' && v.statut_paiement !== 'non_paye') return false;
-        if (statutFilter === 'paye' && v.statut_paiement !== 'paye') return false;
-        return Number(v.commission_rep || 0) !== 0;
-      });
-
-      if (!sourceList.length) {
-        return toast('Aucune commission sur la période sélectionnée à exporter vers Wave.', 'error');
-      }
-
-      const workingCompanySeq = getWaveCompanySeqMap();
-      const invDate = localYmd();
-      const headers = [
-        'Customer Name',
-        'Invoice Number',
-        'Invoice Date',
-        'Due Date',
-        'Item Name',
-        'Description',
-        'Quantity',
-        'Unit Price',
-        'Memo'
-      ];
-
-      const sortedSourceForWave = [...sourceList].sort((a, b) => {
-        const entA = a.entreprise_nom || state.entreprises.find(e => String(e.id) === String(a.entreprise_id))?.nom || 'Korpo Solutions';
-        const entB = b.entreprise_nom || state.entreprises.find(e => String(e.id) === String(b.entreprise_id))?.nom || 'Korpo Solutions';
-        return entA.localeCompare(entB, 'fr') || String(a.date_vente || '').localeCompare(String(b.date_vente || ''));
-      });
-      const companyInvMap = new Map();
-      const rows = sortedSourceForWave.map(v => {
-        const ent = v.entreprise_nom || state.entreprises.find(e => String(e.id) === String(v.entreprise_id))?.nom || 'Korpo Solutions';
-        if (!companyInvMap.has(ent)) {
-          const prevNum = Number(workingCompanySeq[ent] ?? 100);
-          const nextNum = prevNum + 1;
-          workingCompanySeq[ent] = nextNum;
-          companyInvMap.set(ent, `${getWaveCompanyPrefix(ent)}${nextNum}`);
-        }
-        const invNumber = companyInvMap.get(ent);
-        const cli = v.client_nom || state.clients.find(c => String(c.id) === String(v.client_id))?.nom || '—';
-        const cleanNote = cleanDisplaySaleNote(v.note);
-        const clientDesc = `${cli}${cleanNote ? ' (' + cleanNote + ')' : ''}`.replace(/[\t\r\n]+/g, ' ');
-        const commAmt = Number(v.commission_rep || 0).toFixed(2);
-        return [
-          csvCell(ent),
-          csvCell(invNumber),
-          csvCell(invDate),
-          csvCell(invDate),
-          csvCell('Commission sur vente'),
-          csvCell(clientDesc),
-          '1',
-          commAmt,
-          csvCell(`Facture ${periodState.label}`)
-        ].join(',');
-      });
-      saveWaveCompanySeqMap(workingCompanySeq);
-
-      const slug = currentProfile.nom.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-');
-      triggerWaveCsvDownload([headers.join(','), ...rows].join('\n'), `facture-wave-${slug}-${periodState.singleMonth || localYmd()}.csv`);
-      toast(`📄 Fichier Wave téléchargé (${rows.length} vente(s)) — prêt à importer dans Wave ✓`);
-    };
-
     window.sendSingleRepStatementById = async (repId) => {
       const rep = state.representants.find(r => String(r.id) === String(repId));
       if (!rep) return;
@@ -10664,11 +11848,15 @@
     }
 
     function renderAdminEquipe() {
+      syncRedPhoneUI();
       renderEquipeTargetsTable();
       document.getElementById('list-entreprises').innerHTML = state.entreprises.map(e => `
         <li class="px-4 py-3 flex items-center justify-between text-sm bg-white">
           ${entBadge(e.nom)}
-          <button onclick="deleteEntreprise('${e.id}')" class="text-xs font-semibold text-rose-600 hover:underline">Supprimer</button>
+          <div class="flex items-center gap-3">
+            <button type="button" onclick="toggleEntrepriseDepot('${e.id}')" title="Cliquer pour changer (n'affecte pas les ventes déjà enregistrées)" class="text-[11px] font-bold px-2.5 py-0.5 rounded-full border transition cursor-pointer ${e.depot_requis === false ? 'bg-slate-100 text-slate-700 border-slate-300 hover:bg-slate-200' : 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100'}">${e.depot_requis === false ? '🚫 Sans dépôt' : '💵 Dépôt exigé'}</button>
+            <button onclick="deleteEntreprise('${e.id}')" class="text-xs font-semibold text-rose-600 hover:underline">Supprimer</button>
+          </div>
         </li>
       `).join('');
 
@@ -10961,10 +12149,8 @@
       const rawNote = v.note || '';
       const isCurrentlySuivi = rawNote.toUpperCase().includes('[SUIVI]');
       const nextTag = isCurrentlySuivi ? 'OTS' : 'SUIVI';
-      const cleanBody = rawNote.replace(/^\[(OTS|SUIVI)\]\s*/i, '').trim();
+      const cleanBody = rawNote.replace(/^\[(OTS|SUIVI)\]\s*/i, '').replace(/\[(REP|ENT):[^\]]+\]\s*/ig, '').replace(/\[SANSDEPOT\]\s*/ig, '').trim();
       const updatedNote = cleanBody ? `[${nextTag}] ${cleanBody}` : `[${nextTag}]`;
-
-
 
       const { error } = await sb.from('ventes').update({ note: updatedNote }).eq('id', id);
       if (error) return toast(error.message, 'error');
@@ -10995,25 +12181,162 @@
       await loadAllData();
     };
 
+    window.toggleEntrepriseDepot = async (id) => {
+      if (currentProfile?.role !== 'admin') return;
+      const ent = (state.entreprises || []).find(e => String(e.id) === String(id));
+      if (!ent) return;
+      const nextRequired = ent.depot_requis === false; // bascule
+      const { error } = await sb.from('entreprises').update({ depot_requis: nextRequired }).eq('id', id);
+      if (error) {
+        return toast(/depot_requis/i.test(error.message || '')
+          ? 'Colonne « depot_requis » absente de Supabase : exécutez le SQL fourni.'
+          : error.message, 'error');
+      }
+      toast(`${ent.nom} : ${nextRequired ? 'dépôt exigé' : 'aucun dépôt requis'} (ventes futures)`);
+      await loadAllData();
+    };
+
     window.deleteEntreprise = async (id) => {
-      const nom = state.entreprises.find(x => String(x.id) === String(id))?.nom || 'cette entreprise';
-      if (state.ventes.some(v => String(v.entreprise_id) === String(id))) return toast(`Impossible de supprimer ${nom} : des ventes y sont rattachées.`, 'error');
-      const ok = await askConfirm(`Supprimer ${nom} ?`, 'Les taux associés à cette entreprise seront également retirés.');
+      const entObj = state.entreprises.find(x => String(x.id) === String(id));
+      const nom = entObj?.nom || 'cette entreprise';
+      const matchingSales = state.ventes.filter(v => String(v.entreprise_id) === String(id));
+      const hasPastSales = matchingSales.length > 0;
+      const ok = await askConfirm(
+        `Supprimer ${nom} des entreprises actives ?`,
+        hasPastSales
+          ? `Ses statistiques et ventes antérieures seront conservées dans l'historique global et ses objectifs du mois en cours seront ajustés au prorata.`
+          : `Cette entreprise, ses taux et tous ses objectifs seront retirés des KPI.`
+      );
       if (!ok) return;
-      const { error } = await sb.from('entreprises').delete().eq('id', id);
-      if (error) return toast(error.message, 'error');
-      toast('Entreprise supprimée');
+
+      const curMonthEntObj = Number(kpiStore[currentMonthStr]?.entreprises?.[nom]?.total?.objectif || 0);
+      const archiveKey = String(id || nom);
+      archivedEntreprisesStore[archiveKey] = {
+        id: String(id || ''),
+        nom,
+        archivedAt: new Date().toISOString(),
+        saleIds: matchingSales.map(v => String(v.id)),
+        monthlyObjective: curMonthEntObj
+      };
+      saveArchivedEntreprisesStore();
+
+      const metaKeysToRemove = Object.keys(companyTargetsMetaStore || {}).filter(k => {
+        const m = companyTargetsMetaStore[k];
+        const entN = m?.entNom || k.split('__')[0];
+        return String(entN || '').trim().toLowerCase() === nom.toLowerCase();
+      });
+      for (const k of metaKeysToRemove) {
+        await removeCompanyTargetMeta(k);
+      }
+
+      if (Array.isArray(clientTargetsStore)) {
+        const beforeLen = clientTargetsStore.length;
+        clientTargetsStore = clientTargetsStore.filter(t => String(t.entNom || '').trim().toLowerCase() !== nom.toLowerCase());
+        if (clientTargetsStore.length !== beforeLen) saveClientTargetsStore();
+      }
+
+      if (sb) {
+        try {
+          await sb.from('taux_commission').delete().eq('entreprise_id', id);
+        } catch (e) {}
+
+        if (hasPastSales) {
+          for (const v of matchingSales) {
+            const curNote = String(v.note || '').trim();
+            const taggedNote = /\[ENT:/i.test(curNote) ? curNote : `${curNote} [ENT:${nom}]`.trim();
+            try {
+              await sb.from('ventes').update({ entreprise_id: null, note: taggedNote }).eq('id', v.id);
+            } catch (e) {}
+          }
+          try {
+            await sb.from('clients').update({ entreprise_id: null }).eq('entreprise_id', id);
+          } catch (e) {}
+        }
+
+        const { error } = await sb.from('entreprises').delete().eq('id', id);
+        if (error) return toast(error.message, 'error');
+      }
+
+      toast(`${nom} retirée (ventes antérieures conservées et objectifs ajustés au prorata) ✓`);
       await loadAllData();
     };
 
     window.deleteRepresentant = async (id) => {
-      const nom = state.representants.find(x => String(x.id) === String(id))?.nom || 'ce membre';
-      if (state.ventes.some(v => String(v.representant_id) === String(id))) return toast(`Impossible de supprimer ${nom} : des ventes y sont rattachées.`, 'error');
-      const ok = await askConfirm(`Supprimer ${nom} ?`, 'Ce membre sera retiré de l\'équipe.');
+      const repObj = state.representants.find(x => String(x.id) === String(id));
+      const nom = repObj?.nom || 'ce membre';
+      const matchingSales = state.ventes.filter(v => String(v.representant_id) === String(id));
+      const hasPastSales = matchingSales.length > 0;
+      const ok = await askConfirm(
+        `Supprimer ${nom} de l'équipe active ?`,
+        hasPastSales
+          ? `Ses statistiques et ventes antérieures seront conservées dans l'historique global et ses objectifs du mois en cours seront calculés au prorata.`
+          : `Ce membre et tous ses objectifs seront retirés de l'équipe et des KPI.`
+      );
       if (!ok) return;
-      const { error } = await sb.from('representants').delete().eq('id', id);
-      if (error) return toast(error.message, 'error');
-      toast('Représentant supprimé');
+
+      const curRepKpi = kpiStore[currentMonthStr]?.reps?.[nom] || {};
+      const snapTargets = {
+        dollars: getSalesTargetForRep(nom, currentMonthStr),
+        comm: getCommissionTargetForRep(nom, currentMonthStr),
+        booke: Number(curRepKpi['Booké']?.objectif || 80),
+        rdv: Number(curRepKpi['RDV Réalisé']?.objectif || 60),
+        ots: Number(curRepKpi['Ventes OTS']?.objectif || 10),
+        suivi: Number(curRepKpi['Ventes SUIVI']?.objectif || 20)
+      };
+
+      const archiveKey = String(id || nom);
+      archivedRepsStore[archiveKey] = {
+        id: String(id || ''),
+        nom,
+        archivedAt: new Date().toISOString(),
+        saleIds: matchingSales.map(v => String(v.id)),
+        targets: snapTargets
+      };
+      saveArchivedRepsStore();
+
+      Object.keys(repTargetsOverrides || {}).forEach(k => {
+        if (k.endsWith(`_${nom}`)) delete repTargetsOverrides[k];
+      });
+      lsSet('korpo_rep_targets_v1', JSON.stringify(repTargetsOverrides));
+
+      Object.keys(personalMonthlyTargets || {}).forEach(k => {
+        if (k.startsWith(`${nom}_`)) delete personalMonthlyTargets[k];
+      });
+      lsSet('korpo_personal_monthly_targets_v1', JSON.stringify(personalMonthlyTargets));
+
+      Object.keys(personalCommTargets || {}).forEach(k => {
+        if (k.startsWith(`${nom}_`)) delete personalCommTargets[k];
+      });
+      lsSet('korpo_personal_comm_targets_v1', JSON.stringify(personalCommTargets));
+
+      Object.keys(personalBonusPctTargets || {}).forEach(k => {
+        if (k === nom || k.startsWith(`${nom}_`)) delete personalBonusPctTargets[k];
+      });
+      lsSet('korpo_personal_bonus_pct_v1', JSON.stringify(personalBonusPctTargets));
+
+      if (sb) {
+        try {
+          await sb.from('kpi_hebdo').delete().eq('representant_nom', nom).eq('semaine_index', -1);
+          await sb.from('kpi_hebdo').delete().eq('mois_commission', nom).eq('semaine_index', -7);
+          await sb.from('taux_commission').delete().eq('representant_id', id);
+        } catch (e) {}
+
+        if (hasPastSales) {
+          for (const v of matchingSales) {
+            const curNote = String(v.note || '').trim();
+            const taggedNote = /\[REP:/i.test(curNote) ? curNote : `${curNote} [REP:${nom}]`.trim();
+            try {
+              await sb.from('ventes').update({ representant_id: null, note: taggedNote }).eq('id', v.id);
+            } catch (e) {}
+          }
+        }
+
+        const { error } = await sb.from('representants').delete().eq('id', id);
+        if (error) return toast(error.message, 'error');
+      }
+
+      syncAllKpiRepsFromState();
+      toast(`${nom} retiré de l'équipe (ventes antérieures conservées et objectifs ajustés au prorata) ✓`);
       await loadAllData();
     };
 
@@ -11066,7 +12389,6 @@
       await loadAllData();
     });
 
-
     // =========================================================================
     // ASSISTANT VOCAL INTELLIGENT (1 PHRASE COMPLÈTE OU ÉTAPE PAR ÉTAPE + CLAVIER SIRI/GOOGLE)
     // =========================================================================
@@ -11107,9 +12429,9 @@
       },
       {
         key: 'depot',
-        prompt: '5. Dépôt : Reçu ou À confirmer',
-        spokenPrompt: 'Dépôt reçu ou à confirmer ?',
-        hint: 'Dites « Reçu » ou « À confirmer »'
+        get prompt() { return companyNoDeposit() ? '5. Dépôt : aucun requis pour cette entreprise' : '5. Dépôt : Reçu ou À confirmer'; },
+        get spokenPrompt() { return companyNoDeposit() ? 'Cette entreprise ne demande aucun dépôt. Dites suivant pour continuer.' : 'Dépôt reçu ou à confirmer ?'; },
+        get hint() { return companyNoDeposit() ? 'Dites « Suivant »' : 'Dites « Reçu » ou « À confirmer »'; }
       },
       {
         key: 'mois_comm',
@@ -11243,10 +12565,12 @@
           { label: '🔄 Suivi', say: 'Suivi' }
         ];
       } else if (step.key === 'depot') {
-        chips = [
-          { label: '✅ Dépôt reçu', say: 'Dépôt reçu' },
-          { label: '⏳ À confirmer', say: 'À confirmer' }
-        ];
+        chips = companyNoDeposit()
+          ? [{ label: '🚫 Aucun dépôt requis', say: 'Aucun dépôt requis' }]
+          : [
+            { label: '✅ Dépôt reçu', say: 'Dépôt reçu' },
+            { label: '⏳ À confirmer', say: 'À confirmer' }
+          ];
       } else if (step.key === 'mois_comm') {
         const baseYm = document.getElementById('vente-mois-comm')?.value || currentMonthStr;
         const [by, bm] = baseYm.split('-').map(Number);
@@ -11437,8 +12761,12 @@
 
       // 4. Statut dépôt
       const depotSel = document.getElementById('vente-statut-depot');
-      if (depotSel) {
-        if (/\b(?:depot recu|recu|paye|virement|interac)\b/i.test(norm) && !/\b(?:pas recu|a confirmer)\b/i.test(norm)) {
+      if (depotSel && !depotSel.disabled) {
+        if (/\b(?:sans depot|aucun depot|pas de depot|depot non requis|aucun requis)\b/i.test(norm)) {
+          depotSel.value = 'a_confirmer'; // cette entreprise exige un dépôt
+          flashVoiceFilledField(depotSel);
+          filledSummary.push('À confirmer');
+        } else if (/\b(?:depot recu|recu|paye|virement|interac)\b/i.test(norm) && !/\b(?:pas recu|a confirmer)\b/i.test(norm)) {
           depotSel.value = 'depot_recu';
           flashVoiceFilledField(depotSel);
           filledSummary.push('Dépôt reçu');
@@ -11816,8 +13144,21 @@
       if (step.key === 'depot') {
         const depotSel = document.getElementById('vente-statut-depot');
         if (!depotSel) return { ok: false, spokenAck: '' };
+        if (companyNoDeposit()) {
+          applyCompanyDepositRule();
+          flashVoiceFilledField(depotSel);
+          if (summaryEl) summaryEl.textContent = '✓ Dépôt : aucun requis (entreprise)';
+          return { ok: true, spokenAck: 'Aucun dépôt requis' };
+        }
         for (const alt of alts) {
           const n = normalizePhoneticFr(alt);
+          if (/\b(?:aucun depot|sans depot|pas de depot|depot non requis|non requis|pas requis|aucun requis)\b/i.test(n)) {
+            depotSel.value = 'a_confirmer'; // cette entreprise exige un dépôt
+            applyCompanyDepositRule();
+            flashVoiceFilledField(depotSel);
+            if (summaryEl) summaryEl.textContent = '✓ Dépôt : À confirmer (cette entreprise exige un dépôt)';
+            return { ok: true, spokenAck: 'Cette entreprise exige un dépôt, noté à confirmer' };
+          }
           if (/\b(?:confirmer|non|pas|aucun|attente|venir|pas recu)\b/i.test(n)) {
             depotSel.value = 'a_confirmer';
             flashVoiceFilledField(depotSel);
@@ -12899,7 +14240,7 @@
                 ${isAdmin ? `<span>•</span><span class="font-semibold text-indigo-600">${esc(v._rep)}</span>` : ''}
                 <span>•</span>
                 <span class="px-1.5 py-0.2 text-[10px] font-extrabold rounded border ${isSuivi ? 'bg-purple-50 text-purple-700 border-purple-200' : 'bg-sky-50 text-sky-700 border-sky-200'}">${isSuivi ? 'SUIVI' : 'OTS'}</span>
-                <span class="px-1.5 py-0.2 text-[10px] font-bold rounded-full ${v.statut_depot === 'depot_recu' ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'}">${v.statut_depot === 'depot_recu' ? 'Dépôt reçu' : 'À confirmer'}</span>
+                <span class="px-1.5 py-0.2 text-[10px] font-bold rounded-full ${v.statut_depot === 'depot_recu' ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'}">${v.statut_depot === 'depot_recu' ? (isNoDepositSale(v) ? 'Sans dépôt requis' : 'Dépôt reçu') : 'À confirmer'}</span>
                 ${cleanNote ? `<span class="text-slate-400 truncate max-w-[160px]">• ${esc(cleanNote)}</span>` : ''}
               </div>
             </div>
@@ -13058,6 +14399,12 @@
         const repId = currentProfile.role === 'admin' ? document.getElementById('vente-rep').value : currentProfile.id;
         const entId = document.getElementById('vente-entreprise').value;
         const clientNom = document.getElementById('vente-client-nom').value;
+        {
+          const entRule = (state.entreprises || []).find(x => String(x.id) === String(entId));
+          const depotSelEl = document.getElementById('vente-statut-depot');
+          if (entRule && entRule.depot_requis === false) depotSelEl.value = 'sans_depot';
+          else if (entRule && depotSelEl.value === 'sans_depot') throw new Error('Cette entreprise exige un dépôt : choisissez « Dépôt reçu » ou « À confirmer ».');
+        }
         if (!entId) throw new Error('Choisissez l\'entreprise partenaire.');
         if (!clientNom.trim()) throw new Error('Il manque le nom du client.');
         if (!document.getElementById('vente-date').value) throw new Error('Il manque la date réelle de la vente.');
@@ -13078,19 +14425,20 @@
           valeur,
           date_vente: document.getElementById('vente-date').value,
           mois_commission: document.getElementById('vente-mois-comm').value,
-          statut_depot: document.getElementById('vente-statut-depot').value,
+          statut_depot: document.getElementById('vente-statut-depot').value === 'sans_depot' ? 'depot_recu' : document.getElementById('vente-statut-depot').value,
           statut_paiement: document.getElementById('vente-statut-paiement').value,
           note: (() => {
             const rawNote = document.getElementById('vente-note').value
               .trim()
-              .replace(/^\[(OTS|SUIVI)\]\s*/i, '')
+              .replace(/^\[(OTS|SUIVI)\]\s*/i, '').replace(/\[(REP|ENT):[^\]]+\]\s*/ig, '').replace(/\[SANSDEPOT\]\s*/ig, '')
               .replace(/\[HIT(?::(?:REP|OLIVIER|BOTH))?\]\s*/ig, '')
               .trim();
             const typeKpi = document.getElementById('vente-type-kpi').value;
             const isHit = Boolean(document.getElementById('vente-is-hit')?.checked);
             const hitBearer = (document.getElementById('vente-hit-bearer')?.value || 'both').toUpperCase();
             const hitPrefix = isHit ? `[HIT:${hitBearer}] ` : '';
-            return rawNote ? `[${typeKpi}] ${hitPrefix}${rawNote}` : `[${typeKpi}]${isHit ? ` [HIT:${hitBearer}]` : ''}`;
+            const noDepTag = document.getElementById('vente-statut-depot').value === 'sans_depot' ? '[SANSDEPOT] ' : '';
+            return rawNote ? `[${typeKpi}] ${hitPrefix}${noDepTag}${rawNote}` : `[${typeKpi}]${isHit ? ` [HIT:${hitBearer}]` : ''}${noDepTag ? ' [SANSDEPOT]' : ''}`;
           })()
         };
 
@@ -13382,10 +14730,21 @@
     document.getElementById('form-new-entreprise')?.addEventListener('submit', async (e) => {
       e.preventDefault();
       const nom = document.getElementById('new-entreprise-nom').value.trim();
-      const { error } = await sb.from('entreprises').insert({ nom });
+      const depotChoice = document.getElementById('new-entreprise-depot')?.value || '';
+      if (!depotChoice) return toast('Indiquez si cette entreprise exige un dépôt.', 'error');
+      let { error } = await sb.from('entreprises').insert({ nom, depot_requis: depotChoice === 'oui' });
+      let columnMissing = false;
+      if (error && /depot_requis/i.test(error.message || '')) {
+        columnMissing = true;
+        ({ error } = await sb.from('entreprises').insert({ nom }));
+      }
       if (error) return toast(error.message, 'error');
       document.getElementById('new-entreprise-nom').value = '';
-      toast('Entreprise ajoutée');
+      const depotSelNew = document.getElementById('new-entreprise-depot');
+      if (depotSelNew) depotSelNew.value = '';
+      toast(columnMissing
+        ? '⚠️ Entreprise ajoutée, mais la colonne « depot_requis » est absente de Supabase : exécutez le SQL fourni pour enregistrer cette règle.'
+        : 'Entreprise ajoutée', columnMissing ? 'error' : undefined);
       await loadAllData();
     });
 
@@ -13539,7 +14898,7 @@
           const note = get('note');
           const rowJoined = (headerMode ? `${note} ${get('type')}` : cols.slice(6).join(' ')).toUpperCase();
           const kpiTag = rowJoined.includes('SUIVI') ? 'SUIVI' : 'OTS';
-          const cleanNoteBody = note.replace(/^\[(OTS|SUIVI)\]\s*/i, '').trim();
+          const cleanNoteBody = note.replace(/^\[(OTS|SUIVI)\]\s*/i, '').replace(/\[(REP|ENT):[^\]]+\]\s*/ig, '').replace(/\[SANSDEPOT\]\s*/ig, '').trim();
           const finalNote = cleanNoteBody ? `[${kpiTag}] ${cleanNoteBody}` : `[${kpiTag}]`;
 
           try {
@@ -13720,3 +15079,4 @@
         </div>`;
       m.querySelector('#glossary-close').onclick = () => m.classList.add('hidden');
     };
+
