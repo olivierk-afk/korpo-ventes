@@ -2741,6 +2741,7 @@
         });
       });
       switchTab('tab-mes-ventes');
+      setTimeout(() => window.KorpoGuide?.maybeStart(), 900);
     }
 
     function applyMobilePersonalSplitLayout() {

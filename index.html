@@ -1316,6 +1316,10 @@
                   </span>
                   <span id="menu-push-badge" class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">Inactif</span>
                 </button>
+                <button type="button" onclick="document.getElementById('user-menu-dropdown')?.classList.add('hidden'); KorpoGuide.start()" class="w-full px-3 py-2.5 text-left text-xs font-semibold text-slate-700 hover:bg-slate-100 rounded-xl flex items-center gap-2.5 transition">
+                  <span>🧭</span>
+                  <span>Revoir le guide de démarrage</span>
+                </button>
                 <button type="button" onclick="document.getElementById('user-menu-dropdown')?.classList.add('hidden'); openGlossaryModal()" class="w-full px-3 py-2.5 text-left text-xs font-semibold text-slate-700 hover:bg-slate-100 rounded-xl flex items-center gap-2.5 transition">
                   <span>📖</span>
                   <span>Aide : glossaire des termes</span>
@@ -2666,6 +2670,7 @@
   </div>
 
   <script src="route-optimizer.js" defer></script>
+  <script src="guide.js" defer></script>
   <script src="app.js" defer></script>
 </body>
 </html>
