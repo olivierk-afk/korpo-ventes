@@ -5137,8 +5137,8 @@
       });
       const selMonthEl = document.getElementById('kpi-select-month');
       if (!selMonthEl.value) populateKpiMonthSelect(false);
-      const selVal = selMonthEl.value || currentMonthStr;
-      if (!selVal.startsWith('YEAR_') && !kpiStore[selVal]) {
+      const selVal = activeKpiMode === 'all' ? 'ALL' : (selMonthEl.value || currentMonthStr);
+      if (activeKpiMode !== 'all' && !selVal.startsWith('YEAR_') && !selVal.startsWith('QUARTER_') && !kpiStore[selVal]) {
         ensureKpiMonthStructure(selVal);
         populateKpiMonthSelect(true);
       }
@@ -9799,7 +9799,10 @@
           }
         } else {
           state.classement.forEach(row => {
-            const entry = ensureRepEntry(row.representant_id, row.representant_nom);
+            const normR = resolveKpiRepName(row.representant_nom || '');
+            const existingByName = normR ? Array.from(totalsByRep.values()).find(e => resolveKpiRepName(e.nom) === normR) : null;
+            const entry = existingByName || ensureRepEntry(row.representant_id || (normR ? `arch_rep_${normR.toLowerCase()}` : ''), row.representant_nom || normR);
+            if (!entry) return;
             const fakeRow = { mois_commission: row.mois_commission, date_vente: `${row.mois_commission}-01` };
             if (matchesSalePeriod(fakeRow, rankPeriod, false)) {
               const adjTotal = Math.max(0, Number(row.total_ventes || 0));
@@ -9912,8 +9915,24 @@
               entry.byEnt = acc.byEnt;
             }
             if (acc.conf > 0) entry.confirmedTotal = acc.conf;
+            if (acc.vol > entry.total) entry.total = acc.vol;
           }
         });
+        if (!isSubMonthMode) {
+          totalsByRep.forEach(entry => {
+            const rn = resolveKpiRepName(entry.nom);
+            if (!rn) return;
+            let kpiPeriodDol = 0;
+            Object.entries(kpiStore || {}).forEach(([ym, mObj]) => {
+              if (!isValidYearMonth(ym) || !mObj?.reps?.[rn]) return;
+              const fakeRow = { mois_commission: ym, date_vente: `${ym}-01` };
+              if (matchesSalePeriod(fakeRow, rankPeriod, false)) {
+                kpiPeriodDol += Number(mObj.reps[rn]['Vente $']?.cumul || 0);
+              }
+            });
+            if (kpiPeriodDol > entry.total) entry.total = kpiPeriodDol;
+          });
+        }
       }
 
       const activeYm = rankPeriod.singleMonth || (rankPeriod.mode === 'custom_range' && rankPeriod.startVal ? rankPeriod.startVal.slice(0, 7) : currentMonthStr);
