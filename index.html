@@ -7593,11 +7593,11 @@
 
       // Construction des lignes par représentant (Targets & Bonus)
       let unlockedCount = 0;
-      const repRowsData = activeForecastReps.map(rn => {
+      const repRowsData = ALL_KPI_REPS.map(rn => {
         const repObj = state.representants.find(r => r.nom === rn);
         const repSalesList = periodSales.filter(v => {
           if (repObj && String(v.representant_id) === String(repObj.id)) return true;
-          const rN = state.representants.find(r => String(r.id) === String(v.representant_id))?.nom || v.rep_nom || '';
+          const rN = state.representants.find(r => String(r.id) === String(v.representant_id))?.nom || resolveSaleArchivedRepName(v) || v.rep_nom || '';
           return resolveKpiRepName(rN) === rn;
         });
         const signedFromSales = repSalesList.reduce((s, v) => s + Number(v.valeur || 0), 0);
@@ -7620,7 +7620,7 @@
           : repSalesList.reduce((s, v) => s + Number(v.commission_rep || 0), 0);
 
         return { rn, signed, target, pct, gap, bonusStr, isAdminRep, unlocked, commEarned };
-      }).sort((a, b) => b.pct - a.pct);
+      }).filter(item => !isRepArchived(item.rn) || item.signed > 0 || item.target > 0).sort((a, b) => b.pct - a.pct);
 
       const topBadgeLabel = document.getElementById('forecast-cadence-badge-label');
       if (topBadgeLabel) {
@@ -8369,6 +8369,7 @@
         };
       };
       const obj = {
+        ym: refYm,
         label,
         num_weeks: nw,
         monthLabels: [label],
@@ -8834,7 +8835,7 @@
               <div class="flex items-center gap-3">
                 <span class="w-8 h-8 rounded-xl ${isSelected ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-700'} text-xs font-extrabold flex items-center justify-center">${esc(rn.slice(0, 2).toUpperCase())}</span>
                 <div>
-                  <div class="font-bold text-slate-900">${esc(rn)}</div>
+                  <div class="font-bold text-slate-900 flex items-center gap-1.5"><span>${esc(rn)}</span>${isRepArchived(rn) ? `<span class="px-1.5 py-0.2 text-[9px] font-bold rounded bg-slate-100 text-slate-500">Archivé</span>` : ''}</div>
                   <div class="text-[11px] text-slate-400">${isYear ? 'Voir mois par mois →' : 'Voir le détail du mois →'}</div>
                 </div>
               </div>
@@ -8904,7 +8905,7 @@
                 <div class="flex items-center gap-2.5">
                   <span class="w-8 h-8 rounded-xl ${isSelected ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-700'} text-xs font-extrabold flex items-center justify-center">${esc(rn.slice(0, 2).toUpperCase())}</span>
                   <div>
-                    <div class="font-extrabold text-sm text-slate-900">${esc(rn)}</div>
+                    <div class="font-extrabold text-sm text-slate-900 flex items-center gap-1.5"><span>${esc(rn)}</span>${isRepArchived(rn) ? `<span class="px-1.5 py-0.2 text-[9px] font-bold rounded bg-slate-100 text-slate-500">Archivé</span>` : ''}</div>
                     <div class="text-[11px] text-indigo-600 font-semibold">${isSelected ? 'Fermer le détail ↑' : 'Toucher pour le détail ↓'}</div>
                   </div>
                 </div>
@@ -13258,8 +13259,11 @@
         state.representants.forEach(r => ensureRepEntry(r.id, r.nom));
         state.ventes.forEach(v => {
           const repObj = state.representants.find(r => String(r.id) === String(v.representant_id));
-          if (!repObj) return;
-          const entry = ensureRepEntry(repObj.id, repObj.nom);
+          const archRepNom = !repObj ? resolveSaleArchivedRepName(v) : '';
+          const resolvedRepId = repObj ? repObj.id : (archRepNom ? `arch_rep_${archRepNom.toLowerCase()}` : '');
+          const resolvedRepNom = repObj ? repObj.nom : archRepNom;
+          if (!resolvedRepNom) return;
+          const entry = ensureRepEntry(resolvedRepId, resolvedRepNom);
           if (matchesSalePeriod(v, rankPeriod, true)) {
             const val = Number(v.valeur || 0);
             const sYm = getSaleStatsMonth(v);
@@ -13269,7 +13273,7 @@
             if (val > entry.bestSale) entry.bestSale = val;
             if ((v.note || '').toUpperCase().includes('[SUIVI]')) entry.suiviCount += 1;
             else entry.otsCount += 1;
-            const entName = state.entreprises.find(e => String(e.id) === String(v.entreprise_id))?.nom || v.entreprise_nom || '';
+            const entName = state.entreprises.find(e => String(e.id) === String(v.entreprise_id))?.nom || resolveSaleArchivedEntName(v) || v.entreprise_nom || '';
             if (entName) entry.byEnt.set(entName, (entry.byEnt.get(entName) || 0) + val);
             if (sYm) entry.monthsCount.add(sYm);
           }
@@ -13345,8 +13349,11 @@
         detailedSalesPool.forEach(v => {
           if (!matchesSalePeriod(v, rankPeriod, true)) return;
           const rObj = state.representants.find(r => String(r.id) === String(v.representant_id));
-          const rName = rObj?.nom || v.rep_nom || '';
-          const entry = Array.from(totalsByRep.values()).find(e => resolveKpiRepName(e.nom) === resolveKpiRepName(rName));
+          const rName = rObj?.nom || resolveSaleArchivedRepName(v) || v.rep_nom || '';
+          const normRName = resolveKpiRepName(rName);
+          if (!normRName) return;
+          const entry = Array.from(totalsByRep.values()).find(e => resolveKpiRepName(e.nom) === normRName)
+            || ensureRepEntry(rObj?.id || `arch_rep_${normRName.toLowerCase()}`, normRName);
           if (!entry) return;
           if (!perRepDetailed.has(entry.id)) {
             perRepDetailed.set(entry.id, { cnt: 0, conf: 0, best: 0, ots: 0, sui: 0, byEnt: new Map(), vol: 0 });
@@ -13448,9 +13455,19 @@
                 ? 12
                 : (rankPeriod.mode === 'all' ? Math.max(1, Object.keys(kpiStore).length || 1) : 1)))));
 
+      const rankCoveredMonths = Object.keys(kpiStore || {}).filter(ym => {
+        if (!isValidYearMonth(ym)) return false;
+        const fakeRow = { mois_commission: ym, date_vente: `${ym}-01` };
+        return matchesSalePeriod(fakeRow, rankPeriod, false);
+      });
       const enriched = Array.from(totalsByRep.values()).map(r => {
-        const unitTarget = getSalesTargetForRep(r.nom, activeYm);
-        const repTarget = Math.round(unitTarget * mult);
+        let repTarget = 0;
+        if (!isSubMonthMode && rankCoveredMonths.length > 0 && (rankPeriod.mode === 'this_year' || rankPeriod.mode === 'this_quarter' || rankPeriod.mode === 'all')) {
+          repTarget = Math.round(rankCoveredMonths.reduce((s, ym) => s + getSalesTargetForRep(r.nom, ym), 0));
+        } else {
+          const unitTarget = getSalesTargetForRep(r.nom, activeYm);
+          repTarget = Math.round(unitTarget * mult);
+        }
         const targetPct = repTarget > 0 ? Math.round((r.total / repTarget) * 100) : 0;
         const remaining = Math.max(0, repTarget - r.total);
         const avgTicket = r.dealsCount > 0 ? (r.total / r.dealsCount) : 0;
@@ -14508,20 +14525,31 @@
           }).join('')
         : `<p class="col-span-full text-xs text-slate-400">Aucune donnée mensuelle disponible.</p>`;
 
-      const rankedReps = state.representants.map(r => {
-        const subAll = statsList.filter(v => v.representant_id === r.id);
-        const subComm = activeCommList.filter(v => v.representant_id === r.id);
+      const dashRepEntities = [
+        ...state.representants.map(r => ({ ...r, _isArchived: false })),
+        ...Object.values(archivedRepsStore || {})
+          .filter(a => a && a.nom && !state.representants.some(r => r.nom.toLowerCase() === a.nom.toLowerCase()))
+          .map(a => ({ id: a.id || `arch_rep_${a.nom}`, nom: a.nom, _isArchived: true }))
+      ];
+      const matchDashRepSale = (v, r) => {
+        if (!r._isArchived) return String(v.representant_id) === String(r.id);
+        return resolveSaleArchivedRepName(v).toLowerCase() === r.nom.toLowerCase();
+      };
+      const rankedReps = dashRepEntities.map(r => {
+        const subAll = statsList.filter(v => matchDashRepSale(v, r));
+        const subComm = activeCommList.filter(v => matchDashRepSale(v, r));
         const ventesVol = subAll.reduce((s, v) => s + Number(v.valeur || 0), 0);
         const commRepVol = subComm.reduce((s, v) => s + Number(v.commission_rep || 0), 0);
         const commOliVol = subComm.reduce((s, v) => s + Number(v.commission_olivier || 0), 0);
         const commBaseVol = subComm.reduce((s, v) => s + Number(v.valeur || 0), 0);
         const margePct = commBaseVol > 0 ? ((commOliVol / commBaseVol) * 100) : 0;
         return { r, ventesVol, commRepVol, commOliVol, margePct };
-      }).sort((a, b) => {
-        if (Math.abs(b.commOliVol - a.commOliVol) > 0.005) return b.commOliVol - a.commOliVol;
-        if (Math.abs(b.margePct - a.margePct) > 0.005) return b.margePct - a.margePct;
-        return b.ventesVol - a.ventesVol;
-      });
+      }).filter(item => !item.r._isArchived || item.ventesVol > 0 || item.commRepVol !== 0 || item.commOliVol !== 0)
+        .sort((a, b) => {
+          if (Math.abs(b.commOliVol - a.commOliVol) > 0.005) return b.commOliVol - a.commOliVol;
+          if (Math.abs(b.margePct - a.margePct) > 0.005) return b.margePct - a.margePct;
+          return b.ventesVol - a.ventesVol;
+        });
 
       const repMedals = ['🥇', '🥈', '🥉'];
       document.getElementById('tbody-dash-rep').innerHTML = rankedReps.map((item, idx) => {
@@ -14534,6 +14562,7 @@
               <div class="inline-flex items-center gap-1.5">
                 ${rankTag}
                 <span>${esc(item.r.nom)}</span>
+                ${item.r._isArchived ? `<span class="px-1.5 py-0.2 text-[9px] font-bold rounded bg-slate-100 text-slate-500">Archivé</span>` : ''}
               </div>
             </td>
             <td class="py-2.5 px-2 text-right tabular-nums font-medium whitespace-nowrap align-middle">${fmtMoney(item.ventesVol)}</td>
@@ -14545,22 +14574,33 @@
               </span>
             </td>
             <td class="py-2.5 pl-2 text-right whitespace-nowrap align-middle">
-              <button onclick="openPayslipModal('${item.r.id}')" class="px-2.5 py-1 text-[11px] font-semibold bg-slate-100 hover:bg-indigo-600 hover:text-white text-slate-700 rounded-lg transition">Relevé</button>
+              ${item.r._isArchived ? '<span class="text-[11px] text-slate-400">—</span>' : `<button onclick="openPayslipModal('${item.r.id}')" class="px-2.5 py-1 text-[11px] font-semibold bg-slate-100 hover:bg-indigo-600 hover:text-white text-slate-700 rounded-lg transition">Relevé</button>`}
             </td>
           </tr>
         `;
       }).join('');
 
-      const rankedEntreprises = state.entreprises.map(e => {
-        const subAll = statsList.filter(v => v.entreprise_id === e.id);
-        const subComm = activeCommList.filter(v => v.entreprise_id === e.id);
+      const dashEntEntities = [
+        ...state.entreprises.map(e => ({ ...e, _isArchived: false })),
+        ...Object.values(archivedEntreprisesStore || {})
+          .filter(a => a && a.nom && !state.entreprises.some(e => e.nom.toLowerCase() === a.nom.toLowerCase()))
+          .map(a => ({ id: a.id || `arch_ent_${a.nom}`, nom: a.nom, _isArchived: true }))
+      ];
+      const matchDashEntSale = (v, e) => {
+        if (!e._isArchived) return String(v.entreprise_id) === String(e.id);
+        return resolveSaleArchivedEntName(v).toLowerCase() === e.nom.toLowerCase();
+      };
+      const rankedEntreprises = dashEntEntities.map(e => {
+        const subAll = statsList.filter(v => matchDashEntSale(v, e));
+        const subComm = activeCommList.filter(v => matchDashEntSale(v, e));
         const ventesVol = subAll.reduce((s, v) => s + Number(v.valeur || 0), 0);
         const commRepVol = subComm.reduce((s, v) => s + Number(v.commission_rep || 0), 0);
         const commOliVol = subComm.reduce((s, v) => s + Number(v.commission_olivier || 0), 0);
         const commBaseVol = subComm.reduce((s, v) => s + Number(v.valeur || 0), 0);
         const margePct = commBaseVol > 0 ? ((commOliVol / commBaseVol) * 100) : 0;
         return { e, ventesVol, commRepVol, commOliVol, margePct };
-      }).sort((a, b) => {
+      }).filter(item => !item.e._isArchived || item.ventesVol > 0 || item.commRepVol !== 0 || item.commOliVol !== 0)
+        .sort((a, b) => {
         if (Math.abs(b.commOliVol - a.commOliVol) > 0.005) return b.commOliVol - a.commOliVol;
         if (Math.abs(b.margePct - a.margePct) > 0.005) return b.margePct - a.margePct;
         return b.ventesVol - a.ventesVol;
