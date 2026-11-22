@@ -4538,42 +4538,44 @@
       });
 
       if (!isAdminUser) {
-        const repsWithDirectSalesByMonth = new Set(
-          allVentes.map(v => {
-            const ym = getSaleStatsMonth(v);
-            const rObj = state.representants.find(r => String(r.id) === String(v.representant_id));
-            const rn = resolveKpiRepName(rObj?.nom || resolveSaleArchivedRepName(v) || v.rep_nom || '');
-            return (ym && rn) ? `${ym}__${rn}` : '';
-          }).filter(Boolean)
-        );
+        // Ajouter les mois présents dans teamKpiSnapshotStore s'ils ne sont pas encore dans freshStore
+        Object.keys(teamKpiSnapshotStore || {}).forEach(ym => {
+          if (isValidYearMonth(ym) && !freshStore[ym]) {
+            freshStore[ym] = createEmptyMonthKpiObject(ym);
+          }
+        });
 
         Object.entries(freshStore).forEach(([ym, mObj]) => {
           ALL_KPI_REPS.forEach(rn => {
             if (rn === myRepName) return;
             const k = `${ym}__${rn}`;
-            if (repsWithDirectSalesByMonth.has(k)) return;
-
             const snap = teamKpiSnapshotStore[ym]?.[rn];
             const liveClDol = Math.round((classementByYmAndRep.get(k) || 0) * 100) / 100;
+            const directDol = Math.round((mObj.reps[rn]['Vente $'].weeks.reduce((a, b) => a + b, 0)) * 100) / 100;
+            const directOts = mObj.reps[rn]['Ventes OTS'].weeks.reduce((a, b) => a + b, 0);
+            const directSuivi = mObj.reps[rn]['Ventes SUIVI'].weeks.reduce((a, b) => a + b, 0);
 
             if (snap && typeof snap === 'object') {
               const snapDol = Math.round(Number(snap.dol || 0) * 100) / 100;
               const snapClDol = Math.round(Number(snap.clDol || 0) * 100) / 100;
               const liveDeltaDol = liveClDol > snapClDol + 0.01 ? Math.round((liveClDol - snapClDol) * 100) / 100 : 0;
+              const bestDol = Math.max(directDol, Math.round((snapDol + liveDeltaDol) * 100) / 100);
+              const bestOts = Math.max(directOts, Number(snap.ots || 0) + (liveDeltaDol > 0 && directOts <= Number(snap.ots || 0) ? 1 : 0));
+              const bestSuivi = Math.max(directSuivi, Number(snap.suivi || 0));
 
-              mObj.reps[rn]['Booké'].weeks = [Number(snap.booke || 0), 0, 0, 0];
-              mObj.reps[rn]['RDV Réalisé'].weeks = [Number(snap.rdv || 0), 0, 0, 0];
-              mObj.reps[rn]['Ventes OTS'].weeks = [Number(snap.ots || 0) + (liveDeltaDol > 0 ? 1 : 0), 0, 0, 0];
-              mObj.reps[rn]['Ventes SUIVI'].weeks = [Number(snap.suivi || 0), 0, 0, 0];
-              mObj.reps[rn]['Vente $'].weeks = [Math.round((snapDol + liveDeltaDol) * 100) / 100, 0, 0, 0];
+              mObj.reps[rn]['Booké'].weeks = [Math.max(mObj.reps[rn]['Booké'].weeks[0] || 0, Number(snap.booke || 0)), 0, 0, 0];
+              mObj.reps[rn]['RDV Réalisé'].weeks = [Math.max(mObj.reps[rn]['RDV Réalisé'].weeks[0] || 0, Number(snap.rdv || 0)), 0, 0, 0];
+              mObj.reps[rn]['Ventes OTS'].weeks = [bestOts, 0, 0, 0];
+              mObj.reps[rn]['Ventes SUIVI'].weeks = [bestSuivi, 0, 0, 0];
+              mObj.reps[rn]['Vente $'].weeks = [bestDol, 0, 0, 0];
 
               if (Number(snap.objDol) > 0) mObj.reps[rn]['Vente $'].objectif = Number(snap.objDol);
               if (Number(snap.objClose) > 0) mObj.reps[rn]['% Close'].objectif = Number(snap.objClose);
               if (Number(snap.objBooke) > 0) mObj.reps[rn]['Booké'].objectif = Number(snap.objBooke);
               if (Number(snap.objRdv) > 0) mObj.reps[rn]['RDV Réalisé'].objectif = Number(snap.objRdv);
-            } else if (liveClDol > 0) {
-              mObj.reps[rn]['Vente $'].weeks[0] = Math.round(((mObj.reps[rn]['Vente $'].weeks[0] || 0) + liveClDol) * 100) / 100;
-              mObj.reps[rn]['Ventes OTS'].weeks[0] = (mObj.reps[rn]['Ventes OTS'].weeks[0] || 0) + 1;
+            } else if (liveClDol > directDol) {
+              mObj.reps[rn]['Vente $'].weeks = [liveClDol, 0, 0, 0];
+              mObj.reps[rn]['Ventes OTS'].weeks = [Math.max(directOts, 1), 0, 0, 0];
             }
           });
         });
@@ -4739,6 +4741,8 @@
         } else if (mode === 'this_year') {
           const yVal = `YEAR_${today.getFullYear()}`;
           if (Array.from(selMonth.options).some(o => o.value === yVal)) selMonth.value = yVal;
+        } else if (mode === 'all') {
+          if (Array.from(selMonth.options).some(o => o.value === currentMonthStr)) selMonth.value = currentMonthStr;
         }
       }
       renderKpiDashboard();
@@ -8060,9 +8064,7 @@
         document.getElementById('filter-admin-scope')?.classList.add('hidden');
         document.getElementById('th-rep-col')?.classList.add('hidden');
         state.representants = (allRepsPublicRows && allRepsPublicRows.length) ? allRepsPublicRows : [currentProfile];
-        syncAllKpiRepsFromState();
         state.mesVentes = (mesVentesRows || []).map(normalizeRepPersonalSaleRow);
-        syncAllKpiRepsFromState();
         const myOwnSaleIds = new Set(state.mesVentes.map(v => String(v.id)));
         const myOwnClientIds = new Set(state.mesVentes.map(v => String(v.client_id || '')).filter(Boolean));
         state.clients = (state.clients || []).filter(c => myOwnClientIds.has(String(c.id)));
@@ -8074,6 +8076,18 @@
           if (sIdx === -14) return false; // Ne pas exposer le numéro personnel du directeur dans les données locales d'un rep
           return true;
         });
+        mergeCloudAuditAndTrash();
+        // Détecter automatiquement tout ancien membre présent dans l'historique KPI (-11 / -9) mais absent des représentants actifs
+        const activeRepNamesLower = new Set((state.representants || []).map(r => String(r?.nom || '').trim().toLowerCase()));
+        Object.values(teamKpiSnapshotStore || {}).forEach(snapMonth => {
+          Object.keys(snapMonth || {}).forEach(rn => {
+            const norm = resolveKpiRepName(rn);
+            if (norm && !activeRepNamesLower.has(norm.toLowerCase()) && !isRepArchived(norm)) {
+              archivedRepsStore[norm] = { id: `arch_rep_${norm.toLowerCase()}`, nom: norm, archivedAt: '2026-01-01' };
+            }
+          });
+        });
+        syncAllKpiRepsFromState();
 
         const ownSalesNormalized = state.mesVentes.map(v => ({
           ...v,
