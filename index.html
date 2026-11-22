@@ -3874,15 +3874,33 @@
       lsSet('korpo_archived_entreprises_v1', JSON.stringify(archivedEntreprisesStore));
     }
 
-    function isRepArchived(repIdOrName) {
-      if (!repIdOrName) return false;
+    function findArchivedRepEntry(repIdOrName) {
+      if (!repIdOrName) return null;
       const key = String(repIdOrName).trim().toLowerCase();
-      return Object.values(archivedRepsStore || {}).some(entry => {
+      return Object.values(archivedRepsStore || {}).find(entry => {
         if (!entry) return false;
         if (entry.id && String(entry.id) === String(repIdOrName)) return true;
         if (entry.nom && String(entry.nom).trim().toLowerCase() === key) return true;
         return false;
-      });
+      }) || null;
+    }
+
+    function isRepArchived(repIdOrName) {
+      return Boolean(findArchivedRepEntry(repIdOrName));
+    }
+
+    function getRepArchiveMonthFactor(repIdOrName, ym) {
+      const entry = findArchivedRepEntry(repIdOrName);
+      if (!entry || !entry.archivedAt || !isValidYearMonth(ym)) return 1;
+      const archDate = String(entry.archivedAt).slice(0, 10);
+      const archYm = archDate.slice(0, 7);
+      if (!isValidYearMonth(archYm)) return 0;
+      if (ym < archYm) return 1;
+      if (ym > archYm) return 0;
+      const archDay = parseInt(archDate.slice(8, 10), 10) || 1;
+      const totalBiz = Math.max(1, countBusinessDaysInMonth(ym));
+      const activeBiz = countBusinessDaysInMonth(ym, archDay);
+      return Math.min(1, Math.max(0, activeBiz / totalBiz));
     }
 
     function getArchivedRepNameById(repId) {
@@ -3891,21 +3909,71 @@
       return found?.nom || '';
     }
 
-    function isEntrepriseArchived(entIdOrName) {
-      if (!entIdOrName) return false;
+    function findArchivedEntrepriseEntry(entIdOrName) {
+      if (!entIdOrName) return null;
       const key = String(entIdOrName).trim().toLowerCase();
-      return Object.values(archivedEntreprisesStore || {}).some(entry => {
+      return Object.values(archivedEntreprisesStore || {}).find(entry => {
         if (!entry) return false;
         if (entry.id && String(entry.id) === String(entIdOrName)) return true;
         if (entry.nom && String(entry.nom).trim().toLowerCase() === key) return true;
         return false;
-      });
+      }) || null;
+    }
+
+    function isEntrepriseArchived(entIdOrName) {
+      return Boolean(findArchivedEntrepriseEntry(entIdOrName));
+    }
+
+    function getEntrepriseArchiveMonthFactor(entIdOrName, ym) {
+      const entry = findArchivedEntrepriseEntry(entIdOrName);
+      if (!entry || !entry.archivedAt || !isValidYearMonth(ym)) return 1;
+      const archDate = String(entry.archivedAt).slice(0, 10);
+      const archYm = archDate.slice(0, 7);
+      if (!isValidYearMonth(archYm)) return 0;
+      if (ym < archYm) return 1;
+      if (ym > archYm) return 0;
+      const archDay = parseInt(archDate.slice(8, 10), 10) || 1;
+      const totalBiz = Math.max(1, countBusinessDaysInMonth(ym));
+      const activeBiz = countBusinessDaysInMonth(ym, archDay);
+      return Math.min(1, Math.max(0, activeBiz / totalBiz));
     }
 
     function getArchivedEntrepriseNameById(entId) {
       if (!entId) return '';
       const found = Object.values(archivedEntreprisesStore || {}).find(entry => entry && String(entry.id) === String(entId));
       return found?.nom || '';
+    }
+
+    function resolveSaleArchivedRepName(v) {
+      if (!v) return '';
+      if (v.representant_id) {
+        const byId = resolveSaleArchivedRepName(v);
+        if (byId) return byId;
+      }
+      const sid = v.id ? String(v.id) : '';
+      if (sid) {
+        const bySaleId = Object.values(archivedRepsStore || {}).find(entry => Array.isArray(entry?.saleIds) && entry.saleIds.includes(sid));
+        if (bySaleId?.nom) return bySaleId.nom;
+      }
+      const mTag = String(v.note || '').match(/\[REP:([^\]]+)\]/i);
+      if (mTag && mTag[1]) return mTag[1].trim();
+      return '';
+    }
+
+    function resolveSaleArchivedEntName(v) {
+      if (!v) return '';
+      if (v.entreprise_id) {
+        const byId = resolveSaleArchivedEntName(v);
+        if (byId) return byId;
+      }
+      const sid = v.id ? String(v.id) : '';
+      if (sid) {
+        const bySaleId = Object.values(archivedEntreprisesStore || {}).find(entry => Array.isArray(entry?.saleIds) && entry.saleIds.includes(sid));
+        if (bySaleId?.nom) return bySaleId.nom;
+      }
+      const mTag = String(v.note || '').match(/\[ENT:([^\]]+)\]/i);
+      if (mTag && mTag[1]) return mTag[1].trim();
+      return '';
     }
 
     function getActiveKpiReps() {
@@ -4414,6 +4482,26 @@
       lsSet('korpo_kpi_team_snapshot_v1', JSON.stringify(teamKpiSnapshotStore));
       applySaleBonusOverridesToState();
       applyCarryOverMetadataToState();
+      // Récupérer l'attribution des ventes déjà détachées (representant_id / entreprise_id null) lors d'une suppression précédente
+      const archivedRepEntries = Object.values(archivedRepsStore || {});
+      const archivedEntEntries = Object.values(archivedEntreprisesStore || {});
+      if (archivedRepEntries.length === 1 || archivedEntEntries.length === 1) {
+        (state.ventes || []).forEach(v => {
+          if (v.representant_id === null && archivedRepEntries.length === 1) {
+            const onlyRep = archivedRepEntries[0];
+            if (onlyRep && Array.isArray(onlyRep.saleIds) && !onlyRep.saleIds.includes(String(v.id))) {
+              onlyRep.saleIds.push(String(v.id));
+            }
+          }
+          if (v.entreprise_id === null && archivedEntEntries.length === 1) {
+            const onlyEnt = archivedEntEntries[0];
+            if (onlyEnt && Array.isArray(onlyEnt.saleIds) && !onlyEnt.saleIds.includes(String(v.id))) {
+              onlyEnt.saleIds.push(String(v.id));
+            }
+          }
+        });
+      }
+
       updateTrashBadges();
     }
 
@@ -4455,8 +4543,8 @@
       return {
         ...v,
         client_nom: state.clients.find(c => c.id === v.client_id)?.nom || '—',
-        entreprise_nom: state.entreprises.find(e => e.id === v.entreprise_id)?.nom || getArchivedEntrepriseNameById(v.entreprise_id) || '—',
-        rep_nom: state.representants.find(r => r.id === v.representant_id)?.nom || getArchivedRepNameById(v.representant_id) || '—',
+        entreprise_nom: state.entreprises.find(e => e.id === v.entreprise_id)?.nom || resolveSaleArchivedEntName(v) || '—',
+        rep_nom: state.representants.find(r => r.id === v.representant_id)?.nom || resolveSaleArchivedRepName(v) || '—',
         commission_rep: personalComm,
         _repCommAmount: cRep
       };
@@ -6356,20 +6444,32 @@
 
     function recalcTeamObjectivesForMonth(mObj) {
       if (!mObj || !mObj.team || !mObj.reps) return;
-      Object.keys(mObj.reps).forEach(rn => {
-        if (isRepArchived(rn)) {
-          ['Booké', 'RDV Réalisé', 'Ventes OTS', 'Ventes SUIVI', 'Vente $', '% Close'].forEach(mk => {
-            if (mObj.reps[rn][mk]) mObj.reps[rn][mk].objectif = 0;
-          });
+      const ym = mObj.ym || '';
+      const reps = Object.keys(mObj.reps);
+      reps.forEach(rn => {
+        const factor = isRepArchived(rn) ? (isValidYearMonth(ym) ? getRepArchiveMonthFactor(rn, ym) : 0) : 1;
+        if (factor < 1) {
+          const entry = findArchivedRepEntry(rn);
+          const snapObj = entry?.targets || {};
+          const applyFactor = (mk, baseVal) => {
+            if (!mObj.reps[rn][mk]) return;
+            const rawBase = Number(baseVal || mObj.reps[rn][mk].objectif || 0);
+            mObj.reps[rn][mk].objectif = Math.round(rawBase * factor * 100) / 100;
+          };
+          applyFactor('Vente $', snapObj.dollars);
+          applyFactor('Booké', snapObj.booke);
+          applyFactor('RDV Réalisé', snapObj.rdv);
+          applyFactor('Ventes OTS', snapObj.ots);
+          applyFactor('Ventes SUIVI', snapObj.suivi);
+          if (factor === 0 && mObj.reps[rn]['% Close']) mObj.reps[rn]['% Close'].objectif = 0;
         }
       });
-      const reps = Object.keys(mObj.reps).filter(rn => !isRepArchived(rn));
-      mObj.team['Booké'].objectif = reps.reduce((s, rn) => s + Number(mObj.reps[rn]['Booké']?.objectif || 0), 0);
-      mObj.team['RDV RÉA'].objectif = reps.reduce((s, rn) => s + Number(mObj.reps[rn]['RDV Réalisé']?.objectif || 0), 0);
-      mObj.team['VENTE OTS'].objectif = reps.reduce((s, rn) => s + Number(mObj.reps[rn]['Ventes OTS']?.objectif || 0), 0);
-      mObj.team['VENTE SUIVI'].objectif = reps.reduce((s, rn) => s + Number(mObj.reps[rn]['Ventes SUIVI']?.objectif || 0), 0);
+      mObj.team['Booké'].objectif = Math.round(reps.reduce((s, rn) => s + Number(mObj.reps[rn]['Booké']?.objectif || 0), 0));
+      mObj.team['RDV RÉA'].objectif = Math.round(reps.reduce((s, rn) => s + Number(mObj.reps[rn]['RDV Réalisé']?.objectif || 0), 0));
+      mObj.team['VENTE OTS'].objectif = Math.round(reps.reduce((s, rn) => s + Number(mObj.reps[rn]['Ventes OTS']?.objectif || 0), 0));
+      mObj.team['VENTE SUIVI'].objectif = Math.round(reps.reduce((s, rn) => s + Number(mObj.reps[rn]['Ventes SUIVI']?.objectif || 0), 0));
       mObj.team['VENTE TOTAL'].objectif = mObj.team['VENTE OTS'].objectif + mObj.team['VENTE SUIVI'].objectif;
-      mObj.team['VENTE $'].objectif = reps.reduce((s, rn) => s + Number(mObj.reps[rn]['Vente $']?.objectif || 0), 0);
+      mObj.team['VENTE $'].objectif = Math.round(reps.reduce((s, rn) => s + Number(mObj.reps[rn]['Vente $']?.objectif || 0), 0) * 100) / 100;
     }
 
     function syncRepTargetInputs() {
@@ -7122,7 +7222,7 @@
 
     function cleanDisplaySaleNote(noteStr) {
       return String(noteStr || '')
-        .replace(/^\[(OTS|SUIVI)\]\s*/i, '').replace(/\[SANSDEPOT\]\s*/ig, '')
+        .replace(/^\[(OTS|SUIVI)\]\s*/i, '').replace(/\[(REP|ENT):[^\]]+\]\s*/ig, '').replace(/\[SANSDEPOT\]\s*/ig, '')
         .replace(/\[HIT(?::(?:REP|OLIVIER|BOTH))?\]\s*/ig, '')
         .trim();
     }
@@ -7440,7 +7540,7 @@
 
       const activeForecastReps = getActiveKpiReps();
       const repTargetsMap = {};
-      activeForecastReps.forEach(rn => {
+      ALL_KPI_REPS.forEach(rn => {
         if (isSingleMonthMode) {
           repTargetsMap[rn] = getSalesTargetForRep(rn, targetYm);
         } else if (dashPeriod.mode === 'specific_date' || dashPeriod.mode === 'this_week' || dashPeriod.mode === 'custom_range') {
@@ -7449,7 +7549,7 @@
           repTargetsMap[rn] = coveredMonths.reduce((s, ym) => s + getSalesTargetForRep(rn, ym), 0);
         }
       });
-      const totObjective = activeForecastReps.reduce((s, rn) => s + (repTargetsMap[rn] || 0), 0);
+      const totObjective = ALL_KPI_REPS.reduce((s, rn) => s + (repTargetsMap[rn] || 0), 0);
 
       // Cadence par jour ouvrable
       const dailyPace = Math.round(totSigned / elapsedBizDays);
@@ -7778,6 +7878,7 @@
         total: { weeks: [0, 0, 0, 0], cumul: 0, objectif: 0 }
       });
       return {
+        ym,
         label,
         num_weeks: numWeeks,
         reps: {
@@ -7942,8 +8043,8 @@
 
         const repObj = state.representants.find(r => String(r.id) === String(v.representant_id));
         const entObj = state.entreprises.find(e => String(e.id) === String(v.entreprise_id));
-        const repName = resolveKpiRepName(repObj?.nom || getArchivedRepNameById(v.representant_id) || v.rep_nom || '');
-        const entName = (entObj?.nom || getArchivedEntrepriseNameById(v.entreprise_id) || v.entreprise_nom || '').trim();
+        const repName = resolveKpiRepName(repObj?.nom || resolveSaleArchivedRepName(v) || v.rep_nom || '');
+        const entName = (entObj?.nom || resolveSaleArchivedEntName(v) || v.entreprise_nom || '').trim();
         if (!repName) return;
 
         const val = Number(v.valeur || 0);
@@ -8048,8 +8149,13 @@
 
         Object.entries(mObj.entreprises).forEach(([eKey, eObj]) => {
           if (isEntrepriseArchived(eKey)) {
-            if (eObj.total) eObj.total.objectif = 0;
-            Object.values(eObj.reps || {}).forEach(rpObj => { if (rpObj) rpObj.objectif = 0; });
+            const eFactor = getEntrepriseArchiveMonthFactor(eKey, mObj.ym || '');
+            const archEnt = findArchivedEntrepriseEntry(eKey);
+            const baseEntObj = Number(archEnt?.monthlyObjective || eObj.total?.objectif || 0);
+            if (eObj.total) eObj.total.objectif = Math.round(baseEntObj * eFactor * 100) / 100;
+            Object.values(eObj.reps || {}).forEach(rpObj => {
+              if (rpObj) rpObj.objectif = Math.round(Number(rpObj.objectif || 0) * eFactor * 100) / 100;
+            });
           }
           const sumW = Array(nw).fill(0);
           Object.values(eObj.reps).forEach(rpObj => {
@@ -11589,7 +11695,12 @@
     }
 
     function getSalesTargetForRep(repName, ym) {
-      if (isRepArchived(repName)) return 0;
+      if (isRepArchived(repName)) {
+        const factor = getRepArchiveMonthFactor(repName, ym || currentMonthStr);
+        if (factor <= 0) return 0;
+        const baseD = Number(findArchivedRepEntry(repName)?.targets?.dollars || 0);
+        return Math.round(baseD * factor * 100) / 100;
+      }
       const cloudRow = getCloudRepTargetRow(repName, ym);
       if (cloudRow && Number(cloudRow.booke) > 0) return Number(cloudRow.booke);
       if (personalMonthlyTargets[`${repName}_${ym}`] > 0) return Number(personalMonthlyTargets[`${repName}_${ym}`]);
@@ -11663,7 +11774,12 @@
     }
 
     function getCommissionTargetForRep(repName, ym) {
-      if (isRepArchived(repName)) return 0;
+      if (isRepArchived(repName)) {
+        const factor = getRepArchiveMonthFactor(repName, ym || currentMonthStr);
+        if (factor <= 0) return 0;
+        const baseC = Number(findArchivedRepEntry(repName)?.targets?.comm || 0);
+        return Math.round(baseC * factor * 100) / 100;
+      }
       const cloudRow = getCloudRepTargetRow(repName, ym);
       if (cloudRow && Number(cloudRow.rdv_realise) > 0) return Number(cloudRow.rdv_realise);
       if (personalCommTargets[`${repName}_${ym}`] > 0) return Number(personalCommTargets[`${repName}_${ym}`]);
@@ -13772,7 +13888,7 @@
       applyDrawerRoleErgonomics();
       renderDrawerClientQuickSuggestions();
       document.getElementById('vente-note').value = rawN
-        .replace(/^\[(OTS|SUIVI)\]\s*/i, '').replace(/\[SANSDEPOT\]\s*/ig, '')
+        .replace(/^\[(OTS|SUIVI)\]\s*/i, '').replace(/\[(REP|ENT):[^\]]+\]\s*/ig, '').replace(/\[SANSDEPOT\]\s*/ig, '')
         .replace(/\[HIT(?::(?:REP|OLIVIER|BOTH))?\]\s*/ig, '')
         .trim();
 
@@ -14125,8 +14241,8 @@
 
       if (mobileAdminBox) {
         mobileAdminBox.innerHTML = list.map(v => {
-          const rep = state.representants.find(r => r.id === v.representant_id)?.nom || getArchivedRepNameById(v.representant_id) || '—';
-          const ent = state.entreprises.find(e => e.id === v.entreprise_id)?.nom || getArchivedEntrepriseNameById(v.entreprise_id) || '—';
+          const rep = state.representants.find(r => r.id === v.representant_id)?.nom || resolveSaleArchivedRepName(v) || '—';
+          const ent = state.entreprises.find(e => e.id === v.entreprise_id)?.nom || resolveSaleArchivedEntName(v) || '—';
           const cli = state.clients.find(c => c.id === v.client_id)?.nom || '—';
           const isSuivi = (v.note || '').toUpperCase().includes('[SUIVI]');
           const proofSrc = getProofForSale(v);
@@ -14181,8 +14297,8 @@
       }
 
       tbody.innerHTML = list.map(v => {
-        const rep = state.representants.find(r => r.id === v.representant_id)?.nom || getArchivedRepNameById(v.representant_id) || '—';
-        const ent = state.entreprises.find(e => e.id === v.entreprise_id)?.nom || getArchivedEntrepriseNameById(v.entreprise_id) || '—';
+        const rep = state.representants.find(r => r.id === v.representant_id)?.nom || resolveSaleArchivedRepName(v) || '—';
+        const ent = state.entreprises.find(e => e.id === v.entreprise_id)?.nom || resolveSaleArchivedEntName(v) || '—';
         const cli = state.clients.find(c => c.id === v.client_id)?.nom || '—';
         const isChecked = selectedSaleIds.has(v.id);
         const isSuivi = (v.note || '').toUpperCase().includes('[SUIVI]');
@@ -14706,7 +14822,7 @@
           </thead>
           <tbody class="divide-y divide-slate-100">
             ${sales.map(v => {
-              const ent = state.entreprises.find(e => e.id === v.entreprise_id)?.nom || getArchivedEntrepriseNameById(v.entreprise_id) || '—';
+              const ent = state.entreprises.find(e => e.id === v.entreprise_id)?.nom || resolveSaleArchivedEntName(v) || '—';
               const cli = state.clients.find(c => c.id === v.client_id)?.nom || '—';
               const comm = isOlivier ? v.commission_olivier : v.commission_rep;
               return `
@@ -14880,7 +14996,7 @@
         const taux = Number(isOlivier ? v.taux_olivier_applique : v.taux_rep_applique);
         const rawNote = String(v.note || '');
         const typeKpi = rawNote.toUpperCase().includes('[SUIVI]') ? 'SUIVI' : 'OTS';
-        const cleanNote = rawNote.replace(/^\[(OTS|SUIVI)\]\s*/i, '').replace(/\[SANSDEPOT\]\s*/ig, '').trim();
+        const cleanNote = rawNote.replace(/^\[(OTS|SUIVI)\]\s*/i, '').replace(/\[(REP|ENT):[^\]]+\]\s*/ig, '').replace(/\[SANSDEPOT\]\s*/ig, '').trim();
         return {
           date: v.date_vente,
           entreprise: ent,
@@ -15516,7 +15632,7 @@
       const rawNote = v.note || '';
       const isCurrentlySuivi = rawNote.toUpperCase().includes('[SUIVI]');
       const nextTag = isCurrentlySuivi ? 'OTS' : 'SUIVI';
-      const cleanBody = rawNote.replace(/^\[(OTS|SUIVI)\]\s*/i, '').replace(/\[SANSDEPOT\]\s*/ig, '').trim();
+      const cleanBody = rawNote.replace(/^\[(OTS|SUIVI)\]\s*/i, '').replace(/\[(REP|ENT):[^\]]+\]\s*/ig, '').replace(/\[SANSDEPOT\]\s*/ig, '').trim();
       const updatedNote = cleanBody ? `[${nextTag}] ${cleanBody}` : `[${nextTag}]`;
 
       const { error } = await sb.from('ventes').update({ note: updatedNote }).eq('id', id);
@@ -15566,25 +15682,27 @@
     window.deleteEntreprise = async (id) => {
       const entObj = state.entreprises.find(x => String(x.id) === String(id));
       const nom = entObj?.nom || 'cette entreprise';
-      const hasPastSales = state.ventes.some(v => String(v.entreprise_id) === String(id));
+      const matchingSales = state.ventes.filter(v => String(v.entreprise_id) === String(id));
+      const hasPastSales = matchingSales.length > 0;
       const ok = await askConfirm(
         `Supprimer ${nom} des entreprises actives ?`,
         hasPastSales
-          ? `Ses statistiques et ventes antérieures seront conservées dans l'historique global, mais ${nom}, ses taux et tous ses objectifs seront retirés des tableaux KPI et des listes actives.`
+          ? `Ses statistiques et ventes antérieures seront conservées dans l'historique global et ses objectifs du mois en cours seront ajustés au prorata.`
           : `Cette entreprise, ses taux et tous ses objectifs seront retirés des KPI.`
       );
       if (!ok) return;
 
-      // 1. Archiver l'entreprise pour préserver l'attribution de ses ventes antérieures sans affecter les KPI/objectifs actifs
+      const curMonthEntObj = Number(kpiStore[currentMonthStr]?.entreprises?.[nom]?.total?.objectif || 0);
       const archiveKey = String(id || nom);
       archivedEntreprisesStore[archiveKey] = {
         id: String(id || ''),
         nom,
-        archivedAt: new Date().toISOString()
+        archivedAt: new Date().toISOString(),
+        saleIds: matchingSales.map(v => String(v.id)),
+        monthlyObjective: curMonthEntObj
       };
       saveArchivedEntreprisesStore();
 
-      // 2. Supprimer ses objectifs (compagnie + clients associés)
       const metaKeysToRemove = Object.keys(companyTargetsMetaStore || {}).filter(k => {
         const m = companyTargetsMetaStore[k];
         const entN = m?.entNom || k.split('__')[0];
@@ -15606,9 +15724,13 @@
         } catch (e) {}
 
         if (hasPastSales) {
-          try {
-            await sb.from('ventes').update({ entreprise_id: null }).eq('entreprise_id', id);
-          } catch (e) {}
+          for (const v of matchingSales) {
+            const curNote = String(v.note || '').trim();
+            const taggedNote = /\[ENT:/i.test(curNote) ? curNote : `${curNote} [ENT:${nom}]`.trim();
+            try {
+              await sb.from('ventes').update({ entreprise_id: null, note: taggedNote }).eq('id', v.id);
+            } catch (e) {}
+          }
           try {
             await sb.from('clients').update({ entreprise_id: null }).eq('entreprise_id', id);
           } catch (e) {}
@@ -15618,32 +15740,43 @@
         if (error) return toast(error.message, 'error');
       }
 
-      toast(`${nom} retirée des entreprises et objectifs KPI (statistiques antérieures conservées) ✓`);
+      toast(`${nom} retirée (ventes antérieures conservées et objectifs ajustés au prorata) ✓`);
       await loadAllData();
     };
 
     window.deleteRepresentant = async (id) => {
       const repObj = state.representants.find(x => String(x.id) === String(id));
       const nom = repObj?.nom || 'ce membre';
-      const hasPastSales = state.ventes.some(v => String(v.representant_id) === String(id));
+      const matchingSales = state.ventes.filter(v => String(v.representant_id) === String(id));
+      const hasPastSales = matchingSales.length > 0;
       const ok = await askConfirm(
         `Supprimer ${nom} de l'équipe active ?`,
         hasPastSales
-          ? `Ses statistiques et ventes antérieures seront conservées dans l'historique global, mais ${nom} et tous ses objectifs seront retirés des tableaux KPI, du classement et de l'équipe active.`
+          ? `Ses statistiques et ventes antérieures seront conservées dans l'historique global et ses objectifs du mois en cours seront calculés au prorata.`
           : `Ce membre et tous ses objectifs seront retirés de l'équipe et des KPI.`
       );
       if (!ok) return;
 
-      // 1. Archiver le représentant pour préserver l'attribution de ses ventes antérieures dans l'historique sans affecter les KPI/objectifs actifs
+      const curRepKpi = kpiStore[currentMonthStr]?.reps?.[nom] || {};
+      const snapTargets = {
+        dollars: getSalesTargetForRep(nom, currentMonthStr),
+        comm: getCommissionTargetForRep(nom, currentMonthStr),
+        booke: Number(curRepKpi['Booké']?.objectif || 80),
+        rdv: Number(curRepKpi['RDV Réalisé']?.objectif || 60),
+        ots: Number(curRepKpi['Ventes OTS']?.objectif || 10),
+        suivi: Number(curRepKpi['Ventes SUIVI']?.objectif || 20)
+      };
+
       const archiveKey = String(id || nom);
       archivedRepsStore[archiveKey] = {
         id: String(id || ''),
         nom,
-        archivedAt: new Date().toISOString()
+        archivedAt: new Date().toISOString(),
+        saleIds: matchingSales.map(v => String(v.id)),
+        targets: snapTargets
       };
       saveArchivedRepsStore();
 
-      // 2. Supprimer tous ses objectifs (locaux + cloud)
       Object.keys(repTargetsOverrides || {}).forEach(k => {
         if (k.endsWith(`_${nom}`)) delete repTargetsOverrides[k];
       });
@@ -15672,9 +15805,13 @@
         } catch (e) {}
 
         if (hasPastSales) {
-          try {
-            await sb.from('ventes').update({ representant_id: null }).eq('representant_id', id);
-          } catch (e) {}
+          for (const v of matchingSales) {
+            const curNote = String(v.note || '').trim();
+            const taggedNote = /\[REP:/i.test(curNote) ? curNote : `${curNote} [REP:${nom}]`.trim();
+            try {
+              await sb.from('ventes').update({ representant_id: null, note: taggedNote }).eq('id', v.id);
+            } catch (e) {}
+          }
         }
 
         const { error } = await sb.from('representants').delete().eq('id', id);
@@ -15682,7 +15819,7 @@
       }
 
       syncAllKpiRepsFromState();
-      toast(`${nom} retiré de l'équipe et des objectifs KPI (statistiques antérieures conservées) ✓`);
+      toast(`${nom} retiré de l'équipe (ventes antérieures conservées et objectifs ajustés au prorata) ✓`);
       await loadAllData();
     };
 
@@ -17776,7 +17913,7 @@
           note: (() => {
             const rawNote = document.getElementById('vente-note').value
               .trim()
-              .replace(/^\[(OTS|SUIVI)\]\s*/i, '').replace(/\[SANSDEPOT\]\s*/ig, '')
+              .replace(/^\[(OTS|SUIVI)\]\s*/i, '').replace(/\[(REP|ENT):[^\]]+\]\s*/ig, '').replace(/\[SANSDEPOT\]\s*/ig, '')
               .replace(/\[HIT(?::(?:REP|OLIVIER|BOTH))?\]\s*/ig, '')
               .trim();
             const typeKpi = document.getElementById('vente-type-kpi').value;
@@ -18244,7 +18381,7 @@
           const note = get('note');
           const rowJoined = (headerMode ? `${note} ${get('type')}` : cols.slice(6).join(' ')).toUpperCase();
           const kpiTag = rowJoined.includes('SUIVI') ? 'SUIVI' : 'OTS';
-          const cleanNoteBody = note.replace(/^\[(OTS|SUIVI)\]\s*/i, '').replace(/\[SANSDEPOT\]\s*/ig, '').trim();
+          const cleanNoteBody = note.replace(/^\[(OTS|SUIVI)\]\s*/i, '').replace(/\[(REP|ENT):[^\]]+\]\s*/ig, '').replace(/\[SANSDEPOT\]\s*/ig, '').trim();
           const finalNote = cleanNoteBody ? `[${kpiTag}] ${cleanNoteBody}` : `[${kpiTag}]`;
 
           try {
