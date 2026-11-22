@@ -1392,44 +1392,6 @@
       <!-- ONGLET 1 : MES VENTES & COMMISSIONS (REP + ADMIN)            -->
       <!-- ============================================================ -->
       <section id="tab-mes-ventes" class="space-y-6">
-        <!-- PARCOURS DE PREMIÈRE CONNEXION EN 3 ÉTAPES SÉQUENTIELLES -->
-        <div id="rep-onboarding-card" class="hidden fixed inset-0 z-50 bg-slate-950/75 backdrop-blur-sm flex items-center justify-center p-4 no-print">
-          <div class="bg-white w-full max-w-md rounded-3xl border border-slate-200 shadow-2xl overflow-hidden animate-drawer">
-            <!-- En-tête avec barre de progression 1 -> 2 -> 3 -->
-            <div class="px-5 py-4 bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white space-y-3">
-              <div class="flex items-center justify-between gap-2">
-                <div class="flex items-center gap-2.5 min-w-0">
-                  <span class="w-9 h-9 rounded-xl bg-indigo-500/30 border border-indigo-400/40 text-white flex items-center justify-center text-base font-extrabold shrink-0">👋</span>
-                  <div class="min-w-0">
-                    <h3 id="rep-onboarding-title" class="text-sm font-extrabold truncate">Bienvenue sur Korpo Solutions !</h3>
-                    <p id="rep-onboarding-step-label" class="text-[11px] text-indigo-200">Étape 1 sur 3 • Configuration rapide</p>
-                  </div>
-                </div>
-                <button type="button" onclick="completeRepOnboarding(false)" title="Passer le guide" class="px-2.5 py-1 rounded-lg bg-white/10 hover:bg-white/20 text-[11px] font-bold text-slate-200 transition cursor-pointer shrink-0">Passer</button>
-              </div>
-              <div class="grid grid-cols-3 gap-1.5">
-                <div id="onb-prog-1" class="h-1.5 rounded-full bg-emerald-400 transition-all"></div>
-                <div id="onb-prog-2" class="h-1.5 rounded-full bg-white/20 transition-all"></div>
-                <div id="onb-prog-3" class="h-1.5 rounded-full bg-white/20 transition-all"></div>
-              </div>
-            </div>
-
-            <!-- Contenu de l'étape active (1 à la fois) -->
-            <div id="rep-onboarding-step-body" class="p-5 sm:p-6 space-y-4"></div>
-
-            <!-- Pied de navigation Précédent / Suivant -->
-            <div class="px-5 py-3.5 bg-slate-50 border-t border-slate-200/80 flex items-center justify-between gap-2">
-              <button type="button" id="btn-onb-prev" onclick="prevRepOnboardingStep()" class="hidden px-3.5 py-2 text-xs font-bold text-slate-700 bg-white border border-slate-300 rounded-xl hover:bg-slate-100 transition cursor-pointer">
-                ← Précédent
-              </button>
-              <div class="flex-1"></div>
-              <button type="button" id="btn-onb-next" onclick="nextRepOnboardingStep()" class="px-5 py-2.5 text-xs font-extrabold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl shadow-sm transition cursor-pointer">
-                Suivant →
-              </button>
-            </div>
-          </div>
-        </div>
-
         <!-- BANDEAU RELANCE INTELLIGENTE DES DÉPÔTS EN ATTENTE (REPRÉSENTANT) -->
         <div id="rep-deposit-reminder-banner" class="hidden bg-amber-50 border border-amber-300 rounded-2xl p-4 shadow-xs space-y-3">
           <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
