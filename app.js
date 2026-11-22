@@ -1749,8 +1749,15 @@
 
     function triggerSaleCelebration(repName, clientNom, entNom, valeur, commAmount, isTeamBroadcast = false) {
       ensureRocketCelebrationStyles();
-      const overlay = document.getElementById('sale-celebration-overlay');
-      if (!overlay) return;
+      let overlay = document.getElementById('sale-celebration-overlay');
+      if (!overlay) {
+        overlay = document.createElement('div');
+        overlay.id = 'sale-celebration-overlay';
+        overlay.className = 'fixed inset-0 bg-slate-950/75 backdrop-blur-sm flex items-center justify-center p-4';
+        document.body.appendChild(overlay);
+      } else if (overlay.parentNode !== document.body) {
+        document.body.appendChild(overlay);
+      }
 
       const safeVal = Math.max(0, Number(valeur || 0));
       const safeComm = Number(commAmount || 0);
@@ -1815,6 +1822,7 @@
         </div>
       `;
 
+      overlay.style.display = 'flex';
       overlay.classList.remove('hidden');
       playRocketIgnitionSweep();
 
@@ -1890,6 +1898,7 @@
 
       const closeOverlay = () => {
         if (window._rocketAnimFrame) cancelAnimationFrame(window._rocketAnimFrame);
+        overlay.style.display = '';
         overlay.classList.add('hidden');
       };
       const closeBtn = document.getElementById('btn-close-celebration');
@@ -3656,8 +3665,15 @@
     }
 
     window.quickConfirmSale = async (saleId) => {
+      const targetV = (state.ventes || []).find(x => String(x.id) === String(saleId));
       const { error } = await sb.from('ventes').update({ statut_depot: 'depot_recu' }).eq('id', saleId);
       if (error) return toast(error.message, 'error');
+      if (targetV && !isHitSale(targetV)) {
+        const repN = state.representants.find(r => String(r.id) === String(targetV.representant_id))?.nom || 'Représentant';
+        const entN = state.entreprises.find(e => String(e.id) === String(targetV.entreprise_id))?.nom || 'Korpo';
+        const cliN = state.clients.find(c => String(c.id) === String(targetV.client_id))?.nom || '';
+        triggerSaleCelebration(repN, cliN, entN, Number(targetV.valeur || 0), Number(targetV.commission_olivier || targetV.commission_rep || 0));
+      }
       await recordSaleAudit(saleId, 'Dépôt confirmé (Reçu)', 'Validation rapide depuis les notifications', '✅');
       const mergedCount = await reconcilePreviousUnconfirmedDuplicateSales([saleId]);
       toast(mergedCount > 0
@@ -8626,6 +8642,61 @@
       }
     }
 
+    function ensureMiniBarRocketStyles() {
+      if (document.getElementById('korpo-mini-bar-rocket-css')) return;
+      const st = document.createElement('style');
+      st.id = 'korpo-mini-bar-rocket-css';
+      st.textContent = `
+        @keyframes korpoMiniRocketBob {
+          0%, 100% { transform: translate(-50%, -50%) rotate(45deg) scale(1); }
+          50% { transform: translate(-50%, -54%) rotate(48deg) scale(1.1); }
+        }
+        .korpo-mini-rocket-badge {
+          position: absolute;
+          top: 50%;
+          z-index: 10;
+          pointer-events: none;
+          user-select: none;
+          line-height: 1;
+          font-size: 15px;
+          filter: drop-shadow(0 1px 4px rgba(15, 23, 42, 0.35));
+          transition: left 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+          animation: korpoMiniRocketBob 1.3s ease-in-out infinite;
+        }
+      `;
+      document.head.appendChild(st);
+    }
+
+    function syncRocketOnProgressBar(fillEl, pctVal) {
+      if (!fillEl) return;
+      ensureMiniBarRocketStyles();
+      const track = fillEl.parentElement;
+      if (!track) return;
+      track.classList.remove('overflow-hidden');
+      track.classList.add('relative', 'overflow-visible');
+      let rocketEl = track.querySelector('.korpo-mini-rocket-badge');
+      if (!rocketEl) {
+        rocketEl = document.createElement('span');
+        rocketEl.className = 'korpo-mini-rocket-badge';
+        rocketEl.textContent = '🚀';
+        track.appendChild(rocketEl);
+      }
+      const clamped = Math.min(100, Math.max(2, Number(pctVal) || 0));
+      rocketEl.style.left = `${clamped}%`;
+    }
+
+    function miniRocketProgressTrackHtml(fillClass, pctVal, heightClass = 'h-2.5', trackBgClass = 'bg-slate-100') {
+      ensureMiniBarRocketStyles();
+      const safePct = Math.min(100, Math.max(0, Number(pctVal) || 0));
+      const rocketPos = Math.min(100, Math.max(2, safePct));
+      return `
+        <div class="relative w-full ${heightClass} ${trackBgClass} rounded-full overflow-visible">
+          <div class="h-full ${fillClass} rounded-full transition-all duration-700 ease-out" style="width: ${safePct}%"></div>
+          <span class="korpo-mini-rocket-badge" style="left: ${rocketPos}%">🚀</span>
+        </div>
+      `;
+    }
+
     function updatePersonalGoalProgressBar(periodState, scopeFilter) {
       if (!currentProfile) return;
       const isAdmin = currentProfile.role === 'admin';
@@ -8717,6 +8788,7 @@
         cBadge.textContent = '—';
         cBadge.className = 'px-2 py-0.5 text-[11px] font-extrabold rounded-full bg-slate-100 text-slate-500 tabular-nums';
         cFill.style.width = '0%';
+        syncRocketOnProgressBar(cFill, 0);
         cRem.textContent = 'Aucun objectif de commission pour le moment';
         cMsg.textContent = undefinedGoalMsg;
         cMsg.className = 'font-semibold text-slate-500';
@@ -8725,6 +8797,7 @@
         cSub.textContent = `${fmtMoney(achievedComm)} / ${fmtMoney(commTarget)}`;
         cBadge.textContent = `${commPct} %`;
         cFill.style.width = `${Math.min(100, commPct)}%`;
+        syncRocketOnProgressBar(cFill, commPct);
         if (commPct >= 100) {
           cBadge.className = 'px-2 py-0.5 text-[11px] font-extrabold rounded-full bg-emerald-600 text-white tabular-nums';
           cRem.textContent = `Bonus dépassé de + ${fmtMoney(achievedComm - commTarget)} !`;
@@ -8760,6 +8833,7 @@
         badgeEl.textContent = '—';
         badgeEl.className = 'px-2 py-0.5 text-[11px] font-extrabold rounded-full bg-slate-100 text-slate-500 tabular-nums';
         fillEl.style.width = '0%';
+        syncRocketOnProgressBar(fillEl, 0);
         remEl.textContent = 'Aucun objectif de ventes pour le moment';
         msgEl.textContent = undefinedGoalMsg;
         msgEl.className = 'font-semibold text-slate-500';
@@ -8768,6 +8842,7 @@
       subEl.textContent = `${fmtMoney(achievedSales)} / ${fmtMoney(salesTarget)}`;
       badgeEl.textContent = `${salesPct} %`;
       fillEl.style.width = `${Math.min(100, salesPct)}%`;
+      syncRocketOnProgressBar(fillEl, salesPct);
 
       if (salesPct >= 100) {
         badgeEl.className = 'px-2 py-0.5 text-[11px] font-extrabold rounded-full bg-emerald-100 text-emerald-800 tabular-nums';
@@ -10366,9 +10441,7 @@
                   <span class="text-slate-500">Target : ${fmtMoney0(r.repTarget)}</span>
                   <span class="${r.targetPct >= 100 ? 'text-emerald-600' : 'text-indigo-700'}">${r.targetPct} %</span>
                 </div>
-                <div class="w-full h-2.5 bg-slate-100 rounded-full overflow-hidden">
-                  <div class="h-full rounded-full transition-all duration-700 ease-out ${barGradient}" style="width: ${Math.min(100, r.targetPct)}%"></div>
-                </div>
+                ${miniRocketProgressTrackHtml(barGradient, r.targetPct, 'h-2.5', 'bg-slate-100')}
               </div>
             </div>
           `;
@@ -10454,9 +10527,7 @@
                   ${r.targetPct} %
                 </span>
               </div>
-              <div class="w-full h-2.5 bg-slate-100 rounded-full overflow-hidden">
-                <div class="h-full rounded-full transition-all duration-700 ease-out ${progressGradient}" style="width: ${barWidth}%"></div>
-              </div>
+              ${miniRocketProgressTrackHtml(progressGradient, r.targetPct, 'h-2.5', 'bg-slate-100')}
             </div>
           </div>
         `;
@@ -14934,34 +15005,34 @@
             });
           }
 
-          if (insertedRow?.id) {
-            const entN = state.entreprises.find(en => String(en.id) === String(entId))?.nom || '';
-            const bonusNote = eff.bonusActive ? ` • 🔥 Bonus Target +${formatBonusPctShort(eff.bonusDelta)} Rep / -${formatBonusPctShort(eff.bonusDelta)} Olivier` : '';
-            await recordSaleAudit(insertedRow.id, 'Vente créée', `${entN} — ${clientNom.trim()} • ${fmtMoney(valeur)}${bonusNote}${pendingProofDataUrl ? ' (avec preuve photo)' : ''}`, '💵');
-          }
           toast('Vente enregistrée avec succès');
           const repObjCel = state.representants.find(r => String(r.id) === String(repId));
           const entObjCel = state.entreprises.find(en => String(en.id) === String(entId));
+          const shownComm = (currentProfile?.role === 'admin' && String(repId) !== String(currentProfile?.id))
+            ? payload.commission_olivier
+            : payload.commission_rep;
+          if (!isHit) {
+            triggerSaleCelebration(
+              repObjCel?.nom || currentProfile?.nom || '',
+              clientNom.trim(),
+              entObjCel?.nom || '',
+              valeur,
+              shownComm
+            );
+          }
           if (insertedRow?.id) {
+            const entN = entObjCel?.nom || '';
+            const bonusNote = eff.bonusActive ? ` • 🔥 Bonus Target +${formatBonusPctShort(eff.bonusDelta)} Rep / -${formatBonusPctShort(eff.bonusDelta)} Olivier` : '';
+            await recordSaleAudit(insertedRow.id, 'Vente créée', `${entN} — ${clientNom.trim()} • ${fmtMoney(valeur)}${bonusNote}${pendingProofDataUrl ? ' (avec preuve photo)' : ''}`, '💵');
             const typeKpiVal = document.getElementById('vente-type-kpi')?.value || 'OTS';
             await publishAutoSaleToTeamChat(
               insertedRow,
               repObjCel?.nom || currentProfile?.nom || 'Représentant',
-              entObjCel?.nom || 'Entreprise',
+              entN || 'Entreprise',
               clientNom.trim(),
               typeKpiVal
             );
           }
-          const shownComm = (currentProfile?.role === 'admin' && String(repId) !== String(currentProfile?.id))
-            ? payload.commission_olivier
-            : payload.commission_rep;
-          triggerSaleCelebration(
-            repObjCel?.nom || currentProfile?.nom || '',
-            clientNom.trim(),
-            entObjCel?.nom || '',
-            valeur,
-            shownComm
-          );
         }
 
         if (editId) {
