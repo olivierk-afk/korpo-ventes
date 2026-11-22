@@ -29,23 +29,41 @@
     const box = document.createElement('ul');
     box.className = 'hidden absolute z-30 left-0 right-0 top-full mt-1 bg-white border border-slate-200 rounded-xl shadow-lg overflow-hidden';
     inp.parentNode.appendChild(box);
+    const note = document.createElement('div');
+    inp.parentNode.appendChild(note);
+    const upd = () => {
+      if (slot.p) {
+        const weak = slot.p.exact === false;
+        note.className = 'text-[11px] mt-1 ' + (weak ? 'text-amber-600' : 'text-emerald-600');
+        note.textContent = weak ? 'Rue trouvée, mais pas ce numéro civique : le point sera au milieu de la rue.' : 'Adresse reconnue';
+      } else if (slot.t.trim().length > 2) {
+        note.className = 'text-[11px] mt-1 text-slate-400';
+        note.textContent = 'Choisis une suggestion pour une adresse plus précise.';
+      } else note.textContent = '';
+    };
     let timer, seq = 0, items = [], cur = -1;
     const close = () => { box.classList.add('hidden'); box.innerHTML = ''; items = []; cur = -1; };
     const mark = () => [...box.children].forEach((li, i) => li.classList.toggle('bg-indigo-50', i === cur));
-    const pick = i => { const it = items[i]; if (!it) return; inp.value = it.t; slot.t = it.t; slot.p = it.p; close(); persist(); };
+    const pick = i => { const it = items[i]; if (!it) return; inp.value = it.t; slot.t = it.t; slot.p = it.p; close(); persist(); upd(); };
     inp.addEventListener('input', () => {
-      slot.t = inp.value; slot.p = null; persist();
+      slot.t = inp.value; slot.p = null; persist(); upd();
       clearTimeout(timer);
       const q = inp.value.trim();
       if (q.length < 3) return close();
       timer = setTimeout(async () => {
         const my = ++seq;
         try {
-          const r = await fetch('https://photon.komoot.io/api/?lang=fr&limit=5&lat=45.5&lon=-73.57&bbox=' + BBOX + '&q=' + encodeURIComponent(q));
+          const bias = model.start.p || { lat: 45.5, lon: -73.57 }, nq = norm(q);
+          const r = await fetch('https://photon.komoot.io/api/?lang=fr&limit=8&layer=house&layer=street&lat=' + bias.lat + '&lon=' + bias.lon + '&bbox=' + BBOX + '&q=' + encodeURIComponent(nq));
           const j = await r.json();
           if (my !== seq) return;
-          const all = (j.features || []).map(f => ({ t: labelOf(f), p: { lat: f.geometry.coordinates[1], lon: f.geometry.coordinates[0], label: labelOf(f) } })).filter(x => x.t);
-          items = all.filter((x, i) => all.findIndex(y => y.t === x.t) === i);
+          const num = (nq.match(/^\s*(\d+[a-z]?)\b/i) || [])[1], words = nq.toLowerCase().split(/[\s,]+/).filter(w => w.length > 2 && !/\d/.test(w));
+          const all = (j.features || []).map(f => {
+            const t = labelOf(f), hn = (f.properties || {}).housenumber;
+            const sc = (num && hn && String(hn).toLowerCase() === num.toLowerCase() ? 5 : 0) - (num && !hn ? 2 : 0) + words.filter(w => t.toLowerCase().includes(w)).length;
+            return { t, sc, p: { lat: f.geometry.coordinates[1], lon: f.geometry.coordinates[0], label: t, exact: !!hn } };
+          }).filter(x => x.t).sort((x, y) => y.sc - x.sc);
+          items = all.filter((x, i) => all.findIndex(y => y.t === x.t) === i).slice(0, 5);
           cur = -1;
           box.innerHTML = items.map((x, i) => '<li data-i="' + i + '" class="px-3.5 py-2 text-sm text-slate-700 cursor-pointer hover:bg-indigo-50">' + E(x.t) + '</li>').join('');
           box.classList.toggle('hidden', !items.length);
@@ -61,6 +79,7 @@
       else if (e.key === 'Escape') close();
     });
     inp.addEventListener('blur', () => setTimeout(close, 150));
+    upd();
   }
 
   async function geocode(addr, cache) {
@@ -142,6 +161,19 @@
       '&destination=' + encodeURIComponent(ll(dest)) + (via.length ? '&waypoints=' + via.map(p => encodeURIComponent(ll(p))).join('%7C') : '');
   };
 
+  const IOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  const norm = q => q.replace(/\bboul\.?(?=\s|$)/gi, 'boulevard').replace(/\bav\.?(?=\s|$)/gi, 'avenue').replace(/\bch\.?(?=\s|$)/gi, 'chemin')
+    .replace(/\bmt[ée]e\b/gi, 'montée').replace(/\bste-/gi, 'sainte-').replace(/\bst-/gi, 'saint-');
+  const waze = (p, label, big) => '<a href="https://waze.com/ul?ll=' + ll(p) + '&navigate=yes" target="_blank" rel="noopener" class="' +
+    (big ? 'px-4 py-2.5 text-sm font-extrabold' : 'px-2.5 py-1.5 text-xs font-bold') + ' rounded-xl border text-sky-700 bg-sky-50 hover:bg-sky-100 border-sky-200">' + (label || 'Waze') + '</a>';
+  const gmap = p => '<a href="https://www.google.com/maps/dir/?api=1&travelmode=driving&destination=' + ll(p) + '" data-app="comgooglemaps://?daddr=' + ll(p) +
+    '&directionsmode=driving" target="_blank" rel="noopener" class="px-2.5 py-1.5 text-xs font-bold rounded-xl border text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border-indigo-200">Google Maps</a>';
+  const gfull = (pts, order, ret) => {
+    const web = mapsUrl(pts, order, ret);
+    return '<a href="' + web + '" data-app="comgooglemapsurl://' + web.replace(/^https:\/\//, '') +
+      '" target="_blank" rel="noopener" class="px-4 py-2.5 text-sm font-extrabold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl">Google Maps : trajet complet</a>';
+  };
+
   async function run() {
     const st = read(), ret = $('rt-ret').checked, S = model.stops.filter(x => x.t.trim()), start = model.start.t.trim(), lines = S.map(x => x.t.trim());
     const out = $('rt-out'), btn = $('rt-go');
@@ -175,7 +207,7 @@
           '<div class="min-w-0 flex-1"><div class="text-sm font-bold text-slate-900 break-words">' + E(lines[j - 1]) + '</div>' +
           '<div class="text-[11px] text-slate-400 truncate">Repéré : ' + E(pts[j].label) + '</div>' +
           '<div class="text-xs text-slate-600 mt-0.5 tabular-nums">' + km(M.D[p][j]) + ' • ' + hm(M.T[p][j]) + ' depuis ' + (i ? 'l\'arrêt précédent' : 'le départ') + '</div></div>' +
-          '<a href="https://waze.com/ul?ll=' + encodeURIComponent(ll(pts[j])) + '&navigate=yes" target="_blank" rel="noopener" class="shrink-0 px-2.5 py-1.5 text-xs font-bold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 rounded-xl">Waze</a></li>';
+          '<div class="shrink-0 flex gap-1.5">' + waze(pts[j]) + gmap(pts[j]) + '</div></li>';
         p = j;
         return row;
       }).join('');
@@ -188,8 +220,9 @@
         '<div class="mt-3 text-xs text-slate-500">Départ : <strong class="text-slate-700">' + E(start) + '</strong></div>' +
         '<ol class="divide-y divide-slate-100">' + rows + '</ol>' +
         (ret ? '<div class="text-xs text-slate-500">Retour au départ : ' + km(M.D[order[n - 1]][0]) + ' • ' + hm(M.T[order[n - 1]][0]) + '</div>' : '') +
-        '<div class="flex flex-wrap gap-2 pt-3"><a href="' + mapsUrl(pts, order, ret) + '" target="_blank" rel="noopener" class="px-4 py-2.5 text-sm font-extrabold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl">Ouvrir tout le trajet dans Google Maps</a>' +
-        '<button type="button" id="rt-copy" class="px-4 py-2.5 text-sm font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-xl">Copier la liste</button></div>';
+        '<div class="flex flex-wrap gap-2 pt-3">' + gfull(pts, order, ret) + waze(pts[order[0]], 'Waze : 1er arrêt', true) +
+        '<button type="button" id="rt-copy" class="px-4 py-2.5 text-sm font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-xl">Copier la liste</button></div>' +
+        '<p class="text-[11px] text-slate-400 pt-1">Waze ne prend qu\'une destination à la fois : utilise les boutons de chaque arrêt pour enchaîner. <a class="underline" target="_blank" rel="noopener" href="' + mapsUrl(pts, order, ret) + '">Google Maps ne s\'ouvre pas ? Version web</a></p>';
       $('rt-copy').onclick = () => {
         const txt = order.map((j, i) => (i + 1) + '. ' + lines[j - 1]).join('\n');
         navigator.clipboard?.writeText(txt).then(() => say('Liste copiée'), () => say('Copie impossible', 'error'));
@@ -250,6 +283,7 @@
     $('rt-ret').addEventListener('change', persist);
     $('rt-add').addEventListener('click', () => { if (model.stops.length < MAX) { model.stops.push({ t: '' }); persist(); draw(true); } });
     $('rt-go').addEventListener('click', run);
+    $('rt-out').addEventListener('click', e => { const a = e.target.closest('a[data-app]'); if (IOS && a) { e.preventDefault(); location.href = a.dataset.app; } });
     $('rt-clear').addEventListener('click', () => { model.stops = [{ t: '' }, { t: '' }]; $('rt-out').innerHTML = ''; persist(); draw(); });
     draw();
   }
