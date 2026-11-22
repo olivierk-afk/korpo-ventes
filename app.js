@@ -2436,6 +2436,8 @@
         try {
           await hydrateKv();
           await loadAllData();
+          window._initialDataSynced = true;
+          renderMesVentes();
           renderKpiDashboard();
           maybeTriggerFridayWeeklyDigest();
         } catch (bgErr) {
@@ -8855,7 +8857,8 @@
       }
       const dismissed = localStorage.getItem(`korpo_onboarding_dismissed_${currentProfile.id}`) === '1';
       const mySalesCount = (state.mesVentes || []).length;
-      const shouldShow = !dismissed && mySalesCount === 0;
+      const hasFinishedInitialLoad = Boolean(window._initialDataSynced);
+      const shouldShow = hasFinishedInitialLoad && !dismissed && mySalesCount === 0;
       if (shouldShow && card.classList.contains('hidden')) {
         currentRepOnboardingStep = 1;
         const titleEl = document.getElementById('rep-onboarding-title');
@@ -14094,6 +14097,7 @@
             localStorage.removeItem(k);
           }
         });
+        window._initialDataSynced = false;
         state = { representants: [], entreprises: [], clients: [], taux: [], ventes: [], mesVentes: [], classement: [] };
         kpiStore = {};
         kpiHebdoRows = [];
@@ -14101,13 +14105,21 @@
         saleProofsStore = {};
       } catch (e) {}
 
+      window._loggingOutNow = true;
+      try {
+        if (sb && sb.auth) {
+          await Promise.race([
+            sb.auth.signOut({ scope: 'local' }),
+            new Promise(res => setTimeout(res, 250))
+          ]);
+        }
+      } catch (e) {} finally {
+        window._loggingOutNow = false;
+      }
+
       restoreRememberedCredentials();
       showScreen('screen-login');
       toast('Vous êtes déconnecté');
-
-      if (sb && sb.auth) {
-        sb.auth.signOut({ scope: 'local' }).catch(() => {});
-      }
     }
 
     document.getElementById('btn-logout')?.addEventListener('click', (e) => {
