@@ -836,7 +836,6 @@
       border-color: #334155 !important;
     }
 
-
     /* ===================================================================== */
     /* LECTEUR & ENREGISTREUR VOCAL FAÇON WHATSAPP (ONDE SONORE + 1x / 1.5x) */
     /* ===================================================================== */
@@ -926,8 +925,6 @@
     .wa-speed-pill:active {
       transform: scale(0.92);
     }
-
-
 
   </style>
   <script>
@@ -1243,7 +1240,6 @@
       </form>
     </div>
   </div>
-
 
   <!-- MODALE APERÇU PREUVE DE DÉPÔT / CONTRAT -->
   <div id="proof-modal" class="hidden fixed inset-0 z-50 bg-slate-950/75 backdrop-blur-sm flex items-center justify-center p-4 no-print">
@@ -2001,8 +1997,10 @@
               <select id="vente-statut-depot" class="w-full px-3 py-2.5 text-sm font-semibold bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-600">
                 <option value="a_confirmer">À confirmer</option>
                 <option value="depot_recu">Dépôt reçu</option>
+                <option value="sans_depot" hidden disabled>Aucun dépôt requis</option>
               </select>
               <span class="block text-[10px] text-slate-400 mt-1">Acompte du client (Interac). Confirmé par l'administration.</span>
+              <span id="drawer-depot-company-note" class="hidden block text-[10px] font-bold text-emerald-700 mt-1">✓ Cette entreprise ne demande aucun dépôt : aucune preuve à fournir.</span>
             </div>
             <div id="drawer-statut-paiement-wrap">
               <label class="block text-xs font-bold text-slate-700 mb-1">Statut du paiement</label>
@@ -2021,10 +2019,10 @@
         </div>
 
         <!-- BLOC 4 : PREUVE PHOTO DE DÉPÔT -->
-        <div class="bg-slate-50/80 border border-dashed border-slate-300 rounded-2xl p-3.5 sm:p-4 space-y-2.5">
+        <div id="drawer-proof-block" class="bg-slate-50/80 border border-dashed border-slate-300 rounded-2xl p-3.5 sm:p-4 space-y-2.5">
           <div class="flex items-center justify-between">
             <label class="text-xs font-bold text-slate-700 flex items-center gap-1.5">
-              <span>📷</span> Preuve de dépôt / Capture d'écran (optionnel)
+              <span>📷</span> Preuve de dépôt / Capture d'écran
             </label>
             <button type="button" id="btn-clear-proof" class="hidden text-[11px] font-semibold text-rose-600 hover:underline">Retirer</button>
           </div>
@@ -2044,6 +2042,7 @@
           <div id="vente-proof-preview-box" class="hidden pt-1">
             <img id="vente-proof-preview-img" src="" alt="Aperçu preuve" class="max-h-40 w-full rounded-lg border border-slate-200 bg-white object-contain p-1" />
           </div>
+          <p class="text-[10px] text-slate-500">Nécessaire pour débloquer votre commission. Ajoutez-la maintenant, ou plus tard avec le bouton <strong>+ 📷</strong> de votre dossier.</p>
           <p class="text-[10px] text-slate-400">Utilisez <strong>Prendre une photo</strong> (caméra) ou <strong>Photos / Capture d'écran</strong> (virement Interac dans vos photos).</p>
         </div>
 
@@ -2437,7 +2436,7 @@
                 <span id="comm-bar-title" class="text-xs font-extrabold text-emerald-950">💵 Objectif Commission (Mois)</span>
                 <span id="comm-bar-pct-badge" class="px-2 py-0.5 text-[11px] font-extrabold rounded-full bg-emerald-100 text-emerald-800 tabular-nums">0 %</span>
               </div>
-              <div id="comm-bar-subtitle" class="text-xs font-extrabold text-emerald-800 tabular-nums">0,00 $ / 8 000,00 $</div>
+              <div id="comm-bar-subtitle" class="text-xs font-extrabold text-emerald-800 tabular-nums">0,00 $</div>
               <div class="w-full h-3.5 bg-white rounded-full overflow-hidden p-0.5 border border-emerald-200/80">
                 <div id="comm-bar-fill" class="h-full rounded-full bg-gradient-to-r from-emerald-500 to-teal-400 transition-all duration-700 ease-out" style="width: 0%"></div>
               </div>
@@ -2453,7 +2452,7 @@
                 <span id="goal-bar-title" class="text-xs font-extrabold text-slate-900">🎯 Objectif Ventes (Mois)</span>
                 <span id="goal-bar-pct-badge" class="px-2 py-0.5 text-[11px] font-extrabold rounded-full bg-indigo-50 text-indigo-700 tabular-nums">0 %</span>
               </div>
-              <div id="goal-bar-subtitle" class="text-xs font-bold text-slate-700 tabular-nums">0,00 $ / 150 000,00 $</div>
+              <div id="goal-bar-subtitle" class="text-xs font-bold text-slate-700 tabular-nums">0,00 $</div>
               <div class="w-full h-3.5 bg-white rounded-full overflow-hidden p-0.5 border border-slate-200">
                 <div id="goal-bar-fill" class="h-full rounded-full bg-gradient-to-r from-indigo-600 to-sky-500 transition-all duration-700 ease-out" style="width: 0%"></div>
               </div>
@@ -2744,7 +2743,6 @@
           </div>
         </div>
 
-
         <!-- PANNEAU DE SAISIE RAPIDE DES RDV DU MOIS (MASQUÉ PAR DÉFAUT) -->
         <div id="kpi-editor-panel" class="hidden bg-white rounded-2xl border-2 border-indigo-300 p-6 shadow-md space-y-4">
           <div class="flex items-center justify-between border-b border-slate-100 pb-3">
@@ -3023,9 +3021,6 @@
         </div>
       </section>
 
-
-
-
       <!-- ============================================================ -->
       <!-- ONGLET 4 : TOUTES LES VENTES & CSV (ADMIN UNIQUEMENT)        -->
       <!-- ============================================================ -->
@@ -3213,7 +3208,6 @@
             </div>
           </div>
         </div>
-
 
         <!-- CADENCE DU MOIS, TARGETS & BONUS ÉQUIPE -->
         <div class="bg-gradient-to-br from-slate-900 via-slate-900 to-indigo-950 rounded-2xl border border-indigo-500/30 p-5 sm:p-6 text-white shadow-lg space-y-5">
@@ -3507,9 +3501,16 @@
             <h2 class="text-base font-extrabold text-slate-900">Entreprises partenaires</h2>
             <p class="text-xs text-slate-500 mt-0.5">Ajoutez ou retirez les entreprises représentées par Korpo Solutions</p>
           </div>
-          <form id="form-new-entreprise" class="flex gap-2">
-            <input id="new-entreprise-nom" type="text" required placeholder="Nom de l'entreprise (ex. Toitex)" class="flex-1 px-3.5 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl" />
-            <button type="submit" class="px-4 py-2.5 bg-indigo-600 text-white text-sm font-semibold rounded-xl hover:bg-indigo-700 transition">Ajouter</button>
+          <form id="form-new-entreprise" class="space-y-2">
+            <input id="new-entreprise-nom" type="text" required placeholder="Nom de l'entreprise (ex. Toitex)" class="w-full px-3.5 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl" />
+            <div class="flex gap-2">
+              <select id="new-entreprise-depot" required class="flex-1 min-w-0 px-3 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl">
+                <option value="">Cette entreprise exige-t-elle un dépôt ? *</option>
+                <option value="oui">Oui — dépôt exigé (preuve Interac ou chèque)</option>
+                <option value="non">Non — aucun dépôt requis</option>
+              </select>
+              <button type="submit" class="px-4 py-2.5 bg-indigo-600 text-white text-sm font-semibold rounded-xl hover:bg-indigo-700 transition">Ajouter</button>
+            </div>
           </form>
           <ul id="list-entreprises" class="divide-y divide-slate-100 border border-slate-200/80 rounded-xl overflow-hidden"></ul>
         </div>
@@ -3850,9 +3851,6 @@
       return out;
     }
 
-    // =========================================================================
-    // DONNÉES KPI HISTORIQUES INTÉGRÉES (MARS À NOVEMBRE 2026)
-    // =========================================================================
     // =========================================================================
     // ARCHITECTURE KPI UNIFIÉE : BASE FICHIER CONDENSÉ + FICHIER DE VENTES
     // =========================================================================
@@ -4690,7 +4688,7 @@
         <div class="bg-white rounded-xl border border-slate-200/90 p-3.5 flex flex-wrap items-center justify-between gap-2 text-xs">
           <div>
             <span class="text-slate-400">Statut actuel :</span>
-            <strong class="${v.statut_depot === 'depot_recu' ? 'text-emerald-700' : 'text-amber-700'}">${v.statut_depot === 'depot_recu' ? 'Dépôt reçu' : 'À confirmer'}</strong>
+            <strong class="${v.statut_depot === 'depot_recu' ? 'text-emerald-700' : 'text-amber-700'}">${v.statut_depot === 'depot_recu' ? (isNoDepositSale(v) ? 'Sans dépôt requis' : 'Dépôt reçu') : 'À confirmer'}</strong>
             <span class="mx-1 text-slate-300">•</span>
             <strong class="${v.statut_paiement === 'paye' ? 'text-indigo-700' : 'text-slate-700'}">${v.statut_paiement === 'paye' ? 'Payé' : 'Non payé'}</strong>
           </div>
@@ -5160,7 +5158,6 @@
       syncThemeToggleButtons();
       initMentionPushServiceWorker();
     };
-
 
     // =========================================================================
     // NOTIFICATIONS PUSH POUR LES MENTIONS (@) DANS KORPO TOP EARNER
@@ -6032,7 +6029,6 @@
       }
     }
 
-
     // =========================================================================
     // GESTION DES OBJECTIFS PAR CLIENT & COMPAGNIE (ACTIVABLES)
     // =========================================================================
@@ -6557,7 +6553,6 @@
       }).join('');
     }
 
-
     // =========================================================================
     // SYSTÈME DE NOTIFICATIONS EN TEMPS RÉEL + SECOURS AUTOMATIQUE (ADMIN)
     // =========================================================================
@@ -6957,7 +6952,6 @@
       }
     }
 
-
     // =========================================================================
     // PREUVES PHOTO DE DÉPÔT / CONTRAT & ANCIENNETÉ DES DOSSIERS (CHANTIER 2)
     // =========================================================================
@@ -7028,7 +7022,7 @@
 
     function cleanDisplaySaleNote(noteStr) {
       return String(noteStr || '')
-        .replace(/^\[(OTS|SUIVI)\]\s*/i, '')
+        .replace(/^\[(OTS|SUIVI)\]\s*/i, '').replace(/\[SANSDEPOT\]\s*/ig, '')
         .replace(/\[HIT(?::(?:REP|OLIVIER|BOTH))?\]\s*/ig, '')
         .trim();
     }
@@ -7729,14 +7723,6 @@
       return exact || trimmed;
     }
 
-    function getUniqueClientKpiKey(v) {
-      const cliObj = state.clients.find(c => c.id === v.client_id);
-      const rawName = (cliObj?.nom || v.client_nom || '').trim().toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/\s+/g, ' ');
-      const repKey = String(v.representant_id || '');
-      const ym = getSaleStatsMonth(v);
-      return rawName ? `${ym}__${repKey}__${rawName}` : `sale_${v.id}`;
-    }
-
     function rebuildKpiStore() {
       const allVentes = [...(state.ventes || [])].sort((a, b) => {
         const dA = a.date_vente || `${a.mois_commission || '9999-99'}-01`;
@@ -7744,8 +7730,6 @@
         if (dA !== dB) return dA.localeCompare(dB);
         return String(a.created_at || a.id || '').localeCompare(String(b.created_at || b.id || ''));
       });
-
-      window._kpiCountedFirstSaleIds = new Set(allVentes.map(v => String(v.id)));
 
       // 1. Collecter tous les mois pertinents (fichier condensé + fichier de ventes + RDV saisis + mois courant)
       const validMonths = new Set();
@@ -9597,7 +9581,6 @@
       toast('Export CSV condensé téléchargé ✓');
     });
 
-
     // =========================================================================
     // CANAL DE CONVERSATION ÉQUIPE, MENTIONS @ & PUBLICATION AUTOMATIQUE DES VENTES
     // =========================================================================
@@ -9873,18 +9856,6 @@
       renderChatMentionNotifications();
     }
 
-    window.toggleChatSalesOnlyFilter = () => {
-      chatSalesOnlyMode = !chatSalesOnlyMode;
-      const btn = document.getElementById('btn-chat-filter-sales');
-      if (btn) {
-        btn.classList.toggle('bg-emerald-500', chatSalesOnlyMode);
-        btn.classList.toggle('text-slate-950', chatSalesOnlyMode);
-        btn.classList.toggle('bg-white/10', !chatSalesOnlyMode);
-        btn.classList.toggle('text-slate-200', !chatSalesOnlyMode);
-      }
-      renderTeamChatFeed(true);
-    };
-
     function buildTeamChatMessagesFromState() {
       const itemsMap = new Map();
 
@@ -10016,23 +9987,37 @@
     let chatVoiceCancelled = false;
     const chatMediaUrlCache = new Map();
 
-    // Stockage universel et garanti sans limite de taille des médias du chat (vocaux & photos) :
-    // 1) Tente `korpo_store` (`store = 'chat_media'`)
-    // 2) Repli automatique par découpage en micro-blocs (< 1 800 octets) dans `kpi_hebdo` (`semaine_index = -13`),
-    //    accessible à TOUS les utilisateurs (admin & représentants) et sous la limite B-tree PostgreSQL (2 704 octets).
+    // Médias du chat (vocaux & photos) : stockés dans Supabase Storage (bucket privé « preuves-ventes »,
+    // dossier <id utilisateur>/chat/). Le message ne contient que le chemin du fichier.
+    // Repli (rare) : une seule ligne `korpo_store` si Storage est indisponible.
+    // Les anciens médias (refs `media:` et `chunk:`) restent lisibles.
+    const chatMediaFailAt = new Map(); // ref -> timestamp du dernier échec de résolution
+
     async function uploadChatMediaBlob(blob, ext, mimeType) {
       const mediaId = `cm_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
-      const dataUrl = await new Promise((resolve) => {
-        const reader = new FileReader();
-        reader.onloadend = () => resolve(String(reader.result || ''));
-        reader.readAsDataURL(blob);
-      });
-      if (!dataUrl) return '';
+      window._lastChatMediaError = '';
 
-      chatMediaUrlCache.set(`media:${mediaId}`, { url: dataUrl, exp: Date.now() + 24 * 3600 * 1000 });
-
-      // Tentative 1 : table `korpo_store`
+      // Tentative 1 : Supabase Storage
       try {
+        const path = `${currentUser?.id || 'anon'}/chat/${mediaId}.${ext}`;
+        const { error } = await sb.storage.from(PROOF_BUCKET).upload(path, blob, { contentType: mimeType, upsert: false });
+        if (error) throw error;
+        chatMediaUrlCache.set(path, { url: URL.createObjectURL(blob), exp: Date.now() + 2 * 60 * 1000 });
+        return path;
+      } catch (e) {
+        window._lastChatMediaError = 'Storage : ' + String((e && (e.message || e.error)) || e);
+        console.warn('Échec Storage média chat :', e);
+      }
+
+      // Tentative 2 : une seule ligne korpo_store (petits fichiers seulement)
+      try {
+        if (blob.size > 1500000) throw new Error('fichier trop volumineux pour le repli');
+        const dataUrl = await new Promise((resolve) => {
+          const reader = new FileReader();
+          reader.onloadend = () => resolve(String(reader.result || ''));
+          reader.readAsDataURL(blob);
+        });
+        if (!dataUrl) throw new Error('lecture du fichier impossible');
         const { error } = await sb.from(KV_TABLE).upsert({
           store: 'chat_media',
           item_key: mediaId,
@@ -10040,34 +10025,12 @@
           value: { dataUrl, mimeType, ext, at: new Date().toISOString() },
           updated_at: new Date().toISOString()
         }, { onConflict: 'store,item_key,owner' });
-        if (!error) return `media:${mediaId}`;
-      } catch (e) {}
-
-      // Tentative 2 (universelle pour tous les rôles) : découpage en blocs de 1 700 caractères dans `kpi_hebdo` (semaine_index = -13)
-      try {
-        const CHUNK_SIZE = 1700;
-        const totalChunks = Math.ceil(dataUrl.length / CHUNK_SIZE);
-        const nowIso = new Date().toISOString();
-        const rows = [];
-        for (let i = 0; i < totalChunks; i++) {
-          rows.push({
-            mois_commission: `${mediaId}__${i}__${totalChunks}`,
-            semaine_index: -13,
-            representant_nom: dataUrl.slice(i * CHUNK_SIZE, (i + 1) * CHUNK_SIZE),
-            booke: i,
-            rdv_realise: totalChunks,
-            updated_at: nowIso
-          });
-        }
-        for (let start = 0; start < rows.length; start += 25) {
-          const batch = rows.slice(start, start + 25);
-          const { error: insErr } = await sb.from('kpi_hebdo').insert(batch);
-          if (insErr) throw insErr;
-        }
-        chatMediaUrlCache.set(`chunk:${mediaId}:${totalChunks}`, { url: dataUrl, exp: Date.now() + 24 * 3600 * 1000 });
-        return `chunk:${mediaId}:${totalChunks}`;
+        if (error) throw error;
+        chatMediaUrlCache.set(`media:${mediaId}`, { url: dataUrl, exp: Date.now() + 2 * 60 * 1000 });
+        return `media:${mediaId}`;
       } catch (e2) {
-        console.warn('Échec stockage média chat:', e2 && e2.message);
+        window._lastChatMediaError += ' | Repli : ' + String((e2 && (e2.message || e2.error)) || e2);
+        console.warn('Échec repli média chat :', e2);
         return '';
       }
     }
@@ -10077,12 +10040,15 @@
       const mediaKeys = [];
       const chunkPrefixes = [];
       const storagePaths = [];
+      const pendingRefs = [];
 
       (teamChatMessages || []).forEach(m => {
         [m.imageRef, m.audioRef].forEach(ref => {
           if (!ref) return;
-          if (chatMediaUrlCache.get(ref)?.exp > now + 60000) return;
           const sRef = String(ref);
+          if (chatMediaUrlCache.get(sRef)?.exp > now + 60000) return;
+          if ((chatMediaFailAt.get(sRef) || 0) > now - 20000) return; // on réessaie au plus toutes les 20 s
+          pendingRefs.push(sRef);
           if (sRef.startsWith('media:')) {
             mediaKeys.push(sRef.slice(6));
           } else if (sRef.startsWith('chunk:')) {
@@ -10112,15 +10078,18 @@
         } catch (e) {}
       }
 
+      // Anciens vocaux/photos découpés en blocs (lecture seule, avec pagination)
       if (chunkPrefixes.length && sb) {
         for (const item of chunkPrefixes) {
           try {
-            const { data, error } = await sb
-              .from('kpi_hebdo')
-              .select('mois_commission,representant_nom,booke')
-              .eq('semaine_index', -13)
-              .like('mois_commission', `${item.mediaId}__%`);
-            if (!error && Array.isArray(data) && data.length > 0 && (!item.total || data.length >= item.total)) {
+            const data = await fetchAllRows(() =>
+              sb.from('kpi_hebdo')
+                .select('mois_commission,representant_nom,booke')
+                .eq('semaine_index', -13)
+                .like('mois_commission', `${item.mediaId}__%`)
+                .order('booke')
+            );
+            if (Array.isArray(data) && data.length > 0 && (!item.total || data.length >= item.total)) {
               data.sort((a, b) => Number(a.booke || 0) - Number(b.booke || 0));
               const fullDataUrl = data.map(r => r.representant_nom || '').join('');
               if (fullDataUrl.startsWith('data:')) {
@@ -10135,14 +10104,41 @@
       if (uniqStoragePaths.length && sb) {
         try {
           const { data, error } = await sb.storage.from(PROOF_BUCKET).createSignedUrls(uniqStoragePaths, 3600);
-          if (!error && Array.isArray(data)) {
+          if (error) throw error;
+          if (Array.isArray(data)) {
             data.forEach(d => {
               if (d.signedUrl) chatMediaUrlCache.set(d.path, { url: d.signedUrl, exp: now + 3600 * 1000 });
             });
           }
-        } catch (e) {}
+        } catch (e) {
+          console.warn('URL signées du chat indisponibles :', e && e.message);
+        }
       }
+
+      pendingRefs.forEach(r => {
+        if (chatMediaUrlCache.get(r)?.url) chatMediaFailAt.delete(r);
+        else chatMediaFailAt.set(r, now);
+      });
     }
+
+    function chatFeedSignature() {
+      return (teamChatMessages || []).map(m => `${m.id}:${m.audioRef || ''}:${m.imageRef || ''}`).join('|')
+        + `|c${chatMediaUrlCache.size}|f${chatMediaFailAt.size}`;
+    }
+
+    function chatMediaPendingHtml(ref, label) {
+      if (!ref) return '';
+      if (chatMediaFailAt.has(String(ref))) {
+        return `<div class="py-1.5 px-2 text-xs opacity-90 flex items-center gap-2"><span>⚠️ ${label} indisponible</span><button type="button" onclick="retryChatMediaLoad()" class="underline font-extrabold cursor-pointer">Réessayer</button></div>`;
+      }
+      return `<div class="py-1.5 px-2 text-xs italic opacity-75 flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-current animate-ping"></span><span>Chargement…</span></div>`;
+    }
+
+    window.retryChatMediaLoad = async () => {
+      chatMediaFailAt.clear();
+      await resolveChatMediaSignedUrls();
+      renderTeamChatFeed(false);
+    };
 
     function getChatMediaUrl(ref) {
       if (!ref) return '';
@@ -10481,7 +10477,10 @@
       try {
         const uploadedRef = await uploadChatMediaBlob(wavBlob, 'wav', 'audio/wav');
         if (!uploadedRef) {
-          return toast('Vocal affiché localement, mais échec de la synchronisation réseau.', 'error');
+          kpiHebdoRows = kpiHebdoRows.filter(r => !(Number(r.semaine_index) === -12 && String(r.mois_commission) === msgId));
+          buildTeamChatMessagesFromState();
+          renderTeamChatFeed(false);
+          return toast('Vocal non envoyé : ' + (window._lastChatMediaError || 'réseau indisponible'), 'error');
         }
         chatMediaUrlCache.set(uploadedRef, { url: instantLocalUrl, exp: Date.now() + 24 * 3600 * 1000 });
         optimisticObj.audioRef = uploadedRef;
@@ -10489,7 +10488,7 @@
         const rowIdx = kpiHebdoRows.findIndex(r => Number(r.semaine_index) === -12 && String(r.mois_commission) === msgId);
         if (rowIdx >= 0) kpiHebdoRows[rowIdx].representant_nom = JSON.stringify(optimisticObj);
 
-        await safeUpsertKpiHebdoRow({
+        const voiceRes = await safeUpsertKpiHebdoRow({
           mois_commission: msgId,
           semaine_index: -12,
           representant_nom: JSON.stringify(optimisticObj),
@@ -10497,6 +10496,9 @@
           rdv_realise: 0,
           updated_at: nowIso
         });
+        if (voiceRes && voiceRes.error) {
+          toast('Vocal non enregistré : ' + (voiceRes.error.message || 'erreur'), 'error');
+        }
       } finally {
         _pendingVoiceUploads.delete(msgId);
       }
@@ -10648,12 +10650,21 @@
       let imageRef = '';
       if (hasPhoto) {
         const photoData = pendingChatPhotoDataUrl;
-        clearPendingChatPhoto();
-        imageRef = await uploadChatMediaBlob(dataUrlToBlob(photoData), 'jpg', 'image/jpeg');
-        if (!imageRef) {
-          toast('Impossible d’envoyer la photo.', 'error');
-          return;
+        const sendBtn = document.getElementById('btn-send-chat');
+        if (sendBtn) sendBtn.disabled = true;
+        toast('📷 Envoi de la photo…');
+        try {
+          imageRef = await uploadChatMediaBlob(dataUrlToBlob(photoData), 'jpg', 'image/jpeg');
+        } finally {
+          if (sendBtn) sendBtn.disabled = false;
         }
+        if (!imageRef) {
+          toast('Photo non envoyée : ' + (window._lastChatMediaError || 'réseau indisponible'), 'error');
+          const inp = document.getElementById('chat-message-input');
+          if (inp && cleanText && !inp.value) { inp.value = cleanText; autoResizeChatTextarea(); }
+          return; // la photo reste en aperçu pour réessayer
+        }
+        clearPendingChatPhoto();
       }
       clearChatReplyTarget();
 
@@ -10708,6 +10719,13 @@
       kpiHebdoRows = kpiHebdoRows.filter(r => !(Number(r.semaine_index) === -12 && String(r.mois_commission) === String(msgId)));
       buildTeamChatMessagesFromState();
       renderTeamChatFeed(false);
+
+      try {
+        const filesToRemove = [target.imageRef, target.audioRef]
+          .map(r => String(r || ''))
+          .filter(r => r.includes('/chat/') && isProofPath(r));
+        if (filesToRemove.length) await sb.storage.from(PROOF_BUCKET).remove(filesToRemove);
+      } catch (e) {}
 
       try {
         await sb.from('kpi_hebdo').delete().eq('mois_commission', String(msgId)).eq('semaine_index', -12);
@@ -10933,7 +10951,7 @@
 
         const audioHtml = audioUrl
           ? renderWhatsAppVoicePlayerHtml(m, audioUrl, isMe)
-          : (m.audioRef ? `<div class="py-1.5 px-2 text-xs italic opacity-75 flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-current animate-ping"></span><span>Chargement du vocal...</span></div>` : '');
+          : chatMediaPendingHtml(m.audioRef, 'Vocal');
 
         const bubbleClass = isMe
           ? 'chat-bubble-out'
@@ -10950,7 +10968,7 @@
                 </div>
               ` : ''}
               ${quotedHtml}
-              ${photoHtml}
+              ${photoHtml || chatMediaPendingHtml(m.imageRef, 'Photo')}
               ${audioHtml}
               ${formattedBody ? `<div class="whitespace-pre-wrap text-center w-full">${formattedBody}</div>` : ''}
               ${!(audioUrl && !formattedBody && !imgUrl) ? `
@@ -11110,7 +11128,7 @@
       if (_activeWaAudioEl && !_activeWaAudioEl.paused) return;
       refreshingChatNow = true;
       try {
-        const prevSig = teamChatMessages.map(m => `${m.id}:${m.audioRef || ''}:${m.imageRef || ''}`).join('|');
+        const prevSig = chatFeedSignature();
         const rows = await fetchAllRows(() =>
           sb.from('kpi_hebdo').select('*').in('semaine_index', [-12, -14, -15, -16]).order('id')
         );
@@ -11151,7 +11169,7 @@
         checkIncomingRedPhoneAlerts();
         buildTeamChatMessagesFromState();
         await resolveChatMediaSignedUrls();
-        const nextSig = teamChatMessages.map(m => `${m.id}:${m.audioRef || ''}:${m.imageRef || ''}`).join('|');
+        const nextSig = chatFeedSignature();
         // Ne redessiner le fil que si de nouveaux messages/médias sont arrivés (et qu'aucun audio ne joue)
         if (nextSig !== prevSig && !(_activeWaAudioEl && !_activeWaAudioEl.paused)) {
           renderTeamChatFeed(forceScroll);
@@ -11280,6 +11298,7 @@
         fetchAllRows(() => {
           let q = sb.from('kpi_hebdo').select('*').order('id');
           if (!isAdmin) q = q.neq('semaine_index', -3);
+          q = q.neq('semaine_index', -13); // anciens blocs média du chat : lus à la demande
           return q;
         })
       ]);
@@ -11482,6 +11501,67 @@
       return 150000;
     }
 
+    // Vente « sans dépôt requis » : stockée comme dépôt confirmé (aucun report ni relance), repérée par la balise [SANSDEPOT] dans la note.
+    function isNoDepositSale(v) {
+      return /\[SANSDEPOT\]/i.test(String(v?.note || ''));
+    }
+
+    function getSelectedEntreprise() {
+      const id = document.getElementById('vente-entreprise')?.value;
+      return (state.entreprises || []).find(e => String(e.id) === String(id));
+    }
+    function companyNoDeposit(ent) {
+      const e = ent || getSelectedEntreprise();
+      return !!e && e.depot_requis === false;
+    }
+    // La règle de dépôt vient de la fiche de l'entreprise partenaire.
+    function applyCompanyDepositRule() {
+      const sel = document.getElementById('vente-statut-depot');
+      if (!sel) return;
+      const noDep = companyNoDeposit();
+      const opt = sel.querySelector('option[value="sans_depot"]');
+      if (opt) { opt.disabled = !noDep; opt.hidden = !noDep; }
+      if (noDep) {
+        sel.value = 'sans_depot';
+        sel.disabled = true;
+      } else {
+        sel.disabled = false;
+        if (sel.value === 'sans_depot') sel.value = 'a_confirmer';
+      }
+      document.getElementById('drawer-depot-company-note')?.classList.toggle('hidden', !noDep);
+      syncDepositFormUi();
+    }
+    document.getElementById('vente-entreprise')?.addEventListener('change', applyCompanyDepositRule);
+
+    function syncDepositFormUi() {
+      const isNoDep = document.getElementById('vente-statut-depot')?.value === 'sans_depot';
+      document.getElementById('drawer-proof-block')?.classList.toggle('hidden', isNoDep);
+      if (isNoDep) {
+        pendingProofDataUrl = '';
+        const pf = document.getElementById('vente-proof-file'); if (pf) pf.value = '';
+        const cm = document.getElementById('vente-camera-input'); if (cm) cm.value = '';
+        document.getElementById('vente-proof-preview-box')?.classList.add('hidden');
+      }
+    }
+    document.getElementById('vente-statut-depot')?.addEventListener('change', syncDepositFormUi);
+
+    // Vrai si un objectif a réellement été fixé (cloud, local, surcharge admin) ou préréglé pour l'équipe historique.
+    function hasExplicitSalesTarget(repName, ym) {
+      const c = getCloudRepTargetRow(repName, ym);
+      if (c && Number(c.booke) > 0) return true;
+      if (personalMonthlyTargets[`${repName}_${ym}`] > 0 || personalMonthlyTargets[`${repName}_ALL`] > 0) return true;
+      if (repTargetsOverrides[`${ym}_${repName}`]?.dollars > 0 || repTargetsOverrides[`ALL_${repName}`]?.dollars > 0) return true;
+      return DEFAULT_KPI_REPS.includes(repName) && Number(kpiStore[ym]?.reps?.[repName]?.['Vente $']?.objectif) > 0;
+    }
+
+    function hasExplicitCommTarget(repName, ym) {
+      const c = getCloudRepTargetRow(repName, ym);
+      if (c && Number(c.rdv_realise) > 0) return true;
+      if (personalCommTargets[`${repName}_${ym}`] > 0 || personalCommTargets[`${repName}_ALL`] > 0) return true;
+      if (repTargetsOverrides[`${ym}_${repName}`]?.comm > 0 || repTargetsOverrides[`ALL_${repName}`]?.comm > 0) return true;
+      return hasExplicitSalesTarget(repName, ym); // l'estimation (~5,5 %) repose sur un objectif de ventes réel
+    }
+
     function getCommissionTargetForRep(repName, ym) {
       const cloudRow = getCloudRepTargetRow(repName, ym);
       if (cloudRow && Number(cloudRow.rdv_realise) > 0) return Number(cloudRow.rdv_realise);
@@ -11619,6 +11699,10 @@
           : (isMultiMonth ? `Mes objectifs — ${periodTag}` : `Mes objectifs — ${periodTag}`);
       }
 
+      const salesExplicit = hasExplicitSalesTarget(inspectedRepName, activeYm);
+      const commExplicit = hasExplicitCommTarget(inspectedRepName, activeYm);
+      const undefinedGoalMsg = isAdmin ? 'À configurer dans Entreprises & Équipe' : 'Votre direction le fixera bientôt';
+
       // 1. Mise à jour de la barre TARGET COMMISSION ($)
       const commPct = commTarget > 0 ? Math.round((achievedComm / commTarget) * 100) : 0;
       const commRem = Math.max(0, commTarget - achievedComm);
@@ -11629,7 +11713,16 @@
       const cRem = document.getElementById('comm-bar-remaining');
       const cMsg = document.getElementById('comm-bar-status-msg');
 
-      if (cTitle && cFill) {
+      if (cTitle && cFill && !commExplicit) {
+        cTitle.textContent = `💵 Target Commission (${inspectedRepName})`;
+        cSub.textContent = `${fmtMoney(achievedComm)} gagnés • objectif non défini`;
+        cBadge.textContent = '—';
+        cBadge.className = 'px-2 py-0.5 text-[11px] font-extrabold rounded-full bg-slate-100 text-slate-500 tabular-nums';
+        cFill.style.width = '0%';
+        cRem.textContent = 'Aucun objectif de commission pour le moment';
+        cMsg.textContent = undefinedGoalMsg;
+        cMsg.className = 'font-semibold text-slate-500';
+      } else if (cTitle && cFill) {
         cTitle.textContent = `💵 Target Commission (${inspectedRepName})`;
         cSub.textContent = `${fmtMoney(achievedComm)} / ${fmtMoney(commTarget)}`;
         cBadge.textContent = `${commPct} %`;
@@ -11664,6 +11757,16 @@
 
       if (!titleEl || !fillEl) return;
       titleEl.textContent = `🎯 Objectif Ventes (${inspectedRepName})`;
+      if (!salesExplicit) {
+        subEl.textContent = `${fmtMoney(achievedSales)} vendus • objectif non défini`;
+        badgeEl.textContent = '—';
+        badgeEl.className = 'px-2 py-0.5 text-[11px] font-extrabold rounded-full bg-slate-100 text-slate-500 tabular-nums';
+        fillEl.style.width = '0%';
+        remEl.textContent = 'Aucun objectif de ventes pour le moment';
+        msgEl.textContent = undefinedGoalMsg;
+        msgEl.className = 'font-semibold text-slate-500';
+        return;
+      }
       subEl.textContent = `${fmtMoney(achievedSales)} / ${fmtMoney(salesTarget)}`;
       badgeEl.textContent = `${salesPct} %`;
       fillEl.style.width = `${Math.min(100, salesPct)}%`;
@@ -11859,11 +11962,9 @@
       if (openNewSaleAfter) {
         openNewSaleDrawer();
       } else {
-        toast(`Bienvenue sur ton portail personnel, ${currentProfile?.nom || ''} ! 🚀`);
+        toast(`Bienvenue sur votre portail personnel, ${currentProfile?.nom || ''} ! 🚀`);
       }
     };
-
-    window.dismissRepOnboardingCard = () => completeRepOnboarding(false);
 
     window.nextRepOnboardingStep = () => {
       if (currentRepOnboardingStep < 3) {
@@ -11912,28 +12013,28 @@
         body.innerHTML = `
           <div class="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 border border-emerald-200 flex items-center justify-center text-2xl">💵</div>
           <div class="space-y-1.5">
-            <h4 class="text-base font-extrabold text-slate-900">1. Déclare tes ventes en 15 secondes</h4>
+            <h4 class="text-base font-extrabold text-slate-900">1. Déclarez vos ventes en quelques minutes</h4>
             <p class="text-xs text-slate-600 leading-relaxed">
-              Dès qu'un contrat est signé, appuie sur le bouton vert <strong>💵 + Vente</strong> en bas à droite de ton écran (ou sur le menu à gauche sur ordinateur).
+              Dès qu'un contrat est signé, appuyez sur le bouton vert <strong>💵 + Vente</strong> en bas à droite de votre écran (ou sur le menu à gauche sur ordinateur).
             </p>
           </div>
           <div class="bg-slate-50 rounded-2xl border border-slate-200/90 p-3.5 text-xs text-slate-700 space-y-1">
             <div class="font-extrabold text-indigo-700">🎙️ Astuce en voiture :</div>
-            <p>Utilise l'<strong>Assistant vocal mains libres</strong> dans le formulaire : il te pose chaque question à voix haute et remplit ta vente tout seul.</p>
+            <p>Utilisez l'<strong>Assistant vocal mains libres</strong> dans le formulaire : il vous pose chaque question à voix haute et remplit votre vente tout seul.</p>
           </div>
         `;
       } else if (step === 2) {
         body.innerHTML = `
           <div class="w-12 h-12 rounded-2xl bg-indigo-50 text-indigo-600 border border-indigo-200 flex items-center justify-center text-2xl">📸</div>
           <div class="space-y-1.5">
-            <h4 class="text-base font-extrabold text-slate-900">2. Joins la preuve de dépôt Interac</h4>
+            <h4 class="text-base font-extrabold text-slate-900">2. Joignez la preuve de dépôt Interac</h4>
             <p class="text-xs text-slate-600 leading-relaxed">
-              Prends une photo du chèque ou importe la capture d'écran du virement Interac directement dans ta vente pour accélérer sa validation par la direction.
+              Prenez une photo du chèque ou importez la capture d'écran du virement Interac directement dans votre vente pour accélérer sa validation par la direction. Pour les entreprises qui ne demandent aucun dépôt, le formulaire le détecte automatiquement : aucune preuve à fournir.
             </p>
           </div>
           <div class="bg-slate-50 rounded-2xl border border-slate-200/90 p-3.5 text-xs text-slate-700 space-y-1">
-            <div class="font-extrabold text-emerald-700">💰 Suivi de ta paie en direct :</div>
-            <p>Retrouve à tout moment tes gains confirmés, tes paiements reçus et tes <strong>commissions futures</strong> dans l'onglet <strong>Comm.</strong></p>
+            <div class="font-extrabold text-emerald-700">💰 Suivi de votre paie en direct :</div>
+            <p>Retrouvez à tout moment vos gains confirmés, vos paiements reçus et vos <strong>commissions futures</strong> dans l'onglet <strong>Comm.</strong></p>
           </div>
         `;
       } else {
@@ -11941,9 +12042,9 @@
         body.innerHTML = `
           <div class="w-12 h-12 rounded-2xl bg-amber-50 text-amber-600 border border-amber-200 flex items-center justify-center text-2xl">🔔</div>
           <div class="space-y-1.5">
-            <h4 class="text-base font-extrabold text-slate-900">3. Active les alertes d'équipe (@)</h4>
+            <h4 class="text-base font-extrabold text-slate-900">3. Activez les alertes d'équipe (@)</h4>
             <p class="text-xs text-slate-600 leading-relaxed">
-              Reçois une notification instantanée sur ton téléphone dès qu'un collègue ou Olivier te mentionne (<code>@</code>) dans le canal <strong>🏆 Korpo Top Earner</strong>.
+              Recevez une notification instantanée sur votre téléphone dès qu'un collègue ou Olivier vous mentionne (<code>@</code>) dans le canal <strong>🏆 Korpo Top Earner</strong>.
             </p>
           </div>
           <div class="bg-slate-50 rounded-2xl border border-slate-200/90 p-3.5 flex items-center justify-between gap-3">
@@ -12212,8 +12313,8 @@
         descEl.textContent = isPenultimate
           ? `Demain est le dernier jour de ${formatYearMonthLabelFr(currentMonthStr)} : tout dossier non confirmé sera reporté au mois prochain.`
           : (oldestDays >= 3
-            ? `Le plus ancien date d'il y a ${oldestDays} jour(s). Ajoute la capture du virement ou du chèque en 1 clic ci-dessous :`
-            : 'Ajoute la photo du virement Interac ou du chèque pour accélérer la confirmation de ta commission :');
+            ? `Le plus ancien date d'il y a ${oldestDays} jour(s). Ajoutez la capture du virement ou du chèque en 1 clic ci-dessous :`
+            : 'Ajoutez la photo du virement Interac ou du chèque pour accélérer la confirmation de votre commission :');
       }
       if (listEl) {
         listEl.innerHTML = pendingWithMissingProof.slice(0, 6).map(v => {
@@ -12667,7 +12768,7 @@
               <div class="flex items-center justify-between gap-2 pt-2 border-t border-slate-100">
                 <div class="flex items-center flex-wrap gap-1.5">
                   <span class="inline-flex items-center gap-1 px-2 py-0.5 text-[11px] font-semibold rounded-full ${v.statut_depot === 'depot_recu' ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'}">
-                    ${v.statut_depot === 'depot_recu' ? '✓ Dépôt reçu' : '⏳ À confirmer'}
+                    ${v.statut_depot === 'depot_recu' ? (isNoDepositSale(v) ? '✓ Sans dépôt requis' : '✓ Dépôt reçu') : '⏳ À confirmer'}
                   </span>
                   ${agingBadgeForDeposit(v)}
                 </div>
@@ -12713,7 +12814,7 @@
               <div class="flex items-center justify-between gap-2 pt-2 border-t border-slate-100">
                 <div class="flex items-center flex-wrap gap-1.5">
                   <span class="inline-flex items-center gap-1 px-2 py-0.5 text-[11px] font-semibold rounded-full ${v.statut_depot === 'depot_recu' ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'}">
-                    ${v.statut_depot === 'depot_recu' ? 'Dépôt reçu' : 'À confirmer'}
+                    ${v.statut_depot === 'depot_recu' ? (isNoDepositSale(v) ? 'Sans dépôt requis' : 'Dépôt reçu') : 'À confirmer'}
                   </span>
                   <span class="px-2 py-0.5 text-[11px] font-semibold rounded-full ${v.statut_paiement === 'paye' ? 'bg-indigo-100 text-indigo-800' : 'bg-slate-100 text-slate-600'}">
                     ${v.statut_paiement === 'paye' ? '✓ Payé' : 'À recevoir'}
@@ -12768,7 +12869,7 @@
             <div class="flex items-center gap-1.5">
               <span class="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded-full ${v.statut_depot === 'depot_recu' ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'}">
                 <span class="w-1.5 h-1.5 rounded-full ${v.statut_depot === 'depot_recu' ? 'bg-emerald-500' : 'bg-amber-500'}"></span>
-                ${v.statut_depot === 'depot_recu' ? 'Dépôt reçu' : 'À confirmer'}
+                ${v.statut_depot === 'depot_recu' ? (isNoDepositSale(v) ? 'Sans dépôt requis' : 'Dépôt reçu') : 'À confirmer'}
               </span>
               ${agingBadgeForDeposit(v)}
             </div>
@@ -12819,7 +12920,7 @@
             <td class="py-3.5 px-4 whitespace-nowrap align-middle">
               <div class="flex items-center gap-1.5">
                 <span class="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded-full ${v.statut_depot === 'depot_recu' ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'}">
-                  ${v.statut_depot === 'depot_recu' ? 'Dépôt reçu' : 'À confirmer'}
+                  ${v.statut_depot === 'depot_recu' ? (isNoDepositSale(v) ? 'Sans dépôt requis' : 'Dépôt reçu') : 'À confirmer'}
                 </span>
                 <span class="px-2 py-0.5 text-[11px] font-semibold rounded-full ${v.statut_paiement === 'paye' ? 'bg-indigo-50 text-indigo-700' : 'bg-slate-100 text-slate-500'}">
                   ${v.statut_paiement === 'paye' ? '✓ Payé' : 'À recevoir'}
@@ -13528,7 +13629,7 @@
       } else {
         document.getElementById('preview-taux-label').innerHTML = hasRule
           ? `Votre taux applicable : <strong>${fmtPct(tRep)}</strong>${bonusActive ? ` <span class="inline-block ml-1 px-1.5 py-0.5 text-[10px] font-extrabold rounded-md bg-emerald-100 text-emerald-800">🔥 Bonus +${bStr} actif</span>` : ''}${hitBadge}`
-          : `<span class="inline-block px-2 py-1 rounded-lg bg-amber-50 text-amber-900 border border-amber-200 font-semibold text-[11px]">⏳ Taux en attente de configuration par l'administration — ta vente sera bien enregistrée et ta commission recalculée dès validation.</span>${hitBadge}`;
+          : `<span class="inline-block px-2 py-1 rounded-lg bg-amber-50 text-amber-900 border border-amber-200 font-semibold text-[11px]">⏳ Taux en attente de configuration par l'administration — votre vente sera bien enregistrée et votre commission recalculée dès validation.</span>${hitBadge}`;
         repEl.textContent = hasRule ? `Ma commission : ${fmtMoney(cRep)}` : 'En attente du taux';
         oliEl.classList.add('hidden');
       }
@@ -13550,7 +13651,7 @@
       document.getElementById('vente-valeur').value = v.valeur;
       document.getElementById('vente-date').value = duplicate ? localYmd() : v.date_vente;
       document.getElementById('vente-mois-comm').value = v.mois_commission;
-      document.getElementById('vente-statut-depot').value = duplicate ? 'a_confirmer' : v.statut_depot;
+      document.getElementById('vente-statut-depot').value = duplicate ? 'a_confirmer' : ((v.statut_depot === 'depot_recu' && isNoDepositSale(v)) ? 'sans_depot' : v.statut_depot);
       document.getElementById('vente-statut-paiement').value = duplicate ? 'non_paye' : v.statut_paiement;
       const rawN = v.note || '';
       const hasHitTag = /\[HIT(?::(REP|OLIVIER|BOTH))?\]/i.test(rawN) || Number(v.commission_rep) < 0 || Number(v.commission_olivier) < 0;
@@ -13559,7 +13660,7 @@
       applyDrawerRoleErgonomics();
       renderDrawerClientQuickSuggestions();
       document.getElementById('vente-note').value = rawN
-        .replace(/^\[(OTS|SUIVI)\]\s*/i, '')
+        .replace(/^\[(OTS|SUIVI)\]\s*/i, '').replace(/\[SANSDEPOT\]\s*/ig, '')
         .replace(/\[HIT(?::(?:REP|OLIVIER|BOTH))?\]\s*/ig, '')
         .trim();
 
@@ -13645,6 +13746,7 @@
     };
 
     function applyDrawerRoleErgonomics() {
+      applyCompanyDepositRule();
       const isAdmin = currentProfile?.role === 'admin';
       const repWrap = document.getElementById('drawer-rep-field-wrap');
       const repEntGrid = document.getElementById('drawer-rep-ent-grid');
@@ -13944,7 +14046,7 @@
               <div class="flex flex-wrap items-center gap-1.5 pt-2 border-t border-slate-100">
                 <button type="button" onclick="toggleVenteKpiType('${v.id}')" class="px-2.5 py-1 text-[11px] font-extrabold rounded-lg border ${isSuivi ? 'bg-purple-50 text-purple-700 border-purple-200' : 'bg-sky-50 text-sky-700 border-sky-200'}">${isSuivi ? 'SUIVI' : 'OTS'}</button>
                 <button type="button" onclick="toggleVenteStatut('${v.id}', 'statut_depot', '${v.statut_depot === 'depot_recu' ? 'a_confirmer' : 'depot_recu'}')" class="px-2.5 py-1 text-[11px] font-bold rounded-full ${v.statut_depot === 'depot_recu' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-amber-50 text-amber-700 border border-amber-200'}">
-                  ${v.statut_depot === 'depot_recu' ? '✓ Dépôt reçu' : '⏳ À confirmer'}
+                  ${v.statut_depot === 'depot_recu' ? (isNoDepositSale(v) ? '✓ Sans dépôt requis' : '✓ Dépôt reçu') : '⏳ À confirmer'}
                 </button>
                 ${agingBadgeForDeposit(v)}
                 <button type="button" onclick="toggleVenteStatut('${v.id}', 'statut_paiement', '${v.statut_paiement === 'paye' ? 'non_paye' : 'paye'}')" class="px-2.5 py-1 text-[11px] font-bold rounded-full ${v.statut_paiement === 'paye' ? 'bg-indigo-50 text-indigo-700 border border-indigo-200' : 'bg-slate-100 text-slate-600'}">
@@ -14030,7 +14132,7 @@
               <div class="flex items-center gap-1.5">
                 <button onclick="toggleVenteStatut('${v.id}', 'statut_depot', '${v.statut_depot === 'depot_recu' ? 'a_confirmer' : 'depot_recu'}')"
                   class="px-2.5 py-1 text-xs font-semibold rounded-full transition ${v.statut_depot === 'depot_recu' ? 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100' : 'bg-amber-50 text-amber-700 hover:bg-amber-100'}">
-                  ${v.statut_depot === 'depot_recu' ? 'Dépôt reçu' : 'À confirmer'}
+                  ${v.statut_depot === 'depot_recu' ? (isNoDepositSale(v) ? 'Sans dépôt requis' : 'Dépôt reçu') : 'À confirmer'}
                 </button>
                 <button onclick="toggleVenteStatut('${v.id}', 'statut_paiement', '${v.statut_paiement === 'paye' ? 'non_paye' : 'paye'}')"
                   class="px-2.5 py-1 text-xs font-semibold rounded-full transition ${v.statut_paiement === 'paye' ? 'bg-indigo-50 text-indigo-700 hover:bg-indigo-100' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}">
@@ -14666,7 +14768,7 @@
         const taux = Number(isOlivier ? v.taux_olivier_applique : v.taux_rep_applique);
         const rawNote = String(v.note || '');
         const typeKpi = rawNote.toUpperCase().includes('[SUIVI]') ? 'SUIVI' : 'OTS';
-        const cleanNote = rawNote.replace(/^\[(OTS|SUIVI)\]\s*/i, '').trim();
+        const cleanNote = rawNote.replace(/^\[(OTS|SUIVI)\]\s*/i, '').replace(/\[SANSDEPOT\]\s*/ig, '').trim();
         return {
           date: v.date_vente,
           entreprise: ent,
@@ -14922,76 +15024,6 @@
       toast(`📄 Fichier Wave téléchargé (${codesSummary || st.dossiers.length + ' ligne(s)'}) pour ${rep.nom} ✓`);
     };
 
-    window.downloadCurrentUserWaveCsv = () => {
-      if (!currentProfile) return;
-      const periodState = readPeriodFilterState('filter-rep');
-      const statutFilter = document.getElementById('filter-rep-statut')?.value || '';
-      const isConfirmedOnly = commDisplayMode === 'confirme' || statutFilter === 'depot_recu';
-
-      const sourceList = (state.mesVentes || []).filter(v => {
-        if (!matchesSalePeriod(v, periodState, true)) return false;
-        if (isConfirmedOnly && v.statut_depot !== 'depot_recu') return false;
-        if (statutFilter === 'non_paye' && v.statut_paiement !== 'non_paye') return false;
-        if (statutFilter === 'paye' && v.statut_paiement !== 'paye') return false;
-        return Number(v.commission_rep || 0) !== 0;
-      });
-
-      if (!sourceList.length) {
-        return toast('Aucune commission sur la période sélectionnée à exporter vers Wave.', 'error');
-      }
-
-      const workingCompanySeq = getWaveCompanySeqMap();
-      const invDate = localYmd();
-      const headers = [
-        'Customer Name',
-        'Invoice Number',
-        'Invoice Date',
-        'Due Date',
-        'Item Name',
-        'Description',
-        'Quantity',
-        'Unit Price',
-        'Memo'
-      ];
-
-      const sortedSourceForWave = [...sourceList].sort((a, b) => {
-        const entA = a.entreprise_nom || state.entreprises.find(e => String(e.id) === String(a.entreprise_id))?.nom || 'Korpo Solutions';
-        const entB = b.entreprise_nom || state.entreprises.find(e => String(e.id) === String(b.entreprise_id))?.nom || 'Korpo Solutions';
-        return entA.localeCompare(entB, 'fr') || String(a.date_vente || '').localeCompare(String(b.date_vente || ''));
-      });
-      const companyInvMap = new Map();
-      const rows = sortedSourceForWave.map(v => {
-        const ent = v.entreprise_nom || state.entreprises.find(e => String(e.id) === String(v.entreprise_id))?.nom || 'Korpo Solutions';
-        if (!companyInvMap.has(ent)) {
-          const prevNum = Number(workingCompanySeq[ent] ?? 100);
-          const nextNum = prevNum + 1;
-          workingCompanySeq[ent] = nextNum;
-          companyInvMap.set(ent, `${getWaveCompanyPrefix(ent)}${nextNum}`);
-        }
-        const invNumber = companyInvMap.get(ent);
-        const cli = v.client_nom || state.clients.find(c => String(c.id) === String(v.client_id))?.nom || '—';
-        const cleanNote = cleanDisplaySaleNote(v.note);
-        const clientDesc = `${cli}${cleanNote ? ' (' + cleanNote + ')' : ''}`.replace(/[\t\r\n]+/g, ' ');
-        const commAmt = Number(v.commission_rep || 0).toFixed(2);
-        return [
-          csvCell(ent),
-          csvCell(invNumber),
-          csvCell(invDate),
-          csvCell(invDate),
-          csvCell('Commission sur vente'),
-          csvCell(clientDesc),
-          '1',
-          commAmt,
-          csvCell(`Facture ${periodState.label}`)
-        ].join(',');
-      });
-      saveWaveCompanySeqMap(workingCompanySeq);
-
-      const slug = currentProfile.nom.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-');
-      triggerWaveCsvDownload([headers.join(','), ...rows].join('\n'), `facture-wave-${slug}-${periodState.singleMonth || localYmd()}.csv`);
-      toast(`📄 Fichier Wave téléchargé (${rows.length} vente(s)) — prêt à importer dans Wave ✓`);
-    };
-
     window.sendSingleRepStatementById = async (repId) => {
       const rep = state.representants.find(r => String(r.id) === String(repId));
       if (!rep) return;
@@ -15076,7 +15108,10 @@
       document.getElementById('list-entreprises').innerHTML = state.entreprises.map(e => `
         <li class="px-4 py-3 flex items-center justify-between text-sm bg-white">
           ${entBadge(e.nom)}
-          <button onclick="deleteEntreprise('${e.id}')" class="text-xs font-semibold text-rose-600 hover:underline">Supprimer</button>
+          <div class="flex items-center gap-3">
+            <button type="button" onclick="toggleEntrepriseDepot('${e.id}')" title="Cliquer pour changer (n'affecte pas les ventes déjà enregistrées)" class="text-[11px] font-bold px-2.5 py-0.5 rounded-full border transition cursor-pointer ${e.depot_requis === false ? 'bg-slate-100 text-slate-700 border-slate-300 hover:bg-slate-200' : 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100'}">${e.depot_requis === false ? '🚫 Sans dépôt' : '💵 Dépôt exigé'}</button>
+            <button onclick="deleteEntreprise('${e.id}')" class="text-xs font-semibold text-rose-600 hover:underline">Supprimer</button>
+          </div>
         </li>
       `).join('');
 
@@ -15369,10 +15404,8 @@
       const rawNote = v.note || '';
       const isCurrentlySuivi = rawNote.toUpperCase().includes('[SUIVI]');
       const nextTag = isCurrentlySuivi ? 'OTS' : 'SUIVI';
-      const cleanBody = rawNote.replace(/^\[(OTS|SUIVI)\]\s*/i, '').trim();
+      const cleanBody = rawNote.replace(/^\[(OTS|SUIVI)\]\s*/i, '').replace(/\[SANSDEPOT\]\s*/ig, '').trim();
       const updatedNote = cleanBody ? `[${nextTag}] ${cleanBody}` : `[${nextTag}]`;
-
-
 
       const { error } = await sb.from('ventes').update({ note: updatedNote }).eq('id', id);
       if (error) return toast(error.message, 'error');
@@ -15400,6 +15433,21 @@
       const { error } = await sb.from('taux_commission').delete().eq('id', id);
       if (error) return toast(error.message, 'error');
       toast('Taux supprimé');
+      await loadAllData();
+    };
+
+    window.toggleEntrepriseDepot = async (id) => {
+      if (currentProfile?.role !== 'admin') return;
+      const ent = (state.entreprises || []).find(e => String(e.id) === String(id));
+      if (!ent) return;
+      const nextRequired = ent.depot_requis === false; // bascule
+      const { error } = await sb.from('entreprises').update({ depot_requis: nextRequired }).eq('id', id);
+      if (error) {
+        return toast(/depot_requis/i.test(error.message || '')
+          ? 'Colonne « depot_requis » absente de Supabase : exécutez le SQL fourni.'
+          : error.message, 'error');
+      }
+      toast(`${ent.nom} : ${nextRequired ? 'dépôt exigé' : 'aucun dépôt requis'} (ventes futures)`);
       await loadAllData();
     };
 
@@ -15474,7 +15522,6 @@
       await loadAllData();
     });
 
-
     // =========================================================================
     // ASSISTANT VOCAL INTELLIGENT (1 PHRASE COMPLÈTE OU ÉTAPE PAR ÉTAPE + CLAVIER SIRI/GOOGLE)
     // =========================================================================
@@ -15515,9 +15562,9 @@
       },
       {
         key: 'depot',
-        prompt: '5. Dépôt : Reçu ou À confirmer',
-        spokenPrompt: 'Dépôt reçu ou à confirmer ?',
-        hint: 'Dites « Reçu » ou « À confirmer »'
+        get prompt() { return companyNoDeposit() ? '5. Dépôt : aucun requis pour cette entreprise' : '5. Dépôt : Reçu ou À confirmer'; },
+        get spokenPrompt() { return companyNoDeposit() ? 'Cette entreprise ne demande aucun dépôt. Dites suivant pour continuer.' : 'Dépôt reçu ou à confirmer ?'; },
+        get hint() { return companyNoDeposit() ? 'Dites « Suivant »' : 'Dites « Reçu » ou « À confirmer »'; }
       },
       {
         key: 'mois_comm',
@@ -15651,10 +15698,12 @@
           { label: '🔄 Suivi', say: 'Suivi' }
         ];
       } else if (step.key === 'depot') {
-        chips = [
-          { label: '✅ Dépôt reçu', say: 'Dépôt reçu' },
-          { label: '⏳ À confirmer', say: 'À confirmer' }
-        ];
+        chips = companyNoDeposit()
+          ? [{ label: '🚫 Aucun dépôt requis', say: 'Aucun dépôt requis' }]
+          : [
+            { label: '✅ Dépôt reçu', say: 'Dépôt reçu' },
+            { label: '⏳ À confirmer', say: 'À confirmer' }
+          ];
       } else if (step.key === 'mois_comm') {
         const baseYm = document.getElementById('vente-mois-comm')?.value || currentMonthStr;
         const [by, bm] = baseYm.split('-').map(Number);
@@ -15845,8 +15894,12 @@
 
       // 4. Statut dépôt
       const depotSel = document.getElementById('vente-statut-depot');
-      if (depotSel) {
-        if (/\b(?:depot recu|recu|paye|virement|interac)\b/i.test(norm) && !/\b(?:pas recu|a confirmer)\b/i.test(norm)) {
+      if (depotSel && !depotSel.disabled) {
+        if (/\b(?:sans depot|aucun depot|pas de depot|depot non requis|aucun requis)\b/i.test(norm)) {
+          depotSel.value = 'a_confirmer'; // cette entreprise exige un dépôt
+          flashVoiceFilledField(depotSel);
+          filledSummary.push('À confirmer');
+        } else if (/\b(?:depot recu|recu|paye|virement|interac)\b/i.test(norm) && !/\b(?:pas recu|a confirmer)\b/i.test(norm)) {
           depotSel.value = 'depot_recu';
           flashVoiceFilledField(depotSel);
           filledSummary.push('Dépôt reçu');
@@ -16224,8 +16277,21 @@
       if (step.key === 'depot') {
         const depotSel = document.getElementById('vente-statut-depot');
         if (!depotSel) return { ok: false, spokenAck: '' };
+        if (companyNoDeposit()) {
+          applyCompanyDepositRule();
+          flashVoiceFilledField(depotSel);
+          if (summaryEl) summaryEl.textContent = '✓ Dépôt : aucun requis (entreprise)';
+          return { ok: true, spokenAck: 'Aucun dépôt requis' };
+        }
         for (const alt of alts) {
           const n = normalizePhoneticFr(alt);
+          if (/\b(?:aucun depot|sans depot|pas de depot|depot non requis|non requis|pas requis|aucun requis)\b/i.test(n)) {
+            depotSel.value = 'a_confirmer'; // cette entreprise exige un dépôt
+            applyCompanyDepositRule();
+            flashVoiceFilledField(depotSel);
+            if (summaryEl) summaryEl.textContent = '✓ Dépôt : À confirmer (cette entreprise exige un dépôt)';
+            return { ok: true, spokenAck: 'Cette entreprise exige un dépôt, noté à confirmer' };
+          }
           if (/\b(?:confirmer|non|pas|aucun|attente|venir|pas recu)\b/i.test(n)) {
             depotSel.value = 'a_confirmer';
             flashVoiceFilledField(depotSel);
@@ -17307,7 +17373,7 @@
                 ${isAdmin ? `<span>•</span><span class="font-semibold text-indigo-600">${esc(v._rep)}</span>` : ''}
                 <span>•</span>
                 <span class="px-1.5 py-0.2 text-[10px] font-extrabold rounded border ${isSuivi ? 'bg-purple-50 text-purple-700 border-purple-200' : 'bg-sky-50 text-sky-700 border-sky-200'}">${isSuivi ? 'SUIVI' : 'OTS'}</span>
-                <span class="px-1.5 py-0.2 text-[10px] font-bold rounded-full ${v.statut_depot === 'depot_recu' ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'}">${v.statut_depot === 'depot_recu' ? 'Dépôt reçu' : 'À confirmer'}</span>
+                <span class="px-1.5 py-0.2 text-[10px] font-bold rounded-full ${v.statut_depot === 'depot_recu' ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'}">${v.statut_depot === 'depot_recu' ? (isNoDepositSale(v) ? 'Sans dépôt requis' : 'Dépôt reçu') : 'À confirmer'}</span>
                 ${cleanNote ? `<span class="text-slate-400 truncate max-w-[160px]">• ${esc(cleanNote)}</span>` : ''}
               </div>
             </div>
@@ -17466,6 +17532,12 @@
         const repId = currentProfile.role === 'admin' ? document.getElementById('vente-rep').value : currentProfile.id;
         const entId = document.getElementById('vente-entreprise').value;
         const clientNom = document.getElementById('vente-client-nom').value;
+        {
+          const entRule = (state.entreprises || []).find(x => String(x.id) === String(entId));
+          const depotSelEl = document.getElementById('vente-statut-depot');
+          if (entRule && entRule.depot_requis === false) depotSelEl.value = 'sans_depot';
+          else if (entRule && depotSelEl.value === 'sans_depot') throw new Error('Cette entreprise exige un dépôt : choisissez « Dépôt reçu » ou « À confirmer ».');
+        }
         if (!entId) throw new Error('Choisissez l\'entreprise partenaire.');
         if (!clientNom.trim()) throw new Error('Il manque le nom du client.');
         if (!document.getElementById('vente-date').value) throw new Error('Il manque la date réelle de la vente.');
@@ -17486,19 +17558,20 @@
           valeur,
           date_vente: document.getElementById('vente-date').value,
           mois_commission: document.getElementById('vente-mois-comm').value,
-          statut_depot: document.getElementById('vente-statut-depot').value,
+          statut_depot: document.getElementById('vente-statut-depot').value === 'sans_depot' ? 'depot_recu' : document.getElementById('vente-statut-depot').value,
           statut_paiement: document.getElementById('vente-statut-paiement').value,
           note: (() => {
             const rawNote = document.getElementById('vente-note').value
               .trim()
-              .replace(/^\[(OTS|SUIVI)\]\s*/i, '')
+              .replace(/^\[(OTS|SUIVI)\]\s*/i, '').replace(/\[SANSDEPOT\]\s*/ig, '')
               .replace(/\[HIT(?::(?:REP|OLIVIER|BOTH))?\]\s*/ig, '')
               .trim();
             const typeKpi = document.getElementById('vente-type-kpi').value;
             const isHit = Boolean(document.getElementById('vente-is-hit')?.checked);
             const hitBearer = (document.getElementById('vente-hit-bearer')?.value || 'both').toUpperCase();
             const hitPrefix = isHit ? `[HIT:${hitBearer}] ` : '';
-            return rawNote ? `[${typeKpi}] ${hitPrefix}${rawNote}` : `[${typeKpi}]${isHit ? ` [HIT:${hitBearer}]` : ''}`;
+            const noDepTag = document.getElementById('vente-statut-depot').value === 'sans_depot' ? '[SANSDEPOT] ' : '';
+            return rawNote ? `[${typeKpi}] ${hitPrefix}${noDepTag}${rawNote}` : `[${typeKpi}]${isHit ? ` [HIT:${hitBearer}]` : ''}${noDepTag ? ' [SANSDEPOT]' : ''}`;
           })()
         };
 
@@ -17790,10 +17863,21 @@
     document.getElementById('form-new-entreprise')?.addEventListener('submit', async (e) => {
       e.preventDefault();
       const nom = document.getElementById('new-entreprise-nom').value.trim();
-      const { error } = await sb.from('entreprises').insert({ nom });
+      const depotChoice = document.getElementById('new-entreprise-depot')?.value || '';
+      if (!depotChoice) return toast('Indiquez si cette entreprise exige un dépôt.', 'error');
+      let { error } = await sb.from('entreprises').insert({ nom, depot_requis: depotChoice === 'oui' });
+      let columnMissing = false;
+      if (error && /depot_requis/i.test(error.message || '')) {
+        columnMissing = true;
+        ({ error } = await sb.from('entreprises').insert({ nom }));
+      }
       if (error) return toast(error.message, 'error');
       document.getElementById('new-entreprise-nom').value = '';
-      toast('Entreprise ajoutée');
+      const depotSelNew = document.getElementById('new-entreprise-depot');
+      if (depotSelNew) depotSelNew.value = '';
+      toast(columnMissing
+        ? '⚠️ Entreprise ajoutée, mais la colonne « depot_requis » est absente de Supabase : exécutez le SQL fourni pour enregistrer cette règle.'
+        : 'Entreprise ajoutée', columnMissing ? 'error' : undefined);
       await loadAllData();
     });
 
@@ -17947,7 +18031,7 @@
           const note = get('note');
           const rowJoined = (headerMode ? `${note} ${get('type')}` : cols.slice(6).join(' ')).toUpperCase();
           const kpiTag = rowJoined.includes('SUIVI') ? 'SUIVI' : 'OTS';
-          const cleanNoteBody = note.replace(/^\[(OTS|SUIVI)\]\s*/i, '').trim();
+          const cleanNoteBody = note.replace(/^\[(OTS|SUIVI)\]\s*/i, '').replace(/\[SANSDEPOT\]\s*/ig, '').trim();
           const finalNote = cleanNoteBody ? `[${kpiTag}] ${cleanNoteBody}` : `[${kpiTag}]`;
 
           try {
