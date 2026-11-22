@@ -2437,7 +2437,7 @@
 
       // Synchroniser le cloud et charger les dernières données en arrière-plan sans bloquer l'affichage
       const refreshBtn = document.getElementById('btn-refresh');
-      if (refreshBtn) refreshBtn.classList.add('animate-pulse');
+      setRefreshButtonSpinning(refreshBtn, true);
       (async () => {
         try {
           await hydrateKv();
@@ -2449,7 +2449,7 @@
         } catch (bgErr) {
           console.warn('Synchronisation initiale en arrière-plan :', bgErr?.message || bgErr);
         } finally {
-          if (refreshBtn) refreshBtn.classList.remove('animate-pulse');
+          setRefreshButtonSpinning(refreshBtn, false);
         }
       })();
     }
@@ -14134,15 +14134,36 @@
       performAppLogout();
     });
 
+    function setRefreshButtonSpinning(btnEl, isSpinning) {
+      if (!btnEl) return;
+      if (!document.getElementById('korpo-spin-keyframes')) {
+        const st = document.createElement('style');
+        st.id = 'korpo-spin-keyframes';
+        st.textContent = '@keyframes korpoRefreshSpin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } } .korpo-spinning-icon { display: inline-block; animation: korpoRefreshSpin 0.75s linear infinite; transform-origin: center; }';
+        document.head.appendChild(st);
+      }
+      const iconTarget = btnEl.querySelector('svg') || btnEl.querySelector('span') || btnEl;
+      if (isSpinning) {
+        btnEl.classList.add('opacity-80', 'cursor-wait');
+        iconTarget.classList.add('korpo-spinning-icon', 'animate-spin');
+      } else {
+        btnEl.classList.remove('opacity-80', 'cursor-wait');
+        iconTarget.classList.remove('korpo-spinning-icon', 'animate-spin');
+      }
+    }
+
     document.getElementById('btn-refresh')?.addEventListener('click', async () => {
       const btn = document.getElementById('btn-refresh');
       btn.disabled = true;
+      setRefreshButtonSpinning(btn, true);
+      const minSpinDelay = new Promise(res => setTimeout(res, 450));
       try {
-        const loaded = await loadAllData();
+        const [loaded] = await Promise.all([loadAllData(), minSpinDelay]);
         if (loaded !== false) toast('Données actualisées');
       } catch (err) {
         toast(err.message, 'error');
       } finally {
+        setRefreshButtonSpinning(btn, false);
         btn.disabled = false;
       }
     });
