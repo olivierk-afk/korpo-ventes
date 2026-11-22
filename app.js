@@ -4542,7 +4542,7 @@
           allVentes.map(v => {
             const ym = getSaleStatsMonth(v);
             const rObj = state.representants.find(r => String(r.id) === String(v.representant_id));
-            const rn = resolveKpiRepName(rObj?.nom || v.rep_nom || '');
+            const rn = resolveKpiRepName(rObj?.nom || resolveSaleArchivedRepName(v) || v.rep_nom || '');
             return (ym && rn) ? `${ym}__${rn}` : '';
           }).filter(Boolean)
         );
@@ -6634,7 +6634,7 @@
           saleId: String(saleRow.id),
           repNom,
           entNom,
-          clientNom: clientNom || '',
+          clientNom: '',
           valeur: Number(saleRow.valeur || 0),
           typeKpi: typeKpi || 'OTS',
           dateVente: saleRow.date_vente || localYmd()
@@ -7592,7 +7592,16 @@
         // CARTE DE NOUVELLE VENTE COMPACTE (MÊME TAILLE QU'UN MESSAGE NORMAL)
         if (m.kind === 'sale') {
           const sd = m.saleData || {};
-          const showClient = (isAdminUser || isMe) && sd.clientNom && sd.clientNom !== 'Client confidentiel';
+          const localSaleMatch = (isAdminUser || isMe)
+            ? ((state.mesVentes || []).find(v => String(v.id) === String(sd.saleId)) || (state.ventes || []).find(v => String(v.id) === String(sd.saleId)))
+            : null;
+          const resolvedLocalCli = localSaleMatch
+            ? (localSaleMatch.client_nom || state.clients.find(c => String(c.id) === String(localSaleMatch.client_id))?.nom || '')
+            : '';
+          const displayCli = (isAdminUser || isMe)
+            ? ((resolvedLocalCli && resolvedLocalCli !== 'Client confidentiel') ? resolvedLocalCli : (sd.clientNom && sd.clientNom !== 'Client confidentiel' ? sd.clientNom : ''))
+            : '';
+          const showClient = Boolean(displayCli);
           return dayDividerHtml + unreadDividerHtml + `
             <div id="chat-item-${esc(m.id)}" ontouchstart="handleChatTouchStart(event, this)" ontouchmove="handleChatTouchMove(event)" ontouchend="handleChatTouchEnd(event, '${esc(m.id)}')" class="my-1.5 flex justify-center">
               <div class="chat-sale-pill max-w-[94%] sm:max-w-md px-3 py-1.5 flex items-center gap-2 text-xs shadow-2xs">
@@ -7601,7 +7610,7 @@
                   <strong class="font-extrabold text-slate-900 dark:text-white">${esc(sd.repNom || m.authorName)}</strong>
                   <span class="text-slate-400 mx-1">•</span>
                   <span class="font-bold text-indigo-700 dark:text-indigo-300">${esc(sd.entNom || '')}</span>
-                  ${showClient ? `<span class="text-slate-500 dark:text-slate-400"> (${esc(sd.clientNom)})</span>` : ''}
+                  ${showClient ? `<span class="text-slate-500 dark:text-slate-400"> (${esc(displayCli)})</span>` : ''}
                   <span class="text-slate-400 mx-1">•</span>
                   <strong class="font-extrabold text-emerald-700 dark:text-emerald-300 tabular-nums">${fmtMoney(sd.valeur)}</strong>
                 </div>
@@ -7986,7 +7995,7 @@
         // Les représentants ne téléchargent pas la corbeille (index -3) des autres
         fetchAllRows(() => {
           let q = sb.from('kpi_hebdo').select('*').order('id');
-          if (!isAdmin) q = q.neq('semaine_index', -3);
+          if (!isAdmin) q = q.neq('semaine_index', -3).neq('semaine_index', -14);
           q = q.neq('semaine_index', -13); // anciens blocs média du chat : lus à la demande
           return q;
         })
@@ -8053,6 +8062,18 @@
         state.representants = (allRepsPublicRows && allRepsPublicRows.length) ? allRepsPublicRows : [currentProfile];
         syncAllKpiRepsFromState();
         state.mesVentes = (mesVentesRows || []).map(normalizeRepPersonalSaleRow);
+        syncAllKpiRepsFromState();
+        const myOwnSaleIds = new Set(state.mesVentes.map(v => String(v.id)));
+        const myOwnClientIds = new Set(state.mesVentes.map(v => String(v.client_id || '')).filter(Boolean));
+        state.clients = (state.clients || []).filter(c => myOwnClientIds.has(String(c.id)));
+        kpiHebdoRows = (kpiHebdoRows || []).filter(r => {
+          const sIdx = Number(r.semaine_index);
+          if (sIdx === -2 || sIdx === -4 || sIdx === -5) {
+            return myOwnSaleIds.has(String(r.mois_commission));
+          }
+          if (sIdx === -14) return false; // Ne pas exposer le numéro personnel du directeur dans les données locales d'un rep
+          return true;
+        });
 
         const ownSalesNormalized = state.mesVentes.map(v => ({
           ...v,
@@ -8069,8 +8090,8 @@
             const cRow = (state.classement || []).find(c => String(c.representant_id) === String(v.representant_id));
             return {
               ...v,
-              rep_nom: rObj?.nom || cRow?.representant_nom || '',
-              entreprise_nom: state.entreprises.find(e => String(e.id) === String(v.entreprise_id))?.nom || '—',
+              rep_nom: rObj?.nom || resolveSaleArchivedRepName(v) || cRow?.representant_nom || '',
+              entreprise_nom: state.entreprises.find(e => String(e.id) === String(v.entreprise_id))?.nom || resolveSaleArchivedEntName(v) || '—',
               client_nom: 'Client confidentiel'
             };
           });
@@ -9726,9 +9747,17 @@
         });
       } else {
         // Pour un représentant : combiner ses propres ventes détaillées (`state.mesVentes`) + vue classement + KPI store pour les collègues
-        const knownReps = state.representants.length
-          ? state.representants
-          : ALL_KPI_REPS.map((n, i) => ({ id: `kpi_${i}`, nom: n }));
+        const knownRepsMap = new Map();
+        (state.representants || []).forEach(r => {
+          if (r && r.nom) knownRepsMap.set(resolveKpiRepName(r.nom), { id: r.id, nom: r.nom });
+        });
+        ALL_KPI_REPS.forEach((n, i) => {
+          const norm = resolveKpiRepName(n);
+          if (norm && !knownRepsMap.has(norm)) {
+            knownRepsMap.set(norm, { id: `arch_rep_${norm.toLowerCase()}`, nom: n });
+          }
+        });
+        const knownReps = Array.from(knownRepsMap.values());
         knownReps.forEach(r => ensureRepEntry(r.id, r.nom));
 
         if (isSubMonthMode) {
@@ -13944,13 +13973,26 @@
       authLoadingUserId = null;
       kvReset();
 
-      // Purger les jetons de session Supabase locaux immédiatement pour garantir la déconnexion
+      // Purger les jetons de session et caches sensibles locaux immédiatement pour garantir la confidentialité sur appareil partagé
       try {
+        const sensitiveKeys = new Set([
+          'korpo_sale_audit_v1', 'korpo_sale_trash_v1', 'korpo_sale_bonus_overrides_v1',
+          'korpo_carried_over_sales_v1', 'korpo_rep_targets_v1', 'korpo_company_targets_meta_v1',
+          'korpo_client_targets_v1', 'korpo_kpi_condensed_v1', 'korpo_kpi_monthly_rdv_v1',
+          'korpo_daily_rdv_v1', 'korpo_kpi_team_snapshot_v1', 'korpo_kpi_store_v1',
+          'korpo_sale_proofs_v1', 'korpo_red_phone_cfg_v1', 'korpo_archived_reps_v1',
+          'korpo_archived_entreprises_v1'
+        ]);
         Object.keys(localStorage).forEach(k => {
-          if (k.startsWith('sb-') && k.endsWith('-auth-token')) {
+          if ((k.startsWith('sb-') && k.endsWith('-auth-token')) || sensitiveKeys.has(k) || k.startsWith('korpo_kv_migrated_')) {
             localStorage.removeItem(k);
           }
         });
+        state = { representants: [], entreprises: [], clients: [], taux: [], ventes: [], mesVentes: [], classement: [] };
+        kpiStore = {};
+        kpiHebdoRows = [];
+        teamChatMessages = [];
+        saleProofsStore = {};
       } catch (e) {}
 
       try {
