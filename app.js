@@ -2661,7 +2661,8 @@
         { id: 'tab-mes-ventes', icon: '💵', shortLabel: 'Ventes', label: 'Mes ventes' },
         { id: 'tab-mes-commissions', icon: '💰', shortLabel: 'Comm.', label: 'Mes commissions' },
         { id: 'tab-kpi', icon: '📊', shortLabel: 'KPI', label: 'Tableau KPI' },
-        { id: 'tab-classement', icon: '🏆', shortLabel: 'Équipe', label: 'Classement équipe' }
+        { id: 'tab-classement', icon: '🏆', shortLabel: 'Équipe', label: 'Classement équipe' },
+        { id: 'tab-route', icon: '🧭', shortLabel: 'Trajet', label: 'Optimiseur de trajet' }
       ];
 
       const adminItems = isAdmin ? [
@@ -2675,8 +2676,8 @@
       const mobileGrid = document.getElementById('mobile-bottom-nav-grid');
       if (mobileGrid) {
         mobileGrid.className = isAdmin
-          ? 'grid grid-cols-5 gap-1 max-w-lg mx-auto'
-          : 'grid grid-cols-4 gap-1 max-w-lg mx-auto';
+          ? 'grid grid-cols-6 gap-1 max-w-lg mx-auto'
+          : 'grid grid-cols-5 gap-1 max-w-lg mx-auto';
 
         const primaryHtml = primaryItems.map(t => `
           <button type="button" data-tab="${t.id}" style="touch-action: manipulation; -webkit-tap-highlight-color: transparent;" class="nav-btn relative flex flex-col items-center justify-center py-1.5 px-1 rounded-2xl text-[11px] font-bold transition text-slate-300 hover:text-white active:scale-95">
@@ -2726,6 +2727,7 @@
         desktopNav.innerHTML =
           renderGroup('Mon espace', primaryItems.slice(0, 2)) +
           renderGroup('Performance', primaryItems.slice(2, 4)) +
+          renderGroup('Terrain', primaryItems.slice(4, 5)) +
           (adminItems.length ? renderGroup('Administration', adminItems) : '');
       }
 
@@ -2840,6 +2842,7 @@
       });
       if (targetSectionId === 'tab-mes-ventes') applyMobilePersonalSplitLayout();
       if (tabId === 'tab-kpi') renderKpiDashboard();
+      if (tabId === 'tab-route') window.KorpoRoute?.render();
     }
 
     function setChatBackgroundScrollLocked(locked) {
