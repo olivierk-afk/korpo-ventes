@@ -1767,7 +1767,7 @@
         ? `🚀 ${repName || 'Un membre'} vient de closer un deal !`
         : `🚀 DEAL CONCLU, ${String(repName || '').toUpperCase()} !`;
 
-      overlay.style.zIndex = '9999';
+      overlay.style.cssText = 'position:fixed;inset:0;z-index:2147483647;display:flex;align-items:center;justify-content:center;padding:1rem;background:rgba(2,6,23,0.78);backdrop-filter:blur(6px);';
       overlay.innerHTML = `
         <div class="korpo-rocket-card-anim relative w-full max-w-md mx-4 rounded-3xl bg-gradient-to-br from-slate-950 via-indigo-950 to-slate-900 border-2 border-emerald-400/50 p-6 sm:p-7 text-center text-white shadow-2xl overflow-hidden">
           <div class="absolute -top-24 -right-24 w-56 h-56 rounded-full bg-emerald-500/20 blur-3xl pointer-events-none"></div>
@@ -1898,7 +1898,7 @@
 
       const closeOverlay = () => {
         if (window._rocketAnimFrame) cancelAnimationFrame(window._rocketAnimFrame);
-        overlay.style.display = '';
+        overlay.style.cssText = 'display:none;';
         overlay.classList.add('hidden');
       };
       const closeBtn = document.getElementById('btn-close-celebration');
@@ -2016,7 +2016,10 @@
     async function initMentionPushServiceWorker() {
       if ('serviceWorker' in navigator) {
         try {
-          korpoSwRegistration = await navigator.serviceWorker.register('./sw.js');
+          korpoSwRegistration = await navigator.serviceWorker.register('./sw.js', { updateViaCache: 'none' });
+          if (korpoSwRegistration && typeof korpoSwRegistration.update === 'function') {
+            korpoSwRegistration.update().catch(() => {});
+          }
         } catch (e) {
           console.warn('Service Worker non enregistré :', e && e.message);
         }
@@ -2490,6 +2493,10 @@
     });
 
     async function initApp() {
+      ['comm-bar-fill', 'goal-bar-fill'].forEach(fid => {
+        const el = document.getElementById(fid);
+        if (el) syncRocketOnProgressBar(el, parseFloat(el.style.width) || 0);
+      });
       syncThemeToggleButtons();
       initKpiControls();
       const { url, key } = getCredentials();
