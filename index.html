@@ -3947,7 +3947,7 @@
     function resolveSaleArchivedRepName(v) {
       if (!v) return '';
       if (v.representant_id) {
-        const byId = resolveSaleArchivedRepName(v);
+        const byId = getArchivedRepNameById(v.representant_id);
         if (byId) return byId;
       }
       const sid = v.id ? String(v.id) : '';
@@ -3957,13 +3957,22 @@
       }
       const mTag = String(v.note || '').match(/\[REP:([^\]]+)\]/i);
       if (mTag && mTag[1]) return mTag[1].trim();
+      // Fallback si la vente a representant_id === null et provient d'un représentant archivé (ex. Gabryel)
+      if (v.representant_id === null || v.representant_id === undefined || v.representant_id === '') {
+        const archivedList = Object.values(archivedRepsStore || {}).filter(e => e && e.nom);
+        if (archivedList.length === 1) return archivedList[0].nom;
+        // Sinon chercher dans saleAuditStore ou teamChatMessages
+        const auditEvs = sid ? (saleAuditStore[sid] || []) : [];
+        const creatorEv = auditEvs.find(ev => ev && ev.by && !state.representants.some(r => r.nom === ev.by));
+        if (creatorEv?.by) return creatorEv.by;
+      }
       return '';
     }
 
     function resolveSaleArchivedEntName(v) {
       if (!v) return '';
       if (v.entreprise_id) {
-        const byId = resolveSaleArchivedEntName(v);
+        const byId = getArchivedEntrepriseNameById(v.entreprise_id);
         if (byId) return byId;
       }
       const sid = v.id ? String(v.id) : '';
@@ -3973,6 +3982,10 @@
       }
       const mTag = String(v.note || '').match(/\[ENT:([^\]]+)\]/i);
       if (mTag && mTag[1]) return mTag[1].trim();
+      if (v.entreprise_id === null || v.entreprise_id === undefined || v.entreprise_id === '') {
+        const archivedEnts = Object.values(archivedEntreprisesStore || {}).filter(e => e && e.nom);
+        if (archivedEnts.length === 1) return archivedEnts[0].nom;
+      }
       return '';
     }
 
@@ -4010,9 +4023,12 @@
       const kpiSelRep = document.getElementById('kpi-select-rep');
       if (kpiSelRep) {
         const cur = kpiSelRep.value || 'ALL';
+        const archivedWithHistory = Object.values(archivedRepsStore || {}).map(e => String(e?.nom || '').trim()).filter(n => n && !activeRepsList.includes(n));
         kpiSelRep.innerHTML = `<option value="ALL">👥 Toute l'équipe</option>` +
-          activeRepsList.map(n => `<option value="${esc(n)}">${esc(n === 'Jean-Sébastien' ? 'Jean-Sébastien (J-S)' : n)}</option>`).join('');
-        kpiSelRep.value = (cur === 'ALL' || activeRepsList.includes(cur)) ? cur : 'ALL';
+          activeRepsList.map(n => `<option value="${esc(n)}">${esc(n === 'Jean-Sébastien' ? 'Jean-Sébastien (J-S)' : n)}</option>`).join('') +
+          (archivedWithHistory.length ? `<optgroup label="Anciens membres (Historique)">${archivedWithHistory.map(n => `<option value="${esc(n)}">${esc(n)} (Archivé)</option>`).join('')}</optgroup>` : '');
+        const allAllowed = ['ALL', ...activeRepsList, ...archivedWithHistory];
+        kpiSelRep.value = allAllowed.includes(cur) ? cur : 'ALL';
       }
       ['kpi-edit-rep', 'rep-target-select'].forEach(selId => {
         const el = document.getElementById(selId);
@@ -8784,8 +8800,19 @@
         </div>
       `;
 
-      // 2. Tableau comparatif des représentants (actifs uniquement — les anciens restent dans les cumuls globaux)
-      const allReps = getActiveKpiReps();
+      // 2. Tableau comparatif des représentants : inclure les actifs + les anciens qui ont des stats/objectifs sur la période affichée
+      const allReps = ALL_KPI_REPS.filter(rn => {
+        if (!isRepArchived(rn)) return true;
+        const r = mObj.reps?.[rn];
+        if (!r) return false;
+        const hasActivity = (r['Booké']?.cumul || 0) > 0
+          || (r['RDV Réalisé']?.cumul || 0) > 0
+          || (r['Ventes OTS']?.cumul || 0) > 0
+          || (r['Ventes SUIVI']?.cumul || 0) > 0
+          || (r['Vente $']?.cumul || 0) > 0
+          || (r['Vente $']?.objectif || 0) > 0;
+        return hasActivity;
+      });
       const compareRows = allReps.map(rn => {
         const r = mObj.reps[rn];
         if (!r) return '';
@@ -9165,7 +9192,11 @@
       }
 
       const isAdminRole = currentProfile?.role === 'admin';
-      const entList = Object.keys(mObj.entreprises).filter(en => !isEntrepriseArchived(en));
+      const entList = Object.keys(mObj.entreprises).filter(en => {
+        if (!isEntrepriseArchived(en)) return true;
+        const eObj = mObj.entreprises[en];
+        return (eObj?.total?.cumul || 0) > 0 || (eObj?.total?.objectif || 0) > 0;
+      });
       document.getElementById('kpi-entreprises-cards').innerHTML = entList.map(entName => {
         const eObj = mObj.entreprises[entName];
         const totVal = repFilter === 'ALL' ? (eObj.total?.cumul || 0) : (eObj.reps[repFilter]?.cumul || 0);
@@ -13433,7 +13464,7 @@
           topEntName: topEntEntry ? topEntEntry[0] : '',
           topEntVal: topEntEntry ? topEntEntry[1] : 0
         };
-      }).filter(r => !isRepArchived(r.nom) && !isRepArchived(r.id)).sort((a, b) => b.total - a.total);
+      }).filter(r => !isRepArchived(r.nom) && !isRepArchived(r.id) || r.total > 0 || r.dealsCount > 0).sort((a, b) => b.total - a.total);
 
       const teamTotalVol = enriched.reduce((s, r) => s + r.total, 0);
       const teamTotalTarget = enriched.reduce((s, r) => s + r.repTarget, 0);
