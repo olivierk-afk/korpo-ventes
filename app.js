@@ -1694,34 +1694,209 @@
       } catch (e) {}
     }
 
-    function triggerSaleCelebration(repName, clientNom, entNom, valeur, commAmount) {
+    function ensureRocketCelebrationStyles() {
+      if (document.getElementById('korpo-rocket-celebration-css')) return;
+      const st = document.createElement('style');
+      st.id = 'korpo-rocket-celebration-css';
+      st.textContent = `
+        @keyframes korpoRocketThrust {
+          0%, 100% { transform: translate(-50%, -50%) rotate(45deg) scale(1); }
+          50% { transform: translate(-50%, -53%) rotate(47deg) scale(1.08); }
+        }
+        @keyframes korpoRocketBlastOff {
+          0% { transform: translate(-50%, -50%) rotate(45deg) scale(1.15); opacity: 1; }
+          100% { transform: translate(180px, -180px) rotate(45deg) scale(1.45); opacity: 0; }
+        }
+        @keyframes korpoFlameFlicker {
+          0%, 100% { opacity: 0.95; transform: scaleX(1); }
+          50% { opacity: 0.55; transform: scaleX(0.75); }
+        }
+        @keyframes korpoCelebrationPop {
+          0% { transform: scale(0.84) translateY(18px); opacity: 0; }
+          65% { transform: scale(1.03) translateY(-2px); opacity: 1; }
+          100% { transform: scale(1) translateY(0); opacity: 1; }
+        }
+        @keyframes korpoGlowPulse {
+          0%, 100% { box-shadow: 0 0 28px rgba(16, 185, 129, 0.35), 0 0 60px rgba(99, 102, 241, 0.25); }
+          50% { box-shadow: 0 0 46px rgba(16, 185, 129, 0.65), 0 0 85px rgba(245, 158, 11, 0.35); }
+        }
+        .korpo-rocket-card-anim { animation: korpoCelebrationPop 0.45s cubic-bezier(0.22, 1, 0.36, 1) forwards, korpoGlowPulse 2.2s ease-in-out infinite; }
+        .korpo-rocket-active { animation: korpoRocketThrust 0.22s ease-in-out infinite; }
+        .korpo-rocket-blast { animation: korpoRocketBlastOff 0.65s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        .korpo-flame-trail { animation: korpoFlameFlicker 0.16s ease-in-out infinite; transform-origin: right center; }
+      `;
+      document.head.appendChild(st);
+    }
+
+    function playRocketIgnitionSweep() {
+      try {
+        const ctx = sharedAudioCtx || new (window.AudioContext || window.webkitAudioContext)();
+        if (ctx.state === 'suspended') ctx.resume();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sawtooth';
+        const t0 = ctx.currentTime;
+        osc.frequency.setValueAtTime(110, t0);
+        osc.frequency.exponentialRampToValueAtTime(520, t0 + 1.25);
+        gain.gain.setValueAtTime(0.06, t0);
+        gain.gain.exponentialRampToValueAtTime(0.001, t0 + 1.3);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(t0);
+        osc.stop(t0 + 1.3);
+      } catch (e) {}
+    }
+
+    function triggerSaleCelebration(repName, clientNom, entNom, valeur, commAmount, isTeamBroadcast = false) {
+      ensureRocketCelebrationStyles();
       const overlay = document.getElementById('sale-celebration-overlay');
       if (!overlay) return;
-      document.getElementById('celebration-title').textContent = `Bravo ${repName || ''} ! 💵`;
-      document.getElementById('celebration-subtitle').textContent = `${entNom} — ${clientNom}`;
-      document.getElementById('celebration-amount').textContent = fmtMoney(valeur);
-      document.getElementById('celebration-comm').textContent = `Commission : + ${fmtMoney(commAmount)}`;
+
+      const safeVal = Math.max(0, Number(valeur || 0));
+      const safeComm = Number(commAmount || 0);
+      const showCommRow = !isTeamBroadcast && Math.abs(safeComm) > 0.009;
+      const clientLine = clientNom && clientNom !== 'Client confidentiel' ? ` — ${clientNom}` : '';
+      const headline = isTeamBroadcast
+        ? `🚀 ${repName || 'Un membre'} vient de closer un deal !`
+        : `🚀 DEAL CONCLU, ${String(repName || '').toUpperCase()} !`;
+
+      overlay.style.zIndex = '9999';
+      overlay.innerHTML = `
+        <div class="korpo-rocket-card-anim relative w-full max-w-md mx-4 rounded-3xl bg-gradient-to-br from-slate-950 via-indigo-950 to-slate-900 border-2 border-emerald-400/50 p-6 sm:p-7 text-center text-white shadow-2xl overflow-hidden">
+          <div class="absolute -top-24 -right-24 w-56 h-56 rounded-full bg-emerald-500/20 blur-3xl pointer-events-none"></div>
+          <div class="absolute -bottom-24 -left-24 w-56 h-56 rounded-full bg-amber-400/15 blur-3xl pointer-events-none"></div>
+
+          <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/20 border border-emerald-400/40 text-emerald-300 text-[11px] font-extrabold uppercase tracking-wider mb-3">
+            <span>🔥</span><span>Nouvelle vente enregistrée</span>
+          </div>
+
+          <h3 id="celebration-title" class="text-xl sm:text-2xl font-black tracking-tight text-white">${esc(headline)}</h3>
+          <p id="celebration-subtitle" class="text-xs sm:text-sm font-semibold text-indigo-200 mt-1">${esc((entNom || 'Korpo') + clientLine)}</p>
+
+          <!-- PISTE DE DÉCOLLAGE DE LA FUSÉE -->
+          <div class="mt-6 mb-5 px-2">
+            <div class="flex items-center justify-between text-[11px] font-extrabold uppercase tracking-wider mb-2">
+              <span id="rocket-stage-label" class="text-amber-300">Allumage des moteurs...</span>
+              <span id="rocket-pct-label" class="text-emerald-300 tabular-nums">0 %</span>
+            </div>
+            <div class="relative h-5 rounded-full bg-slate-800/95 border border-white/15 p-1 overflow-visible shadow-inner">
+              <div id="rocket-progress-fill" class="h-full rounded-full bg-gradient-to-r from-indigo-500 via-amber-400 to-emerald-400 transition-none" style="width: 4%;"></div>
+              <!-- Cible d'arrivée -->
+              <span class="absolute right-2 top-1/2 -translate-y-1/2 text-xs select-none" title="Objectif atteint">🏁</span>
+              <!-- Fusée animée -->
+              <div id="rocket-ship-runner" class="korpo-rocket-active absolute top-1/2 select-none pointer-events-none flex items-center" style="left: 4%;">
+                <span class="korpo-flame-trail text-base -mr-1.5">🔥</span>
+                <span class="text-2xl sm:text-3xl drop-shadow-[0_0_12px_rgba(251,191,36,0.9)]">🚀</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- COMPTEURS DYNAMIQUES MONTANT + COMMISSION -->
+          <div class="grid ${showCommRow ? 'grid-cols-2' : 'grid-cols-1'} gap-3 mt-4">
+            <div class="rounded-2xl bg-white/10 border border-white/15 p-3.5 backdrop-blur-xs">
+              <div class="text-[10.5px] font-bold uppercase tracking-wider text-indigo-200">Montant du deal</div>
+              <div id="celebration-amount" class="text-xl sm:text-2xl font-black text-white tabular-nums mt-0.5">${fmtMoney(0)}</div>
+            </div>
+            ${showCommRow ? `
+              <div class="rounded-2xl bg-emerald-500/20 border border-emerald-400/45 p-3.5 backdrop-blur-xs">
+                <div class="text-[10.5px] font-bold uppercase tracking-wider text-emerald-200">Ta commission</div>
+                <div id="celebration-comm" class="text-xl sm:text-2xl font-black text-emerald-300 tabular-nums mt-0.5">+ ${fmtMoney(0)}</div>
+              </div>
+            ` : ''}
+          </div>
+
+          <p id="rocket-final-quote" class="opacity-0 transition-opacity duration-300 text-xs font-bold text-amber-300 mt-4">
+            💥 Boom ! Dossier propulsé dans tes statistiques !
+          </p>
+
+          <button type="button" id="btn-close-celebration" class="mt-4 w-full py-2.5 px-4 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-xs uppercase tracking-wider shadow-lg transition cursor-pointer">
+            Continuer sur ma lancée 🔥
+          </button>
+        </div>
+      `;
 
       overlay.classList.remove('hidden');
-      playSaleCelebrationFanfare();
+      playRocketIgnitionSweep();
 
-      const emojis = ['💵', '💰', '🎉', '✨', '⭐', '🔥'];
-      for (let i = 0; i < 28; i++) {
-        const p = document.createElement('div');
-        p.className = 'celebration-particle text-2xl select-none';
-        p.textContent = emojis[i % emojis.length];
-        p.style.left = `${Math.random() * 96 + 2}vw`;
-        p.style.animationDuration = `${1.8 + Math.random() * 1.4}s`;
-        p.style.animationDelay = `${Math.random() * 0.35}s`;
-        document.body.appendChild(p);
-        setTimeout(() => p.remove(), 3600);
-      }
+      const fillEl = document.getElementById('rocket-progress-fill');
+      const shipEl = document.getElementById('rocket-ship-runner');
+      const pctEl = document.getElementById('rocket-pct-label');
+      const stageEl = document.getElementById('rocket-stage-label');
+      const amtEl = document.getElementById('celebration-amount');
+      const commEl = document.getElementById('celebration-comm');
+      const quoteEl = document.getElementById('rocket-final-quote');
 
-      const closeOverlay = () => overlay.classList.add('hidden');
-      document.getElementById('btn-close-celebration').onclick = closeOverlay;
+      const durationMs = 1350;
+      const startTime = performance.now();
+      let fanfarePlayed = false;
+
+      if (window._rocketAnimFrame) cancelAnimationFrame(window._rocketAnimFrame);
+
+      const spawnConfettiBurst = () => {
+        const emojis = ['🚀', '💵', '💰', '🔥', '🎉', '⭐', '💎'];
+        for (let i = 0; i < 34; i++) {
+          const p = document.createElement('div');
+          p.className = 'celebration-particle text-2xl select-none';
+          p.style.zIndex = '10000';
+          p.textContent = emojis[i % emojis.length];
+          p.style.left = `${Math.random() * 96 + 2}vw`;
+          p.style.animationDuration = `${1.7 + Math.random() * 1.4}s`;
+          p.style.animationDelay = `${Math.random() * 0.25}s`;
+          document.body.appendChild(p);
+          setTimeout(() => p.remove(), 3500);
+        }
+      };
+
+      const stepAnimation = (now) => {
+        if (overlay.classList.contains('hidden')) return;
+        const rawT = Math.min(1, (now - startTime) / durationMs);
+        // Courbe d'accélération progressive façon fusée (ease-in-out cubic)
+        const eased = rawT < 0.5
+          ? 2 * rawT * rawT
+          : 1 - Math.pow(-2 * rawT + 2, 2) / 2;
+
+        const pct = Math.round(eased * 100);
+        const trackPct = Math.min(96, Math.max(4, Math.round(eased * 96)));
+        if (fillEl) fillEl.style.width = `${Math.max(4, pct)}%`;
+        if (shipEl) shipEl.style.left = `${trackPct}%`;
+        if (pctEl) pctEl.textContent = `${pct} %`;
+        if (amtEl) amtEl.textContent = fmtMoney(safeVal * eased);
+        if (commEl) commEl.textContent = `${safeComm >= 0 ? '+ ' : ''}${fmtMoney(safeComm * eased)}`;
+
+        if (stageEl) {
+          if (pct < 35) stageEl.textContent = '🔥 Allumage des propulseurs...';
+          else if (pct < 75) stageEl.textContent = '⚡ Pleine puissance...';
+          else if (pct < 100) stageEl.textContent = '🚀 Approche de la cible...';
+          else stageEl.textContent = '🏆 OBJECTIF ATTEINT !';
+        }
+
+        if (rawT < 1) {
+          window._rocketAnimFrame = requestAnimationFrame(stepAnimation);
+        } else if (!fanfarePlayed) {
+          fanfarePlayed = true;
+          if (amtEl) amtEl.textContent = fmtMoney(safeVal);
+          if (commEl) commEl.textContent = `${safeComm >= 0 ? '+ ' : ''}${fmtMoney(safeComm)}`;
+          if (quoteEl) quoteEl.classList.remove('opacity-0');
+          if (shipEl) {
+            shipEl.classList.remove('korpo-rocket-active');
+            shipEl.classList.add('korpo-rocket-blast');
+          }
+          playSaleCelebrationFanfare();
+          spawnConfettiBurst();
+        }
+      };
+
+      window._rocketAnimFrame = requestAnimationFrame(stepAnimation);
+
+      const closeOverlay = () => {
+        if (window._rocketAnimFrame) cancelAnimationFrame(window._rocketAnimFrame);
+        overlay.classList.add('hidden');
+      };
+      const closeBtn = document.getElementById('btn-close-celebration');
+      if (closeBtn) closeBtn.onclick = closeOverlay;
       overlay.onclick = (e) => { if (e.target === overlay) closeOverlay(); };
       clearTimeout(window._celebrationTimer);
-      window._celebrationTimer = setTimeout(closeOverlay, 4500);
+      window._celebrationTimer = setTimeout(closeOverlay, 5600);
     }
 
     function toast(msg, type = 'success') {
@@ -6671,6 +6846,35 @@
       teamChatMessages = Array.from(itemsMap.values()).sort((a, b) =>
         String(a.at || '').localeCompare(String(b.at || ''))
       );
+
+      // Détecter une nouvelle vente d'un collègue en temps réel pour lancer la fusée d'équipe
+      if (!window._knownChatSaleIds) {
+        window._knownChatSaleIds = new Set(teamChatMessages.filter(m => m.kind === 'sale').map(m => String(m.id)));
+      } else if (currentProfile) {
+        const freshCutoffIso = new Date(Date.now() - 2 * 60 * 1000).toISOString();
+        teamChatMessages.forEach(m => {
+          if (m.kind !== 'sale') return;
+          const sid = String(m.id);
+          if (window._knownChatSaleIds.has(sid)) return;
+          window._knownChatSaleIds.add(sid);
+          if (String(m.authorId) === String(currentProfile.id)) return;
+          if (m.at && String(m.at) < freshCutoffIso) return;
+          const sd = m.saleData || {};
+          const localSale = (state.ventes || []).find(v => `sale_${v.id}` === sid);
+          const commForViewer = currentProfile.role === 'admin'
+            ? Number(localSale?.commission_olivier || 0)
+            : 0;
+          triggerSaleCelebration(
+            sd.repNom || m.authorName || 'Équipe',
+            sd.clientNom || '',
+            sd.entNom || 'Korpo',
+            Number(sd.valeur || 0),
+            commForViewer,
+            commForViewer === 0
+          );
+        });
+      }
+
       if (activeChatTabOpen) {
         markTeamChatAsRead();
       } else {
