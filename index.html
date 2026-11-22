@@ -7,7 +7,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black" />
   <meta name="apple-mobile-web-app-title" content="Korpo Ventes" />
-  <meta name="theme-color" content="#0A0F14" />
+  <meta name="theme-color" content="#0D1012" />
   <link rel="manifest" href="manifest.json" />
   <script src="https://cdn.tailwindcss.com/3.4.17"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4"></script>
@@ -929,85 +929,85 @@
 
 
     /* ===================================================================== */
-    /* IDENTITÉ VISUELLE KORPO : SARCELLE PÉTROLE, SABLE & TERRACOTTA        */
-    /* Palette : #0A0F14 | #0F3D3E | #2E6F73 | #7FB3B8 | #EADCC8 | #C6601F   */
+    /* IDENTITÉ VISUELLE KORPO : GRAPHITE TITANE & ÉMERAUDE PROFOND          */
+    /* Palette : #0D1012 | #161B1F | #1F262C | #10B981 | #059669 | #F4F6F5   */
     /* ===================================================================== */
     :root {
-      --korpo-void: #0A0F14;
-      --korpo-deep-teal: #0F3D3E;
-      --korpo-teal: #2E6F73;
-      --korpo-ice-teal: #7FB3B8;
-      --korpo-sand: #EADCC8;
-      --korpo-terracotta: #C6601F;
+      --korpo-titanium-void: #0D1012;
+      --korpo-anthracite: #161B1F;
+      --korpo-graphite: #1F262C;
+      --korpo-emerald: #10B981;
+      --korpo-emerald-deep: #059669;
+      --korpo-sage-light: #F4F6F5;
     }
 
-    /* En-tête, barre mobile basse et menu latéral (Teal profond #0F3D3E / #0A0F14) */
+    /* En-tête, barre mobile basse et menu latéral (Titane noir #0D1012 / Anthracite #161B1F) */
     header.bg-slate-900,
     #mobile-bottom-nav,
     #desktop-sidebar {
-      background-color: #0A0F14 !important;
-      border-color: rgba(127, 179, 184, 0.22) !important;
+      background-color: #0D1012 !important;
+      border-color: rgba(255, 255, 255, 0.10) !important;
     }
     header .bg-slate-800\/95,
     header .bg-slate-800,
     #desktop-sidebar .bg-slate-800 {
-      background-color: #0F3D3E !important;
-      border-color: rgba(127, 179, 184, 0.32) !important;
+      background-color: #161B1F !important;
+      border-color: rgba(255, 255, 255, 0.14) !important;
     }
     header .bg-slate-800\/95:hover,
     header .bg-slate-800:hover,
     #desktop-sidebar .bg-slate-800:hover {
-      background-color: #2E6F73 !important;
+      background-color: #1F262C !important;
     }
 
-    /* Boutons d'action principaux & onglets actifs -> Sarcelle #2E6F73 & Terracotta #C6601F */
+    /* Boutons d'action principaux & onglets actifs -> Émeraude #059669 / #10B981 */
     .bg-indigo-600 {
-      background-color: #2E6F73 !important;
-      border-color: #2E6F73 !important;
+      background-color: #059669 !important;
+      border-color: #059669 !important;
       color: #ffffff !important;
     }
     .hover\:bg-indigo-700:hover,
     .hover\:bg-indigo-500:hover {
-      background-color: #0F3D3E !important;
+      background-color: #047857 !important;
     }
     #btn-mobile-fab-sale,
     #desktop-sidebar button[onclick*="openNewSaleDrawer"],
     #btn-submit-drawer {
-      background: linear-gradient(135deg, #C6601F 0%, #a84e16 100%) !important;
-      border-color: rgba(234, 220, 200, 0.45) !important;
+      background: linear-gradient(135deg, #10B981 0%, #059669 100%) !important;
+      border-color: rgba(167, 243, 208, 0.45) !important;
       color: #ffffff !important;
-      box-shadow: 0 8px 20px rgba(198, 96, 31, 0.34) !important;
+      box-shadow: 0 8px 20px rgba(16, 185, 129, 0.30) !important;
     }
     #btn-mobile-fab-sale:hover,
     #desktop-sidebar button[onclick*="openNewSaleDrawer"]:hover,
     #btn-submit-drawer:hover {
-      background: linear-gradient(135deg, #d86c27 0%, #b55418 100%) !important;
+      background: linear-gradient(135deg, #059669 0%, #047857 100%) !important;
     }
     #btn-floating-chat-bubble {
-      background-color: #0F3D3E !important;
-      border-color: rgba(127, 179, 184, 0.48) !important;
+      background-color: #161B1F !important;
+      border-color: rgba(16, 185, 129, 0.42) !important;
     }
 
-    /* Cartes Héros & Bannières dégradées -> Sarcelle #0F3D3E -> #2E6F73 */
+    /* Cartes Héros & Bannières dégradées -> Graphite Titane #0D1012 -> #161B1F */
     .bg-gradient-to-br.from-emerald-600.to-teal-700 {
-      background-image: linear-gradient(135deg, #0F3D3E 0%, #2E6F73 100%) !important;
-      border: 1px solid rgba(127, 179, 184, 0.35) !important;
+      background-image: linear-gradient(135deg, #059669 0%, #047857 100%) !important;
+      border: 1px solid rgba(167, 243, 208, 0.35) !important;
     }
     .bg-gradient-to-r.from-slate-900.via-indigo-950.to-slate-900,
     .bg-gradient-to-br.from-slate-900.via-slate-900.to-indigo-950,
     .bg-gradient-to-br.from-slate-900.to-indigo-950,
     .rank-hero-banner {
-      background-image: linear-gradient(135deg, #0A0F14 0%, #0F3D3E 58%, #1d4d4f 100%) !important;
-      border-color: rgba(127, 179, 184, 0.34) !important;
+      background-image: linear-gradient(135deg, #0D1012 0%, #161B1F 60%, #112922 100%) !important;
+      border-color: rgba(16, 185, 129, 0.28) !important;
     }
     #screen-login {
-      background-image: linear-gradient(135deg, #0A0F14 0%, #0F3D3E 55%, #194446 100%) !important;
+      background-image: linear-gradient(135deg, #0D1012 0%, #161B1F 65%, #0f241e 100%) !important;
     }
 
-    /* Mode Clair harmonisé avec le Sable chaud #EADCC8 et le Sarcelle #2E6F73 */
+    /* Mode Clair minimaliste (Gris sauge très pâle #F4F6F5 + cartes blanches pures #FFFFFF) */
     html:not(.dark) body {
-      background-color: #efe8dd !important;
-      color: #0A0F14 !important;
+      background-color: #F4F6F5 !important;
+      color: #0D1012 !important;
     }
     html:not(.dark) main .bg-white,
     html:not(.dark) #sale-drawer-backdrop .bg-white,
@@ -1027,55 +1027,55 @@
     html:not(.dark) #push-relance-modal .bg-white,
     html:not(.dark) #red-phone-rep-modal .bg-white,
     html:not(.dark) #red-phone-incoming-modal > div {
-      background-color: #faf6f0 !important;
-      border-color: #d6c7b2 !important;
-      box-shadow: 0 2px 8px rgba(10, 15, 20, 0.06) !important;
+      background-color: #FFFFFF !important;
+      border-color: #DFE4E2 !important;
+      box-shadow: 0 2px 8px rgba(13, 16, 18, 0.04) !important;
     }
     html:not(.dark) #screen-login .bg-white,
     html:not(.dark) #screen-config .bg-white {
-      background-color: #faf6f0 !important;
-      border-color: #d6c7b2 !important;
+      background-color: #FFFFFF !important;
+      border-color: #DFE4E2 !important;
     }
     html:not(.dark) main .bg-slate-50,
     html:not(.dark) main .bg-slate-50\/80,
     html:not(.dark) main .bg-slate-50\/90,
     html:not(.dark) main .bg-slate-50\/40 {
-      background-color: #f2ebe0 !important;
+      background-color: #EEF2F0 !important;
     }
     html:not(.dark) main .bg-indigo-50,
     html:not(.dark) main .bg-indigo-50\/30,
     html:not(.dark) main .bg-indigo-50\/50,
     html:not(.dark) main .bg-indigo-50\/70,
     html:not(.dark) main .bg-indigo-50\/80 {
-      background-color: rgba(46, 111, 115, 0.13) !important;
-      border-color: rgba(46, 111, 115, 0.34) !important;
+      background-color: rgba(16, 185, 129, 0.09) !important;
+      border-color: rgba(5, 150, 105, 0.28) !important;
     }
     html:not(.dark) main .text-indigo-950,
     html:not(.dark) main .text-indigo-900,
     html:not(.dark) main .text-indigo-800,
     html:not(.dark) main .text-indigo-700,
     html:not(.dark) main .text-indigo-600 {
-      color: #0F3D3E !important;
+      color: #047857 !important;
     }
     html:not(.dark) main .border-indigo-200,
     html:not(.dark) main .border-indigo-200\/80,
     html:not(.dark) main .border-indigo-200\/90,
     html:not(.dark) main .border-indigo-300 {
-      border-color: rgba(46, 111, 115, 0.38) !important;
+      border-color: rgba(5, 150, 105, 0.32) !important;
     }
     html:not(.dark) .chat-bubble-out {
-      background-color: #2E6F73 !important;
+      background-color: #059669 !important;
     }
 
-    /* Mode Sombre profond (#0A0F14) avec cartes pétrole (#0F3D3E / #122628) & accents #7FB3B8 / #C6601F */
+    /* Mode Sombre Graphite Titane (#0D1012) + Cartes Anthracite (#161B1F) + Émeraude (#10B981) */
     html.dark body {
-      background-color: #0A0F14 !important;
-      color: #f5efe6 !important;
+      background-color: #0D1012 !important;
+      color: #F4F6F5 !important;
     }
     html.dark .bg-white,
     html.dark .bg-white\/95 {
-      background-color: #102022 !important;
-      border-color: rgba(127, 179, 184, 0.24) !important;
+      background-color: #161B1F !important;
+      border-color: rgba(255, 255, 255, 0.11) !important;
     }
     html.dark .bg-slate-50,
     html.dark .bg-slate-50\/90,
@@ -1084,11 +1084,11 @@
     html.dark .bg-slate-50\/60,
     html.dark .bg-slate-50\/50,
     html.dark .bg-slate-50\/40 {
-      background-color: #152b2d !important;
+      background-color: #1C2227 !important;
     }
     html.dark .bg-slate-100,
     html.dark .bg-slate-100\/80 {
-      background-color: #1b383b !important;
+      background-color: #232A30 !important;
     }
     html.dark .bg-indigo-50,
     html.dark .bg-indigo-50\/80,
@@ -1097,54 +1097,50 @@
     html.dark .bg-indigo-50\/40,
     html.dark .bg-indigo-50\/30,
     html.dark .bg-indigo-100 {
-      background-color: rgba(46, 111, 115, 0.30) !important;
+      background-color: rgba(16, 185, 129, 0.16) !important;
     }
     html.dark .border-slate-100,
     html.dark .border-slate-200,
     html.dark .border-slate-200\/90,
     html.dark .border-slate-200\/80,
     html.dark .border-slate-300 {
-      border-color: rgba(127, 179, 184, 0.25) !important;
+      border-color: rgba(255, 255, 255, 0.12) !important;
     }
     html.dark .border-indigo-100,
     html.dark .border-indigo-200,
     html.dark .border-indigo-200\/80,
     html.dark .border-indigo-200\/70,
     html.dark .border-indigo-300 {
-      border-color: rgba(127, 179, 184, 0.45) !important;
+      border-color: rgba(16, 185, 129, 0.38) !important;
     }
     html.dark .text-indigo-950,
     html.dark .text-indigo-900,
     html.dark .text-indigo-800,
     html.dark .text-indigo-700,
     html.dark .text-indigo-600 {
-      color: #7FB3B8 !important;
-    }
-    html.dark .text-amber-600,
-    html.dark .text-amber-700 {
-      color: #e8894a !important;
+      color: #34D399 !important;
     }
     html.dark .chat-bubble-out {
-      background-color: #2E6F73 !important;
+      background-color: #059669 !important;
     }
     html.dark .chat-feed-area {
-      background-color: #0A0F14 !important;
+      background-color: #0D1012 !important;
     }
     html.dark .chat-bubble-in {
-      background-color: #13282a !important;
-      border-color: rgba(127, 179, 184, 0.28) !important;
+      background-color: #161B1F !important;
+      border-color: rgba(255, 255, 255, 0.12) !important;
     }
     html.dark input:not([type="checkbox"]):not([type="radio"]):not([type="file"]),
     html.dark select,
     html.dark textarea {
-      background-color: #0A0F14 !important;
-      border-color: rgba(127, 179, 184, 0.38) !important;
+      background-color: #0D1012 !important;
+      border-color: rgba(255, 255, 255, 0.18) !important;
     }
     html.dark input:focus,
     html.dark select:focus,
     html.dark textarea:focus {
-      border-color: #7FB3B8 !important;
-      box-shadow: 0 0 0 2px rgba(127, 179, 184, 0.28) !important;
+      border-color: #10B981 !important;
+      box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.25) !important;
     }
   </style>
   <script>
@@ -5324,7 +5320,7 @@
         el.textContent = isDark ? 'Passer en mode clair' : 'Passer en mode sombre';
       });
       const metaTheme = document.querySelector('meta[name="theme-color"]');
-      if (metaTheme) metaTheme.setAttribute('content', '#0A0F14');
+      if (metaTheme) metaTheme.setAttribute('content', '#0D1012');
     }
 
     window.toggleColorTheme = () => {
