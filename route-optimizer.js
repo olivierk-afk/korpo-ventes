@@ -1,8 +1,7 @@
-/* Korpo — Optimiseur de trajet (v2)
-   Le représentant saisit ses adresses du jour avec autocomplétion en ligne (Québec / Canada) ;
-   l'app trouve l'ordre le plus court en temps de conduite (max 8 arrêts pour compatibilité 100 % iOS/Android Google Maps)
+/* Korpo — Optimiseur de trajet (v1)
+   Le représentant colle ses adresses du jour ; l'app trouve l'ordre le plus court en temps de conduite
    et ouvre le trajet dans Google Maps / Waze. Aucune donnée n'est envoyée à Supabase :
-   tout reste dans le navigateur (localStorage). Services publics utilisés : Photon (Komoot/OSM) + Nominatim + OSRM. */
+   tout reste dans le navigateur (localStorage). Services publics utilisés : Nominatim + OSRM (OpenStreetMap). */
 (function () {
   'use strict';
   const KEY = 'korpo_route_v1', MAX = 8;
@@ -15,81 +14,53 @@
   const km = m => (m / 1000).toLocaleString('fr-CA', { maximumFractionDigits: 1 }) + ' km';
   const hm = s => { const m = Math.round(s / 60); return m >= 60 ? Math.floor(m / 60) + ' h ' + String(m % 60).padStart(2, '0') : m + ' min'; };
   let lastGeo = 0;
+  let model = { start: { t: '' }, stops: [{ t: '' }, { t: '' }] };
+  const BBOX = '-79.8,44.9,-57,62.6'; // Québec
+  const F = 'w-full px-3.5 py-2.5 text-sm font-medium bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-600';
+  const persist = () => write(Object.assign(read(), { start: model.start, ret: $('rt-ret') ? $('rt-ret').checked : true, stops: model.stops }));
+  const labelOf = f => {
+    const q = f.properties || {};
+    const first = q.street ? (q.housenumber ? q.housenumber + ' ' : '') + q.street : q.name;
+    return [first, q.city || q.locality || q.district || q.county, q.state, q.postcode].filter(Boolean).join(', ');
+  };
 
-  // Formatage propre d'une adresse québécoise / canadienne depuis Photon (GeoJSON)
-  function formatPhotonFeature(f) {
-    const p = f && f.properties ? f.properties : {};
-    const num = p.housenumber || '';
-    const street = p.street || p.name || '';
-    const line1 = [num, street].filter(Boolean).join(' ').trim();
-    const city = p.city || p.town || p.village || p.municipality || p.district || '';
-    const postcode = p.postcode || '';
-    const state = p.state || '';
-    const parts = [];
-    if (line1) parts.push(line1);
-    else if (p.name) parts.push(p.name);
-    if (city && city.toLowerCase() !== (p.name || '').toLowerCase()) parts.push(city);
-    if (state && /qu[ée]bec/i.test(state)) parts.push('QC');
-    else if (state) parts.push(state);
-    if (postcode) parts.push(postcode);
-    const label = parts.join(', ');
-    const coords = Array.isArray(f?.geometry?.coordinates) ? f.geometry.coordinates : null;
-    if (!label || !coords || coords.length < 2) return null;
-    return { label, lat: Number(coords[1]), lon: Number(coords[0]) };
-  }
-
-  // Recherche d'autocomplétion rapide en ligne (Photon biaisé sur le grand Montréal / Québec, avec repli Nominatim)
-  const suggestCache = new Map();
-  async function searchAddressSuggestions(query, signal) {
-    const raw = String(query || '').trim();
-    if (raw.length < 3) return [];
-    const normKey = raw.toLowerCase().replace(/\s+/g, ' ');
-    if (suggestCache.has(normKey)) return suggestCache.get(normKey);
-
-    const q = /qu[ée]bec|\bqc\b|\bcanada\b/i.test(raw) ? raw : raw + ', Québec';
-    try {
-      // Photon (Komoot / OpenStreetMap) : rapide, tolérant aux fautes de frappe, biaisé sur Terrebonne / Montréal / Québec
-      const u = 'https://photon.komoot.io/api/?q=' + encodeURIComponent(q) + '&lat=45.70&lon=-73.64&limit=6&lang=fr';
-      const r = await fetch(u, { signal });
-      if (r.ok) {
-        const j = await r.json();
-        const seen = new Set();
-        const out = [];
-        for (const feat of (j.features || [])) {
-          const cc = String(feat?.properties?.countrycode || '').toUpperCase();
-          if (cc && cc !== 'CA') continue;
-          const item = formatPhotonFeature(feat);
-          if (!item) continue;
-          const k = item.label.toLowerCase();
-          if (seen.has(k)) continue;
-          seen.add(k);
-          out.push(item);
-          if (out.length >= 5) break;
-        }
-        if (out.length) {
-          suggestCache.set(normKey, out);
-          return out;
-        }
-      }
-    } catch (e) {
-      if (e && e.name === 'AbortError') return [];
-    }
-
-    // Repli Nominatim si Photon ne retourne rien
-    try {
-      const r2 = await fetch('https://nominatim.openstreetmap.org/search?format=jsonv2&limit=5&countrycodes=ca&accept-language=fr&q=' + encodeURIComponent(q), { signal });
-      if (!r2.ok) return [];
-      const j2 = await r2.json();
-      const out2 = (j2 || []).map(x => ({
-        label: String(x.display_name || '').split(',').slice(0, 4).join(',').trim(),
-        lat: +x.lat,
-        lon: +x.lon
-      })).filter(x => x.label);
-      suggestCache.set(normKey, out2);
-      return out2;
-    } catch (e2) {
-      return [];
-    }
+  // Suggestions pendant la saisie (Photon / OpenStreetMap) ; le choix enregistre aussi les coordonnées
+  function attach(inp, slot) {
+    const box = document.createElement('ul');
+    box.className = 'hidden absolute z-30 left-0 right-0 top-full mt-1 bg-white border border-slate-200 rounded-xl shadow-lg overflow-hidden';
+    inp.parentNode.appendChild(box);
+    let timer, seq = 0, items = [], cur = -1;
+    const close = () => { box.classList.add('hidden'); box.innerHTML = ''; items = []; cur = -1; };
+    const mark = () => [...box.children].forEach((li, i) => li.classList.toggle('bg-indigo-50', i === cur));
+    const pick = i => { const it = items[i]; if (!it) return; inp.value = it.t; slot.t = it.t; slot.p = it.p; close(); persist(); };
+    inp.addEventListener('input', () => {
+      slot.t = inp.value; slot.p = null; persist();
+      clearTimeout(timer);
+      const q = inp.value.trim();
+      if (q.length < 3) return close();
+      timer = setTimeout(async () => {
+        const my = ++seq;
+        try {
+          const r = await fetch('https://photon.komoot.io/api/?lang=fr&limit=5&lat=45.5&lon=-73.57&bbox=' + BBOX + '&q=' + encodeURIComponent(q));
+          const j = await r.json();
+          if (my !== seq) return;
+          const all = (j.features || []).map(f => ({ t: labelOf(f), p: { lat: f.geometry.coordinates[1], lon: f.geometry.coordinates[0], label: labelOf(f) } })).filter(x => x.t);
+          items = all.filter((x, i) => all.findIndex(y => y.t === x.t) === i);
+          cur = -1;
+          box.innerHTML = items.map((x, i) => '<li data-i="' + i + '" class="px-3.5 py-2 text-sm text-slate-700 cursor-pointer hover:bg-indigo-50">' + E(x.t) + '</li>').join('');
+          box.classList.toggle('hidden', !items.length);
+        } catch (e) { close(); }
+      }, 350);
+    });
+    box.addEventListener('pointerdown', e => { const li = e.target.closest('li'); if (li) { e.preventDefault(); pick(+li.dataset.i); } });
+    inp.addEventListener('keydown', e => {
+      if (box.classList.contains('hidden')) return;
+      if (e.key === 'ArrowDown') { cur = Math.min(cur + 1, items.length - 1); mark(); e.preventDefault(); }
+      else if (e.key === 'ArrowUp') { cur = Math.max(cur - 1, 0); mark(); e.preventDefault(); }
+      else if (e.key === 'Enter' && cur >= 0) { pick(cur); e.preventDefault(); }
+      else if (e.key === 'Escape') close();
+    });
+    inp.addEventListener('blur', () => setTimeout(close, 150));
   }
 
   async function geocode(addr, cache) {
@@ -171,133 +142,8 @@
       '&destination=' + encodeURIComponent(ll(dest)) + (via.length ? '&waypoints=' + via.map(p => encodeURIComponent(ll(p))).join('%7C') : '');
   };
 
-  // Gestion des suggestions d'autocomplétion sur un champ texte ou sur la dernière ligne du textarea
-  function bindAddressAutocomplete(inputEl, dropdownEl, opts = {}) {
-    let debounceTimer = null;
-    let activeAbort = null;
-    let currentItems = [];
-    let selectedIdx = -1;
-
-    const getQueryText = () => {
-      if (opts.multilineLastLine) {
-        const lines = inputEl.value.split('\n');
-        return (lines[lines.length - 1] || '').trim();
-      }
-      return inputEl.value.trim();
-    };
-
-    const applyChoice = (item) => {
-      if (!item) return;
-      // Sauvegarder directement les coordonnées dans le cache local pour accélérer le calcul ensuite
-      const st = read();
-      st.cache = st.cache || {};
-      st.cache[item.label.toLowerCase().replace(/\s+/g, ' ').trim()] = { lat: item.lat, lon: item.lon, label: item.label };
-      write(st);
-
-      if (opts.multilineLastLine) {
-        const lines = inputEl.value.split('\n');
-        lines[lines.length - 1] = item.label;
-        const nonEmptyCount = lines.map(s => s.trim()).filter(Boolean).length;
-        // Ajouter automatiquement un saut de ligne si on n'a pas encore atteint MAX arrêts
-        inputEl.value = nonEmptyCount < MAX ? lines.join('\n') + '\n' : lines.join('\n');
-      } else {
-        inputEl.value = item.label;
-      }
-      closeDropdown();
-      inputEl.dispatchEvent(new Event('input'));
-      inputEl.focus();
-    };
-
-    const closeDropdown = () => {
-      dropdownEl.classList.add('hidden');
-      dropdownEl.innerHTML = '';
-      currentItems = [];
-      selectedIdx = -1;
-    };
-
-    const renderDropdown = (items, isLoading = false) => {
-      currentItems = items;
-      selectedIdx = items.length ? 0 : -1;
-      if (isLoading) {
-        dropdownEl.innerHTML = '<div class="px-3.5 py-2.5 text-xs text-slate-500 flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-indigo-500 animate-ping"></span><span>Recherche d\'adresse en ligne...</span></div>';
-        dropdownEl.classList.remove('hidden');
-        return;
-      }
-      if (!items.length) {
-        closeDropdown();
-        return;
-      }
-      dropdownEl.innerHTML = items.map((it, idx) =>
-        '<button type="button" data-ac-idx="' + idx + '" class="w-full text-left px-3.5 py-2.5 text-xs flex items-start gap-2.5 transition cursor-pointer ' +
-        (idx === selectedIdx ? 'bg-indigo-50 text-indigo-950 font-bold' : 'text-slate-700 hover:bg-slate-50 font-medium') + '">' +
-        '<span class="text-sm shrink-0 mt-0.5">📍</span>' +
-        '<span class="min-w-0 flex-1 break-words leading-snug">' + E(it.label) + '</span>' +
-        '</button>'
-      ).join('');
-      dropdownEl.classList.remove('hidden');
-
-      dropdownEl.querySelectorAll('button[data-ac-idx]').forEach(btn => {
-        btn.addEventListener('mousedown', (ev) => {
-          ev.preventDefault();
-          const i = Number(btn.getAttribute('data-ac-idx'));
-          applyChoice(currentItems[i]);
-        });
-      });
-    };
-
-    inputEl.addEventListener('input', () => {
-      clearTimeout(debounceTimer);
-      if (activeAbort) {
-        try { activeAbort.abort(); } catch (e) {}
-        activeAbort = null;
-      }
-      const q = getQueryText();
-      if (q.length < 3) {
-        closeDropdown();
-        return;
-      }
-      debounceTimer = setTimeout(async () => {
-        const ctrl = new AbortController();
-        activeAbort = ctrl;
-        renderDropdown([], true);
-        const results = await searchAddressSuggestions(q, ctrl.signal);
-        if (ctrl.signal.aborted) return;
-        renderDropdown(results, false);
-      }, 280);
-    });
-
-    inputEl.addEventListener('keydown', (e) => {
-      if (dropdownEl.classList.contains('hidden') || !currentItems.length) return;
-      if (e.key === 'ArrowDown') {
-        e.preventDefault();
-        selectedIdx = (selectedIdx + 1) % currentItems.length;
-        dropdownEl.querySelectorAll('button[data-ac-idx]').forEach((b, i) => {
-          b.className = 'w-full text-left px-3.5 py-2.5 text-xs flex items-start gap-2.5 transition cursor-pointer ' +
-            (i === selectedIdx ? 'bg-indigo-50 text-indigo-950 font-bold' : 'text-slate-700 hover:bg-slate-50 font-medium');
-        });
-      } else if (e.key === 'ArrowUp') {
-        e.preventDefault();
-        selectedIdx = (selectedIdx - 1 + currentItems.length) % currentItems.length;
-        dropdownEl.querySelectorAll('button[data-ac-idx]').forEach((b, i) => {
-          b.className = 'w-full text-left px-3.5 py-2.5 text-xs flex items-start gap-2.5 transition cursor-pointer ' +
-            (i === selectedIdx ? 'bg-indigo-50 text-indigo-950 font-bold' : 'text-slate-700 hover:bg-slate-50 font-medium');
-        });
-      } else if (e.key === 'Enter' && selectedIdx >= 0) {
-        e.preventDefault();
-        applyChoice(currentItems[selectedIdx]);
-      } else if (e.key === 'Escape') {
-        closeDropdown();
-      }
-    });
-
-    inputEl.addEventListener('blur', () => {
-      setTimeout(closeDropdown, 180);
-    });
-  }
-
   async function run() {
-    const st = read(), start = $('rt-start').value.trim(), ret = $('rt-ret').checked;
-    const lines = $('rt-stops').value.split('\n').map(s => s.trim()).filter(Boolean);
+    const st = read(), ret = $('rt-ret').checked, S = model.stops.filter(x => x.t.trim()), start = model.start.t.trim(), lines = S.map(x => x.t.trim());
     const out = $('rt-out'), btn = $('rt-go');
     const stat = m => { out.innerHTML = '<p class="text-sm text-slate-500">' + E(m) + '</p>'; };
     if (!start) return say('Entre ton adresse de départ', 'error');
@@ -306,10 +152,10 @@
     btn.disabled = true;
     try {
       st.cache = st.cache || {};
-      const names = [start, ...lines], pts = [], bad = [];
+      const all = [model.start, ...S], names = [start, ...lines], pts = [], bad = [];
       for (let i = 0; i < names.length; i++) {
         stat('Recherche des adresses… (' + (i + 1) + '/' + names.length + ')');
-        const p = await geocode(names[i], st.cache);
+        const p = all[i].p || await geocode(names[i], st.cache);
         if (p) pts.push(p); else bad.push(names[i]);
       }
       write(Object.assign(read(), { cache: st.cache }));
@@ -355,56 +201,57 @@
     }
   }
 
-  function updateStopsCounter() {
-    const badge = $('rt-stops-counter');
-    const ta = $('rt-stops');
-    if (!badge || !ta) return;
-    const count = ta.value.split('\n').map(s => s.trim()).filter(Boolean).length;
-    badge.textContent = count + ' / ' + MAX + ' arrêts';
-    badge.className = count > MAX
-      ? 'px-2 py-0.5 text-[10px] font-extrabold rounded-full bg-rose-100 text-rose-700 border border-rose-200 tabular-nums'
-      : 'px-2 py-0.5 text-[10px] font-extrabold rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200 tabular-nums';
+  function draw(focusLast) {
+    const list = $('rt-list');
+    list.innerHTML = '';
+    model.stops.forEach((st, i) => {
+      const row = document.createElement('div');
+      row.className = 'flex items-center gap-2';
+      row.innerHTML = '<span class="w-7 h-7 rounded-full bg-slate-200 text-slate-700 text-xs font-extrabold flex items-center justify-center shrink-0">' + (i + 1) + '</span>' +
+        '<div class="relative flex-1 min-w-0"><input autocomplete="off" placeholder="Adresse de l\'arrêt ' + (i + 1) + '" class="' + F + '" /></div>' +
+        '<button type="button" aria-label="Retirer cet arrêt" class="w-9 h-9 shrink-0 text-slate-400 hover:text-rose-600 text-lg rounded-xl hover:bg-slate-100">×</button>';
+      const inp = row.querySelector('input');
+      inp.value = st.t;
+      attach(inp, st);
+      row.querySelector('button').onclick = () => { model.stops.splice(i, 1); while (model.stops.length < 2) model.stops.push({ t: '' }); persist(); draw(); };
+      list.appendChild(row);
+    });
+    const add = $('rt-add');
+    add.disabled = model.stops.length >= MAX;
+    add.textContent = model.stops.length >= MAX ? 'Maximum de ' + MAX + ' arrêts atteint' : '+ Ajouter un arrêt';
+    if (focusLast) list.lastElementChild.querySelector('input').focus();
   }
 
   function render() {
     const sec = $('tab-route');
     if (!sec || $('rt-start')) return;
-    const f = 'w-full px-3.5 py-2.5 text-sm font-medium bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-600';
     sec.innerHTML =
       '<div class="max-w-3xl mx-auto space-y-5"><div class="bg-white rounded-3xl border border-slate-200/80 p-5 shadow-xs space-y-4">' +
       '<div class="flex items-center gap-3"><span class="w-10 h-10 rounded-2xl bg-indigo-600 text-white flex items-center justify-center text-lg shrink-0">🧭</span><div>' +
       '<h2 class="text-lg sm:text-xl font-extrabold text-slate-900 tracking-tight">Optimiseur de trajet</h2>' +
-      '<p class="text-xs text-slate-500">Commence à taper une adresse : elle se complète automatiquement en ligne, puis l\'app calcule le trajet le plus court.</p></div></div>' +
-      '<div class="relative"><label for="rt-start" class="block text-xs font-bold text-slate-700 mb-1.5">Adresse de départ</label>' +
-      '<input id="rt-start" autocomplete="off" placeholder="Ex. 123 rue Principale, Mascouche" class="' + f + '" />' +
-      '<div id="rt-start-ac" class="hidden absolute left-0 right-0 top-full mt-1 bg-white border border-slate-200 rounded-2xl shadow-2xl overflow-hidden divide-y divide-slate-100 z-30"></div></div>' +
-      '<label class="flex items-center gap-2 text-xs font-bold text-slate-700 cursor-pointer"><input id="rt-ret" type="checkbox" class="rounded" /> Revenir au point de départ à la fin</label>' +
-      '<div class="relative"><div class="flex items-center justify-between mb-1.5"><label for="rt-stops" class="block text-xs font-bold text-slate-700">Arrêts (une adresse par ligne, ' + MAX + ' maximum)</label>' +
-      '<span id="rt-stops-counter" class="px-2 py-0.5 text-[10px] font-extrabold rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200 tabular-nums">0 / ' + MAX + ' arrêts</span></div>' +
-      '<textarea id="rt-stops" rows="6" placeholder="Tape une adresse par ligne (ex. 456 boul. des Laurentides, Laval)..." class="' + f + '"></textarea>' +
-      '<div id="rt-stops-ac" class="hidden absolute left-0 right-0 top-full mt-1 bg-white border border-slate-200 rounded-2xl shadow-2xl overflow-hidden divide-y divide-slate-100 z-30"></div></div>' +
-      '<div class="flex flex-wrap items-center gap-2"><button type="button" id="rt-go" class="px-4 py-2.5 text-sm font-extrabold text-white bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 rounded-xl cursor-pointer">Optimiser mon trajet</button>' +
-      '<button type="button" id="rt-clear" class="px-3.5 py-2.5 text-sm font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-xl cursor-pointer">Effacer les arrêts</button></div>' +
-      '<p class="text-[11px] text-slate-400">Autocomplétion et calcul via OpenStreetMap (Photon / OSRM). Les adresses restent uniquement dans ton navigateur. Les heures de rendez-vous fixes ne sont pas prises en compte.</p></div>' +
+      '<p class="text-xs text-slate-500">Entre les adresses de ta journée : l\'ordre le plus court en temps de conduite t\'est proposé.</p></div></div>' +
+      '<div><label for="rt-start" class="block text-xs font-bold text-slate-700 mb-1.5">Adresse de départ</label><div class="relative"><input id="rt-start" autocomplete="off" placeholder="Commence à écrire une adresse…" class="' + F + '" /></div></div>' +
+      '<label class="flex items-center gap-2 text-xs font-bold text-slate-700"><input id="rt-ret" type="checkbox" class="rounded" /> Revenir au point de départ à la fin</label>' +
+      '<div><div class="text-xs font-bold text-slate-700 mb-1.5">Arrêts de la journée (' + MAX + ' maximum)</div><div id="rt-list" class="space-y-2"></div>' +
+      '<button type="button" id="rt-add" class="mt-2 px-3.5 py-2 text-xs font-bold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 disabled:opacity-50 border border-indigo-200 rounded-xl"></button></div>' +
+      '<div class="flex flex-wrap items-center gap-2"><button type="button" id="rt-go" class="px-4 py-2.5 text-sm font-extrabold text-white bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 rounded-xl">Optimiser mon trajet</button>' +
+      '<button type="button" id="rt-clear" class="px-3.5 py-2.5 text-sm font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-xl">Effacer les arrêts</button></div>' +
+      '<p class="text-[11px] text-slate-400">Pendant que tu écris, le texte est envoyé à des services de cartes publics (OpenStreetMap) pour suggérer des adresses et calculer le trajet. Rien n\'est enregistré dans le portail. Les heures de rendez-vous ne sont pas prises en compte : garde tes rendez-vous fixes dans le bon ordre.</p></div>' +
       '<div id="rt-out" class="bg-white rounded-3xl border border-slate-200/80 p-5 shadow-xs empty:hidden"></div></div>';
-
     const st = read();
-    $('rt-start').value = st.start || '';
+    const slot = v => (typeof v === 'string' ? { t: v } : v && typeof v === 'object' ? { t: v.t || '', p: v.p || null } : { t: '' });
+    const old = typeof st.stops === 'string' ? st.stops.split('\n').filter(Boolean) : st.stops;
+    model.start = slot(st.start);
+    model.stops = (Array.isArray(old) ? old.slice(0, MAX).map(slot) : []);
+    while (model.stops.length < 2) model.stops.push({ t: '' });
+    $('rt-start').value = model.start.t;
     $('rt-ret').checked = st.ret !== false;
-    $('rt-stops').value = st.stops || '';
-    updateStopsCounter();
-
-    const keep = () => {
-      updateStopsCounter();
-      write(Object.assign(read(), { start: $('rt-start').value, ret: $('rt-ret').checked, stops: $('rt-stops').value }));
-    };
-    ['rt-start', 'rt-ret', 'rt-stops'].forEach(id => $(id).addEventListener('input', keep));
-    $('rt-ret').addEventListener('change', keep);
+    attach($('rt-start'), model.start);
+    $('rt-ret').addEventListener('change', persist);
+    $('rt-add').addEventListener('click', () => { if (model.stops.length < MAX) { model.stops.push({ t: '' }); persist(); draw(true); } });
     $('rt-go').addEventListener('click', run);
-    $('rt-clear').addEventListener('click', () => { $('rt-stops').value = ''; $('rt-out').innerHTML = ''; keep(); });
-
-    bindAddressAutocomplete($('rt-start'), $('rt-start-ac'), { multilineLastLine: false });
-    bindAddressAutocomplete($('rt-stops'), $('rt-stops-ac'), { multilineLastLine: true });
+    $('rt-clear').addEventListener('click', () => { model.stops = [{ t: '' }, { t: '' }]; $('rt-out').innerHTML = ''; persist(); draw(); });
+    draw();
   }
 
   window.KorpoRoute = { render };
