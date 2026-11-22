@@ -4378,6 +4378,33 @@
       }
     }
 
+    function mapAdminPersonalSaleRow(v) {
+      const cOli = Number(v.commission_olivier || 0);
+      const cRep = Number(v.commission_rep || 0);
+      const isDirectOwnSale = currentProfile && String(v.representant_id) === String(currentProfile.id);
+      const personalComm = (cOli !== 0 || !isDirectOwnSale) ? cOli : cRep;
+      return {
+        ...v,
+        client_nom: state.clients.find(c => c.id === v.client_id)?.nom || '—',
+        entreprise_nom: state.entreprises.find(e => e.id === v.entreprise_id)?.nom || '—',
+        rep_nom: state.representants.find(r => r.id === v.representant_id)?.nom || '—',
+        commission_rep: personalComm,
+        _repCommAmount: cRep
+      };
+    }
+
+    function normalizeRepPersonalSaleRow(v) {
+      const rawComm = v.commission_rep ?? v.commission ?? v.commission_representant;
+      const resolvedComm = (rawComm !== undefined && rawComm !== null && !Number.isNaN(Number(rawComm)))
+        ? Number(rawComm)
+        : Math.round(Number(v.valeur || 0) * Number(v.taux_rep_applique || 0) * 100) / 100;
+      return {
+        ...v,
+        commission_rep: resolvedComm,
+        _repCommAmount: resolvedComm
+      };
+    }
+
     function applySaleBonusOverridesToState() {
       const isAdmin = currentProfile?.role === 'admin';
       const applyToRow = (row, isMesVentesForAdmin = false) => {
@@ -4386,11 +4413,14 @@
         if (!ov) return row;
         const baseR = getRateForSale(row.representant_id, row.entreprise_id, row.client_id);
         const isBonusHigher = baseR ? (Number(ov.tRep) > Number(baseR.taux) + 0.0001) : !ov.noBonus;
+        const isDirectOwn = currentProfile && String(row.representant_id) === String(currentProfile.id);
+        const adminPersonalOv = (Number(ov.cOli) !== 0 || !isDirectOwn) ? Number(ov.cOli) : Number(ov.cRep);
         const updated = {
           ...row,
           taux_rep_applique: Number(ov.tRep),
           taux_olivier_applique: Number(ov.tOli),
-          commission_rep: isMesVentesForAdmin ? Number(ov.cOli) : Number(ov.cRep),
+          commission_rep: isMesVentesForAdmin ? adminPersonalOv : Number(ov.cRep),
+          _repCommAmount: Number(ov.cRep),
           commission_olivier: Number(ov.cOli),
           _isHit: Boolean(ov.isHit || Number(ov.cRep) < 0 || Number(ov.cOli) < 0),
           _hitBearer: ov.hitBearer || null,
@@ -6849,13 +6879,7 @@
         const newPending = latestVentes.filter(v => v.statut_depot === 'a_confirmer' && !knownPendingSaleIds.has(String(v.id)));
         if (newPending.length > 0) {
           state.ventes = latestVentes;
-          state.mesVentes = state.ventes.map(v => ({
-            ...v,
-            client_nom: state.clients.find(c => c.id === v.client_id)?.nom || '—',
-            entreprise_nom: state.entreprises.find(e => e.id === v.entreprise_id)?.nom || '—',
-            rep_nom: state.representants.find(r => r.id === v.representant_id)?.nom || '—',
-            commission_rep: Number(v.commission_olivier || 0)
-          }));
+          state.mesVentes = state.ventes.map(mapAdminPersonalSaleRow);
           applySaleBonusOverridesToState();
           syncSalesIntoKpi();
           renderAdminNotifications();
@@ -11319,13 +11343,7 @@
         state.taux = tauxRows;
         state.ventes = venteRows;
 
-        state.mesVentes = state.ventes.map(v => ({
-          ...v,
-          client_nom: state.clients.find(c => c.id === v.client_id)?.nom || '—',
-          entreprise_nom: state.entreprises.find(e => e.id === v.entreprise_id)?.nom || '—',
-          rep_nom: state.representants.find(r => r.id === v.representant_id)?.nom || '—',
-          commission_rep: Number(v.commission_olivier || 0)
-        }));
+        state.mesVentes = state.ventes.map(mapAdminPersonalSaleRow);
 
         document.getElementById('filter-admin-scope').classList.remove('hidden');
         document.getElementById('th-rep-col').classList.remove('hidden');
@@ -11369,7 +11387,7 @@
         document.getElementById('th-rep-col')?.classList.add('hidden');
         state.representants = (allRepsPublicRows && allRepsPublicRows.length) ? allRepsPublicRows : [currentProfile];
         syncAllKpiRepsFromState();
-        state.mesVentes = mesVentesRows;
+        state.mesVentes = (mesVentesRows || []).map(normalizeRepPersonalSaleRow);
 
         const ownSalesNormalized = state.mesVentes.map(v => ({
           ...v,
@@ -12793,25 +12811,35 @@
         mobileCommCardsBox.innerHTML = filtered.map(v => {
           const baseR = getRateForSale(v.representant_id, v.entreprise_id, v.client_id);
           const diff = baseR ? Math.max(0, Number(v.taux_rep_applique) - Number(baseR.taux)) : 0.01;
+          const myCommVal = Number(v.commission_rep || 0);
+          const repCommVal = Number(v._repCommAmount || 0);
+          const showTeamRepSub = isAdmin && !isInspectingRep && String(v.representant_id) !== String(currentProfile.id) && repCommVal !== 0;
           return `
-            <div class="bg-white rounded-2xl border border-slate-200/80 p-4 shadow-xs space-y-2.5">
-              <div class="flex items-start justify-between gap-2">
-                <div class="space-y-1 min-w-0">
-                  <div class="flex items-center flex-wrap gap-1.5">
-                    ${entBadge(v.entreprise_nom)}
-                    ${isMonthClosed(v.mois_commission) ? `<span class="inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-extrabold rounded-md bg-slate-800 text-amber-300">🔒 Clôturée</span>` : ''}
-                    <span class="text-[11px] font-medium text-slate-400">${v.date_vente} (${v.mois_commission})</span>
-                  </div>
-                  <div class="font-extrabold text-sm text-slate-900 truncate">${esc(v.client_nom)}</div>
-                  ${isAdmin ? `<div class="text-[11px] font-semibold text-indigo-600">Rep : ${esc(v.rep_nom || '—')}</div>` : ''}
-                  <div class="text-[11px] text-slate-500 tabular-nums">Vente : <strong>${fmtMoney(v.valeur)}</strong></div>
+            <div class="bg-white rounded-2xl border border-slate-200/80 p-4 shadow-xs space-y-3">
+              <div class="space-y-1 min-w-0">
+                <div class="flex items-center flex-wrap gap-1.5">
+                  ${entBadge(v.entreprise_nom)}
+                  ${isMonthClosed(v.mois_commission) ? `<span class="inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-extrabold rounded-md bg-slate-800 text-amber-300">🔒 Clôturée</span>` : ''}
+                  <span class="text-[11px] font-medium text-slate-400">${v.date_vente} (${v.mois_commission})</span>
                 </div>
-                <div class="text-right shrink-0 tabular-nums">
-                  <div class="text-base font-extrabold ${Number(v.commission_rep) < 0 ? 'text-rose-600' : 'text-emerald-600'}">${Number(v.commission_rep) < 0 ? fmtMoney(v.commission_rep) : `+ ${fmtMoney(v.commission_rep)}`}</div>
-                  ${isHitSale(v) ? hitBadgeHtml(v) : (v._bonusApplied ? `<span class="inline-block px-1.5 py-0.5 text-[10px] font-extrabold rounded bg-emerald-100 text-emerald-800">+${formatBonusPctShort(diff || 0.01)} bonus</span>` : '<span class="text-[10px] font-semibold text-slate-400">Commission</span>')}
+                <div class="font-extrabold text-sm text-slate-900 truncate">${esc(v.client_nom)}</div>
+                ${isAdmin ? `<div class="text-[11px] font-semibold text-indigo-600">Rep : ${esc(v.rep_nom || '—')}</div>` : ''}
+              </div>
+
+              <div class="grid grid-cols-2 gap-2.5 p-2.5 rounded-xl bg-slate-50/90 border border-slate-200/70 tabular-nums">
+                <div>
+                  <div class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Montant vente</div>
+                  <div class="text-sm font-extrabold text-slate-800 mt-0.5">${fmtMoney(v.valeur)}</div>
+                </div>
+                <div class="text-right border-l border-slate-200/80 pl-2.5">
+                  <div class="text-[10px] font-bold uppercase tracking-wider text-emerald-700">Ma commission</div>
+                  <div class="text-base font-extrabold mt-0.5 ${myCommVal < 0 ? 'text-rose-600' : 'text-emerald-600'}">${myCommVal < 0 ? fmtMoney(myCommVal) : `+ ${fmtMoney(myCommVal)}`}</div>
+                  ${showTeamRepSub ? `<div class="text-[10px] font-semibold text-slate-500">Comm. Rep : ${fmtMoney(repCommVal)}</div>` : ''}
+                  ${isHitSale(v) ? hitBadgeHtml(v) : (v._bonusApplied ? `<span class="inline-block mt-0.5 px-1.5 py-0.2 text-[10px] font-extrabold rounded bg-emerald-100 text-emerald-800">+${formatBonusPctShort(diff || 0.01)} bonus</span>` : '')}
                 </div>
               </div>
-              <div class="flex items-center justify-between gap-2 pt-2 border-t border-slate-100">
+
+              <div class="flex items-center justify-between gap-2 pt-1">
                 <div class="flex items-center flex-wrap gap-1.5">
                   <span class="inline-flex items-center gap-1 px-2 py-0.5 text-[11px] font-semibold rounded-full ${v.statut_depot === 'depot_recu' ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'}">
                     ${v.statut_depot === 'depot_recu' ? (isNoDepositSale(v) ? 'Sans dépôt requis' : 'Dépôt reçu') : 'À confirmer'}
@@ -12915,6 +12943,7 @@
             <td class="py-3.5 px-4 text-right font-semibold text-slate-700 tabular-nums whitespace-nowrap align-middle">${fmtMoney(v.valeur)}</td>
             <td class="py-3.5 px-4 text-right tabular-nums whitespace-nowrap align-middle">
               <div class="font-extrabold ${Number(v.commission_rep) < 0 ? 'text-rose-600' : 'text-emerald-600'}">${Number(v.commission_rep) < 0 ? fmtMoney(v.commission_rep) : `+ ${fmtMoney(v.commission_rep)}`}</div>
+              ${(isAdmin && !isInspectingRep && String(v.representant_id) !== String(currentProfile.id) && Number(v._repCommAmount || 0) !== 0) ? `<div class="text-[11px] font-semibold text-slate-500">Comm. Rep : ${fmtMoney(v._repCommAmount)}</div>` : ''}
               ${isHitSale(v) ? hitBadgeHtml(v) : (v._bonusApplied ? `<span class="inline-block mt-0.5 px-1.5 py-0.2 text-[10px] font-extrabold rounded bg-emerald-100 text-emerald-800">+${formatBonusPctShort(diff || 0.01)} bonus</span>` : '')}
             </td>
             <td class="py-3.5 px-4 whitespace-nowrap align-middle">
