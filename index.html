@@ -7,7 +7,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black" />
   <meta name="apple-mobile-web-app-title" content="Korpo Ventes" />
-  <meta name="theme-color" content="#0f172a" />
+  <meta name="theme-color" content="#0A0F14" />
   <link rel="manifest" href="manifest.json" />
   <script src="https://cdn.tailwindcss.com/3.4.17"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4"></script>
@@ -927,6 +927,225 @@
       transform: scale(0.92);
     }
 
+
+    /* ===================================================================== */
+    /* IDENTITÉ VISUELLE KORPO : SARCELLE PÉTROLE, SABLE & TERRACOTTA        */
+    /* Palette : #0A0F14 | #0F3D3E | #2E6F73 | #7FB3B8 | #EADCC8 | #C6601F   */
+    /* ===================================================================== */
+    :root {
+      --korpo-void: #0A0F14;
+      --korpo-deep-teal: #0F3D3E;
+      --korpo-teal: #2E6F73;
+      --korpo-ice-teal: #7FB3B8;
+      --korpo-sand: #EADCC8;
+      --korpo-terracotta: #C6601F;
+    }
+
+    /* En-tête, barre mobile basse et menu latéral (Teal profond #0F3D3E / #0A0F14) */
+    header.bg-slate-900,
+    #mobile-bottom-nav,
+    #desktop-sidebar {
+      background-color: #0A0F14 !important;
+      border-color: rgba(127, 179, 184, 0.22) !important;
+    }
+    header .bg-slate-800\/95,
+    header .bg-slate-800,
+    #desktop-sidebar .bg-slate-800 {
+      background-color: #0F3D3E !important;
+      border-color: rgba(127, 179, 184, 0.32) !important;
+    }
+    header .bg-slate-800\/95:hover,
+    header .bg-slate-800:hover,
+    #desktop-sidebar .bg-slate-800:hover {
+      background-color: #2E6F73 !important;
+    }
+
+    /* Boutons d'action principaux & onglets actifs -> Sarcelle #2E6F73 & Terracotta #C6601F */
+    .bg-indigo-600 {
+      background-color: #2E6F73 !important;
+      border-color: #2E6F73 !important;
+      color: #ffffff !important;
+    }
+    .hover\:bg-indigo-700:hover,
+    .hover\:bg-indigo-500:hover {
+      background-color: #0F3D3E !important;
+    }
+    #btn-mobile-fab-sale,
+    #desktop-sidebar button[onclick*="openNewSaleDrawer"],
+    #btn-submit-drawer {
+      background: linear-gradient(135deg, #C6601F 0%, #a84e16 100%) !important;
+      border-color: rgba(234, 220, 200, 0.45) !important;
+      color: #ffffff !important;
+      box-shadow: 0 8px 20px rgba(198, 96, 31, 0.34) !important;
+    }
+    #btn-mobile-fab-sale:hover,
+    #desktop-sidebar button[onclick*="openNewSaleDrawer"]:hover,
+    #btn-submit-drawer:hover {
+      background: linear-gradient(135deg, #d86c27 0%, #b55418 100%) !important;
+    }
+    #btn-floating-chat-bubble {
+      background-color: #0F3D3E !important;
+      border-color: rgba(127, 179, 184, 0.48) !important;
+    }
+
+    /* Cartes Héros & Bannières dégradées -> Sarcelle #0F3D3E -> #2E6F73 */
+    .bg-gradient-to-br.from-emerald-600.to-teal-700 {
+      background-image: linear-gradient(135deg, #0F3D3E 0%, #2E6F73 100%) !important;
+      border: 1px solid rgba(127, 179, 184, 0.35) !important;
+    }
+    .bg-gradient-to-r.from-slate-900.via-indigo-950.to-slate-900,
+    .bg-gradient-to-br.from-slate-900.via-slate-900.to-indigo-950,
+    .bg-gradient-to-br.from-slate-900.to-indigo-950,
+    .rank-hero-banner {
+      background-image: linear-gradient(135deg, #0A0F14 0%, #0F3D3E 58%, #1d4d4f 100%) !important;
+      border-color: rgba(127, 179, 184, 0.34) !important;
+    }
+    #screen-login {
+      background-image: linear-gradient(135deg, #0A0F14 0%, #0F3D3E 55%, #194446 100%) !important;
+    }
+
+    /* Mode Clair harmonisé avec le Sable chaud #EADCC8 et le Sarcelle #2E6F73 */
+    html:not(.dark) body {
+      background-color: #efe8dd !important;
+      color: #0A0F14 !important;
+    }
+    html:not(.dark) main .bg-white,
+    html:not(.dark) #sale-drawer-backdrop .bg-white,
+    html:not(.dark) #global-client-search-modal .bg-white,
+    html:not(.dark) #chat-modal-backdrop > div,
+    html:not(.dark) #confirm-modal .bg-white,
+    html:not(.dark) #pwd-modal .bg-white,
+    html:not(.dark) #rate-adjust-modal .bg-white,
+    html:not(.dark) #audit-modal .bg-white,
+    html:not(.dark) #dedup-modal .bg-white,
+    html:not(.dark) #trash-modal .bg-white,
+    html:not(.dark) #auto-email-modal .bg-white,
+    html:not(.dark) #payslip-modal .bg-white,
+    html:not(.dark) #wa-modal .bg-white,
+    html:not(.dark) #kpi-import-modal .bg-white,
+    html:not(.dark) #weekly-digest-modal .bg-white,
+    html:not(.dark) #push-relance-modal .bg-white,
+    html:not(.dark) #red-phone-rep-modal .bg-white,
+    html:not(.dark) #red-phone-incoming-modal > div {
+      background-color: #faf6f0 !important;
+      border-color: #d6c7b2 !important;
+      box-shadow: 0 2px 8px rgba(10, 15, 20, 0.06) !important;
+    }
+    html:not(.dark) #screen-login .bg-white,
+    html:not(.dark) #screen-config .bg-white {
+      background-color: #faf6f0 !important;
+      border-color: #d6c7b2 !important;
+    }
+    html:not(.dark) main .bg-slate-50,
+    html:not(.dark) main .bg-slate-50\/80,
+    html:not(.dark) main .bg-slate-50\/90,
+    html:not(.dark) main .bg-slate-50\/40 {
+      background-color: #f2ebe0 !important;
+    }
+    html:not(.dark) main .bg-indigo-50,
+    html:not(.dark) main .bg-indigo-50\/30,
+    html:not(.dark) main .bg-indigo-50\/50,
+    html:not(.dark) main .bg-indigo-50\/70,
+    html:not(.dark) main .bg-indigo-50\/80 {
+      background-color: rgba(46, 111, 115, 0.13) !important;
+      border-color: rgba(46, 111, 115, 0.34) !important;
+    }
+    html:not(.dark) main .text-indigo-950,
+    html:not(.dark) main .text-indigo-900,
+    html:not(.dark) main .text-indigo-800,
+    html:not(.dark) main .text-indigo-700,
+    html:not(.dark) main .text-indigo-600 {
+      color: #0F3D3E !important;
+    }
+    html:not(.dark) main .border-indigo-200,
+    html:not(.dark) main .border-indigo-200\/80,
+    html:not(.dark) main .border-indigo-200\/90,
+    html:not(.dark) main .border-indigo-300 {
+      border-color: rgba(46, 111, 115, 0.38) !important;
+    }
+    html:not(.dark) .chat-bubble-out {
+      background-color: #2E6F73 !important;
+    }
+
+    /* Mode Sombre profond (#0A0F14) avec cartes pétrole (#0F3D3E / #122628) & accents #7FB3B8 / #C6601F */
+    html.dark body {
+      background-color: #0A0F14 !important;
+      color: #f5efe6 !important;
+    }
+    html.dark .bg-white,
+    html.dark .bg-white\/95 {
+      background-color: #102022 !important;
+      border-color: rgba(127, 179, 184, 0.24) !important;
+    }
+    html.dark .bg-slate-50,
+    html.dark .bg-slate-50\/90,
+    html.dark .bg-slate-50\/80,
+    html.dark .bg-slate-50\/70,
+    html.dark .bg-slate-50\/60,
+    html.dark .bg-slate-50\/50,
+    html.dark .bg-slate-50\/40 {
+      background-color: #152b2d !important;
+    }
+    html.dark .bg-slate-100,
+    html.dark .bg-slate-100\/80 {
+      background-color: #1b383b !important;
+    }
+    html.dark .bg-indigo-50,
+    html.dark .bg-indigo-50\/80,
+    html.dark .bg-indigo-50\/70,
+    html.dark .bg-indigo-50\/50,
+    html.dark .bg-indigo-50\/40,
+    html.dark .bg-indigo-50\/30,
+    html.dark .bg-indigo-100 {
+      background-color: rgba(46, 111, 115, 0.30) !important;
+    }
+    html.dark .border-slate-100,
+    html.dark .border-slate-200,
+    html.dark .border-slate-200\/90,
+    html.dark .border-slate-200\/80,
+    html.dark .border-slate-300 {
+      border-color: rgba(127, 179, 184, 0.25) !important;
+    }
+    html.dark .border-indigo-100,
+    html.dark .border-indigo-200,
+    html.dark .border-indigo-200\/80,
+    html.dark .border-indigo-200\/70,
+    html.dark .border-indigo-300 {
+      border-color: rgba(127, 179, 184, 0.45) !important;
+    }
+    html.dark .text-indigo-950,
+    html.dark .text-indigo-900,
+    html.dark .text-indigo-800,
+    html.dark .text-indigo-700,
+    html.dark .text-indigo-600 {
+      color: #7FB3B8 !important;
+    }
+    html.dark .text-amber-600,
+    html.dark .text-amber-700 {
+      color: #e8894a !important;
+    }
+    html.dark .chat-bubble-out {
+      background-color: #2E6F73 !important;
+    }
+    html.dark .chat-feed-area {
+      background-color: #0A0F14 !important;
+    }
+    html.dark .chat-bubble-in {
+      background-color: #13282a !important;
+      border-color: rgba(127, 179, 184, 0.28) !important;
+    }
+    html.dark input:not([type="checkbox"]):not([type="radio"]):not([type="file"]),
+    html.dark select,
+    html.dark textarea {
+      background-color: #0A0F14 !important;
+      border-color: rgba(127, 179, 184, 0.38) !important;
+    }
+    html.dark input:focus,
+    html.dark select:focus,
+    html.dark textarea:focus {
+      border-color: #7FB3B8 !important;
+      box-shadow: 0 0 0 2px rgba(127, 179, 184, 0.28) !important;
+    }
   </style>
   <script>
     (function() {
@@ -5105,7 +5324,7 @@
         el.textContent = isDark ? 'Passer en mode clair' : 'Passer en mode sombre';
       });
       const metaTheme = document.querySelector('meta[name="theme-color"]');
-      if (metaTheme) metaTheme.setAttribute('content', isDark ? '#090d16' : '#0f172a');
+      if (metaTheme) metaTheme.setAttribute('content', '#0A0F14');
     }
 
     window.toggleColorTheme = () => {
