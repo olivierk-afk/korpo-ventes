@@ -1,10 +1,7 @@
-/* Korpo — Optimiseur de trajet (v1)
-   Le représentant colle ses adresses du jour ; l'app trouve l'ordre le plus court en temps de conduite
-   et ouvre le trajet dans Google Maps / Waze. Aucune donnée n'est envoyée à Supabase :
-   tout reste dans le navigateur (localStorage). Services publics utilisés : Nominatim + OSRM (OpenStreetMap). */
+/* Korpo — Optimiseur de trajet (v3 : validation & journal km mensuel synchronisé) */
 (function () {
   'use strict';
-  const KEY = 'korpo_route_v1', MAX = 8;
+  const KEY = 'korpo_route_v1', MILEAGE_KEY = 'korpo_rep_mileage_v1', MAX = 8;
   const $ = id => document.getElementById(id);
   const E = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const read = () => { try { return JSON.parse(localStorage.getItem(KEY) || '{}'); } catch (e) { return {}; } };
@@ -13,18 +10,71 @@
   const sleep = ms => new Promise(r => setTimeout(r, ms));
   const km = m => (m / 1000).toLocaleString('fr-CA', { maximumFractionDigits: 1 }) + ' km';
   const hm = s => { const m = Math.round(s / 60); return m >= 60 ? Math.floor(m / 60) + ' h ' + String(m % 60).padStart(2, '0') : m + ' min'; };
+  const todayYmd = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
+
   let lastGeo = 0;
   let model = { start: { t: '' }, stops: [{ t: '' }, { t: '' }] };
-  const BBOX = '-79.8,44.9,-57,62.6'; // Québec
+  let lastComputedTrip = null;
+  const BBOX = '-79.8,44.9,-57,62.6';
   const F = 'w-full px-3.5 py-2.5 text-sm font-medium bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-600';
   const persist = () => write(Object.assign(read(), { start: model.start, ret: $('rt-ret') ? $('rt-ret').checked : true, stops: model.stops }));
+
+  function readMileageStore() {
+    try { return JSON.parse(localStorage.getItem(MILEAGE_KEY) || '{}'); } catch (e) { return {}; }
+  }
+  function saveMileageStore(obj) {
+    const raw = JSON.stringify(obj);
+    if (typeof lsSet === 'function') lsSet(MILEAGE_KEY, raw);
+    else try { localStorage.setItem(MILEAGE_KEY, raw); } catch (e) {}
+  }
+
+  function renderMileageLog() {
+    const box = $('rt-mileage-log');
+    if (!box) return;
+    const prof = (typeof currentProfile !== 'undefined' && currentProfile) || {};
+    const repId = String(prof.id || '');
+    const ym = todayYmd().slice(0, 7);
+    const store = readMileageStore();
+    const entries = Object.values(store)
+      .filter(it => it && it.ym === ym && (!repId || String(it.repId) === repId || it.repNom === prof.nom))
+      .sort((a, b) => String(b.createdAt || b.date || '').localeCompare(String(a.createdAt || a.date || '')));
+
+    const totalKm = Math.round(entries.reduce((s, it) => s + Number(it.totalKm || 0), 0) * 10) / 10;
+
+    box.innerHTML =
+      '<div class="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-slate-100">' +
+      '<div><h3 class="text-sm font-extrabold text-slate-900">📒 Trajets validés ce mois-ci (' + E(ym) + ')</h3>' +
+      '<p class="text-[11px] text-slate-500">Inclus automatiquement dans ton relevé mensuel de commissions.</p></div>' +
+      '<span class="px-3 py-1.5 rounded-xl bg-emerald-50 border border-emerald-200 text-xs font-extrabold text-emerald-800 tabular-nums">Total : ' +
+      totalKm.toLocaleString('fr-CA', { maximumFractionDigits: 1 }) + ' km (' + entries.length + ' trajet' + (entries.length > 1 ? 's' : '') + ')</span></div>' +
+      (!entries.length
+        ? '<p class="text-xs text-slate-400 py-3">Aucun trajet validé pour ce mois. Optimise ton itinéraire puis clique sur « ✓ Valider ce trajet ».</p>'
+        : '<ul class="divide-y divide-slate-100">' + entries.map(it =>
+          '<li class="py-2.5 flex items-start justify-between gap-3 text-xs">' +
+          '<div class="min-w-0 flex-1"><div class="font-bold text-slate-800">' + E(it.date) + ' • <span class="text-indigo-600 tabular-nums">' +
+          Number(it.totalKm || 0).toLocaleString('fr-CA', { maximumFractionDigits: 1 }) + ' km</span>' + (it.retour ? ' (aller-retour)' : '') + '</div>' +
+          '<div class="text-[11px] text-slate-500 mt-0.5 break-words">Départ : ' + E(it.depart) + ' → ' + (it.arrets || []).map(E).join(' → ') + (it.retour ? ' → ' + E(it.depart) : '') + '</div></div>' +
+          '<button type="button" data-del-trip="' + E(it.id) + '" class="px-2 py-1 text-[11px] font-bold text-rose-600 hover:bg-rose-50 rounded-lg shrink-0">Retirer</button></li>'
+        ).join('') + '</ul>');
+
+    box.querySelectorAll('button[data-del-trip]').forEach(btn => {
+      btn.onclick = () => {
+        const id = btn.getAttribute('data-del-trip');
+        const st = readMileageStore();
+        delete st[id];
+        saveMileageStore(st);
+        renderMileageLog();
+        say('Trajet retiré du relevé');
+      };
+    });
+  }
+
   const labelOf = f => {
     const q = f.properties || {};
     const first = q.street ? (q.housenumber ? q.housenumber + ' ' : '') + q.street : q.name;
     return [first, q.city || q.locality || q.district || q.county, q.state, q.postcode].filter(Boolean).join(', ');
   };
 
-  // Suggestions pendant la saisie (Photon / OpenStreetMap) ; le choix enregistre aussi les coordonnées
   function attach(inp, slot) {
     const box = document.createElement('ul');
     box.className = 'hidden absolute z-30 left-0 right-0 top-full mt-1 bg-white border border-slate-200 rounded-xl shadow-lg overflow-hidden';
@@ -85,7 +135,7 @@
   async function geocode(addr, cache) {
     const k = addr.toLowerCase().replace(/\s+/g, ' ').trim();
     if (cache[k]) return cache[k];
-    const w = 1100 - (Date.now() - lastGeo); // Nominatim : 1 requête / seconde max
+    const w = 1100 - (Date.now() - lastGeo);
     if (w > 0) await sleep(w);
     lastGeo = Date.now();
     const q = /qu[ée]bec|\bqc\b/i.test(addr) ? addr : addr + ', Québec';
@@ -107,7 +157,6 @@
         return { T: j.durations, D: j.distances, approx: false };
       }
     } catch (e) {}
-    // Repli : distance à vol d'oiseau x 1,35, à 55 km/h
     const f = x => x * Math.PI / 180;
     const hav = (a, b) => {
       const dp = f(b.lat - a.lat), dl = f(b.lon - a.lon);
@@ -118,7 +167,6 @@
     return { D, T: D.map(r => r.map(d => d / 15.3)), approx: true };
   }
 
-  // Solution exacte (Held-Karp) : nœud 0 = départ, 1..n = arrêts
   function solve(T, n, ret) {
     const F = 1 << n;
     const dp = Array.from({ length: F }, () => new Array(n + 1).fill(Infinity));
@@ -182,6 +230,7 @@
     if (lines.length < 2) return say('Ajoute au moins 2 arrêts', 'error');
     if (lines.length > MAX) return say('Maximum ' + MAX + ' arrêts par trajet', 'error');
     btn.disabled = true;
+    lastComputedTrip = null;
     try {
       st.cache = st.cache || {};
       const all = [model.start, ...S], names = [start, ...lines], pts = [], bad = [];
@@ -201,6 +250,17 @@
       const order = solve(M.T, n, ret), orig = lines.map((_, i) => i + 1);
       const a = total(M, order, ret), b = total(M, orig, ret);
       const gT = b.t - a.t, gD = b.d - a.d, gain = gT > 60 || gD > 1000;
+      const orderedStops = order.map(j => lines[j - 1]);
+      const totalKmRounded = Math.round((a.d / 1000) * 10) / 10;
+
+      lastComputedTrip = {
+        depart: start,
+        arrets: orderedStops,
+        retour: ret,
+        totalKm: totalKmRounded,
+        durationSec: Math.round(a.t)
+      };
+
       let p = 0;
       const rows = order.map((j, i) => {
         const row = '<li class="flex items-start gap-3 py-3"><span class="w-7 h-7 rounded-full bg-indigo-600 text-white text-xs font-extrabold flex items-center justify-center shrink-0">' + (i + 1) + '</span>' +
@@ -220,9 +280,41 @@
         '<div class="mt-3 text-xs text-slate-500">Départ : <strong class="text-slate-700">' + E(start) + '</strong></div>' +
         '<ol class="divide-y divide-slate-100">' + rows + '</ol>' +
         (ret ? '<div class="text-xs text-slate-500">Retour au départ : ' + km(M.D[order[n - 1]][0]) + ' • ' + hm(M.T[order[n - 1]][0]) + '</div>' : '') +
-        '<div class="flex flex-wrap gap-2 pt-3">' + gfull(pts, order, ret) + waze(pts[order[0]], 'Waze : 1er arrêt', true) +
+        '<div class="flex flex-wrap gap-2 pt-3">' +
+        '<button type="button" id="rt-validate" class="px-4 py-2.5 text-sm font-extrabold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl shadow-xs cursor-pointer">✓ Valider ce trajet (' + totalKmRounded.toLocaleString('fr-CA', { maximumFractionDigits: 1 }) + ' km)</button>' +
+        gfull(pts, order, ret) + waze(pts[order[0]], 'Waze : 1er arrêt', true) +
         '<button type="button" id="rt-copy" class="px-4 py-2.5 text-sm font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-xl">Copier la liste</button></div>' +
-        '<p class="text-[11px] text-slate-400 pt-1">Waze ne prend qu\'une destination à la fois : utilise les boutons de chaque arrêt pour enchaîner. <a class="underline" target="_blank" rel="noopener" href="' + mapsUrl(pts, order, ret) + '">Google Maps ne s\'ouvre pas ? Version web</a></p>';
+        '<p class="text-[11px] text-slate-400 pt-1">Clique sur « Valider ce trajet » pour l\'ajouter à ton relevé mensuel. <a class="underline" target="_blank" rel="noopener" href="' + mapsUrl(pts, order, ret) + '">Google Maps ne s\'ouvre pas ? Version web</a></p>';
+
+      $('rt-validate').onclick = () => {
+        if (!lastComputedTrip) return;
+        const prof = (typeof currentProfile !== 'undefined' && currentProfile) || {};
+        const dStr = todayYmd();
+        const tripId = 'trip_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6);
+        const stMileage = readMileageStore();
+        stMileage[tripId] = {
+          id: tripId,
+          date: dStr,
+          ym: dStr.slice(0, 7),
+          repId: String(prof.id || ''),
+          repNom: prof.nom || '',
+          depart: lastComputedTrip.depart,
+          arrets: lastComputedTrip.arrets,
+          retour: lastComputedTrip.retour,
+          totalKm: lastComputedTrip.totalKm,
+          createdAt: new Date().toISOString()
+        };
+        saveMileageStore(stMileage);
+        const vBtn = $('rt-validate');
+        if (vBtn) {
+          vBtn.disabled = true;
+          vBtn.textContent = '✓ Trajet validé dans ton relevé (' + lastComputedTrip.totalKm.toLocaleString('fr-CA', { maximumFractionDigits: 1 }) + ' km)';
+          vBtn.className = 'px-4 py-2.5 text-sm font-extrabold text-emerald-900 bg-emerald-100 border border-emerald-300 rounded-xl';
+        }
+        renderMileageLog();
+        say('Trajet validé (' + lastComputedTrip.totalKm.toLocaleString('fr-CA', { maximumFractionDigits: 1 }) + ' km) et ajouté au relevé ✓');
+      };
+
       $('rt-copy').onclick = () => {
         const txt = order.map((j, i) => (i + 1) + '. ' + lines[j - 1]).join('\n');
         navigator.clipboard?.writeText(txt).then(() => say('Liste copiée'), () => say('Copie impossible', 'error'));
@@ -257,7 +349,8 @@
 
   function render() {
     const sec = $('tab-route');
-    if (!sec || $('rt-start')) return;
+    if (!sec) return;
+    if ($('rt-start')) { renderMileageLog(); return; }
     sec.innerHTML =
       '<div class="max-w-3xl mx-auto space-y-5"><div class="bg-white rounded-3xl border border-slate-200/80 p-5 shadow-xs space-y-4">' +
       '<div class="flex items-center gap-3"><span class="w-10 h-10 rounded-2xl bg-indigo-600 text-white flex items-center justify-center text-lg shrink-0">🧭</span><div>' +
@@ -269,8 +362,9 @@
       '<button type="button" id="rt-add" class="mt-2 px-3.5 py-2 text-xs font-bold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 disabled:opacity-50 border border-indigo-200 rounded-xl"></button></div>' +
       '<div class="flex flex-wrap items-center gap-2"><button type="button" id="rt-go" class="px-4 py-2.5 text-sm font-extrabold text-white bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 rounded-xl">Optimiser mon trajet</button>' +
       '<button type="button" id="rt-clear" class="px-3.5 py-2.5 text-sm font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-xl">Effacer les arrêts</button></div>' +
-      '<p class="text-[11px] text-slate-400">Pendant que tu écris, le texte est envoyé à des services de cartes publics (OpenStreetMap) pour suggérer des adresses et calculer le trajet. Rien n\'est enregistré dans le portail. Les heures de rendez-vous ne sont pas prises en compte : garde tes rendez-vous fixes dans le bon ordre.</p></div>' +
-      '<div id="rt-out" class="bg-white rounded-3xl border border-slate-200/80 p-5 shadow-xs empty:hidden"></div></div>';
+      '<p class="text-[11px] text-slate-400">Pendant que tu écris, le texte est envoyé à des services de cartes publics (OpenStreetMap) pour suggérer des adresses et calculer le trajet. Les heures de rendez-vous ne sont pas prises en compte : garde tes rendez-vous fixes dans le bon ordre.</p></div>' +
+      '<div id="rt-out" class="bg-white rounded-3xl border border-slate-200/80 p-5 shadow-xs empty:hidden"></div>' +
+      '<div id="rt-mileage-log" class="bg-white rounded-3xl border border-slate-200/80 p-5 shadow-xs space-y-2"></div></div>';
     const st = read();
     const slot = v => (typeof v === 'string' ? { t: v } : v && typeof v === 'object' ? { t: v.t || '', p: v.p || null } : { t: '' });
     const old = typeof st.stops === 'string' ? st.stops.split('\n').filter(Boolean) : st.stops;
@@ -286,7 +380,8 @@
     $('rt-out').addEventListener('click', e => { const a = e.target.closest('a[data-app]'); if (IOS && a) { e.preventDefault(); location.href = a.dataset.app; } });
     $('rt-clear').addEventListener('click', () => { model.stops = [{ t: '' }, { t: '' }]; $('rt-out').innerHTML = ''; persist(); draw(); });
     draw();
+    renderMileageLog();
   }
 
-  window.KorpoRoute = { render };
+  window.KorpoRoute = { render, renderMileageLog };
 })();
