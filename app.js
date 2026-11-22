@@ -2351,11 +2351,39 @@
 
     async function handleAuthenticatedUserInner(user) {
       currentUser = user;
-      const { data: profile, error } = await sb
-        .from('representants')
-        .select('*')
-        .ilike('courriel', String(user.email || '').replace(/[\\%_]/g, '\\$&'))
-        .single();
+      const cachedProfilesMap = lsGetJson('korpo_cached_profiles_v1', '{}');
+      const emailKey = String(user.email || '').trim().toLowerCase();
+      let profile = cachedProfilesMap[emailKey] || null;
+      let error = null;
+
+      if (!profile) {
+        const res = await sb
+          .from('representants')
+          .select('*')
+          .ilike('courriel', String(user.email || '').replace(/[\%_]/g, '\\$&'))
+          .single();
+        profile = res.data;
+        error = res.error;
+      } else {
+        // Rafraîchir le profil en arrière-plan pour détecter tout changement de rôle
+        sb.from('representants')
+          .select('*')
+          .ilike('courriel', String(user.email || '').replace(/[\%_]/g, '\\$&'))
+          .single()
+          .then(({ data: freshProf }) => {
+            if (freshProf) {
+              const m = lsGetJson('korpo_cached_profiles_v1', '{}');
+              m[emailKey] = freshProf;
+              try { localStorage.setItem('korpo_cached_profiles_v1', JSON.stringify(m)); } catch (e) {}
+            }
+          })
+          .catch(() => {});
+      }
+
+      if (profile) {
+        cachedProfilesMap[emailKey] = profile;
+        try { localStorage.setItem('korpo_cached_profiles_v1', JSON.stringify(cachedProfilesMap)); } catch (e) {}
+      }
 
       if (error || !profile) {
         const errBox = document.getElementById('login-error');
@@ -14003,26 +14031,43 @@
     document.getElementById('login-form')?.addEventListener('submit', async (e) => {
       e.preventDefault();
       const errBox = document.getElementById('login-error');
+      const submitBtn = document.getElementById('login-submit');
       errBox.classList.add('hidden');
       const email = document.getElementById('login-email').value.trim();
       const password = document.getElementById('login-password').value;
       const remember = document.getElementById('login-remember')?.checked;
 
-      const { error } = await sb.auth.signInWithPassword({ email, password });
-      if (error) {
-        errBox.textContent = `Échec de connexion : ${error.message}`;
-        errBox.classList.remove('hidden');
-        return;
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Connexion en cours...';
       }
 
-      if (remember) {
-        try {
-          lsSet('korpo_saved_creds_v1', JSON.stringify({ email })); // jamais le mot de passe
-          document.getElementById('btn-forget-saved-login')?.classList.remove('hidden');
-        } catch (err) {}
-      } else {
-        localStorage.removeItem('korpo_saved_creds_v1');
-        document.getElementById('btn-forget-saved-login')?.classList.add('hidden');
+      try {
+        const { data, error } = await sb.auth.signInWithPassword({ email, password });
+        if (error) {
+          errBox.textContent = `Échec de connexion : ${error.message}`;
+          errBox.classList.remove('hidden');
+          return;
+        }
+
+        if (remember) {
+          try {
+            lsSet('korpo_saved_creds_v1', JSON.stringify({ email })); // jamais le mot de passe
+            document.getElementById('btn-forget-saved-login')?.classList.remove('hidden');
+          } catch (err) {}
+        } else {
+          localStorage.removeItem('korpo_saved_creds_v1');
+          document.getElementById('btn-forget-saved-login')?.classList.add('hidden');
+        }
+
+        if (data?.user) {
+          await handleAuthenticatedUser(data.user);
+        }
+      } finally {
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          submitBtn.textContent = 'Accéder au portail';
+        }
       }
     });
 
@@ -14056,20 +14101,13 @@
         saleProofsStore = {};
       } catch (e) {}
 
-      try {
-        if (sb && sb.auth) {
-          await Promise.race([
-            sb.auth.signOut({ scope: 'local' }),
-            new Promise(res => setTimeout(res, 1200))
-          ]);
-        }
-      } catch (e) {
-        console.warn('SignOut fallback:', e?.message);
-      }
-
       restoreRememberedCredentials();
       showScreen('screen-login');
       toast('Vous êtes déconnecté');
+
+      if (sb && sb.auth) {
+        sb.auth.signOut({ scope: 'local' }).catch(() => {});
+      }
     }
 
     document.getElementById('btn-logout')?.addEventListener('click', (e) => {
