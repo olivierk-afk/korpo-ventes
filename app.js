@@ -14007,7 +14007,9 @@
       e.preventDefault();
       lsSet('korpo_sb_url', document.getElementById('cfg-url').value.trim());
       lsSet('korpo_sb_key', document.getElementById('cfg-key').value.trim());
-      
+      initApp();
+    });
+
     // =========================================================================
     // SECTION FINANCES KORPO : ENCAISSEMENTS, PROFIT RÉEL, PRÉVISIONS & WAVE
     // =========================================================================
@@ -14222,7 +14224,8 @@
       if (!file) return;
       try {
         const text = await file.text();
-        const lines = text.split(/?
+        const lines = text.split(/
+?
 /).filter(l => l.trim());
         if (lines.length < 2) return toast('Fichier CSV Wave vide.', 'error');
         const sep = lines[0].includes(';') ? ';' : ',';
@@ -14651,8 +14654,8 @@
       }
     }
 
+
     initApp();
-    });
 
     document.getElementById('btn-reset-cfg')?.addEventListener('click', () => {
       localStorage.removeItem('korpo_sb_url');
