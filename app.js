@@ -14152,10 +14152,26 @@
       toast('Dépense supprimée');
     };
 
-    window.applyRecurringExpensesToCurrentMonth = () => {
+    function enumerateYearMonthsInclusive(startYm, endYm) {
+      if (!isValidYearMonth(startYm) || !isValidYearMonth(endYm) || startYm > endYm) return [];
+      const out = [];
+      let [y, m] = startYm.split('-').map(n => parseInt(n, 10));
+      const [endY, endM] = endYm.split('-').map(n => parseInt(n, 10));
+      let guard = 0;
+      while ((y < endY || (y === endY && m <= endM)) && guard < 120) {
+        out.push(`${y}-${String(m).padStart(2, '0')}`);
+        m += 1;
+        if (m > 12) { m = 1; y += 1; }
+        guard++;
+      }
+      return out;
+    }
+
+    window.applyRecurringExpensesToMonth = (targetYm) => {
       if (currentProfile?.role !== 'admin') return;
+      const ym = isValidYearMonth(targetYm) ? targetYm : currentMonthStr;
       const store = getFinExpensesStore();
-      const existingThisMonth = Object.values(store).filter(e => e && e.ym === currentMonthStr);
+      const existingTargetMonth = Object.values(store).filter(e => e && e.ym === ym);
       const recurringTemplates = new Map();
       Object.values(store).forEach(e => {
         if (e && e.recurring && e.label) {
@@ -14167,13 +14183,13 @@
       }
       let added = 0;
       recurringTemplates.forEach((tpl, key) => {
-        const alreadyExists = existingThisMonth.some(x => `${x.category}__${String(x.label || '').trim().toLowerCase()}` === key);
+        const alreadyExists = existingTargetMonth.some(x => `${x.category}__${String(x.label || '').trim().toLowerCase()}` === key);
         if (!alreadyExists) {
           const id = `exp_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
           store[id] = {
             id,
-            date: `${currentMonthStr}-01`,
-            ym: currentMonthStr,
+            date: `${ym}-01`,
+            ym,
             category: tpl.category,
             label: tpl.label,
             amountHt: Number(tpl.amountHt || 0),
@@ -14183,10 +14199,26 @@
           added++;
         }
       });
-      if (!added) return toast(`Tous vos frais fixes (${recurringTemplates.size}) sont déjà présents pour ${currentMonthStr}.`);
+      const labelFr = formatYearMonthLabelFr(ym);
+      if (!added) return toast(`Tous vos frais fixes (${recurringTemplates.size}) sont déjà présents pour ${labelFr}.`);
       saveFinExpensesStore(store);
       renderAdminFinances();
-      toast(`${added} frais fixe(s) généré(s) pour ${currentMonthStr} ✓`);
+      toast(`${added} frais fixe(s) généré(s) pour ${labelFr} ✓`);
+    };
+
+    window.applyRecurringExpensesToCurrentMonth = () => window.applyRecurringExpensesToMonth(currentMonthStr);
+
+    window.applyRecurringExpensesToPreviousMonth = () => {
+      const prevYm = getPreviousYearMonth(currentMonthStr);
+      const targetIn = document.getElementById('fin-recurring-target-month');
+      if (targetIn) targetIn.value = prevYm;
+      window.applyRecurringExpensesToMonth(prevYm);
+    };
+
+    window.applyRecurringExpensesToSelectedMonth = () => {
+      const targetIn = document.getElementById('fin-recurring-target-month');
+      const ym = targetIn && isValidYearMonth(targetIn.value) ? targetIn.value : currentMonthStr;
+      window.applyRecurringExpensesToMonth(ym);
     };
 
     document.getElementById('form-fin-expense')?.addEventListener('submit', (e) => {
@@ -14197,27 +14229,391 @@
       const labelVal = document.getElementById('fin-exp-label')?.value.trim() || '';
       const amtVal = parseFloat(document.getElementById('fin-exp-amount')?.value) || 0;
       const recVal = Boolean(document.getElementById('fin-exp-recurring')?.checked);
+      const backfillFromYm = recVal ? (document.getElementById('fin-exp-backfill-from')?.value || '') : '';
       if (!labelVal || amtVal <= 0) return toast('Entrez une description et un montant valide.', 'error');
 
-      const id = `exp_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
+      const primaryYm = dateVal.slice(0, 7);
       const store = getFinExpensesStore();
+      const normKey = `${catVal}__${labelVal.toLowerCase()}`;
+
+      const id = `exp_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
       store[id] = {
         id,
         date: dateVal,
-        ym: dateVal.slice(0, 7),
+        ym: primaryYm,
         category: catVal,
         label: labelVal,
         amountHt: Math.round(amtVal * 100) / 100,
         recurring: recVal,
         createdAt: new Date().toISOString()
       };
+
+      let extraMonthsAdded = 0;
+      if (recVal && isValidYearMonth(backfillFromYm) && backfillFromYm < primaryYm) {
+        const pastMonths = enumerateYearMonthsInclusive(backfillFromYm, getPreviousYearMonth(primaryYm));
+        pastMonths.forEach(pYm => {
+          const alreadyExists = Object.values(store).some(x => x && x.ym === pYm && `${x.category}__${String(x.label || '').trim().toLowerCase()}` === normKey);
+          if (!alreadyExists) {
+            const pId = `exp_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
+            store[pId] = {
+              id: pId,
+              date: `${pYm}-01`,
+              ym: pYm,
+              category: catVal,
+              label: labelVal,
+              amountHt: Math.round(amtVal * 100) / 100,
+              recurring: true,
+              createdAt: new Date().toISOString()
+            };
+            extraMonthsAdded++;
+          }
+        });
+      }
+
       saveFinExpensesStore(store);
       document.getElementById('fin-exp-label').value = '';
       document.getElementById('fin-exp-amount').value = '';
       document.getElementById('fin-exp-recurring').checked = false;
+      const bfIn = document.getElementById('fin-exp-backfill-from');
+      if (bfIn) bfIn.value = '';
+      document.getElementById('fin-exp-backfill-wrap')?.classList.add('hidden');
       renderAdminFinances();
-      toast(`Dépense enregistrée (${fmtMoney(amtVal)} HT) ✓`);
+      if (extraMonthsAdded > 0) {
+        toast(`Frais fixe enregistré + appliqué à ${extraMonthsAdded} mois antérieur(s) (${fmtMoney(amtVal)} HT/mois) ✓`);
+      } else {
+        toast(`Dépense enregistrée (${fmtMoney(amtVal)} HT) ✓`);
+      }
     });
+
+    // =========================================================================
+    // CONNECTEUR DIRECT WAVE ACCOUNTING (SUPABASE EDGE FUNCTION `wave-sync`)
+    // =========================================================================
+    const WAVE_EDGE_FUNCTION_CODE = `// Supabase Edge Function : wave-sync
+// Secret requis dans Supabase : WAVE_ACCESS_TOKEN (Full Access Token Wave)
+import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
+
+const WAVE_GQL_URL = "https://gql.waveapps.com/graphql/public";
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+};
+
+async function waveGraphQL(token: string, query: string, variables: Record<string, unknown> = {}) {
+  const res = await fetch(WAVE_GQL_URL, {
+    method: "POST",
+    headers: {
+      "Authorization": \`Bearer \${token}\`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ query, variables }),
+  });
+  const json = await res.json();
+  if (!res.ok || json.errors) {
+    throw new Error(json.errors?.[0]?.message || \`Erreur HTTP Wave (\${res.status})\`);
+  }
+  return json.data;
+}
+
+serve(async (req) => {
+  if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
+  try {
+    const token = Deno.env.get("WAVE_ACCESS_TOKEN");
+    if (!token) {
+      return new Response(JSON.stringify({ error: "Secret WAVE_ACCESS_TOKEN manquant dans Supabase." }), {
+        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" }
+      });
+    }
+
+    const body = await req.json().catch(() => ({}));
+    const action = body.action || "sync_invoices";
+
+    // 1. Lister les entreprises Wave du compte
+    const bizData = await waveGraphQL(token, \`
+      query {
+        businesses(page: 1, pageSize: 10) {
+          edges { node { id name isClassicAccounting } }
+        }
+      }
+    \`);
+    const businesses = (bizData?.businesses?.edges || []).map((e: any) => e.node);
+    if (!businesses.length) throw new Error("Aucune entreprise trouvée sur ce compte Wave.");
+    const businessId = body.businessId || businesses[0].id;
+
+    if (action === "sync_invoices") {
+      // 2. Récupérer les 50 dernières factures Wave avec leur statut (PAID, SENT, DRAFT, OVERDUE)
+      const invData = await waveGraphQL(token, \`
+        query($businessId: ID!) {
+          business(id: $businessId) {
+            id
+            name
+            invoices(page: 1, pageSize: 50, sort: [INVOICE_DATE_DESC]) {
+              edges {
+                node {
+                  id
+                  invoiceNumber
+                  status
+                  invoiceDate
+                  dueDate
+                  amountPaid { value currency { code } }
+                  amountDue { value currency { code } }
+                  total { value currency { code } }
+                  customer { id name }
+                }
+              }
+            }
+          }
+        }
+      \`, { businessId });
+
+      const invoices = (invData?.business?.invoices?.edges || []).map((e: any) => ({
+        id: e.node.id,
+        invoiceNumber: e.node.invoiceNumber || "",
+        status: e.node.status || "",
+        invoiceDate: e.node.invoiceDate || "",
+        customerName: e.node.customer?.name || "",
+        total: parseFloat(e.node.total?.value || "0"),
+        amountPaid: parseFloat(e.node.amountPaid?.value || "0"),
+        amountDue: parseFloat(e.node.amountDue?.value || "0"),
+      }));
+
+      return new Response(JSON.stringify({ ok: true, businesses, businessId, invoices }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    if (action === "create_invoice") {
+      // 3. Créer une facture brouillon dans Wave pour un partenaire Korpo
+      const { customerName, invoiceNumber, invoiceDate, title, description, amountHt } = body;
+      const custData = await waveGraphQL(token, \`
+        query($businessId: ID!) {
+          business(id: $businessId) {
+            customers(page: 1, pageSize: 50) {
+              edges { node { id name email } }
+            }
+            products(page: 1, pageSize: 20) {
+              edges { node { id name isSold } }
+            }
+          }
+        }
+      \`, { businessId });
+
+      const customers = (custData?.business?.customers?.edges || []).map((e: any) => e.node);
+      let customer = customers.find((c: any) => c.name.toLowerCase().includes(String(customerName || "").toLowerCase()));
+      if (!customer) {
+        const createdCust = await waveGraphQL(token, \`
+          mutation($input: CustomerCreateInput!) {
+            customerCreate(input: $input) {
+              didSucceed
+              customer { id name }
+            }
+          }
+        \`, { input: { businessId, name: customerName } });
+        customer = createdCust?.customerCreate?.customer;
+      }
+
+      const soldProduct = (custData?.business?.products?.edges || []).map((e: any) => e.node).find((p: any) => p.isSold);
+      if (!customer?.id || !soldProduct?.id) {
+        throw new Error("Créez au moins un produit/service de vente dans Wave (ex. Commissions Korpo) avant d'exporter.");
+      }
+
+      const createdInv = await waveGraphQL(token, \`
+        mutation($input: InvoiceCreateInput!) {
+          invoiceCreate(input: $input) {
+            didSucceed
+            inputErrors { path message }
+            invoice { id invoiceNumber viewUrl status }
+          }
+        }
+      \`, {
+        input: {
+          businessId,
+          customerId: customer.id,
+          invoiceNumber: invoiceNumber || undefined,
+          invoiceDate: invoiceDate || new Date().toISOString().slice(0, 10),
+          title: title || "Facture Commissions Korpo Solutions",
+          items: [{
+            productId: soldProduct.id,
+            description: description || "Commissions sur ventes",
+            quantity: 1,
+            unitPrice: Number(amountHt || 0).toFixed(2),
+          }],
+        },
+      });
+
+      if (!createdInv?.invoiceCreate?.didSucceed) {
+        throw new Error(createdInv?.invoiceCreate?.inputErrors?.[0]?.message || "Échec création facture Wave");
+      }
+
+      return new Response(JSON.stringify({ ok: true, invoice: createdInv.invoiceCreate.invoice }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    throw new Error(\`Action inconnue : \${action}\`);
+  } catch (err: any) {
+    return new Response(JSON.stringify({ error: err?.message || String(err) }), {
+      status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
+});`;
+
+    window.toggleWaveApiSetupBox = (forceState) => {
+      const box = document.getElementById('fin-wave-api-setup-box');
+      if (!box) return;
+      if (typeof forceState === 'boolean') box.classList.toggle('hidden', !forceState);
+      else box.classList.toggle('hidden');
+    };
+
+    window.saveSelectedWaveBusinessId = (bizId) => {
+      try { localStorage.setItem('korpo_wave_business_id_v1', String(bizId || '')); } catch (e) {}
+    };
+
+    window.copyWaveEdgeFunctionCode = async () => {
+      try {
+        await navigator.clipboard.writeText(WAVE_EDGE_FUNCTION_CODE);
+        toast('Code de la fonction Supabase « wave-sync » copié dans le presse-papiers 📋');
+      } catch (e) {
+        toast('Impossible de copier automatiquement. Ouvrez la console pour le récupérer.', 'error');
+      }
+    };
+
+    window.syncWaveDirectFromPortal = async () => {
+      if (currentProfile?.role !== 'admin') return;
+      if (!sb) return toast('Connexion Supabase non initialisée.', 'error');
+
+      const btn = document.getElementById('btn-wave-direct-sync');
+      const iconEl = document.getElementById('wave-direct-sync-icon');
+      const lblEl = document.getElementById('wave-direct-sync-label');
+      const connBadge = document.getElementById('wave-api-conn-badge');
+      if (btn) btn.disabled = true;
+      if (iconEl) iconEl.classList.add('animate-spin');
+      if (lblEl) lblEl.textContent = 'Connexion à Wave...';
+
+      try {
+        const savedBizId = localStorage.getItem('korpo_wave_business_id_v1') || '';
+        const { data, error } = await sb.functions.invoke('wave-sync', {
+          body: { action: 'sync_invoices', ...(savedBizId ? { businessId: savedBizId } : {}) }
+        });
+
+        if (error || data?.error) {
+          const errMsg = data?.error || error?.message || 'Fonction wave-sync non déployée';
+          if (connBadge) {
+            connBadge.textContent = 'Configuration requise';
+            connBadge.className = 'px-2 py-0.5 text-[10px] font-extrabold rounded-full bg-amber-500/20 text-amber-300';
+          }
+          toggleWaveApiSetupBox(true);
+          return toast(`Connecteur Wave : ${errMsg}`, 'error');
+        }
+
+        if (connBadge) {
+          connBadge.textContent = '✓ Connecté en direct';
+          connBadge.className = 'px-2 py-0.5 text-[10px] font-extrabold rounded-full bg-emerald-500/20 text-emerald-300';
+        }
+
+        // Peupler le sélecteur d'entreprise Wave si plusieurs entreprises existent sur le compte
+        const bizSel = document.getElementById('wave-business-select');
+        if (bizSel && Array.isArray(data.businesses) && data.businesses.length) {
+          bizSel.innerHTML = data.businesses.map(b =>
+            `<option value="${esc(b.id)}" ${b.id === data.businessId ? 'selected' : ''}>${esc(b.name)}</option>`
+          ).join('');
+          saveSelectedWaveBusinessId(data.businessId);
+        }
+
+        const waveInvoices = Array.isArray(data.invoices) ? data.invoices : [];
+        const partnerPaidStore = getFinPartnerPaidStore();
+        const { months } = getFinPeriodMonths();
+        const batches = buildPartnerBatchesForMonths(months);
+        let autoMatched = 0;
+
+        batches.forEach(b => {
+          const match = waveInvoices.find(w => {
+            const custMatch = String(w.customerName || '').toLowerCase().includes(b.entName.toLowerCase()) ||
+              String(w.invoiceNumber || '').toLowerCase().startsWith(getWaveCompanyPrefix(b.entName).toLowerCase());
+            if (!custMatch) return false;
+            const isPaidStatus = String(w.status || '').toUpperCase() === 'PAID' || (w.amountPaid > 0 && w.amountDue <= 0.05);
+            const amtRef = w.amountPaid > 0 ? w.amountPaid : w.total;
+            const amtMatchesHt = Math.abs(amtRef - b.grossHt) <= 2.5;
+            const amtMatchesTtc = Math.abs(amtRef - b.grossTtc) <= 2.5;
+            return isPaidStatus && (amtMatchesHt || amtMatchesTtc);
+          });
+
+          if (match && !partnerPaidStore[b.batchKey]?.paid) {
+            partnerPaidStore[b.batchKey] = {
+              paid: true,
+              paidAt: match.invoiceDate || localYmd(),
+              waveRef: match.invoiceNumber || 'API Wave',
+              by: 'Sync Directe Wave'
+            };
+            autoMatched++;
+          }
+        });
+
+        if (autoMatched > 0) saveFinPartnerPaidStore(partnerPaidStore);
+        const paidWaveInvoices = waveInvoices.filter(w => String(w.status || '').toUpperCase() === 'PAID');
+        waveReconcileResults = {
+          filename: `API Wave Directe (${data.businesses?.find(x => x.id === data.businessId)?.name || 'Wave'})`,
+          totalRows: waveInvoices.length,
+          autoMatched,
+          totalWaveAmt: paidWaveInvoices.reduce((s, r) => s + Number(r.amountPaid || r.total || 0), 0)
+        };
+        renderAdminFinances();
+        toast(autoMatched > 0
+          ? `Wave synchronisé : ${autoMatched} facture(s) partenaire(s) marquée(s) encaissée(s) ✓`
+          : `Wave synchronisé (${waveInvoices.length} facture(s) lue(s), tout est déjà à jour) ✓`);
+      } catch (err) {
+        toggleWaveApiSetupBox(true);
+        toast('Erreur synchronisation Wave : ' + (err?.message || err), 'error');
+      } finally {
+        if (btn) btn.disabled = false;
+        if (iconEl) iconEl.classList.remove('animate-spin');
+        if (lblEl) lblEl.textContent = 'Synchroniser Wave';
+      }
+    };
+
+    window.createDraftInvoiceInWaveForBatch = async (entName, ym, amountHt, countDossiers) => {
+      if (currentProfile?.role !== 'admin') return;
+      if (!sb) return;
+      const ok = await askConfirm(
+        `Créer une facture dans Wave ?`,
+        `Générer une facture brouillon dans Wave pour ${entName} (${formatYearMonthLabelFr(ym)}) d'un montant de ${fmtMoney(amountHt)} + taxes (${countDossiers} dossier(s)) ?`
+      );
+      if (!ok) return;
+
+      try {
+        toast('Création de la facture dans Wave...');
+        const seqMap = getWaveCompanySeqMap();
+        const nextNum = Number(seqMap[entName] || 100) + 1;
+        const invNumber = `${getWaveCompanyPrefix(entName)}${nextNum}`;
+        const savedBizId = localStorage.getItem('korpo_wave_business_id_v1') || '';
+
+        const { data, error } = await sb.functions.invoke('wave-sync', {
+          body: {
+            action: 'create_invoice',
+            ...(savedBizId ? { businessId: savedBizId } : {}),
+            customerName: entName,
+            invoiceNumber: invNumber,
+            invoiceDate: localYmd(),
+            title: `Commissions Korpo Solutions — ${formatYearMonthLabelFr(ym)}`,
+            description: `Commissions sur ventes confirmées (${countDossiers} dossier(s) — ${formatYearMonthLabelFr(ym)})`,
+            amountHt: Number(amountHt || 0)
+          }
+        });
+
+        if (error || data?.error) {
+          toggleWaveApiSetupBox(true);
+          return toast(`Erreur Wave : ${data?.error || error?.message}`, 'error');
+        }
+
+        seqMap[entName] = nextNum;
+        await saveWaveCompanySeqMap(seqMap);
+        toast(`Facture ${invNumber} créée dans Wave ✓`);
+        if (data?.invoice?.viewUrl) {
+          window.open(data.invoice.viewUrl, '_blank', 'noopener');
+        }
+      } catch (err) {
+        toast('Erreur création facture Wave : ' + (err?.message || err), 'error');
+      }
+    };
 
     window.handleWaveReconcileCsvUpload = async (inputEl) => {
       const file = inputEl?.files?.[0];
@@ -14324,6 +14720,18 @@
       if (currentProfile?.role !== 'admin') return;
       const expDateIn = document.getElementById('fin-exp-date');
       if (expDateIn && !expDateIn.value) expDateIn.value = localYmd();
+      const recTargetIn = document.getElementById('fin-recurring-target-month');
+      if (recTargetIn) {
+        const periodMode = document.getElementById('fin-filter-period')?.value || 'this_month';
+        if (periodMode === 'last_month') {
+          recTargetIn.value = getPreviousYearMonth(currentMonthStr);
+        } else if (periodMode === 'specific_month') {
+          const spVal = document.getElementById('fin-filter-month')?.value;
+          if (isValidYearMonth(spVal)) recTargetIn.value = spVal;
+        } else if (!recTargetIn.value) {
+          recTargetIn.value = currentMonthStr;
+        }
+      }
 
       const { label: periodLabel, months } = getFinPeriodMonths();
       const partnerPaidStore = getFinPartnerPaidStore();
@@ -14443,9 +14851,12 @@
                 <td class="py-3 px-2.5 text-right font-extrabold text-slate-900 tabular-nums">${fmtMoney(b.grossHt)}</td>
                 <td class="py-3 px-2.5 text-right font-semibold text-slate-500 tabular-nums">${fmtMoney(b.grossTtc)}</td>
                 <td class="py-3 px-3.5 text-right">
-                  <button type="button" onclick="togglePartnerBatchPaid('${safeKey}')" class="px-3 py-1.5 text-[11px] font-extrabold rounded-xl transition cursor-pointer ${isPaid ? 'bg-emerald-100 text-emerald-800 border border-emerald-300' : 'bg-amber-50 text-amber-900 border border-amber-300 hover:bg-amber-100'}">
-                    ${isPaid ? `✓ Encaissé (${esc(b.paidInfo.paidAt || '')})` : '⏳ Marquer encaissé'}
-                  </button>
+                  <div class="inline-flex items-center justify-end gap-1.5">
+                    ${!isPaid ? `<button type="button" onclick="createDraftInvoiceInWaveForBatch('${esc(b.entName).replace(/'/g, "\\'")}', '${esc(b.ym)}', ${Number(b.grossHt || 0)}, ${Number(b.count || 0)})" title="Créer directement la facture brouillon dans Wave" class="px-2.5 py-1.5 text-[11px] font-extrabold rounded-xl bg-indigo-50 text-indigo-800 border border-indigo-200 hover:bg-indigo-100 transition cursor-pointer">📤 Wave</button>` : ''}
+                    <button type="button" onclick="togglePartnerBatchPaid('${safeKey}')" class="px-3 py-1.5 text-[11px] font-extrabold rounded-xl transition cursor-pointer ${isPaid ? 'bg-emerald-100 text-emerald-800 border border-emerald-300' : 'bg-amber-50 text-amber-900 border border-amber-300 hover:bg-amber-100'}">
+                      ${isPaid ? `✓ Encaissé (${esc(b.paidInfo.paidAt || '')})` : '⏳ Marquer encaissé'}
+                    </button>
+                  </div>
                 </td>
               </tr>
             `;
