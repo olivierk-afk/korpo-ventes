@@ -2378,66 +2378,6 @@
       </section>
 
       <!-- ============================================================ -->
-      <!-- ONGLET 6 : GRILLE DES TAUX DE COMMISSION (ADMIN UNIQUEMENT)  -->
-      <!-- ============================================================ -->
-      <section id="tab-admin-taux" class="hidden space-y-6">
-        <div class="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-xs">
-          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5">
-            <div>
-              <h2 class="text-base font-extrabold text-slate-900">Configurer un taux de commission</h2>
-              <p class="text-xs text-slate-500 mt-0.5">Une règle ciblant un client précis prend priorité sur le taux général de l'entreprise.</p>
-            </div>
-            <button id="btn-recalc-all-rates" type="button" class="px-3.5 py-2 text-xs font-semibold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 rounded-xl transition">
-              ↻ Recalculer les ventes existantes selon cette grille
-            </button>
-          </div>
-          <form id="form-taux" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4">
-            <div>
-              <label class="block text-xs font-semibold text-slate-700 mb-1.5">Représentant *</label>
-              <select id="taux-rep" required class="w-full px-3 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl"></select>
-            </div>
-            <div>
-              <label class="block text-xs font-semibold text-slate-700 mb-1.5">Entreprise *</label>
-              <select id="taux-ent" required class="w-full px-3 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl"></select>
-            </div>
-            <div>
-              <label class="block text-xs font-semibold text-slate-700 mb-1.5">Client spécifique</label>
-              <select id="taux-client" class="w-full px-3 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl">
-                <option value="">— Toute l'entreprise —</option>
-              </select>
-            </div>
-            <div>
-              <label class="block text-xs font-semibold text-slate-700 mb-1.5">Taux Rep (%) *</label>
-              <input id="taux-val-rep" type="number" step="0.01" min="0" max="100" required placeholder="6.00" class="w-full px-3 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl tabular-nums" />
-            </div>
-            <div>
-              <label class="block text-xs font-semibold text-slate-700 mb-1.5">Taux Olivier (%) *</label>
-              <input id="taux-val-olivier" type="number" step="0.01" min="0" max="100" required placeholder="4.00" class="w-full px-3 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl tabular-nums" />
-            </div>
-            <div class="flex items-end">
-              <button type="submit" class="w-full py-2.5 px-4 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold rounded-xl shadow-sm transition">Enregistrer</button>
-            </div>
-          </form>
-        </div>
-
-        <div class="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden">
-          <table class="w-full text-left border-collapse">
-            <thead>
-              <tr class="bg-slate-50/80 border-b border-slate-200 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
-                <th class="py-3.5 px-4">Représentant</th>
-                <th class="py-3.5 px-4">Entreprise</th>
-                <th class="py-3.5 px-4">Portée</th>
-                <th class="py-3.5 px-4 text-right">Taux Rep</th>
-                <th class="py-3.5 px-4 text-right">Taux Olivier</th>
-                <th class="py-3.5 px-4 text-right">Action</th>
-              </tr>
-            </thead>
-            <tbody id="tbody-taux" class="divide-y divide-slate-100 text-sm"></tbody>
-          </table>
-        </div>
-      </section>
-
-      <!-- ============================================================ -->
       <!-- ONGLET 7A : ENTREPRISES PARTENAIRES (ADMIN UNIQUEMENT)       -->
       <!-- ============================================================ -->
       <section id="tab-admin-entreprises" class="hidden space-y-6">
@@ -2455,12 +2395,18 @@
               <p class="text-xs text-slate-500 mt-1">Vue complète de vos compagnies partenaires : volumes générés, marge nette Korpo, objectifs, facturation Wave et contacts.</p>
             </div>
             <div class="flex flex-wrap items-center gap-2">
-              <select id="admin-ent-period-filter" onchange="renderAdminEntreprises()" class="px-3.5 py-2 text-xs font-bold bg-indigo-50/70 text-indigo-950 border border-indigo-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-600 cursor-pointer">
+              <select id="admin-ent-period-filter" onchange="document.getElementById('admin-ent-specific-month')?.classList.toggle('hidden', this.value !== 'specific_month'); renderAdminEntreprises();" class="px-3.5 py-2 text-xs font-bold bg-indigo-50/70 text-indigo-950 border border-indigo-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-600 cursor-pointer">
                 <option value="this_month" selected>📅 Ce mois-ci</option>
+                <option value="last_month">⏪ Mois dernier</option>
+                <option value="specific_month">🎯 Mois précis...</option>
                 <option value="this_quarter">📊 Ce trimestre</option>
                 <option value="this_year">🗓️ Cette année</option>
                 <option value="all">∞ Tout l'historique</option>
               </select>
+              <input id="admin-ent-specific-month" type="month" onchange="renderAdminEntreprises()" class="hidden px-3 py-2 text-xs font-bold bg-white border border-indigo-300 rounded-xl cursor-pointer" />
+              <button id="btn-recalc-all-rates" type="button" title="Met à jour toutes les ventes existantes selon les taux configurés sur vos fiches entreprises" class="px-3.5 py-2 text-xs font-bold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 rounded-xl transition cursor-pointer">
+                ↻ Recalculer ventes selon les taux
+              </button>
             </div>
           </div>
 
@@ -2912,8 +2858,8 @@
     </div>
   </div>
 
-  <script src="route-optimizer.js?v=20261122h" defer></script>
-  <script src="guide.js?v=20261122h" defer></script>
-  <script src="app.js?v=20261122h" defer></script>
+  <script src="route-optimizer.js?v=20261122i" defer></script>
+  <script src="guide.js?v=20261122i" defer></script>
+  <script src="app.js?v=20261122i" defer></script>
 </body>
 </html>

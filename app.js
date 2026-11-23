@@ -2743,7 +2743,6 @@
         { id: 'tab-admin-ventes', icon: '📋', shortLabel: 'Registre', label: 'Toutes les ventes', desc: 'Valider & gérer les dossiers' },
         { id: 'tab-admin-dashboard', icon: '📈', shortLabel: 'Direction', label: 'Tableau de bord', desc: 'Analytique, paie & courriels' },
         { id: 'tab-admin-finances', icon: '🏦', shortLabel: 'Finances', label: 'Finances Korpo', desc: 'Encaissements, profit réel & Wave' },
-        { id: 'tab-admin-taux', icon: '⚙️', shortLabel: 'Taux', label: 'Grille des taux', desc: 'Commissions & règles clients' },
         { id: 'tab-admin-entreprises', icon: '🏢', shortLabel: 'Partenaires', label: 'Entreprises partenaires', desc: 'Contrats, facturation & marges' },
         { id: 'tab-admin-equipe', icon: '👥', shortLabel: 'Équipe', label: 'Représentants & Équipe', desc: 'Profils, objectifs & paie' }
       ] : [];
@@ -10875,8 +10874,10 @@
       const entOptions = state.entreprises.map(e => `<option value="${e.id}">${esc(e.nom)}</option>`).join('');
 
       populateDrawerSelects();
-      document.getElementById('taux-rep').innerHTML = repOptions;
-      document.getElementById('taux-ent').innerHTML = entOptions;
+      const tauxRepEl = document.getElementById('taux-rep');
+      const tauxEntEl = document.getElementById('taux-ent');
+      if (tauxRepEl) tauxRepEl.innerHTML = repOptions;
+      if (tauxEntEl) tauxEntEl.innerHTML = entOptions;
 
       document.getElementById('admin-filter-rep').innerHTML = `<option value="">Tous les représentants</option>${repOptions}`;
       document.getElementById('admin-filter-ent').innerHTML = `<option value="">Toutes les entreprises</option>${entOptions}`;
@@ -10950,9 +10951,12 @@
     }
 
     function updateTauxClientSelect() {
-      const entId = document.getElementById('taux-ent').value;
+      const entEl = document.getElementById('taux-ent');
+      const cliEl = document.getElementById('taux-client');
+      if (!entEl || !cliEl) return;
+      const entId = entEl.value;
       const list = state.clients.filter(c => c.entreprise_id === entId);
-      document.getElementById('taux-client').innerHTML = `<option value="">— Toute l'entreprise —</option>` +
+      cliEl.innerHTML = `<option value="">— Toute l'entreprise —</option>` +
         list.map(c => `<option value="${c.id}">${esc(c.nom)}</option>`).join('');
     }
 
@@ -12232,26 +12236,10 @@
     });
 
     function renderAdminTaux() {
-      const tbody = document.getElementById('tbody-taux');
-      if (!state.taux.length) {
-        tbody.innerHTML = `<tr><td colspan="6" class="py-10 text-center text-sm text-slate-400">Aucun taux configuré.</td></tr>`;
-        return;
+      // Grille des taux désormais intégrée directement dans chaque fiche Entreprise partenaire
+      if (document.getElementById('admin-entreprises-cards-grid')) {
+        renderAdminEntreprises();
       }
-      tbody.innerHTML = state.taux.map(t => {
-        const rep = state.representants.find(r => r.id === t.representant_id)?.nom || '—';
-        const ent = state.entreprises.find(e => e.id === t.entreprise_id)?.nom || '—';
-        const cli = t.client_id ? (state.clients.find(c => c.id === t.client_id)?.nom || 'Client') : 'Toute l\'entreprise';
-        return `
-          <tr class="hover:bg-slate-50">
-            <td class="py-3.5 px-4 font-semibold text-slate-900">${esc(rep)}</td>
-            <td class="py-3.5 px-4">${entBadge(ent)}</td>
-            <td class="py-3.5 px-4"><span class="px-2.5 py-0.5 text-xs font-semibold rounded-full ${t.client_id ? 'bg-indigo-50 text-indigo-700' : 'bg-slate-100 text-slate-600'}">${esc(cli)}</span></td>
-            <td class="py-3.5 px-4 text-right tabular-nums font-bold">${fmtPct(t.taux)}</td>
-            <td class="py-3.5 px-4 text-right tabular-nums font-bold text-emerald-600">${fmtPct(t.taux_olivier)}</td>
-            <td class="py-3.5 px-4 text-right"><button onclick="deleteTaux('${t.id}')" class="text-xs font-semibold text-rose-600 hover:underline">Supprimer</button></td>
-          </tr>
-        `;
-      }).join('');
     }
 
     function getPartnerProfilesStore() {
@@ -12267,13 +12255,15 @@
       lsSet('korpo_rep_profiles_v1', JSON.stringify(store || {}));
     }
 
-    function getAdminSubTabMonths(periodMode) {
+    function getAdminSubTabMonths(periodMode, specificYm = '') {
       const allMonths = Array.from(new Set([
         currentMonthStr,
         ...Object.keys(kpiStore || {}).filter(isValidYearMonth),
         ...(state.ventes || []).map(v => getSaleStatsMonth(v)).filter(isValidYearMonth)
       ])).sort();
       if (periodMode === 'this_month') return [currentMonthStr];
+      if (periodMode === 'last_month') return [getPreviousYearMonth(currentMonthStr)];
+      if (periodMode === 'specific_month' && isValidYearMonth(specificYm)) return [specificYm];
       if (periodMode === 'this_quarter') {
         const q = getQuarterForMonth(currentMonthStr);
         return allMonths.filter(m => getQuarterForMonth(m) === q);
@@ -12285,6 +12275,52 @@
       return allMonths;
     }
 
+    function getAdminEntPeriodLabel(periodMode, months) {
+      if (periodMode === 'this_month') return formatYearMonthLabelFr(currentMonthStr);
+      if (periodMode === 'last_month') return formatYearMonthLabelFr(getPreviousYearMonth(currentMonthStr));
+      if (periodMode === 'specific_month' && months.length === 1) return formatYearMonthLabelFr(months[0]);
+      if (periodMode === 'this_quarter') return `Trimestre ${getQuarterForMonth(currentMonthStr).replace('-Q', ' T')}`;
+      if (periodMode === 'this_year') return `Année ${currentMonthStr.slice(0, 4)}`;
+      return 'Cumul complet';
+    }
+
+    window.addRateForEntrepriseCard = async (entId) => {
+      if (currentProfile?.role !== 'admin') return;
+      const card = document.getElementById(`partner-card-${entId}`);
+      if (!card) return;
+      const repId = card.querySelector('[data-rate-field="repId"]')?.value || '';
+      const clientId = card.querySelector('[data-rate-field="clientId"]')?.value || null;
+      const tauxRep = parseFloat(card.querySelector('[data-rate-field="tauxRep"]')?.value || '') / 100;
+      const tauxOlivier = parseFloat(card.querySelector('[data-rate-field="tauxOli"]')?.value || '') / 100;
+
+      if (!repId) return toast('Sélectionnez un représentant.', 'error');
+      if (!isFinite(tauxRep) || !isFinite(tauxOlivier) || tauxRep < 0 || tauxOlivier < 0 || tauxRep > 1 || tauxOlivier > 1) {
+        return toast('Entrez des pourcentages valides entre 0 et 100.', 'error');
+      }
+
+      let selQuery = sb.from('taux_commission').select('*').eq('representant_id', repId).eq('entreprise_id', entId);
+      selQuery = clientId ? selQuery.eq('client_id', clientId) : selQuery.is('client_id', null);
+      const { data: backupRows } = await selQuery;
+
+      let delQuery = sb.from('taux_commission').delete().eq('representant_id', repId).eq('entreprise_id', entId);
+      delQuery = clientId ? delQuery.eq('client_id', clientId) : delQuery.is('client_id', null);
+      await delQuery;
+
+      const { error } = await sb.from('taux_commission').insert({
+        representant_id: repId,
+        entreprise_id: entId,
+        client_id: clientId,
+        taux: tauxRep,
+        taux_olivier: tauxOlivier
+      });
+      if (error) {
+        if (backupRows && backupRows.length) await sb.from('taux_commission').insert(backupRows);
+        return toast(`${error.message} (ancien taux conservé)`, 'error');
+      }
+      toast('Taux enregistré sur la fiche partenaire ✓');
+      await loadAllData();
+    };
+
     window.savePartnerProfileDetails = async (entId) => {
       if (currentProfile?.role !== 'admin') return;
       const ent = (state.entreprises || []).find(e => String(e.id) === String(entId));
@@ -12294,6 +12330,7 @@
 
       const contactName = card.querySelector('[data-field="contactName"]')?.value.trim() || '';
       const billingEmail = card.querySelector('[data-field="billingEmail"]')?.value.trim() || '';
+      const phone = card.querySelector('[data-field="phone"]')?.value.trim() || '';
       const notes = card.querySelector('[data-field="notes"]')?.value.trim() || '';
       const waveSeqVal = parseInt(card.querySelector('[data-field="waveSeq"]')?.value || '', 10);
       const monthlyObjVal = parseFloat(card.querySelector('[data-field="monthlyObj"]')?.value || '');
@@ -12302,6 +12339,7 @@
       pStore[ent.nom] = {
         contactName,
         billingEmail,
+        phone,
         notes,
         updatedAt: new Date().toISOString()
       };
@@ -12331,13 +12369,225 @@
     };
 
     window.openRatesForEntreprise = (entId) => {
-      switchTab('tab-admin-taux');
-      const tauxEntSel = document.getElementById('taux-ent');
-      if (tauxEntSel && entId) {
-        tauxEntSel.value = String(entId);
-        if (typeof updateTauxClientSelect === 'function') updateTauxClientSelect();
+      switchTab('tab-admin-entreprises');
+      setTimeout(() => {
+        const card = document.getElementById(`partner-card-${entId}`);
+        if (card) {
+          card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          card.classList.add('ring-2', 'ring-indigo-500');
+          setTimeout(() => card.classList.remove('ring-2', 'ring-indigo-500'), 2000);
+          card.querySelector('[data-rate-field="tauxRep"]')?.focus();
+        }
+      }, 60);
+    };
+
+    window.openPartnerStatementModal = (entId) => {
+      if (currentProfile?.role !== 'admin') return;
+      const ent = (state.entreprises || []).find(e => String(e.id) === String(entId));
+      if (!ent) return;
+
+      const periodMode = document.getElementById('admin-ent-period-filter')?.value || 'this_month';
+      const specificYm = document.getElementById('admin-ent-specific-month')?.value || currentMonthStr;
+      const months = getAdminSubTabMonths(periodMode, specificYm);
+      const periodLabel = getAdminEntPeriodLabel(periodMode, months);
+
+      const pProfiles = getPartnerProfilesStore();
+      const prof = pProfiles[ent.nom] || {};
+      const seqMap = getWaveCompanySeqMap();
+      const wavePrefix = getWaveCompanyPrefix(ent.nom);
+      const waveSeq = seqMap[ent.nom] ?? 100;
+      const nextInvNum = `${wavePrefix}${waveSeq + 1}`;
+      const isToitexSpecial = normalizeMentionStr(ent.nom).includes('toitex');
+
+      // Dossiers confirmés facturables à ce partenaire sur la période choisie
+      const allEntSalesPeriod = (state.ventes || [])
+        .filter(v => String(v.entreprise_id) === String(ent.id) && (!months.length || months.includes(getSaleStatsMonth(v))))
+        .sort((a, b) => String(a.date_vente || '').localeCompare(String(b.date_vente || '')));
+
+      const billableSales = allEntSalesPeriod.filter(v =>
+        v.statut_depot === 'depot_recu' && isSaleBillableByKorpoToPartner(v, ent.nom)
+      );
+      const unconfirmedSales = allEntSalesPeriod.filter(v =>
+        v.statut_depot !== 'depot_recu' && isSaleBillableByKorpoToPartner(v, ent.nom)
+      );
+
+      const totalSalesVolume = billableSales.reduce((s, v) => s + Number(v.valeur || 0), 0);
+      const subtotalHt = Math.round(billableSales.reduce((s, v) => s + computeKorpoGrossRevenueForSale(v), 0) * 100) / 100;
+      const tpsAmt = Math.round(subtotalHt * 0.05 * 100) / 100;
+      const tvqAmt = Math.round(subtotalHt * 0.09975 * 100) / 100;
+      const totalTtc = Math.round((subtotalHt + tpsAmt + tvqAmt) * 100) / 100;
+
+      const rowsHtml = billableSales.length
+        ? billableSales.map((v, idx) => {
+            const cliNom = state.clients.find(c => String(c.id) === String(v.client_id))?.nom || v.client_nom || 'Client';
+            const repNom = state.representants.find(r => String(r.id) === String(v.representant_id))?.nom || resolveSaleArchivedRepName(v) || '—';
+            const noteClean = cleanDisplaySaleNote(v.note || '');
+            const lineHt = computeKorpoGrossRevenueForSale(v);
+            const effPct = Number(v.valeur || 0) > 0 ? ((lineHt / Number(v.valeur || 0)) * 100).toFixed(2) : '0.00';
+            return `
+              <tr class="border-b border-slate-100">
+                <td class="py-2.5 px-2 text-xs text-slate-500 tabular-nums">${idx + 1}</td>
+                <td class="py-2.5 px-2 text-xs text-slate-700 tabular-nums whitespace-nowrap">${esc(v.date_vente || '—')}</td>
+                <td class="py-2.5 px-2 text-xs font-extrabold text-slate-900">${esc(cliNom)}${noteClean ? ` <span class="font-normal text-slate-500">(${esc(noteClean)})</span>` : ''}</td>
+                <td class="py-2.5 px-2 text-xs text-slate-600">${esc(repNom)}</td>
+                <td class="py-2.5 px-2 text-xs text-right tabular-nums text-slate-700">${fmtMoney(v.valeur)}</td>
+                <td class="py-2.5 px-2 text-xs text-right tabular-nums text-slate-500">${effPct} %</td>
+                <td class="py-2.5 px-2 text-xs text-right tabular-nums font-extrabold text-slate-900">${fmtMoney(lineHt)}</td>
+              </tr>
+            `;
+          }).join('')
+        : `<tr><td colspan="7" class="py-6 text-center text-xs text-slate-400">Aucun dossier confirmé facturable sur cette période.</td></tr>`;
+
+      document.getElementById('payslip-print-area').innerHTML = `
+        <div class="flex flex-col sm:flex-row sm:items-start justify-between gap-4 border-b-2 border-slate-900 pb-5">
+          <div>
+            <div class="text-xl font-extrabold text-slate-900 tracking-tight">Korpo Solutions</div>
+            <div class="text-xs font-bold text-indigo-700 mt-0.5">Annexe détaillée de facturation — ${esc(ent.nom)}</div>
+            <div class="text-[11px] text-slate-500 mt-1">Référence facture Wave : <strong>${esc(nextInvNum)}</strong> • Période : <strong>${esc(periodLabel)}</strong></div>
+            ${isToitexSpecial ? '<div class="text-[11px] font-bold text-amber-800 mt-1">★ Modalité Toitex : ventes directes Olivier uniquement (10 %)</div>' : ''}
+          </div>
+          <div class="sm:text-right text-xs space-y-0.5">
+            <div class="text-sm font-extrabold text-slate-900">${esc(ent.nom)}</div>
+            ${prof.contactName ? `<div class="text-slate-700 font-semibold">Attn : ${esc(prof.contactName)}</div>` : ''}
+            ${prof.billingEmail ? `<div class="text-slate-500">${esc(prof.billingEmail)}</div>` : ''}
+            ${prof.phone ? `<div class="text-slate-500">${esc(prof.phone)}</div>` : ''}
+            <div class="text-[11px] text-slate-400 pt-1">Émis le ${localYmd()}</div>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <div class="bg-slate-50 p-3.5 rounded-xl border border-slate-200">
+            <div class="text-[11px] text-slate-500 font-semibold">Dossiers facturés</div>
+            <div class="text-lg font-extrabold text-slate-900 mt-0.5 tabular-nums">${billableSales.length}</div>
+          </div>
+          <div class="bg-slate-50 p-3.5 rounded-xl border border-slate-200">
+            <div class="text-[11px] text-slate-500 font-semibold">Volume des ventes</div>
+            <div class="text-lg font-extrabold text-slate-900 mt-0.5 tabular-nums">${fmtMoney(totalSalesVolume)}</div>
+          </div>
+          <div class="bg-indigo-50 p-3.5 rounded-xl border border-indigo-200">
+            <div class="text-[11px] text-indigo-800 font-semibold">Sous-total HT</div>
+            <div class="text-lg font-extrabold text-indigo-950 mt-0.5 tabular-nums">${fmtMoney(subtotalHt)}</div>
+          </div>
+          <div class="bg-emerald-50 p-3.5 rounded-xl border border-emerald-200">
+            <div class="text-[11px] text-emerald-800 font-semibold">Total avec taxes (TTC)</div>
+            <div class="text-lg font-extrabold text-emerald-700 mt-0.5 tabular-nums">${fmtMoney(totalTtc)}</div>
+          </div>
+        </div>
+
+        <div class="border border-slate-200 rounded-xl overflow-hidden">
+          <table class="w-full text-left border-collapse">
+            <thead>
+              <tr class="bg-slate-900 text-white text-[10.5px] font-bold uppercase tracking-wider">
+                <th class="py-2.5 px-2">#</th>
+                <th class="py-2.5 px-2">Date</th>
+                <th class="py-2.5 px-2">Client / Contrat</th>
+                <th class="py-2.5 px-2">Représentant</th>
+                <th class="py-2.5 px-2 text-right">Vente</th>
+                <th class="py-2.5 px-2 text-right">Taux</th>
+                <th class="py-2.5 px-2 text-right">Commission HT</th>
+              </tr>
+            </thead>
+            <tbody>${rowsHtml}</tbody>
+          </table>
+        </div>
+
+        <div class="flex flex-col sm:flex-row sm:items-start justify-between gap-4 pt-1">
+          <div class="text-xs text-slate-500 space-y-1 max-w-md">
+            ${prof.notes ? `<div><strong>Modalités :</strong> ${esc(prof.notes)}</div>` : ''}
+            ${unconfirmedSales.length > 0 ? `<div class="text-amber-700 font-semibold">Note : ${unconfirmedSales.length} dossier(s) supplémentaire(s) sont encore en attente de dépôt et seront facturés dès confirmation.</div>` : ''}
+          </div>
+          <div class="w-full sm:w-72 bg-slate-50 rounded-xl border border-slate-200 p-3.5 space-y-1.5 text-xs tabular-nums">
+            <div class="flex justify-between text-slate-600">
+              <span>Sous-total commissions (HT) :</span>
+              <strong class="text-slate-900">${fmtMoney(subtotalHt)}</strong>
+            </div>
+            <div class="flex justify-between text-slate-500">
+              <span>TPS (5 %) :</span>
+              <span>${fmtMoney(tpsAmt)}</span>
+            </div>
+            <div class="flex justify-between text-slate-500">
+              <span>TVQ (9,975 %) :</span>
+              <span>${fmtMoney(tvqAmt)}</span>
+            </div>
+            <div class="pt-1.5 border-t border-slate-300 flex justify-between text-sm font-extrabold text-emerald-700">
+              <span>Total à payer (TTC) :</span>
+              <span>${fmtMoney(totalTtc)}</span>
+            </div>
+          </div>
+        </div>
+      `;
+
+      const btnSendSingleEmail = document.getElementById('btn-send-payslip-email');
+      if (btnSendSingleEmail) {
+        btnSendSingleEmail.onclick = () => {
+          const toEmail = prof.billingEmail || '';
+          const subject = `Relevé détaillé commissions Korpo Solutions — ${ent.nom} (${periodLabel}) — Facture ${nextInvNum}`;
+          const linesText = billableSales.map((v, i) => {
+            const cliNom = state.clients.find(c => String(c.id) === String(v.client_id))?.nom || v.client_nom || 'Client';
+            const noteClean = cleanDisplaySaleNote(v.note || '');
+            const lineHt = computeKorpoGrossRevenueForSale(v);
+            return `${i + 1}. ${v.date_vente || ''} | ${cliNom}${noteClean ? ` (${noteClean})` : ''} | Vente: ${fmtMoney(v.valeur)} | Commission HT: ${fmtMoney(lineHt)}`;
+          }).join('
+');
+
+          const bodyText =
+`Bonjour${prof.contactName ? ` ${prof.contactName}` : ''},
+
+Veuillez trouver ci-dessous le détail complet des commissions Korpo Solutions pour ${ent.nom} (${periodLabel}) accompagnant la facture ${nextInvNum} :
+
+${linesText || 'Aucun dossier sur cette période.'}
+
+----------------------------------------
+Sous-total commissions (HT) : ${fmtMoney(subtotalHt)}
+TPS (5 %) : ${fmtMoney(tpsAmt)}
+TVQ (9,975 %) : ${fmtMoney(tvqAmt)}
+TOTAL À PAYER (TTC) : ${fmtMoney(totalTtc)}
+----------------------------------------
+
+Merci et bonne journée,
+Olivier — Korpo Solutions`;
+
+          window.location.href = `mailto:${encodeURIComponent(toEmail)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(bodyText)}`;
+        };
       }
-      document.getElementById('taux-val-rep')?.focus();
+
+      document.getElementById('btn-export-payslip-csv').onclick = () => {
+        const headers = ['No', 'Date', 'Partenaire', 'Periode', 'Client', 'Note_Contrat', 'Representant', 'Valeur_Vente', 'Taux_Pct', 'Commission_HT', 'TPS_5pct', 'TVQ_9_975pct', 'Total_TTC'];
+        const rows = billableSales.map((v, idx) => {
+          const cliNom = state.clients.find(c => String(c.id) === String(v.client_id))?.nom || v.client_nom || 'Client';
+          const repNom = state.representants.find(r => String(r.id) === String(v.representant_id))?.nom || resolveSaleArchivedRepName(v) || '';
+          const noteClean = cleanDisplaySaleNote(v.note || '');
+          const lineHt = computeKorpoGrossRevenueForSale(v);
+          const effPct = Number(v.valeur || 0) > 0 ? ((lineHt / Number(v.valeur || 0)) * 100).toFixed(2) : '0.00';
+          const lTps = Math.round(lineHt * 0.05 * 100) / 100;
+          const lTvq = Math.round(lineHt * 0.09975 * 100) / 100;
+          const lTtc = Math.round((lineHt + lTps + lTvq) * 100) / 100;
+          return [
+            idx + 1,
+            v.date_vente || '',
+            csvCell(ent.nom),
+            csvCell(periodLabel),
+            csvCell(cliNom),
+            csvCell(noteClean),
+            csvCell(repNom),
+            Number(v.valeur || 0).toFixed(2),
+            effPct,
+            lineHt.toFixed(2),
+            lTps.toFixed(2),
+            lTvq.toFixed(2),
+            lTtc.toFixed(2)
+          ].join(',');
+        });
+        rows.push(['', '', csvCell(`TOTAL ${ent.nom}`), csvCell(periodLabel), '', '', '', totalSalesVolume.toFixed(2), '', subtotalHt.toFixed(2), tpsAmt.toFixed(2), tvqAmt.toFixed(2), totalTtc.toFixed(2)].join(','));
+        const blob = new Blob(['﻿' + [headers.join(','), ...rows].join('
+')], { type: 'text/csv;charset=utf-8;' });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = `fiche-facturation-${ent.nom.toLowerCase().replace(/[^a-z0-9]+/g, '-')}-${periodLabel.toLowerCase().replace(/[^a-z0-9]+/g, '-')}.csv`;
+        a.click();
+      };
+
+      document.getElementById('payslip-modal').classList.remove('hidden');
     };
 
     function renderAdminEntreprises() {
@@ -12347,13 +12597,16 @@
       if (currentProfile?.role !== 'admin') return;
 
       const periodMode = document.getElementById('admin-ent-period-filter')?.value || 'this_month';
-      const months = getAdminSubTabMonths(periodMode);
+      const specificYm = document.getElementById('admin-ent-specific-month')?.value || currentMonthStr;
+      const months = getAdminSubTabMonths(periodMode, specificYm);
+      const periodLabel = getAdminEntPeriodLabel(periodMode, months);
       const partnerPaidStore = getFinPartnerPaidStore();
       const pProfiles = getPartnerProfilesStore();
       const seqMap = getWaveCompanySeqMap();
 
       const periodSales = (state.ventes || []).filter(v => !months.length || months.includes(getSaleStatsMonth(v)));
       const activeEnts = (state.entreprises || []).filter(e => !isEntrepriseArchived(e.nom));
+      const activeRepsList = (state.representants || []).filter(r => !isRepArchived(r.nom));
 
       let totVolumeAll = 0;
       let totKorpoGrossAll = 0;
@@ -12402,7 +12655,8 @@
         });
         const topReps = Object.entries(repBreakdown).sort((a, b) => b[1] - a[1]);
 
-        const ratesCount = (state.taux || []).filter(t => String(t.entreprise_id) === String(e.id)).length;
+        const entRates = (state.taux || []).filter(t => String(t.entreprise_id) === String(e.id));
+        const entClients = uniqueClientsByName((state.clients || []).filter(c => String(c.entreprise_id) === String(e.id)));
         const prof = pProfiles[e.nom] || {};
         const wavePrefix = getWaveCompanyPrefix(e.nom);
         const waveSeq = seqMap[e.nom] ?? 100;
@@ -12410,7 +12664,7 @@
         return {
           e, entSales, confirmedSales, pendingSales, volumeSigned, volumeConfirmed, avgTicket,
           korpoGross, korpoNetMargin, partnerPendingToCollect, baseMonthlyObj, periodObj, objPct,
-          topReps, ratesCount, prof, wavePrefix, waveSeq
+          topReps, entRates, entClients, prof, wavePrefix, waveSeq
         };
       }).sort((a, b) => b.volumeSigned - a.volumeSigned);
 
@@ -12421,7 +12675,7 @@
           <div class="text-[11px] text-slate-400">Entreprises représentées par Korpo</div>
         </div>
         <div class="bg-indigo-50/60 p-4 rounded-2xl border border-indigo-200/80 space-y-1">
-          <div class="text-[11px] font-bold text-indigo-800">Volume généré (Période)</div>
+          <div class="text-[11px] font-bold text-indigo-800">Volume généré (${esc(periodLabel)})</div>
           <div class="text-2xl font-extrabold text-indigo-950 tabular-nums">${fmtMoney0(totVolumeAll)}</div>
           <div class="text-[11px] text-indigo-700/80">Total contrats signés chez les partenaires</div>
         </div>
@@ -12442,30 +12696,53 @@
         return;
       }
 
+      const repSelectOpts = activeRepsList.map(r => `<option value="${esc(r.id)}">${esc(r.nom)}</option>`).join('');
+
       gridEl.innerHTML = entCardsData.map(item => {
-        const { e, entSales, confirmedSales, pendingSales, volumeSigned, avgTicket, korpoGross, korpoNetMargin, partnerPendingToCollect, baseMonthlyObj, periodObj, objPct, topReps, ratesCount, prof, wavePrefix, waveSeq } = item;
+        const { e, entSales, confirmedSales, pendingSales, volumeSigned, avgTicket, korpoGross, korpoNetMargin, partnerPendingToCollect, baseMonthlyObj, periodObj, objPct, topReps, entRates, entClients, prof, wavePrefix, waveSeq } = item;
         const isToitexSpecial = normalizeMentionStr(e.nom).includes('toitex');
         const repPillsHtml = topReps.length
           ? topReps.map(([rn, val]) => `<span class="px-2 py-0.5 text-[10.5px] font-bold rounded-lg bg-slate-100 text-slate-700 tabular-nums">${esc(rn)} : ${fmtMoney0(val)}</span>`).join('')
           : '<span class="text-[11px] text-slate-400 italic">Aucune vente sur cette période</span>';
 
+        const clientSelectOpts = `<option value="">Toute l'entreprise</option>` +
+          entClients.map(c => `<option value="${esc(c.id)}">${esc(c.nom)}</option>`).join('');
+
+        const ratesRowsHtml = entRates.length
+          ? entRates.map(tr => {
+              const rNom = state.representants.find(r => String(r.id) === String(tr.representant_id))?.nom || '—';
+              const cNom = tr.client_id ? (state.clients.find(c => String(c.id) === String(tr.client_id))?.nom || 'Client') : 'Général';
+              const totPct = Math.round((Number(tr.taux || 0) + Number(tr.taux_olivier || 0)) * 10000) / 100;
+              return `
+                <tr class="hover:bg-slate-50/80">
+                  <td class="py-1.5 px-2.5 font-bold text-slate-800">${esc(rNom)}</td>
+                  <td class="py-1.5 px-2"><span class="px-1.5 py-0.2 text-[10px] font-semibold rounded ${tr.client_id ? 'bg-indigo-50 text-indigo-700' : 'bg-slate-100 text-slate-600'}">${esc(cNom)}</span></td>
+                  <td class="py-1.5 px-2 text-right font-bold text-slate-800 tabular-nums">${fmtPct(tr.taux)}</td>
+                  <td class="py-1.5 px-2 text-right font-bold text-emerald-700 tabular-nums">${fmtPct(tr.taux_olivier)}</td>
+                  <td class="py-1.5 px-2 text-right font-extrabold text-indigo-700 tabular-nums">${totPct.toFixed(2)} %</td>
+                  <td class="py-1.5 px-2 text-right"><button type="button" onclick="deleteTaux('${esc(tr.id)}')" title="Supprimer ce taux" class="text-[11px] font-bold text-rose-600 hover:underline cursor-pointer">✕</button></td>
+                </tr>
+              `;
+            }).join('')
+          : `<tr><td colspan="6" class="py-3 px-2.5 text-center text-[11px] text-slate-400 italic">Aucun taux configuré pour ${esc(e.nom)}. Ajoutez-en un ci-dessous.</td></tr>`;
+
         return `
           <div id="partner-card-${esc(e.id)}" class="bg-white rounded-3xl border border-slate-200/90 p-5 shadow-xs flex flex-col justify-between space-y-4">
             <div class="space-y-4">
-              <!-- EN-TÊTE FICHE PARTENAIRE -->
-              <div class="flex items-start justify-between gap-2">
+              <!-- EN-TÊTE FICHE PARTENAIRE + BOUTON RELEVÉ / EXPORT FIN DE MOIS -->
+              <div class="flex flex-wrap items-start justify-between gap-2">
                 <div class="space-y-1.5">
                   <div class="flex flex-wrap items-center gap-2">
                     ${entBadge(e.nom)}
                     <button type="button" onclick="toggleEntrepriseDepot('${esc(e.id)}')" title="Cliquer pour basculer l'exigence de dépôt" class="text-[10.5px] font-extrabold px-2.5 py-0.5 rounded-full border transition cursor-pointer ${e.depot_requis === false ? 'bg-slate-100 text-slate-700 border-slate-300 hover:bg-slate-200' : 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100'}">${e.depot_requis === false ? '🚫 Sans dépôt' : '💵 Dépôt exigé'}</button>
-                    ${isToitexSpecial ? '<span class="px-2 py-0.5 text-[10px] font-extrabold rounded-full bg-amber-100 text-amber-900 border border-amber-300" title="Seules les ventes personnelles d’Olivier (10 %) sont facturées par Korpo à Toitex">★ Facturation 10 % Olivier seul</span>' : ''}
+                    ${isToitexSpecial ? '<span class="px-2 py-0.5 text-[10px] font-extrabold rounded-full bg-amber-100 text-amber-900 border border-amber-300" title="Seules les ventes personnelles d’Olivier (10 %) sont facturées par Korpo à Toitex">★ 10 % Olivier seul</span>' : ''}
                   </div>
                   <div class="text-[11px] text-slate-500">
-                    ${ratesCount} règle(s) de taux • Prochaine facture Wave : <strong class="text-slate-800">${esc(wavePrefix)}${waveSeq + 1}</strong>
+                    Prochaine facture Wave : <strong class="text-slate-800">${esc(wavePrefix)}${waveSeq + 1}</strong> • Période : <strong>${esc(periodLabel)}</strong>
                   </div>
                 </div>
-                <div class="flex items-center gap-1.5 shrink-0">
-                  <button type="button" onclick="openRatesForEntreprise('${esc(e.id)}')" class="px-2.5 py-1.5 text-[11px] font-bold bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 rounded-xl transition cursor-pointer">⚙️ Taux</button>
+                <div class="flex flex-wrap items-center gap-1.5 shrink-0">
+                  <button type="button" onclick="openPartnerStatementModal('${esc(e.id)}')" title="Générer, télécharger en PDF/CSV ou envoyer par courriel le relevé détaillé de fin de mois" class="px-3 py-1.5 text-[11px] font-extrabold bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl shadow-2xs transition cursor-pointer">🧾 Relevé / PDF &amp; CSV</button>
                   <button type="button" onclick="deleteEntreprise('${esc(e.id)}')" class="px-2.5 py-1.5 text-[11px] font-bold bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 rounded-xl transition cursor-pointer">Supprimer</button>
                 </div>
               </div>
@@ -12509,6 +12786,36 @@
               <div class="space-y-1">
                 <div class="text-[10.5px] font-extrabold uppercase tracking-wider text-slate-400">Répartition des ventes par représentant</div>
                 <div class="flex flex-wrap gap-1.5">${repPillsHtml}</div>
+              </div>
+
+              <!-- GRILLE DES TAUX DE COMMISSION INTÉGRÉE À LA FICHE -->
+              <div class="pt-3 border-t border-slate-100 space-y-2.5">
+                <div class="flex items-center justify-between">
+                  <span class="text-[10.5px] font-extrabold uppercase tracking-wider text-indigo-900">⚙️ Grille des taux de commission (${entRates.length})</span>
+                  <span class="text-[10px] text-slate-400">Client spécifique prioritaire sur taux général</span>
+                </div>
+                <div class="border border-slate-200/80 rounded-2xl overflow-x-auto">
+                  <table class="w-full text-left border-collapse text-[11px]">
+                    <thead>
+                      <tr class="bg-slate-50 border-b border-slate-200 text-[10px] font-bold uppercase text-slate-500">
+                        <th class="py-2 px-2.5">Rep</th>
+                        <th class="py-2 px-2">Portée</th>
+                        <th class="py-2 px-2 text-right">Rep %</th>
+                        <th class="py-2 px-2 text-right">Olivier %</th>
+                        <th class="py-2 px-2 text-right text-indigo-700">Total</th>
+                        <th class="py-2 px-2 text-right"></th>
+                      </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100">${ratesRowsHtml}</tbody>
+                  </table>
+                </div>
+                <div class="grid grid-cols-2 sm:grid-cols-12 gap-1.5 items-center bg-indigo-50/50 p-2 rounded-xl border border-indigo-200/70">
+                  <select data-rate-field="repId" class="col-span-1 sm:col-span-3 px-2 py-1.5 text-[11px] font-bold bg-white border border-slate-200 rounded-lg">${repSelectOpts}</select>
+                  <select data-rate-field="clientId" class="col-span-1 sm:col-span-3 px-2 py-1.5 text-[11px] bg-white border border-slate-200 rounded-lg">${clientSelectOpts}</select>
+                  <input type="number" step="0.01" min="0" max="100" data-rate-field="tauxRep" placeholder="Rep %" class="col-span-1 sm:col-span-2 px-2 py-1.5 text-[11px] font-bold bg-white border border-slate-200 rounded-lg tabular-nums" />
+                  <input type="number" step="0.01" min="0" max="100" data-rate-field="tauxOli" placeholder="Oli %" class="col-span-1 sm:col-span-2 px-2 py-1.5 text-[11px] font-bold bg-white border border-slate-200 rounded-lg tabular-nums" />
+                  <button type="button" onclick="addRateForEntrepriseCard('${esc(e.id)}')" class="col-span-2 sm:col-span-2 py-1.5 px-2 bg-indigo-600 hover:bg-indigo-700 text-white text-[11px] font-extrabold rounded-lg transition cursor-pointer">+ Taux</button>
+                </div>
               </div>
 
               <!-- FORMULAIRE ÉDITABLE : CONTACT, FACTURATION WAVE & OBJECTIF -->
@@ -16610,13 +16917,13 @@ serve(async (req) => {
     });
 
     window.openRatesForRep = (repId) => {
-      switchTab('tab-admin-taux');
-      const tauxRepSel = document.getElementById('taux-rep');
-      if (tauxRepSel && repId) {
-        tauxRepSel.value = String(repId);
-        if (typeof updateTauxClientSelect === 'function') updateTauxClientSelect();
+      switchTab('tab-admin-entreprises');
+      if (repId) {
+        document.querySelectorAll('#admin-entreprises-cards-grid [data-rate-field="repId"]').forEach(sel => {
+          sel.value = String(repId);
+        });
       }
-      document.getElementById('taux-val-rep')?.focus();
+      toast('Sélectionnez la compagnie partenaire pour ajuster ses taux ✓');
     };
 
     document.getElementById('form-new-rep')?.addEventListener('submit', async (e) => {
