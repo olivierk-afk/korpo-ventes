@@ -14224,9 +14224,7 @@
       if (!file) return;
       try {
         const text = await file.text();
-        const lines = text.split(/
-?
-/).filter(l => l.trim());
+        const lines = text.split(/\r?\n/).filter(l => l.trim());
         if (lines.length < 2) return toast('Fichier CSV Wave vide.', 'error');
         const sep = lines[0].includes(';') ? ';' : ',';
         const headers = parseCsvLine(lines[0], sep).map(h => h.toLowerCase().trim());
