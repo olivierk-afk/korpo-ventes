@@ -59,6 +59,8 @@
       'korpo_fin_partner_paid_v1':      { store: 'fin_partner_paid',     shared: true,  type: 'map' },
       'korpo_archived_reps_v1':         { store: 'archived_reps',        shared: true,  type: 'map' },
       'korpo_archived_entreprises_v1':  { store: 'archived_entreprises', shared: true,  type: 'map' },
+      'korpo_partner_profiles_v1':      { store: 'partner_profiles',     shared: true,  type: 'map' },
+      'korpo_rep_profiles_v1':          { store: 'rep_profiles',         shared: true,  type: 'map' },
       'korpo_personal_monthly_targets_v1': { store: 'personal_monthly_targets', shared: false, type: 'map' },
       'korpo_personal_comm_targets_v1':    { store: 'personal_comm_targets',    shared: false, type: 'map' },
       'korpo_personal_bonus_pct_v1':       { store: 'personal_bonus_pct',       shared: false, type: 'map' },
@@ -2742,7 +2744,8 @@
         { id: 'tab-admin-dashboard', icon: '📈', shortLabel: 'Direction', label: 'Tableau de bord', desc: 'Analytique, paie & courriels' },
         { id: 'tab-admin-finances', icon: '🏦', shortLabel: 'Finances', label: 'Finances Korpo', desc: 'Encaissements, profit réel & Wave' },
         { id: 'tab-admin-taux', icon: '⚙️', shortLabel: 'Taux', label: 'Grille des taux', desc: 'Commissions & règles clients' },
-        { id: 'tab-admin-equipe', icon: '🏢', shortLabel: 'Équipe', label: 'Entreprises & Équipe', desc: 'Objectifs, reps & partenaires' }
+        { id: 'tab-admin-entreprises', icon: '🏢', shortLabel: 'Partenaires', label: 'Entreprises partenaires', desc: 'Contrats, facturation & marges' },
+        { id: 'tab-admin-equipe', icon: '👥', shortLabel: 'Équipe', label: 'Représentants & Équipe', desc: 'Profils, objectifs & paie' }
       ] : [];
 
       // 1. Barre basse mobile ergonomique (4 boutons pour rep, 5 boutons avec tiroir Admin pour admin)
@@ -2918,6 +2921,9 @@
       if (tabId === 'tab-kpi') renderKpiDashboard();
       if (tabId === 'tab-route') window.KorpoRoute?.render();
       if (tabId === 'tab-admin-finances') renderAdminFinances();
+      if (tabId === 'tab-admin-entreprises') renderAdminEntreprises();
+      if (tabId === 'tab-admin-equipe') renderAdminEntreprises();
+        renderAdminEquipe();
     }
 
     function setChatBackgroundScrollLocked(locked) {
@@ -12248,41 +12254,560 @@
       }).join('');
     }
 
+    function getPartnerProfilesStore() {
+      return lsGetJson('korpo_partner_profiles_v1', '{}');
+    }
+    function savePartnerProfilesStore(store) {
+      lsSet('korpo_partner_profiles_v1', JSON.stringify(store || {}));
+    }
+    function getRepProfilesStore() {
+      return lsGetJson('korpo_rep_profiles_v1', '{}');
+    }
+    function saveRepProfilesStore(store) {
+      lsSet('korpo_rep_profiles_v1', JSON.stringify(store || {}));
+    }
+
+    function getAdminSubTabMonths(periodMode) {
+      const allMonths = Array.from(new Set([
+        currentMonthStr,
+        ...Object.keys(kpiStore || {}).filter(isValidYearMonth),
+        ...(state.ventes || []).map(v => getSaleStatsMonth(v)).filter(isValidYearMonth)
+      ])).sort();
+      if (periodMode === 'this_month') return [currentMonthStr];
+      if (periodMode === 'this_quarter') {
+        const q = getQuarterForMonth(currentMonthStr);
+        return allMonths.filter(m => getQuarterForMonth(m) === q);
+      }
+      if (periodMode === 'this_year') {
+        const y = currentMonthStr.slice(0, 4);
+        return allMonths.filter(m => m.startsWith(y));
+      }
+      return allMonths;
+    }
+
+    window.savePartnerProfileDetails = async (entId) => {
+      if (currentProfile?.role !== 'admin') return;
+      const ent = (state.entreprises || []).find(e => String(e.id) === String(entId));
+      if (!ent) return;
+      const card = document.getElementById(`partner-card-${entId}`);
+      if (!card) return;
+
+      const contactName = card.querySelector('[data-field="contactName"]')?.value.trim() || '';
+      const billingEmail = card.querySelector('[data-field="billingEmail"]')?.value.trim() || '';
+      const notes = card.querySelector('[data-field="notes"]')?.value.trim() || '';
+      const waveSeqVal = parseInt(card.querySelector('[data-field="waveSeq"]')?.value || '', 10);
+      const monthlyObjVal = parseFloat(card.querySelector('[data-field="monthlyObj"]')?.value || '');
+
+      const pStore = getPartnerProfilesStore();
+      pStore[ent.nom] = {
+        contactName,
+        billingEmail,
+        notes,
+        updatedAt: new Date().toISOString()
+      };
+      savePartnerProfilesStore(pStore);
+
+      if (!isNaN(waveSeqVal) && waveSeqVal >= 0) {
+        const seqMap = getWaveCompanySeqMap();
+        seqMap[ent.nom] = waveSeqVal;
+        await saveWaveCompanySeqMap(seqMap);
+      }
+
+      if (!isNaN(monthlyObjVal) && monthlyObjVal >= 0) {
+        if (monthlyObjVal > 0) {
+          await saveCompanyTargetMeta(ent.nom, 'ALL', {
+            periodicity: 'monthly',
+            monthlyAmount: monthlyObjVal,
+            annualAmount: monthlyObjVal * 12
+          }, 'ALL');
+        } else {
+          await removeCompanyTargetMeta(`${ent.nom}__ALL`);
+        }
+      }
+
+      renderAdminEntreprises();
+      renderKpiDashboard();
+      toast(`Fiche partenaire enregistrée pour ${ent.nom} ✓`);
+    };
+
+    window.openRatesForEntreprise = (entId) => {
+      switchTab('tab-admin-taux');
+      const tauxEntSel = document.getElementById('taux-ent');
+      if (tauxEntSel && entId) {
+        tauxEntSel.value = String(entId);
+        if (typeof updateTauxClientSelect === 'function') updateTauxClientSelect();
+      }
+      document.getElementById('taux-val-rep')?.focus();
+    };
+
+    function renderAdminEntreprises() {
+      const summaryEl = document.getElementById('admin-ent-summary-cards');
+      const gridEl = document.getElementById('admin-entreprises-cards-grid');
+      if (!summaryEl || !gridEl) return;
+      if (currentProfile?.role !== 'admin') return;
+
+      const periodMode = document.getElementById('admin-ent-period-filter')?.value || 'this_month';
+      const months = getAdminSubTabMonths(periodMode);
+      const partnerPaidStore = getFinPartnerPaidStore();
+      const pProfiles = getPartnerProfilesStore();
+      const seqMap = getWaveCompanySeqMap();
+
+      const periodSales = (state.ventes || []).filter(v => !months.length || months.includes(getSaleStatsMonth(v)));
+      const activeEnts = (state.entreprises || []).filter(e => !isEntrepriseArchived(e.nom));
+
+      let totVolumeAll = 0;
+      let totKorpoGrossAll = 0;
+      let totKorpoNetAll = 0;
+      let totUnbilledOrPendingPartnerAll = 0;
+
+      const entCardsData = activeEnts.map(e => {
+        const entSales = periodSales.filter(v => String(v.entreprise_id) === String(e.id));
+        const confirmedSales = entSales.filter(v => v.statut_depot === 'depot_recu');
+        const pendingSales = entSales.filter(v => v.statut_depot !== 'depot_recu');
+
+        const volumeSigned = entSales.reduce((s, v) => s + Number(v.valeur || 0), 0);
+        const volumeConfirmed = confirmedSales.reduce((s, v) => s + Number(v.valeur || 0), 0);
+        const avgTicket = entSales.length > 0 ? Math.round(volumeSigned / entSales.length) : 0;
+
+        // Revenu facturable par Korpo au partenaire (respecte la règle Toitex 10% Olivier uniquement)
+        const korpoGross = confirmedSales.reduce((s, v) => s + computeKorpoGrossRevenueForSale(v), 0);
+        const repCommBillable = confirmedSales.reduce((s, v) => s + (isSaleBillableByKorpoToPartner(v, e.nom) ? Number(v.commission_rep || 0) : 0), 0);
+        const korpoNetMargin = Math.round((korpoGross - repCommBillable) * 100) / 100;
+
+        let partnerPendingToCollect = 0;
+        confirmedSales.forEach(v => {
+          if (!isSaleBillableByKorpoToPartner(v, e.nom)) return;
+          const ym = getSaleStatsMonth(v);
+          const isPaid = Boolean(partnerPaidStore[getPartnerBatchKey(e.nom, ym)]?.paid);
+          if (!isPaid) partnerPendingToCollect += computeKorpoGrossRevenueForSale(v);
+        });
+
+        totVolumeAll += volumeSigned;
+        totKorpoGrossAll += korpoGross;
+        totKorpoNetAll += korpoNetMargin;
+        totUnbilledOrPendingPartnerAll += partnerPendingToCollect;
+
+        const baseMonthlyObj = Number(
+          companyTargetsMetaStore[`${e.nom}__ALL`]?.monthlyAmount ||
+          kpiStore[currentMonthStr]?.entreprises?.[e.nom]?.total?.objectif ||
+          0
+        );
+        const periodObj = periodMode === 'all' ? 0 : (baseMonthlyObj * Math.max(1, months.length));
+        const objPct = periodObj > 0 ? Math.round((volumeSigned / periodObj) * 100) : 0;
+
+        const repBreakdown = {};
+        entSales.forEach(v => {
+          const rNom = state.representants.find(r => String(r.id) === String(v.representant_id))?.nom || resolveSaleArchivedRepName(v) || 'Autre';
+          repBreakdown[rNom] = (repBreakdown[rNom] || 0) + Number(v.valeur || 0);
+        });
+        const topReps = Object.entries(repBreakdown).sort((a, b) => b[1] - a[1]);
+
+        const ratesCount = (state.taux || []).filter(t => String(t.entreprise_id) === String(e.id)).length;
+        const prof = pProfiles[e.nom] || {};
+        const wavePrefix = getWaveCompanyPrefix(e.nom);
+        const waveSeq = seqMap[e.nom] ?? 100;
+
+        return {
+          e, entSales, confirmedSales, pendingSales, volumeSigned, volumeConfirmed, avgTicket,
+          korpoGross, korpoNetMargin, partnerPendingToCollect, baseMonthlyObj, periodObj, objPct,
+          topReps, ratesCount, prof, wavePrefix, waveSeq
+        };
+      }).sort((a, b) => b.volumeSigned - a.volumeSigned);
+
+      summaryEl.innerHTML = `
+        <div class="bg-slate-50/90 p-4 rounded-2xl border border-slate-200/80 space-y-1">
+          <div class="text-[11px] font-bold text-slate-500">Partenaires actifs</div>
+          <div class="text-2xl font-extrabold text-slate-900 tabular-nums">${activeEnts.length}</div>
+          <div class="text-[11px] text-slate-400">Entreprises représentées par Korpo</div>
+        </div>
+        <div class="bg-indigo-50/60 p-4 rounded-2xl border border-indigo-200/80 space-y-1">
+          <div class="text-[11px] font-bold text-indigo-800">Volume généré (Période)</div>
+          <div class="text-2xl font-extrabold text-indigo-950 tabular-nums">${fmtMoney0(totVolumeAll)}</div>
+          <div class="text-[11px] text-indigo-700/80">Total contrats signés chez les partenaires</div>
+        </div>
+        <div class="bg-emerald-50/60 p-4 rounded-2xl border border-emerald-200/80 space-y-1">
+          <div class="text-[11px] font-bold text-emerald-800">Marge nette Korpo conservée</div>
+          <div class="text-2xl font-extrabold text-emerald-700 tabular-nums">${fmtMoney(totKorpoNetAll)}</div>
+          <div class="text-[11px] text-emerald-800/80 tabular-nums">Sur ${fmtMoney(totKorpoGrossAll)} facturable HT</div>
+        </div>
+        <div class="bg-amber-50/70 p-4 rounded-2xl border border-amber-200/80 space-y-1">
+          <div class="text-[11px] font-bold text-amber-900">À encaisser des partenaires</div>
+          <div class="text-2xl font-extrabold text-amber-700 tabular-nums">${fmtMoney(totUnbilledOrPendingPartnerAll)}</div>
+          <div class="text-[11px] text-amber-800/80">En attente de règlement Wave (HT)</div>
+        </div>
+      `;
+
+      if (!entCardsData.length) {
+        gridEl.innerHTML = `<div class="col-span-full bg-white rounded-3xl border border-slate-200 p-8 text-center text-xs text-slate-400">Aucune entreprise partenaire active. Utilisez le formulaire ci-dessus pour en ajouter une.</div>`;
+        return;
+      }
+
+      gridEl.innerHTML = entCardsData.map(item => {
+        const { e, entSales, confirmedSales, pendingSales, volumeSigned, avgTicket, korpoGross, korpoNetMargin, partnerPendingToCollect, baseMonthlyObj, periodObj, objPct, topReps, ratesCount, prof, wavePrefix, waveSeq } = item;
+        const isToitexSpecial = normalizeMentionStr(e.nom).includes('toitex');
+        const repPillsHtml = topReps.length
+          ? topReps.map(([rn, val]) => `<span class="px-2 py-0.5 text-[10.5px] font-bold rounded-lg bg-slate-100 text-slate-700 tabular-nums">${esc(rn)} : ${fmtMoney0(val)}</span>`).join('')
+          : '<span class="text-[11px] text-slate-400 italic">Aucune vente sur cette période</span>';
+
+        return `
+          <div id="partner-card-${esc(e.id)}" class="bg-white rounded-3xl border border-slate-200/90 p-5 shadow-xs flex flex-col justify-between space-y-4">
+            <div class="space-y-4">
+              <!-- EN-TÊTE FICHE PARTENAIRE -->
+              <div class="flex items-start justify-between gap-2">
+                <div class="space-y-1.5">
+                  <div class="flex flex-wrap items-center gap-2">
+                    ${entBadge(e.nom)}
+                    <button type="button" onclick="toggleEntrepriseDepot('${esc(e.id)}')" title="Cliquer pour basculer l'exigence de dépôt" class="text-[10.5px] font-extrabold px-2.5 py-0.5 rounded-full border transition cursor-pointer ${e.depot_requis === false ? 'bg-slate-100 text-slate-700 border-slate-300 hover:bg-slate-200' : 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100'}">${e.depot_requis === false ? '🚫 Sans dépôt' : '💵 Dépôt exigé'}</button>
+                    ${isToitexSpecial ? '<span class="px-2 py-0.5 text-[10px] font-extrabold rounded-full bg-amber-100 text-amber-900 border border-amber-300" title="Seules les ventes personnelles d’Olivier (10 %) sont facturées par Korpo à Toitex">★ Facturation 10 % Olivier seul</span>' : ''}
+                  </div>
+                  <div class="text-[11px] text-slate-500">
+                    ${ratesCount} règle(s) de taux • Prochaine facture Wave : <strong class="text-slate-800">${esc(wavePrefix)}${waveSeq + 1}</strong>
+                  </div>
+                </div>
+                <div class="flex items-center gap-1.5 shrink-0">
+                  <button type="button" onclick="openRatesForEntreprise('${esc(e.id)}')" class="px-2.5 py-1.5 text-[11px] font-bold bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 rounded-xl transition cursor-pointer">⚙️ Taux</button>
+                  <button type="button" onclick="deleteEntreprise('${esc(e.id)}')" class="px-2.5 py-1.5 text-[11px] font-bold bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 rounded-xl transition cursor-pointer">Supprimer</button>
+                </div>
+              </div>
+
+              <!-- 4 INDICATEURS CHIFFRÉS DU PARTENAIRE -->
+              <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 bg-slate-50/90 rounded-2xl border border-slate-200/70 p-3 text-xs tabular-nums">
+                <div>
+                  <span class="text-[10px] font-bold text-slate-400 block">Volume signé</span>
+                  <strong class="text-sm font-extrabold text-slate-900">${fmtMoney0(volumeSigned)}</strong>
+                </div>
+                <div>
+                  <span class="text-[10px] font-bold text-slate-400 block">Dossiers</span>
+                  <strong class="text-sm font-extrabold text-slate-900">${entSales.length}</strong>
+                  <span class="text-[10px] text-emerald-700 block">${confirmedSales.length} conf. / ${pendingSales.length} att.</span>
+                </div>
+                <div>
+                  <span class="text-[10px] font-bold text-slate-400 block">Panier moyen</span>
+                  <strong class="text-sm font-extrabold text-slate-900">${fmtMoney0(avgTicket)}</strong>
+                </div>
+                <div>
+                  <span class="text-[10px] font-bold text-emerald-700 block">Marge nette Korpo</span>
+                  <strong class="text-sm font-extrabold text-emerald-700">${fmtMoney(korpoNetMargin)}</strong>
+                  <span class="text-[10px] text-slate-400 block">Fact. ${fmtMoney0(korpoGross)}</span>
+                </div>
+              </div>
+
+              <!-- BARRE DE PROGRESSION OBJECTIF -->
+              ${periodObj > 0 ? `
+                <div class="space-y-1">
+                  <div class="flex items-center justify-between text-[11px] font-bold tabular-nums">
+                    <span class="text-slate-600">Objectif période : ${fmtMoney0(volumeSigned)} / ${fmtMoney0(periodObj)}</span>
+                    <span class="${objPct >= 100 ? 'text-emerald-600' : 'text-indigo-700'} font-extrabold">${objPct} %</span>
+                  </div>
+                  <div class="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
+                    <div class="h-full ${progressColor(objPct)} rounded-full" style="width: ${Math.min(100, objPct)}%"></div>
+                  </div>
+                </div>
+              ` : ''}
+
+              <!-- RÉPARTITION PAR REPRÉSENTANT -->
+              <div class="space-y-1">
+                <div class="text-[10.5px] font-extrabold uppercase tracking-wider text-slate-400">Répartition des ventes par représentant</div>
+                <div class="flex flex-wrap gap-1.5">${repPillsHtml}</div>
+              </div>
+
+              <!-- FORMULAIRE ÉDITABLE : CONTACT, FACTURATION WAVE & OBJECTIF -->
+              <div class="pt-3 border-t border-slate-100 grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-xs">
+                <div>
+                  <label class="block text-[10px] font-bold text-slate-500 mb-1">Personne-contact</label>
+                  <input type="text" data-field="contactName" value="${esc(prof.contactName || '')}" placeholder="Nom du contact..." class="w-full px-3 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-xl" />
+                </div>
+                <div>
+                  <label class="block text-[10px] font-bold text-slate-500 mb-1">Courriel de facturation</label>
+                  <input type="email" data-field="billingEmail" value="${esc(prof.billingEmail || '')}" placeholder="factures@partenaire.ca" class="w-full px-3 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-xl" />
+                </div>
+                <div>
+                  <label class="block text-[10px] font-bold text-slate-500 mb-1">Objectif mensuel ($ CAD)</label>
+                  <input type="number" step="1000" min="0" data-field="monthlyObj" value="${baseMonthlyObj || ''}" placeholder="0" class="w-full px-3 py-1.5 text-xs font-bold bg-slate-50 border border-slate-200 rounded-xl tabular-nums" />
+                </div>
+                <div>
+                  <label class="block text-[10px] font-bold text-slate-500 mb-1">Dernier n° facture Wave (${esc(wavePrefix)}-...)</label>
+                  <input type="number" min="0" data-field="waveSeq" value="${waveSeq}" class="w-full px-3 py-1.5 text-xs font-bold bg-slate-50 border border-slate-200 rounded-xl tabular-nums" />
+                </div>
+                <div class="sm:col-span-2">
+                  <label class="block text-[10px] font-bold text-slate-500 mb-1">Notes &amp; modalités de facturation</label>
+                  <input type="text" data-field="notes" value="${esc(prof.notes || '')}" placeholder="Ex. Paiement net 15 jours, modalités particulières..." class="w-full px-3 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-xl" />
+                </div>
+              </div>
+            </div>
+
+            <div class="pt-3 border-t border-slate-100 flex items-center justify-between gap-2">
+              <span class="text-[11px] font-semibold ${partnerPendingToCollect > 0 ? 'text-amber-700' : 'text-emerald-700'} tabular-nums">
+                ${partnerPendingToCollect > 0 ? `⏳ ${fmtMoney(partnerPendingToCollect)} HT à encaisser` : '✓ Aucun solde en attente'}
+              </span>
+              <button type="button" onclick="savePartnerProfileDetails('${esc(e.id)}')" class="px-4 py-2 text-xs font-extrabold text-white bg-slate-900 hover:bg-indigo-600 rounded-xl shadow-2xs transition cursor-pointer">
+                ✓ Enregistrer la fiche
+              </button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    window.saveRepProfileDetails = async (repId) => {
+      if (currentProfile?.role !== 'admin') return;
+      const rep = (state.representants || []).find(r => String(r.id) === String(repId));
+      if (!rep) return;
+      const card = document.getElementById(`rep-profile-card-${repId}`);
+      if (!card) return;
+
+      const phone = card.querySelector('[data-field="phone"]')?.value.trim() || '';
+      const notes = card.querySelector('[data-field="notes"]')?.value.trim() || '';
+      const commGoal = parseFloat(card.querySelector('[data-field="commGoal"]')?.value || '');
+      const salesGoal = parseFloat(card.querySelector('[data-field="salesGoal"]')?.value || '');
+      const bonusPctInput = parseFloat(card.querySelector('[data-field="bonusPct"]')?.value || '');
+
+      const rStore = getRepProfilesStore();
+      rStore[String(rep.id)] = {
+        phone,
+        notes,
+        updatedAt: new Date().toISOString()
+      };
+      saveRepProfilesStore(rStore);
+
+      const safeComm = isNaN(commGoal) ? getCommissionTargetForRep(rep.nom, currentMonthStr) : Math.max(0, commGoal);
+      const safeSales = isNaN(salesGoal) ? getSalesTargetForRep(rep.nom, currentMonthStr) : Math.max(0, salesGoal);
+      const safeBonusDec = isNaN(bonusPctInput) ? getBonusPctForRep(rep.nom, currentMonthStr) : Math.max(0, bonusPctInput / 100);
+
+      await saveRepTargetsToStorageAndCloud(rep.nom, currentMonthStr, safeSales, safeComm, true, safeBonusDec);
+
+      const existingOv = repTargetsOverrides[`ALL_${rep.nom}`] || {};
+      repTargetsOverrides[`ALL_${rep.nom}`] = {
+        ...existingOv,
+        dollars: safeSales,
+        comm: safeComm,
+        bonusPct: safeBonusDec,
+        booke: existingOv.booke ?? 80,
+        rdv: existingOv.rdv ?? 60,
+        ots: existingOv.ots ?? 10,
+        suivi: existingOv.suivi ?? 20,
+        close: existingOv.close ?? 35
+      };
+      lsSet('korpo_rep_targets_v1', JSON.stringify(repTargetsOverrides));
+
+      rebuildKpiStore();
+      renderAdminEquipe();
+      renderKpiDashboard();
+      renderMesVentes();
+      toast(`Fiche et objectifs enregistrés pour ${rep.nom} ✓`);
+    };
+
     function renderAdminEquipe() {
       syncRedPhoneUI();
       renderEquipeTargetsTable();
-      document.getElementById('list-entreprises').innerHTML = state.entreprises.map(e => `
-        <li class="px-4 py-3 flex items-center justify-between text-sm bg-white">
-          ${entBadge(e.nom)}
-          <div class="flex items-center gap-3">
-            <button type="button" onclick="toggleEntrepriseDepot('${e.id}')" title="Cliquer pour changer (n'affecte pas les ventes déjà enregistrées)" class="text-[11px] font-bold px-2.5 py-0.5 rounded-full border transition cursor-pointer ${e.depot_requis === false ? 'bg-slate-100 text-slate-700 border-slate-300 hover:bg-slate-200' : 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100'}">${e.depot_requis === false ? '🚫 Sans dépôt' : '💵 Dépôt exigé'}</button>
-            <button onclick="deleteEntreprise('${e.id}')" class="text-xs font-semibold text-rose-600 hover:underline">Supprimer</button>
-          </div>
-        </li>
-      `).join('');
 
-      document.getElementById('list-representants').innerHTML = state.representants.map(r => {
-        const ratesCount = (state.taux || []).filter(t => String(t.representant_id) === String(r.id)).length;
-        const rateStatusBadge = r.role === 'admin'
-          ? ''
-          : (ratesCount > 0
-            ? `<span class="ml-1.5 text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">${ratesCount} taux actif(s)</span>`
-            : `<button type="button" onclick="openRatesForRep('${r.id}')" class="ml-1.5 text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-amber-100 text-amber-900 border border-amber-300 hover:bg-amber-200 transition cursor-pointer">⚠️ Configurer taux →</button>`);
-        return `
-        <li class="px-4 py-3 flex items-center justify-between gap-2 text-sm bg-white">
-          <div class="min-w-0">
-            <div class="font-bold text-slate-900 flex flex-wrap items-center">
-              <span>${esc(r.nom)}</span>
-              <span class="ml-1.5 text-[11px] font-semibold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">${esc(r.role)}</span>
-              ${rateStatusBadge}
-            </div>
-            <div class="text-xs text-slate-500 truncate">${esc(r.courriel)}</div>
-          </div>
-          <div class="shrink-0">
-            ${r.id !== currentProfile.id ? `<button onclick="deleteRepresentant('${r.id}')" class="text-xs font-semibold text-rose-600 hover:underline">Supprimer</button>` : '<span class="text-xs font-medium text-emerald-600">Session active</span>'}
-          </div>
-        </li>
+      const summaryEl = document.getElementById('admin-rep-summary-cards');
+      const gridEl = document.getElementById('admin-reps-cards-grid');
+      if (!summaryEl || !gridEl) return;
+      if (currentProfile?.role !== 'admin') return;
+
+      const periodMode = document.getElementById('admin-rep-period-filter')?.value || 'this_month';
+      const months = getAdminSubTabMonths(periodMode);
+      const rProfiles = getRepProfilesStore();
+      const periodSales = (state.ventes || []).filter(v => !months.length || months.includes(getSaleStatsMonth(v)));
+      const activeReps = (state.representants || []).filter(r => !isRepArchived(r.nom));
+
+      let totTeamSales = 0;
+      let totCommToPay = 0;
+      let totCommPaid = 0;
+      let unlockedBonusCount = 0;
+
+      const repCardsData = activeReps.map(r => {
+        const isAdminRep = r.role === 'admin';
+        const repSales = periodSales.filter(v => isAdminRep ? true : String(v.representant_id) === String(r.id));
+        const directSales = periodSales.filter(v => String(v.representant_id) === String(r.id));
+        const confirmedSales = repSales.filter(v => v.statut_depot === 'depot_recu');
+        const pendingDepositSales = directSales.filter(v => v.statut_depot !== 'depot_recu');
+
+        const volumeSigned = directSales.reduce((s, v) => s + Number(v.valeur || 0), 0);
+        const commEarnedTotal = repSales.reduce((s, v) => s + Number(isAdminRep ? v.commission_olivier : v.commission_rep), 0);
+        const commPaid = repSales.filter(v => v.statut_paiement === 'paye').reduce((s, v) => s + Number(isAdminRep ? v.commission_olivier : v.commission_rep), 0);
+        const commUnpaid = Math.max(0, Math.round((commEarnedTotal - commPaid) * 100) / 100);
+
+        totTeamSales += volumeSigned;
+        if (!isAdminRep) {
+          totCommToPay += commUnpaid;
+          totCommPaid += commPaid;
+        }
+
+        let sumRdv = 0;
+        let sumBooke = 0;
+        let sumVentesCount = 0;
+        months.forEach(ym => {
+          const rKpi = kpiStore[ym]?.reps?.[r.nom];
+          if (rKpi) {
+            sumBooke += Number(rKpi['Booké']?.cumul || 0);
+            sumRdv += Number(rKpi['RDV Réalisé']?.cumul || 0);
+            sumVentesCount += Number(rKpi['Ventes OTS']?.cumul || 0) + Number(rKpi['Ventes SUIVI']?.cumul || 0);
+          }
+        });
+        const closeRate = sumRdv > 0 ? ((sumVentesCount / sumRdv) * 100) : 0;
+
+        const monthlyCommGoal = getCommissionTargetForRep(r.nom, currentMonthStr);
+        const monthlySalesGoal = getSalesTargetForRep(r.nom, currentMonthStr);
+        const bonusDec = getBonusPctForRep(r.nom, currentMonthStr);
+        const bonusPctVal = Math.round(bonusDec * 10000) / 100;
+
+        const periodSalesGoal = periodMode === 'all' ? 0 : (monthlySalesGoal * Math.max(1, months.length));
+        const goalPct = periodSalesGoal > 0 ? Math.round((volumeSigned / periodSalesGoal) * 100) : 0;
+        const isBonusUnlocked = !isAdminRep && periodSalesGoal > 0 && volumeSigned >= periodSalesGoal;
+        if (isBonusUnlocked) unlockedBonusCount++;
+
+        const ratesList = (state.taux || []).filter(t => String(t.representant_id) === String(r.id) && !t.client_id);
+        const prof = rProfiles[String(r.id)] || {};
+
+        return {
+          r, isAdminRep, directSales, confirmedSales, pendingDepositSales,
+          volumeSigned, commEarnedTotal, commPaid, commUnpaid,
+          sumRdv, sumBooke, closeRate,
+          monthlyCommGoal, monthlySalesGoal, bonusPctVal, periodSalesGoal, goalPct, isBonusUnlocked,
+          ratesList, prof
+        };
+      }).sort((a, b) => b.volumeSigned - a.volumeSigned);
+
+      summaryEl.innerHTML = `
+        <div class="bg-slate-50/90 p-4 rounded-2xl border border-slate-200/80 space-y-1">
+          <div class="text-[11px] font-bold text-slate-500">Membres actifs</div>
+          <div class="text-2xl font-extrabold text-slate-900 tabular-nums">${activeReps.length}</div>
+          <div class="text-[11px] text-slate-400">${activeReps.filter(r => r.role !== 'admin').length} représentant(s) • ${activeReps.filter(r => r.role === 'admin').length} admin</div>
+        </div>
+        <div class="bg-indigo-50/60 p-4 rounded-2xl border border-indigo-200/80 space-y-1">
+          <div class="text-[11px] font-bold text-indigo-800">Volume équipe (Période)</div>
+          <div class="text-2xl font-extrabold text-indigo-950 tabular-nums">${fmtMoney0(totTeamSales)}</div>
+          <div class="text-[11px] text-indigo-700/80">Total signé par l'équipe</div>
+        </div>
+        <div class="bg-amber-50/70 p-4 rounded-2xl border border-amber-200/80 space-y-1">
+          <div class="text-[11px] font-bold text-amber-900">Commissions reps à verser</div>
+          <div class="text-2xl font-extrabold text-amber-700 tabular-nums">${fmtMoney(totCommToPay)}</div>
+          <div class="text-[11px] text-amber-800/80 tabular-nums">Déjà versé : ${fmtMoney(totCommPaid)}</div>
+        </div>
+        <div class="bg-emerald-50/60 p-4 rounded-2xl border border-emerald-200/80 space-y-1">
+          <div class="text-[11px] font-bold text-emerald-800">Targets &amp; Bonus atteints</div>
+          <div class="text-2xl font-extrabold text-emerald-700 tabular-nums">${unlockedBonusCount} / ${activeReps.filter(r => r.role !== 'admin').length}</div>
+          <div class="text-[11px] text-emerald-800/80">Représentants à 100 %+ de leur cible</div>
+        </div>
       `;
+
+      gridEl.innerHTML = repCardsData.map(item => {
+        const { r, isAdminRep, directSales, pendingDepositSales, volumeSigned, commEarnedTotal, commPaid, commUnpaid, sumRdv, sumBooke, closeRate, monthlyCommGoal, monthlySalesGoal, bonusPctVal, periodSalesGoal, goalPct, isBonusUnlocked, ratesList, prof } = item;
+
+        const rateChipsHtml = isAdminRep
+          ? '<span class="px-2 py-0.5 text-[10.5px] font-bold rounded-lg bg-indigo-50 text-indigo-700 border border-indigo-200">Part direction sur toutes les ventes</span>'
+          : (ratesList.length
+            ? ratesList.map(tr => {
+                const eNom = state.entreprises.find(e => String(e.id) === String(tr.entreprise_id))?.nom || '—';
+                return `<span class="px-2 py-0.5 text-[10.5px] font-bold rounded-lg bg-slate-100 text-slate-700 tabular-nums">${esc(eNom)} : ${(Number(tr.taux || 0) * 100).toFixed(1)}%</span>`;
+              }).join('')
+            : `<button type="button" onclick="openRatesForRep('${esc(r.id)}')" class="px-2.5 py-0.5 text-[10.5px] font-extrabold rounded-lg bg-amber-100 text-amber-900 border border-amber-300 hover:bg-amber-200 transition cursor-pointer">⚠️ Aucun taux configuré →</button>`);
+
+        return `
+          <div id="rep-profile-card-${esc(r.id)}" class="bg-white rounded-3xl border border-slate-200/90 p-5 shadow-xs flex flex-col justify-between space-y-4">
+            <div class="space-y-4">
+              <!-- EN-TÊTE FICHE REPRÉSENTANT -->
+              <div class="flex items-start justify-between gap-2">
+                <div class="flex items-center gap-3 min-w-0">
+                  <div class="w-11 h-11 rounded-2xl ${isAdminRep ? 'bg-slate-900 text-emerald-300' : 'bg-indigo-600 text-white'} font-extrabold text-sm flex items-center justify-center shrink-0 shadow-xs">
+                    ${esc(r.nom.slice(0, 2).toUpperCase())}
+                  </div>
+                  <div class="min-w-0">
+                    <div class="flex flex-wrap items-center gap-1.5">
+                      <h4 class="text-base font-extrabold text-slate-900 truncate">${esc(r.nom)}</h4>
+                      <span class="text-[10.5px] font-extrabold px-2 py-0.5 rounded-full ${isAdminRep ? 'bg-slate-900 text-white' : 'bg-indigo-50 text-indigo-700 border border-indigo-200'}">${isAdminRep ? 'Administrateur' : 'Représentant'}</span>
+                      ${isBonusUnlocked ? `<span class="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300">🔥 Bonus +${bonusPctVal}% actif</span>` : ''}
+                    </div>
+                    <div class="text-xs text-slate-500 truncate">${esc(r.courriel)}</div>
+                  </div>
+                </div>
+                <div class="flex items-center gap-1.5 shrink-0">
+                  <button type="button" onclick="openPayslipModal('${esc(r.id)}')" title="Aperçu du relevé de paie" class="px-2.5 py-1.5 text-[11px] font-bold bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 rounded-xl transition cursor-pointer">🧾 Relevé</button>
+                  <button type="button" onclick="openRatesForRep('${esc(r.id)}')" title="Grille des taux de ce membre" class="px-2.5 py-1.5 text-[11px] font-bold bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 rounded-xl transition cursor-pointer">⚙️ Taux</button>
+                  ${r.id !== currentProfile.id ? `<button type="button" onclick="deleteRepresentant('${esc(r.id)}')" class="px-2.5 py-1.5 text-[11px] font-bold bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 rounded-xl transition cursor-pointer">Retirer</button>` : ''}
+                </div>
+              </div>
+
+              <!-- 4 INDICATEURS CHIFFRÉS DU REPRÉSENTANT -->
+              <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 bg-slate-50/90 rounded-2xl border border-slate-200/70 p-3 text-xs tabular-nums">
+                <div>
+                  <span class="text-[10px] font-bold text-slate-400 block">Ventes signées</span>
+                  <strong class="text-sm font-extrabold text-slate-900">${fmtMoney0(volumeSigned)}</strong>
+                  <span class="text-[10px] text-slate-500 block">${directSales.length} dossier(s)</span>
+                </div>
+                <div>
+                  <span class="text-[10px] font-bold text-slate-400 block">RDV &amp; % Close</span>
+                  <strong class="text-sm font-extrabold text-slate-900">${closeRate.toFixed(1)} %</strong>
+                  <span class="text-[10px] text-slate-500 block">${sumRdv} réa / ${sumBooke} book.</span>
+                </div>
+                <div>
+                  <span class="text-[10px] font-bold text-emerald-700 block">Commissions totales</span>
+                  <strong class="text-sm font-extrabold text-emerald-700">${fmtMoney(commEarnedTotal)}</strong>
+                  <span class="text-[10px] text-slate-500 block">Versé : ${fmtMoney0(commPaid)}</span>
+                </div>
+                <div>
+                  <span class="text-[10px] font-bold text-amber-700 block">Solde à verser</span>
+                  <strong class="text-sm font-extrabold ${commUnpaid > 0 ? 'text-amber-700' : 'text-slate-600'}">${fmtMoney(commUnpaid)}</strong>
+                  <span class="text-[10px] text-rose-600 block">${pendingDepositSales.length} dépôt(s) att.</span>
+                </div>
+              </div>
+
+              <!-- BARRE DE PROGRESSION TARGET -->
+              ${periodSalesGoal > 0 ? `
+                <div class="space-y-1">
+                  <div class="flex items-center justify-between text-[11px] font-bold tabular-nums">
+                    <span class="text-slate-600">Progression target : ${fmtMoney0(volumeSigned)} / ${fmtMoney0(periodSalesGoal)}</span>
+                    <span class="${goalPct >= 100 ? 'text-emerald-600' : 'text-indigo-700'} font-extrabold">${goalPct} %</span>
+                  </div>
+                  <div class="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
+                    <div class="h-full ${progressColor(goalPct)} rounded-full" style="width: ${Math.min(100, goalPct)}%"></div>
+                  </div>
+                </div>
+              ` : ''}
+
+              <!-- TAUX DE COMMISSION APPLIQUÉS -->
+              <div class="space-y-1">
+                <div class="text-[10.5px] font-extrabold uppercase tracking-wider text-slate-400">Grille de commission active</div>
+                <div class="flex flex-wrap gap-1.5">${rateChipsHtml}</div>
+              </div>
+
+              <!-- FORMULAIRE ÉDITABLE : OBJECTIFS, TÉLÉPHONE & SOCIÉTÉ DE FACTURATION -->
+              <div class="pt-3 border-t border-slate-100 grid grid-cols-1 sm:grid-cols-3 gap-2.5 text-xs">
+                <div>
+                  <label class="block text-[10px] font-bold text-emerald-800 mb-1">Obj. Commission ($/mois)</label>
+                  <input type="number" step="100" min="0" data-field="commGoal" value="${monthlyCommGoal}" class="w-full px-3 py-1.5 text-xs font-extrabold text-emerald-900 bg-emerald-50/50 border border-emerald-200 rounded-xl tabular-nums" />
+                </div>
+                <div>
+                  <label class="block text-[10px] font-bold text-slate-600 mb-1">Obj. Ventes ($/mois)</label>
+                  <input type="number" step="500" min="0" data-field="salesGoal" value="${monthlySalesGoal}" class="w-full px-3 py-1.5 text-xs font-bold bg-slate-50 border border-slate-200 rounded-xl tabular-nums" />
+                </div>
+                <div>
+                  <label class="block text-[10px] font-bold text-amber-800 mb-1">Bonus Target (%)</label>
+                  <input type="number" step="0.25" min="0" max="50" data-field="bonusPct" value="${bonusPctVal}" class="w-full px-3 py-1.5 text-xs font-extrabold text-amber-900 bg-amber-50/50 border border-amber-200 rounded-xl tabular-nums" />
+                </div>
+                <div>
+                  <label class="block text-[10px] font-bold text-slate-500 mb-1">Téléphone cellulaire</label>
+                  <input type="tel" data-field="phone" value="${esc(prof.phone || '')}" placeholder="Ex. 514-555-0199" class="w-full px-3 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-xl tabular-nums" />
+                </div>
+                <div class="sm:col-span-2">
+                  <label class="block text-[10px] font-bold text-slate-500 mb-1">Entité / Notes de paie (TPS/TVQ, autonome...)</label>
+                  <input type="text" data-field="notes" value="${esc(prof.notes || '')}" placeholder="Ex. Inc. inscrit aux taxes, virement Interac..." class="w-full px-3 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-xl" />
+                </div>
+              </div>
+            </div>
+
+            <div class="pt-3 border-t border-slate-100 flex items-center justify-between gap-2">
+              <span class="text-[11px] text-slate-400">
+                ${r.id === currentProfile.id ? '✓ Session active' : 'Synchronisé en direct'}
+              </span>
+              <button type="button" onclick="saveRepProfileDetails('${esc(r.id)}')" class="px-4 py-2 text-xs font-extrabold text-white bg-slate-900 hover:bg-indigo-600 rounded-xl shadow-2xs transition cursor-pointer">
+                ✓ Enregistrer le profil
+              </button>
+            </div>
+          </div>
+        `;
       }).join('');
     }
 
@@ -16049,6 +16574,8 @@ serve(async (req) => {
       e.preventDefault();
       const nom = document.getElementById('new-entreprise-nom').value.trim();
       const depotChoice = document.getElementById('new-entreprise-depot')?.value || '';
+      const objVal = parseFloat(document.getElementById('new-entreprise-obj')?.value || '');
+      const billingEmail = document.getElementById('new-entreprise-email')?.value.trim() || '';
       if (!depotChoice) return toast('Indiquez si cette entreprise exige un dépôt.', 'error');
       let { error } = await sb.from('entreprises').insert({ nom, depot_requis: depotChoice === 'oui' });
       let columnMissing = false;
@@ -16057,12 +16584,28 @@ serve(async (req) => {
         ({ error } = await sb.from('entreprises').insert({ nom }));
       }
       if (error) return toast(error.message, 'error');
+
+      if (billingEmail) {
+        const pStore = getPartnerProfilesStore();
+        pStore[nom] = { ...(pStore[nom] || {}), billingEmail, updatedAt: new Date().toISOString() };
+        savePartnerProfilesStore(pStore);
+      }
+      if (!isNaN(objVal) && objVal > 0) {
+        await saveCompanyTargetMeta(nom, 'ALL', {
+          periodicity: 'monthly',
+          monthlyAmount: objVal,
+          annualAmount: objVal * 12
+        }, 'ALL');
+      }
+
       document.getElementById('new-entreprise-nom').value = '';
       const depotSelNew = document.getElementById('new-entreprise-depot');
       if (depotSelNew) depotSelNew.value = '';
+      if (document.getElementById('new-entreprise-obj')) document.getElementById('new-entreprise-obj').value = '';
+      if (document.getElementById('new-entreprise-email')) document.getElementById('new-entreprise-email').value = '';
       toast(columnMissing
         ? '⚠️ Entreprise ajoutée, mais la colonne « depot_requis » est absente de Supabase : exécutez le SQL fourni pour enregistrer cette règle.'
-        : 'Entreprise ajoutée', columnMissing ? 'error' : undefined);
+        : 'Entreprise partenaire ajoutée ✓');
       await loadAllData();
     });
 

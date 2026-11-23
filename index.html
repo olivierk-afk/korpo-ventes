@@ -2438,17 +2438,176 @@
       </section>
 
       <!-- ============================================================ -->
-      <!-- ONGLET 7 : ENTREPRISES & ÉQUIPE (ADMIN UNIQUEMENT)           -->
+      <!-- ONGLET 7A : ENTREPRISES PARTENAIRES (ADMIN UNIQUEMENT)       -->
+      <!-- ============================================================ -->
+      <section id="tab-admin-entreprises" class="hidden space-y-6">
+        <!-- EN-TÊTE + KPI PARTENAIRES -->
+        <div class="bg-white rounded-3xl border border-slate-200/80 p-5 sm:p-6 shadow-xs space-y-4">
+          <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+            <div>
+              <div class="flex flex-wrap items-center gap-2.5">
+                <h2 class="text-lg sm:text-xl font-extrabold text-slate-900 tracking-tight flex items-center gap-2">
+                  <span class="w-9 h-9 rounded-2xl bg-sky-50 text-sky-600 border border-sky-200/80 flex items-center justify-center text-lg shrink-0">🏢</span>
+                  <span>Entreprises partenaires</span>
+                </h2>
+                <span class="px-2.5 py-0.5 text-[11px] font-bold rounded-full bg-slate-900 text-sky-300">Gestion B2B &amp; Facturation</span>
+              </div>
+              <p class="text-xs text-slate-500 mt-1">Vue complète de vos compagnies partenaires : volumes générés, marge nette Korpo, objectifs, facturation Wave et contacts.</p>
+            </div>
+            <div class="flex flex-wrap items-center gap-2">
+              <select id="admin-ent-period-filter" onchange="renderAdminEntreprises()" class="px-3.5 py-2 text-xs font-bold bg-indigo-50/70 text-indigo-950 border border-indigo-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-600 cursor-pointer">
+                <option value="this_month" selected>📅 Ce mois-ci</option>
+                <option value="this_quarter">📊 Ce trimestre</option>
+                <option value="this_year">🗓️ Cette année</option>
+                <option value="all">∞ Tout l'historique</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- 4 CARTES KPI PARTENAIRES -->
+          <div id="admin-ent-summary-cards" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5"></div>
+        </div>
+
+        <!-- AJOUTER UNE ENTREPRISE PARTENAIRE -->
+        <div class="bg-white rounded-3xl border border-slate-200/80 p-5 sm:p-6 shadow-xs space-y-4">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <div>
+              <h3 class="text-sm sm:text-base font-extrabold text-slate-900">➕ Ajouter une entreprise partenaire</h3>
+              <p class="text-xs text-slate-500 mt-0.5">Configurez dès la création son exigence de dépôt, son objectif mensuel et son courriel de facturation.</p>
+            </div>
+          </div>
+          <form id="form-new-entreprise" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3 items-end">
+            <div class="lg:col-span-2">
+              <label class="block text-[11px] font-bold text-slate-700 mb-1">Nom de l'entreprise *</label>
+              <input id="new-entreprise-nom" type="text" required placeholder="Ex. Toitex, MaClim..." class="w-full px-3.5 py-2.5 text-sm font-semibold bg-slate-50 border border-slate-200 rounded-xl" />
+            </div>
+            <div>
+              <label class="block text-[11px] font-bold text-slate-700 mb-1">Dépôt client *</label>
+              <select id="new-entreprise-depot" required class="w-full px-3 py-2.5 text-xs font-bold bg-slate-50 border border-slate-200 rounded-xl">
+                <option value="">Choisir...</option>
+                <option value="oui">💵 Dépôt exigé (Interac/chèque)</option>
+                <option value="non">🚫 Aucun dépôt requis</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-[11px] font-bold text-slate-700 mb-1">Objectif mensuel ($)</label>
+              <input id="new-entreprise-obj" type="number" step="1000" min="0" placeholder="Ex. 150000" class="w-full px-3.5 py-2.5 text-sm font-bold bg-slate-50 border border-slate-200 rounded-xl tabular-nums" />
+            </div>
+            <div>
+              <label class="block text-[11px] font-bold text-slate-700 mb-1">Courriel facturation</label>
+              <input id="new-entreprise-email" type="email" placeholder="comptabilite@partenaire.ca" class="w-full px-3.5 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl" />
+            </div>
+            <div>
+              <button type="submit" class="w-full py-2.5 px-4 bg-indigo-600 text-white text-xs font-extrabold rounded-xl hover:bg-indigo-700 shadow-xs transition cursor-pointer">✓ Ajouter</button>
+            </div>
+          </form>
+        </div>
+
+        <!-- FICHES DÉTAILLÉES PAR ENTREPRISE PARTENAIRE -->
+        <div id="admin-entreprises-cards-grid" class="grid grid-cols-1 lg:grid-cols-2 gap-5"></div>
+      </section>
+
+      <!-- ============================================================ -->
+      <!-- ONGLET 7B : REPRÉSENTANTS & ÉQUIPE (ADMIN UNIQUEMENT)        -->
       <!-- ============================================================ -->
       <section id="tab-admin-equipe" class="hidden space-y-6">
-        <!-- CONFIGURATION TÉLÉPHONE ROUGE : NUMÉRO DE CELLULAIRE DU DIRECTEUR (ADMIN UNIQUEMENT) -->
-        <div class="bg-white rounded-2xl border border-rose-200/90 p-5 sm:p-6 shadow-xs space-y-4">
+        <!-- EN-TÊTE + KPI ÉQUIPE -->
+        <div class="bg-white rounded-3xl border border-slate-200/80 p-5 sm:p-6 shadow-xs space-y-4">
+          <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+            <div>
+              <div class="flex flex-wrap items-center gap-2.5">
+                <h2 class="text-lg sm:text-xl font-extrabold text-slate-900 tracking-tight flex items-center gap-2">
+                  <span class="w-9 h-9 rounded-2xl bg-indigo-50 text-indigo-600 border border-indigo-200/80 flex items-center justify-center text-lg shrink-0">👥</span>
+                  <span>Représentants &amp; Équipe</span>
+                </h2>
+                <span class="px-2.5 py-0.5 text-[11px] font-bold rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200">RH, Targets &amp; Paie</span>
+              </div>
+              <p class="text-xs text-slate-500 mt-1">Profils des membres, objectifs mensuels, bonus target, taux de closing, commissions à payer et ligne directe closing.</p>
+            </div>
+            <div class="flex flex-wrap items-center gap-2">
+              <select id="admin-rep-period-filter" onchange="renderAdminEquipe()" class="px-3.5 py-2 text-xs font-bold bg-indigo-50/70 text-indigo-950 border border-indigo-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-600 cursor-pointer">
+                <option value="this_month" selected>📅 Ce mois-ci</option>
+                <option value="this_quarter">📊 Ce trimestre</option>
+                <option value="this_year">🗓️ Cette année</option>
+                <option value="all">∞ Tout l'historique</option>
+              </select>
+              <button type="button" id="btn-save-all-equipe-targets" class="px-4 py-2 text-xs font-extrabold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl shadow-xs transition shrink-0 cursor-pointer">
+                ✓ Enregistrer tous les objectifs
+              </button>
+            </div>
+          </div>
+
+          <!-- 4 CARTES KPI ÉQUIPE -->
+          <div id="admin-rep-summary-cards" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5"></div>
+        </div>
+
+        <!-- AJOUTER UN NOUVEAU MEMBRE -->
+        <div class="bg-white rounded-3xl border border-slate-200/80 p-5 sm:p-6 shadow-xs space-y-4">
+          <div>
+            <h3 class="text-sm sm:text-base font-extrabold text-slate-900">➕ Ajouter un membre à l'équipe</h3>
+            <p class="text-xs text-slate-500 mt-0.5">Le courriel doit correspondre au compte créé dans Supabase Authentication.</p>
+          </div>
+          <form id="form-new-rep" class="grid grid-cols-1 sm:grid-cols-4 gap-2.5">
+            <input id="new-rep-nom" type="text" required placeholder="Prénom / Nom" class="px-3.5 py-2.5 text-sm font-semibold bg-slate-50 border border-slate-200 rounded-xl" />
+            <input id="new-rep-email" type="email" required placeholder="courriel@korpo.ca" class="px-3.5 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl" />
+            <select id="new-rep-role" class="px-3 py-2.5 text-sm font-bold bg-slate-50 border border-slate-200 rounded-xl">
+              <option value="representant">Représentant</option>
+              <option value="admin">Administrateur</option>
+            </select>
+            <button type="submit" class="px-4 py-2.5 bg-indigo-600 text-white text-xs font-extrabold rounded-xl hover:bg-indigo-700 shadow-xs transition cursor-pointer">✓ Ajouter le membre</button>
+          </form>
+          <div id="new-rep-setup-banner" class="hidden rounded-2xl border border-emerald-300 bg-emerald-50/80 p-3.5 space-y-2 text-xs">
+            <div class="flex items-start justify-between gap-2">
+              <div class="font-extrabold text-emerald-950" id="new-rep-setup-title">✅ Membre ajouté ! Dernières étapes :</div>
+              <button type="button" onclick="document.getElementById('new-rep-setup-banner').classList.add('hidden')" class="text-slate-400 hover:text-slate-700 font-bold">✕</button>
+            </div>
+            <ol class="list-decimal pl-4 space-y-1 text-emerald-900">
+              <li>Créez son compte de connexion dans <strong>Supabase &gt; Authentication &gt; Users</strong> avec le même courriel (<span id="new-rep-setup-email" class="font-mono font-bold"></span>).</li>
+              <li>Configurez ses taux de commission par entreprise dans <strong>Grille des taux</strong>.</li>
+            </ol>
+            <div class="pt-1">
+              <button type="button" id="btn-new-rep-goto-rates" class="px-3.5 py-1.5 text-xs font-extrabold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl shadow-2xs transition cursor-pointer">
+                ⚙️ Configurer ses taux maintenant →
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- FICHES DÉTAILLÉES PAR REPRÉSENTANT (PERFORMANCE, TAUX, PAIE & TARGETS) -->
+        <div id="admin-reps-cards-grid" class="grid grid-cols-1 lg:grid-cols-2 gap-5"></div>
+
+        <!-- TABLEAU CONSOLIDÉ DES TARGETS & BONUS MENSUELS -->
+        <div class="bg-white rounded-3xl border border-slate-200/80 p-5 sm:p-6 shadow-xs space-y-4">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <div>
+              <h3 class="text-sm sm:text-base font-extrabold text-slate-900">🎯 Grille des objectifs &amp; bonus mensuels</h3>
+              <p class="text-xs text-slate-500 mt-0.5">Ajustez rapidement les targets de commission, de ventes et le pourcentage de bonus de toute l'équipe.</p>
+            </div>
+          </div>
+          <div class="overflow-x-auto border border-slate-200/80 rounded-2xl">
+            <table class="w-full text-left border-collapse text-sm">
+              <thead>
+                <tr class="bg-slate-50 border-b border-slate-200 text-[11px] font-bold uppercase text-slate-500">
+                  <th class="py-3 px-4">Représentant</th>
+                  <th class="py-3 px-4">Objectif Commission ($ / mois)</th>
+                  <th class="py-3 px-4">Objectif Ventes ($ / mois)</th>
+                  <th class="py-3 px-4">Bonus Target (% ajouté)</th>
+                  <th class="py-3 px-4 text-right">Action</th>
+                </tr>
+              </thead>
+              <tbody id="tbody-equipe-targets" class="divide-y divide-slate-100"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- CONFIGURATION TÉLÉPHONE ROUGE : NUMÉRO DE CELLULAIRE DU DIRECTEUR -->
+        <div class="bg-white rounded-3xl border border-rose-200/90 p-5 sm:p-6 shadow-xs space-y-4">
           <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div class="flex items-start sm:items-center gap-3">
               <span class="w-10 h-10 rounded-2xl bg-rose-100 text-rose-600 border border-rose-200 flex items-center justify-center text-xl shrink-0">☎️</span>
               <div>
                 <div class="flex items-center gap-2">
-                  <h2 class="text-base font-extrabold text-slate-900">Téléphone Rouge — Ligne directe closing</h2>
+                  <h3 class="text-base font-extrabold text-slate-900">Téléphone Rouge — Ligne directe closing</h3>
                   <span class="px-2.5 py-0.5 text-[10px] font-extrabold rounded-full bg-rose-100 text-rose-700 border border-rose-200">Appel Directeur</span>
                 </div>
                 <p class="text-xs text-slate-500 mt-0.5">Lorsqu'un représentant appuie sur le Téléphone Rouge, vous recevez immédiatement une alerte urgente avec son nom et son appel démarre vers ce numéro.</p>
@@ -2476,92 +2635,6 @@
               <span>Lun–Ven : 8h00 à 18h00 • Sam–Dim : 8h00 à 12h00</span>
             </div>
           </form>
-        </div>
-
-        <!-- GESTION DES TARGETS MENSUELS PAR REPRÉSENTANT (ADMIN UNIQUEMENT) -->
-        <div class="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-xs space-y-4">
-          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <div>
-              <div class="flex items-center gap-2">
-                <h2 class="text-base font-extrabold text-slate-900">🎯 Objectifs mensuels par représentant</h2>
-                <span class="px-2.5 py-0.5 text-[11px] font-bold rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200">Admin uniquement</span>
-              </div>
-              <p class="text-xs text-slate-500 mt-0.5">Définissez le target de commission et l'objectif de ventes mensuel de chaque représentant. Seul vous pouvez modifier ces montants.</p>
-            </div>
-            <button type="button" id="btn-save-all-equipe-targets" class="px-4 py-2 text-xs font-extrabold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl shadow-xs transition shrink-0">
-              ✓ Enregistrer tous les objectifs
-            </button>
-          </div>
-
-          <div class="overflow-x-auto border border-slate-200/80 rounded-xl">
-            <table class="w-full text-left border-collapse text-sm">
-              <thead>
-                <tr class="bg-slate-50 border-b border-slate-200 text-[11px] font-bold uppercase text-slate-500">
-                  <th class="py-3 px-4">Représentant</th>
-                  <th class="py-3 px-4">Objectif Commission ($ / mois)</th>
-                  <th class="py-3 px-4">Objectif Ventes ($ / mois)</th>
-                  <th class="py-3 px-4">Bonus Target (% ajouté)</th>
-                  <th class="py-3 px-4 text-right">Action</th>
-                </tr>
-              </thead>
-              <tbody id="tbody-equipe-targets" class="divide-y divide-slate-100"></tbody>
-            </table>
-          </div>
-        </div>
-
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div class="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-xs space-y-4">
-          <div>
-            <h2 class="text-base font-extrabold text-slate-900">Entreprises partenaires</h2>
-            <p class="text-xs text-slate-500 mt-0.5">Ajoutez ou retirez les entreprises représentées par Korpo Solutions</p>
-          </div>
-          <form id="form-new-entreprise" class="space-y-2">
-            <input id="new-entreprise-nom" type="text" required placeholder="Nom de l'entreprise (ex. Toitex)" class="w-full px-3.5 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl" />
-            <div class="flex gap-2">
-              <select id="new-entreprise-depot" required class="flex-1 min-w-0 px-3 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl">
-                <option value="">Cette entreprise exige-t-elle un dépôt ? *</option>
-                <option value="oui">Oui — dépôt exigé (preuve Interac ou chèque)</option>
-                <option value="non">Non — aucun dépôt requis</option>
-              </select>
-              <button type="submit" class="px-4 py-2.5 bg-indigo-600 text-white text-sm font-semibold rounded-xl hover:bg-indigo-700 transition">Ajouter</button>
-            </div>
-          </form>
-          <ul id="list-entreprises" class="divide-y divide-slate-100 border border-slate-200/80 rounded-xl overflow-hidden"></ul>
-        </div>
-
-        <div class="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-xs space-y-4">
-          <div>
-            <h2 class="text-base font-extrabold text-slate-900">Membres de l'équipe</h2>
-            <p class="text-xs text-slate-500 mt-0.5">Le courriel doit correspondre au compte créé dans Supabase Authentication</p>
-          </div>
-          <form id="form-new-rep" class="grid grid-cols-1 sm:grid-cols-3 gap-2">
-            <input id="new-rep-nom" type="text" required placeholder="Prénom / Nom" class="px-3.5 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl" />
-            <input id="new-rep-email" type="email" required placeholder="courriel@korpo.ca" class="px-3.5 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl" />
-            <div class="flex gap-2">
-              <select id="new-rep-role" class="flex-1 px-2.5 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl">
-                <option value="representant">Rep</option>
-                <option value="admin">Admin</option>
-              </select>
-              <button type="submit" class="px-3.5 py-2.5 bg-indigo-600 text-white text-sm font-semibold rounded-xl hover:bg-indigo-700 transition">Ajouter</button>
-            </div>
-          </form>
-          <div id="new-rep-setup-banner" class="hidden rounded-2xl border border-emerald-300 bg-emerald-50/80 p-3.5 space-y-2 text-xs">
-            <div class="flex items-start justify-between gap-2">
-              <div class="font-extrabold text-emerald-950" id="new-rep-setup-title">✅ Membre ajouté ! Dernières étapes :</div>
-              <button type="button" onclick="document.getElementById('new-rep-setup-banner').classList.add('hidden')" class="text-slate-400 hover:text-slate-700 font-bold">✕</button>
-            </div>
-            <ol class="list-decimal pl-4 space-y-1 text-emerald-900">
-              <li>Créez son compte de connexion dans <strong>Supabase &gt; Authentication &gt; Users</strong> avec le même courriel (<span id="new-rep-setup-email" class="font-mono font-bold"></span>).</li>
-              <li>Configurez ses taux de commission par entreprise dans <strong>Grille des taux</strong>.</li>
-            </ol>
-            <div class="pt-1">
-              <button type="button" id="btn-new-rep-goto-rates" class="px-3.5 py-1.5 text-xs font-extrabold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl shadow-2xs transition cursor-pointer">
-                ⚙️ Configurer ses taux maintenant →
-              </button>
-            </div>
-          </div>
-          <ul id="list-representants" class="divide-y divide-slate-100 border border-slate-200/80 rounded-xl overflow-hidden"></ul>
-        </div>
         </div>
       </section>
 
@@ -2839,8 +2912,8 @@
     </div>
   </div>
 
-  <script src="route-optimizer.js?v=20261122g" defer></script>
-  <script src="guide.js?v=20261122g" defer></script>
-  <script src="app.js?v=20261122g" defer></script>
+  <script src="route-optimizer.js?v=20261122h" defer></script>
+  <script src="guide.js?v=20261122h" defer></script>
+  <script src="app.js?v=20261122h" defer></script>
 </body>
 </html>
