@@ -12527,8 +12527,7 @@
             const noteClean = cleanDisplaySaleNote(v.note || '');
             const lineHt = computeKorpoGrossRevenueForSale(v);
             return `${i + 1}. ${v.date_vente || ''} | ${cliNom}${noteClean ? ` (${noteClean})` : ''} | Vente: ${fmtMoney(v.valeur)} | Commission HT: ${fmtMoney(lineHt)}`;
-          }).join('
-');
+          }).join('\n');
 
           const bodyText =
 `Bonjour${prof.contactName ? ` ${prof.contactName}` : ''},
@@ -12579,8 +12578,7 @@ Olivier — Korpo Solutions`;
           ].join(',');
         });
         rows.push(['', '', csvCell(`TOTAL ${ent.nom}`), csvCell(periodLabel), '', '', '', totalSalesVolume.toFixed(2), '', subtotalHt.toFixed(2), tpsAmt.toFixed(2), tvqAmt.toFixed(2), totalTtc.toFixed(2)].join(','));
-        const blob = new Blob(['﻿' + [headers.join(','), ...rows].join('
-')], { type: 'text/csv;charset=utf-8;' });
+        const blob = new Blob(['﻿' + [headers.join(','), ...rows].join('\n')], { type: 'text/csv;charset=utf-8;' });
         const a = document.createElement('a');
         a.href = URL.createObjectURL(blob);
         a.download = `fiche-facturation-${ent.nom.toLowerCase().replace(/[^a-z0-9]+/g, '-')}-${periodLabel.toLowerCase().replace(/[^a-z0-9]+/g, '-')}.csv`;
