@@ -2742,7 +2742,7 @@
       const adminItems = isAdmin ? [
         { id: 'tab-admin-ventes', icon: '📋', shortLabel: 'Registre', label: 'Toutes les ventes', desc: 'Valider & gérer les dossiers' },
         { id: 'tab-admin-dashboard', icon: '📈', shortLabel: 'Direction', label: 'Tableau de bord', desc: 'Analytique, paie & courriels' },
-        { id: 'tab-admin-finances', icon: '🏦', shortLabel: 'Finances', label: 'Finances Korpo', desc: 'Encaissements, profit réel & Wave' },
+        { id: 'tab-admin-finances', icon: '🏦', shortLabel: 'Finances', label: 'Finances Korpo', desc: 'Encaissements, dépenses & profit réel' },
         { id: 'tab-admin-entreprises', icon: '🏢', shortLabel: 'Partenaires', label: 'Entreprises partenaires', desc: 'Contrats, facturation & marges' },
         { id: 'tab-admin-equipe', icon: '👥', shortLabel: 'Équipe', label: 'Représentants & Équipe', desc: 'Profils, objectifs & paie' }
       ] : [];
@@ -12588,6 +12588,75 @@ Olivier — Korpo Solutions`;
       document.getElementById('payslip-modal').classList.remove('hidden');
     };
 
+    window.createWaveInvoiceFromPartnerCard = async (entId) => {
+      if (currentProfile?.role !== 'admin') return;
+      const ent = (state.entreprises || []).find(e => String(e.id) === String(entId));
+      if (!ent) return;
+      const card = document.getElementById(`partner-card-${entId}`);
+      if (!card) return;
+
+      const targetYm = card.querySelector('[data-wave-field="targetYm"]')?.value || currentMonthStr;
+      const customSeqRaw = parseInt(card.querySelector('[data-field="waveSeq"]')?.value || '', 10);
+      const seqMap = getWaveCompanySeqMap();
+      if (!isNaN(customSeqRaw) && customSeqRaw >= 0) {
+        seqMap[ent.nom] = customSeqRaw;
+        await saveWaveCompanySeqMap(seqMap);
+      }
+
+      const billableSales = (state.ventes || []).filter(v => {
+        if (v.statut_depot !== 'depot_recu') return false;
+        if (getSaleStatsMonth(v) !== targetYm) return false;
+        if (String(v.entreprise_id) !== String(ent.id)) return false;
+        return isSaleBillableByKorpoToPartner(v, ent.nom);
+      });
+
+      const amountHt = Math.round(billableSales.reduce((s, v) => s + computeKorpoGrossRevenueForSale(v), 0) * 100) / 100;
+      if (!billableSales.length || amountHt <= 0) {
+        return toast(`Aucun dossier confirmé facturable pour ${ent.nom} en ${formatYearMonthLabelFr(targetYm)}.`, 'error');
+      }
+
+      await createDraftInvoiceInWaveForBatch(ent.nom, targetYm, amountHt, billableSales.length);
+      renderAdminEntreprises();
+    };
+
+    window.applyWaveInvoiceChoiceOnPartnerCard = async (entId) => {
+      if (currentProfile?.role !== 'admin') return;
+      const ent = (state.entreprises || []).find(e => String(e.id) === String(entId));
+      if (!ent) return;
+      const card = document.getElementById(`partner-card-${entId}`);
+      if (!card) return;
+
+      const targetYm = card.querySelector('[data-wave-field="targetYm"]')?.value || currentMonthStr;
+      const chosenInvRef = card.querySelector('[data-wave-field="chosenInvoiceRef"]')?.value.trim() || '';
+      const chosenStatus = card.querySelector('[data-wave-field="chosenInvoiceStatus"]')?.value || 'sent';
+
+      if (!chosenInvRef) {
+        return toast('Saisissez ou sélectionnez un numéro de facture Wave.', 'error');
+      }
+
+      const partnerPaidStore = getFinPartnerPaidStore();
+      const batchKey = getPartnerBatchKey(ent.nom, targetYm);
+      if (chosenStatus === 'paid') {
+        partnerPaidStore[batchKey] = {
+          paid: true,
+          paidAt: localYmd(),
+          waveRef: chosenInvRef,
+          by: currentProfile.nom || 'Admin'
+        };
+      } else {
+        partnerPaidStore[batchKey] = {
+          paid: false,
+          paidAt: '',
+          waveRef: chosenInvRef,
+          by: currentProfile.nom || 'Admin'
+        };
+      }
+      saveFinPartnerPaidStore(partnerPaidStore);
+      renderAdminEntreprises();
+      renderAdminFinances();
+      toast(`Facture Wave ${chosenInvRef} associée à ${ent.nom} (${formatYearMonthLabelFr(targetYm)}) ✓`);
+    };
+
     function renderAdminEntreprises() {
       const summaryEl = document.getElementById('admin-ent-summary-cards');
       const gridEl = document.getElementById('admin-entreprises-cards-grid');
@@ -12688,6 +12757,24 @@ Olivier — Korpo Solutions`;
           <div class="text-[11px] text-amber-800/80">En attente de règlement Wave (HT)</div>
         </div>
       `;
+
+      const waveBox = document.getElementById('fin-wave-reconcile-box');
+      if (waveBox) {
+        if (!waveReconcileResults) {
+          waveBox.classList.add('hidden');
+        } else {
+          waveBox.classList.remove('hidden');
+          waveBox.innerHTML = `
+            <div class="flex items-center justify-between gap-2">
+              <div class="text-xs font-extrabold text-emerald-950">✓ Wave synchronisé : ${esc(waveReconcileResults.filename)}</div>
+              <button type="button" onclick="waveReconcileResults=null; renderAdminEntreprises();" class="text-xs font-bold text-slate-500 hover:text-slate-800">✕</button>
+            </div>
+            <div class="text-[11px] text-emerald-900 tabular-nums">
+              ${waveReconcileResults.totalRows} facture(s) / transaction(s) lue(s) (${fmtMoney(waveReconcileResults.totalWaveAmt)}) • <strong>${waveReconcileResults.autoMatched} lot(s) partenaire(s) rapproché(s) automatiquement</strong>.
+            </div>
+          `;
+        }
+      }
 
       if (!entCardsData.length) {
         gridEl.innerHTML = `<div class="col-span-full bg-white rounded-3xl border border-slate-200 p-8 text-center text-xs text-slate-400">Aucune entreprise partenaire active. Utilisez le formulaire ci-dessus pour en ajouter une.</div>`;
@@ -12816,7 +12903,91 @@ Olivier — Korpo Solutions`;
                 </div>
               </div>
 
-              <!-- FORMULAIRE ÉDITABLE : CONTACT, FACTURATION WAVE & OBJECTIF -->
+              <!-- CRÉATION & CHOIX DE LA FACTURE WAVE POUR CE PARTENAIRE -->
+              ${(() => {
+                const defaultWaveYm = (periodMode === 'specific_month' && isValidYearMonth(specificYm))
+                  ? specificYm
+                  : (periodMode === 'last_month' ? getPreviousYearMonth(currentMonthStr) : currentMonthStr);
+                const availWaveMonths = Array.from(new Set([
+                  currentMonthStr,
+                  getPreviousYearMonth(currentMonthStr),
+                  defaultWaveYm,
+                  ...(state.ventes || []).filter(v => String(v.entreprise_id) === String(e.id)).map(v => getSaleStatsMonth(v)).filter(isValidYearMonth)
+                ])).sort().reverse();
+
+                const waveMonthSales = (state.ventes || []).filter(v =>
+                  String(v.entreprise_id) === String(e.id) &&
+                  v.statut_depot === 'depot_recu' &&
+                  getSaleStatsMonth(v) === defaultWaveYm &&
+                  isSaleBillableByKorpoToPartner(v, e.nom)
+                );
+                const waveMonthHt = Math.round(waveMonthSales.reduce((s, v) => s + computeKorpoGrossRevenueForSale(v), 0) * 100) / 100;
+                const batchInfo = partnerPaidStore[getPartnerBatchKey(e.nom, defaultWaveYm)] || {};
+                const syncedList = Array.isArray(window._lastSyncedWaveInvoices)
+                  ? window._lastSyncedWaveInvoices.filter(w =>
+                      String(w.customerName || '').toLowerCase().includes(e.nom.toLowerCase()) ||
+                      String(w.invoiceNumber || '').toLowerCase().startsWith(wavePrefix.toLowerCase())
+                    )
+                  : [];
+                const datalistId = `wave-inv-list-${e.id}`;
+                const syncedOpts = syncedList.map(w =>
+                  `<option value="${esc(w.invoiceNumber || '')}">${esc(w.invoiceNumber || '')} — ${fmtMoney(w.total || 0)} (${esc(w.status || '')})</option>`
+                ).join('');
+
+                return `
+                  <div class="pt-3 border-t border-indigo-100 bg-gradient-to-br from-indigo-50/70 to-sky-50/50 rounded-2xl p-3.5 border border-indigo-200/80 space-y-2.5">
+                    <div class="flex flex-wrap items-center justify-between gap-2">
+                      <div class="text-[11px] font-extrabold uppercase tracking-wider text-indigo-950 flex items-center gap-1.5">
+                        <span>🌊</span>
+                        <span>Facture Wave — ${esc(e.nom)}</span>
+                      </div>
+                      <span class="px-2 py-0.5 text-[10.5px] font-extrabold rounded-full ${batchInfo.paid ? 'bg-emerald-100 text-emerald-800 border border-emerald-300' : 'bg-white text-indigo-800 border border-indigo-200'} tabular-nums">
+                        ${batchInfo.paid ? `✓ Encaissée (${esc(batchInfo.waveRef || '')})` : `${waveMonthSales.length} dossier(s) • ${fmtMoney(waveMonthHt)} HT`}
+                      </span>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-12 gap-2 items-end text-xs">
+                      <div class="sm:col-span-5">
+                        <label class="block text-[10px] font-bold text-indigo-950 mb-1">Mois à facturer</label>
+                        <select data-wave-field="targetYm" class="w-full px-2.5 py-1.5 text-xs font-bold bg-white border border-indigo-200 rounded-xl cursor-pointer">
+                          ${availWaveMonths.map(m => `<option value="${esc(m)}" ${m === defaultWaveYm ? 'selected' : ''}>${esc(formatYearMonthLabelFr(m))}</option>`).join('')}
+                        </select>
+                      </div>
+                      <div class="sm:col-span-3">
+                        <label class="block text-[10px] font-bold text-indigo-950 mb-1">N° précédent</label>
+                        <input type="number" min="0" data-field="waveSeq" value="${waveSeq}" class="w-full px-2.5 py-1.5 text-xs font-extrabold bg-white border border-indigo-200 rounded-xl tabular-nums" />
+                      </div>
+                      <div class="sm:col-span-4">
+                        <button type="button" onclick="createWaveInvoiceFromPartnerCard('${esc(e.id)}')" class="w-full py-1.5 px-3 bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white text-xs font-extrabold rounded-xl shadow-xs transition cursor-pointer">
+                          📤 Créer ${esc(wavePrefix)}${waveSeq + 1}
+                        </button>
+                      </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-12 gap-2 items-end text-xs pt-1 border-t border-indigo-200/60">
+                      <div class="sm:col-span-5">
+                        <label class="block text-[10px] font-bold text-slate-600 mb-1">Choisir / lier une facture Wave</label>
+                        <input type="text" list="${esc(datalistId)}" data-wave-field="chosenInvoiceRef" value="${esc(batchInfo.waveRef || '')}" placeholder="Ex. ${esc(wavePrefix)}${waveSeq + 1}" class="w-full px-2.5 py-1.5 text-xs font-bold bg-white border border-slate-200 rounded-xl" />
+                        <datalist id="${esc(datalistId)}">${syncedOpts}</datalist>
+                      </div>
+                      <div class="sm:col-span-4">
+                        <label class="block text-[10px] font-bold text-slate-600 mb-1">État dans Wave</label>
+                        <select data-wave-field="chosenInvoiceStatus" class="w-full px-2.5 py-1.5 text-xs font-bold bg-white border border-slate-200 rounded-xl">
+                          <option value="sent" ${!batchInfo.paid ? 'selected' : ''}>⏳ Envoyée / En attente</option>
+                          <option value="paid" ${batchInfo.paid ? 'selected' : ''}>✓ Payée / Encaissée</option>
+                        </select>
+                      </div>
+                      <div class="sm:col-span-3">
+                        <button type="button" onclick="applyWaveInvoiceChoiceOnPartnerCard('${esc(e.id)}')" class="w-full py-1.5 px-2.5 bg-slate-900 hover:bg-emerald-600 text-white text-[11px] font-extrabold rounded-xl transition cursor-pointer">
+                          ✓ Lier
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                `;
+              })()}
+
+              <!-- FORMULAIRE ÉDITABLE : CONTACT & OBJECTIF -->
               <div class="pt-3 border-t border-slate-100 grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-xs">
                 <div>
                   <label class="block text-[10px] font-bold text-slate-500 mb-1">Personne-contact</label>
@@ -12830,10 +13001,7 @@ Olivier — Korpo Solutions`;
                   <label class="block text-[10px] font-bold text-slate-500 mb-1">Objectif mensuel ($ CAD)</label>
                   <input type="number" step="1000" min="0" data-field="monthlyObj" value="${baseMonthlyObj || ''}" placeholder="0" class="w-full px-3 py-1.5 text-xs font-bold bg-slate-50 border border-slate-200 rounded-xl tabular-nums" />
                 </div>
-                <div>
-                  <label class="block text-[10px] font-bold text-slate-500 mb-1">Dernier n° facture Wave (${esc(wavePrefix)}-...)</label>
-                  <input type="number" min="0" data-field="waveSeq" value="${waveSeq}" class="w-full px-3 py-1.5 text-xs font-bold bg-slate-50 border border-slate-200 rounded-xl tabular-nums" />
-                </div>
+
                 <div class="sm:col-span-2">
                   <label class="block text-[10px] font-bold text-slate-500 mb-1">Notes &amp; modalités de facturation</label>
                   <input type="text" data-field="notes" value="${esc(prof.notes || '')}" placeholder="Ex. Paiement net 15 jours, modalités particulières..." class="w-full px-3 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-xl" />
@@ -15425,7 +15593,9 @@ serve(async (req) => {
           autoMatched,
           totalWaveAmt: paidWaveInvoices.reduce((s, r) => s + Number(r.amountPaid || r.total || 0), 0)
         };
+        window._lastSyncedWaveInvoices = waveInvoices;
         renderAdminFinances();
+        renderAdminEntreprises();
         toast(autoMatched > 0
           ? `Wave synchronisé : ${autoMatched} facture(s) partenaire(s) marquée(s) encaissée(s) ✓`
           : `Wave synchronisé (${waveInvoices.length} facture(s) lue(s), tout est déjà à jour) ✓`);
@@ -15505,6 +15675,7 @@ serve(async (req) => {
 
         seqMap[entName] = nextNum;
         await saveWaveCompanySeqMap(seqMap);
+        renderAdminEntreprises();
         toast(`Facture ${invNumber} créée dans Wave avec ${lineItems.length || 1} ligne(s) client ✓`);
         if (data?.invoice?.viewUrl) {
           window.open(data.invoice.viewUrl, '_blank', 'noopener');
@@ -15754,7 +15925,7 @@ serve(async (req) => {
                 <td class="py-3 px-2.5 text-right font-semibold text-slate-500 tabular-nums">${fmtMoney(b.grossTtc)}</td>
                 <td class="py-3 px-3.5 text-right">
                   <div class="inline-flex items-center justify-end gap-1.5">
-                    ${!isPaid ? `<button type="button" onclick="createDraftInvoiceInWaveForBatch('${esc(b.entName).replace(/'/g, "\\'")}', '${esc(b.ym)}', ${Number(b.grossHt || 0)}, ${Number(b.count || 0)})" title="Créer directement la facture brouillon dans Wave" class="px-2.5 py-1.5 text-[11px] font-extrabold rounded-xl bg-indigo-50 text-indigo-800 border border-indigo-200 hover:bg-indigo-100 transition cursor-pointer">📤 Wave</button>` : ''}
+                    
                     <button type="button" onclick="togglePartnerBatchPaid('${safeKey}')" class="px-3 py-1.5 text-[11px] font-extrabold rounded-xl transition cursor-pointer ${isPaid ? 'bg-emerald-100 text-emerald-800 border border-emerald-300' : 'bg-amber-50 text-amber-900 border border-amber-300 hover:bg-amber-100'}">
                       ${isPaid ? `✓ Encaissé (${esc(b.paidInfo.paidAt || '')})` : '⏳ Marquer encaissé'}
                     </button>

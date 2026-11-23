@@ -2412,6 +2412,57 @@
 
           <!-- 4 CARTES KPI PARTENAIRES -->
           <div id="admin-ent-summary-cards" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5"></div>
+
+          <!-- BARRE INTÉGRÉE FACTURATION & RAPPROCHEMENT WAVE -->
+          <div class="pt-3 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div class="flex items-center gap-2 text-xs">
+              <span class="px-2.5 py-1 rounded-lg bg-indigo-50 text-indigo-800 border border-indigo-200 font-extrabold">🌊 Facturation Wave Accounting</span>
+              <span class="text-slate-500">Créez vos factures brouillons (1 ligne par client) et associez vos factures directement sur chaque entreprise.</span>
+            </div>
+            <div class="flex flex-wrap items-center gap-2 shrink-0">
+              <button type="button" id="btn-wave-direct-sync" onclick="syncWaveDirectFromPortal()" class="px-3.5 py-2 text-xs font-extrabold text-white bg-indigo-600 hover:bg-indigo-700 active:scale-95 rounded-xl shadow-xs transition inline-flex items-center gap-1.5 cursor-pointer">
+                <span id="wave-direct-sync-icon">🔄</span>
+                <span id="wave-direct-sync-label">Synchroniser Wave</span>
+              </button>
+              <button type="button" onclick="toggleWaveApiSetupBox()" title="Configuration & code serveur Wave" class="px-3 py-2 text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-200 rounded-xl transition cursor-pointer">
+                ⚙️ API Wave
+              </button>
+              <label class="cursor-pointer px-3 py-2 text-xs font-bold text-indigo-800 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 rounded-xl transition inline-flex items-center gap-1.5">
+                <span>📥 CSV Wave</span>
+                <input id="fin-wave-csv-input" type="file" accept=".csv" class="hidden" onchange="handleWaveReconcileCsvUpload(this)" />
+              </label>
+            </div>
+          </div>
+
+          <!-- PANNEAU CONFIGURATION CONNEXION DIRECTE WAVE API -->
+          <div id="fin-wave-api-setup-box" class="hidden bg-slate-900 text-slate-100 rounded-2xl p-4 space-y-3 border border-indigo-500/40 text-xs">
+            <div class="flex items-center justify-between gap-2">
+              <div class="font-extrabold text-emerald-400 flex items-center gap-2">
+                <span>🔌 Connecteur direct Wave Accounting (GraphQL API)</span>
+                <span id="wave-api-conn-badge" class="px-2 py-0.5 text-[10px] font-extrabold rounded-full bg-white/10 text-slate-300">Non testé</span>
+              </div>
+              <button type="button" onclick="toggleWaveApiSetupBox(false)" class="text-slate-400 hover:text-white font-bold">✕</button>
+            </div>
+            <p class="text-[11px] text-slate-300 leading-relaxed">
+              Votre jeton d'accès Wave reste stocké de façon chiffrée dans <strong>Supabase Edge Functions</strong> (secret <code>WAVE_ACCESS_TOKEN</code>). Une fois la fonction <code>wave-sync</code> déployée, créez vos factures brouillons en 1 clic sur chaque entreprise et synchronisez les factures payées.
+            </p>
+            <div class="flex flex-wrap items-center justify-between gap-2 pt-1 border-t border-white/10">
+              <div id="wave-business-selector-wrap" class="flex items-center gap-2">
+                <span class="text-[11px] text-indigo-200 font-bold">Entreprise Wave :</span>
+                <select id="wave-business-select" onchange="saveSelectedWaveBusinessId(this.value)" class="px-2.5 py-1 text-xs font-bold bg-slate-800 text-white border border-slate-700 rounded-lg">
+                  <option value="">Détection automatique...</option>
+                </select>
+              </div>
+              <div class="flex items-center gap-2">
+                <button type="button" onclick="copyWaveEdgeFunctionCode()" class="px-3 py-1.5 text-[11px] font-extrabold bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg transition cursor-pointer">
+                  📋 Copier le code Edge Function (wave-sync)
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- RÉSULTAT DU RAPPROCHEMENT WAVE -->
+          <div id="fin-wave-reconcile-box" class="hidden bg-emerald-50/80 border border-emerald-200 rounded-2xl p-4 space-y-2.5"></div>
         </div>
 
         <!-- AJOUTER UNE ENTREPRISE PARTENAIRE -->
@@ -2664,53 +2715,13 @@
           <div class="lg:col-span-7 bg-white rounded-3xl border border-slate-200/80 p-5 sm:p-6 shadow-xs space-y-4">
             <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div>
-                <h3 class="text-base font-extrabold text-slate-900">🧾 Commissions partenaires &amp; Rapprochement Wave</h3>
-                <p class="text-xs text-slate-500 mt-0.5">Suivez les factures dues par vos entreprises partenaires et rapprochez vos paiements Wave en 1 clic.</p>
+                <h3 class="text-base font-extrabold text-slate-900">🧾 Encaissements partenaires</h3>
+                <p class="text-xs text-slate-500 mt-0.5">Suivez les règlements reçus de vos partenaires (la création et le choix des factures Wave sont dans <strong>🏢 Entreprises partenaires</strong>).</p>
               </div>
-              <div class="flex flex-wrap items-center gap-2 shrink-0">
-                <button type="button" id="btn-wave-direct-sync" onclick="syncWaveDirectFromPortal()" class="px-3.5 py-2 text-xs font-extrabold text-white bg-indigo-600 hover:bg-indigo-700 active:scale-95 rounded-xl shadow-xs transition inline-flex items-center gap-1.5 cursor-pointer">
-                  <span id="wave-direct-sync-icon">🔄</span>
-                  <span id="wave-direct-sync-label">Synchroniser Wave</span>
-                </button>
-                <button type="button" onclick="toggleWaveApiSetupBox()" title="Configuration & code serveur Wave" class="px-3 py-2 text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-200 rounded-xl transition cursor-pointer">
-                  ⚙️ API Wave
-                </button>
-                <label class="cursor-pointer px-3 py-2 text-xs font-bold text-indigo-800 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 rounded-xl transition inline-flex items-center gap-1.5">
-                  <span>📥 CSV</span>
-                  <input id="fin-wave-csv-input" type="file" accept=".csv" class="hidden" onchange="handleWaveReconcileCsvUpload(this)" />
-                </label>
-              </div>
+              <button type="button" onclick="switchTab('tab-admin-entreprises')" class="px-3 py-1.5 text-xs font-bold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 rounded-xl transition shrink-0 cursor-pointer">
+                🏢 Facturation Wave →
+              </button>
             </div>
-
-            <!-- PANNEAU CONFIGURATION CONNEXION DIRECTE WAVE API -->
-            <div id="fin-wave-api-setup-box" class="hidden bg-slate-900 text-slate-100 rounded-2xl p-4 space-y-3 border border-indigo-500/40 text-xs">
-              <div class="flex items-center justify-between gap-2">
-                <div class="font-extrabold text-emerald-400 flex items-center gap-2">
-                  <span>🔌 Connecteur direct Wave Accounting (GraphQL API)</span>
-                  <span id="wave-api-conn-badge" class="px-2 py-0.5 text-[10px] font-extrabold rounded-full bg-white/10 text-slate-300">Non testé</span>
-                </div>
-                <button type="button" onclick="toggleWaveApiSetupBox(false)" class="text-slate-400 hover:text-white font-bold">✕</button>
-              </div>
-              <p class="text-[11px] text-slate-300 leading-relaxed">
-                Votre jeton d'accès Wave reste stocké de façon chiffrée dans <strong>Supabase Edge Functions</strong> (secret <code>WAVE_ACCESS_TOKEN</code>). Une fois la fonction <code>wave-sync</code> déployée, le bouton <strong>🔄 Synchroniser Wave</strong> rapproche automatiquement vos factures payées et permet de créer des factures brouillons directement dans Wave.
-              </p>
-              <div class="flex flex-wrap items-center justify-between gap-2 pt-1 border-t border-white/10">
-                <div id="wave-business-selector-wrap" class="flex items-center gap-2">
-                  <span class="text-[11px] text-indigo-200 font-bold">Entreprise Wave :</span>
-                  <select id="wave-business-select" onchange="saveSelectedWaveBusinessId(this.value)" class="px-2.5 py-1 text-xs font-bold bg-slate-800 text-white border border-slate-700 rounded-lg">
-                    <option value="">Détection automatique...</option>
-                  </select>
-                </div>
-                <div class="flex items-center gap-2">
-                  <button type="button" onclick="copyWaveEdgeFunctionCode()" class="px-3 py-1.5 text-[11px] font-extrabold bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg transition cursor-pointer">
-                    📋 Copier le code Edge Function (wave-sync)
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            <!-- RÉSULTAT DU RAPPROCHEMENT CSV WAVE (SI IMPORTÉ) -->
-            <div id="fin-wave-reconcile-box" class="hidden bg-emerald-50/80 border border-emerald-200 rounded-2xl p-4 space-y-2.5"></div>
 
             <!-- FACTURES / LOTS PAR ENTREPRISE PARTENAIRE -->
             <div class="overflow-x-auto border border-slate-200/80 rounded-2xl">
@@ -2858,8 +2869,8 @@
     </div>
   </div>
 
-  <script src="route-optimizer.js?v=20261122j" defer></script>
-  <script src="guide.js?v=20261122j" defer></script>
-  <script src="app.js?v=20261122j" defer></script>
+  <script src="route-optimizer.js?v=20261122k" defer></script>
+  <script src="guide.js?v=20261122k" defer></script>
+  <script src="app.js?v=20261122k" defer></script>
 </body>
 </html>
