@@ -14434,7 +14434,7 @@
         } else {
           tbodyPartners.innerHTML = batches.map(b => {
             const isPaid = Boolean(b.paidInfo?.paid);
-            const safeKey = b.batchKey.replace(/'/g, "'");
+            const safeKey = b.batchKey.replace(/'/g, "\\'");
             return `
               <tr class="hover:bg-slate-50">
                 <td class="py-3 px-3.5">
@@ -14654,8 +14654,6 @@
       }
     }
 
-
-    initApp();
 
     document.getElementById('btn-reset-cfg')?.addEventListener('click', () => {
       localStorage.removeItem('korpo_sb_url');
