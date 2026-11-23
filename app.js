@@ -55,6 +55,8 @@
       'korpo_rep_mileage_v1':           { store: 'rep_mileage_logs',     shared: true,  type: 'map' },
       'korpo_kpi_team_snapshot_v1':     { store: 'kpi_team_snapshot',    shared: true,  type: 'map' },
       'korpo_wave_company_seq_v1':      { store: 'wave_company_seq',     shared: true,  type: 'map' },
+      'korpo_fin_expenses_v1':          { store: 'fin_expenses',         shared: true,  type: 'map' },
+      'korpo_fin_partner_paid_v1':      { store: 'fin_partner_paid',     shared: true,  type: 'map' },
       'korpo_archived_reps_v1':         { store: 'archived_reps',        shared: true,  type: 'map' },
       'korpo_archived_entreprises_v1':  { store: 'archived_entreprises', shared: true,  type: 'map' },
       'korpo_personal_monthly_targets_v1': { store: 'personal_monthly_targets', shared: false, type: 'map' },
@@ -2738,6 +2740,7 @@
       const adminItems = isAdmin ? [
         { id: 'tab-admin-ventes', icon: '📋', shortLabel: 'Registre', label: 'Toutes les ventes', desc: 'Valider & gérer les dossiers' },
         { id: 'tab-admin-dashboard', icon: '📈', shortLabel: 'Direction', label: 'Tableau de bord', desc: 'Analytique, paie & courriels' },
+        { id: 'tab-admin-finances', icon: '🏦', shortLabel: 'Finances', label: 'Finances Korpo', desc: 'Encaissements, profit réel & Wave' },
         { id: 'tab-admin-taux', icon: '⚙️', shortLabel: 'Taux', label: 'Grille des taux', desc: 'Commissions & règles clients' },
         { id: 'tab-admin-equipe', icon: '🏢', shortLabel: 'Équipe', label: 'Entreprises & Équipe', desc: 'Objectifs, reps & partenaires' }
       ] : [];
@@ -2914,6 +2917,7 @@
       if (targetSectionId === 'tab-mes-ventes') applyMobilePersonalSplitLayout();
       if (tabId === 'tab-kpi') renderKpiDashboard();
       if (tabId === 'tab-route') window.KorpoRoute?.render();
+      if (tabId === 'tab-admin-finances') renderAdminFinances();
     }
 
     function setChatBackgroundScrollLocked(locked) {
@@ -3838,6 +3842,7 @@
           renderAdminNotifications();
           renderAdminVentes();
           renderAdminDashboard();
+        renderAdminFinances();
           renderMesVentes();
           renderKpiDashboard();
           newPending.forEach(v => triggerAdminNewSaleAlert(v));
@@ -14002,7 +14007,651 @@
       e.preventDefault();
       lsSet('korpo_sb_url', document.getElementById('cfg-url').value.trim());
       lsSet('korpo_sb_key', document.getElementById('cfg-key').value.trim());
-      initApp();
+      
+    // =========================================================================
+    // SECTION FINANCES KORPO : ENCAISSEMENTS, PROFIT RÉEL, PRÉVISIONS & WAVE
+    // =========================================================================
+    const QC_TAX_RATE = 0.14975; // TPS 5 % + TVQ 9,975 %
+    let finTaxMode = 'ht'; // 'ht' | 'ttc'
+    let waveReconcileResults = null;
+
+    function getFinExpensesStore() {
+      return lsGetJson('korpo_fin_expenses_v1', '{}');
+    }
+    function saveFinExpensesStore(obj) {
+      lsSet('korpo_fin_expenses_v1', JSON.stringify(obj || {}));
+    }
+
+    function getFinPartnerPaidStore() {
+      return lsGetJson('korpo_fin_partner_paid_v1', '{}');
+    }
+    function saveFinPartnerPaidStore(obj) {
+      lsSet('korpo_fin_partner_paid_v1', JSON.stringify(obj || {}));
+    }
+
+    window.setFinancesTaxMode = (mode) => {
+      finTaxMode = mode === 'ttc' ? 'ttc' : 'ht';
+      const btnHt = document.getElementById('btn-fin-tax-ht');
+      const btnTtc = document.getElementById('btn-fin-tax-ttc');
+      if (btnHt && btnTtc) {
+        btnHt.className = finTaxMode === 'ht'
+          ? 'px-3 py-1.5 rounded-lg bg-indigo-600 text-white shadow-2xs transition cursor-pointer'
+          : 'px-3 py-1.5 rounded-lg text-slate-600 hover:text-slate-900 transition cursor-pointer';
+        btnTtc.className = finTaxMode === 'ttc'
+          ? 'px-3 py-1.5 rounded-lg bg-indigo-600 text-white shadow-2xs transition cursor-pointer'
+          : 'px-3 py-1.5 rounded-lg text-slate-600 hover:text-slate-900 transition cursor-pointer';
+      }
+      renderAdminFinances();
+    };
+
+    function getFinPeriodMonths() {
+      const mode = document.getElementById('fin-filter-period')?.value || 'this_month';
+      const monthInp = document.getElementById('fin-filter-month');
+      if (monthInp) {
+        monthInp.classList.toggle('hidden', mode !== 'specific_month');
+        if (mode === 'specific_month' && !monthInp.value) monthInp.value = currentMonthStr;
+      }
+      const allYms = new Set([currentMonthStr]);
+      (state.ventes || []).forEach(v => {
+        const ym = getSaleStatsMonth(v);
+        if (isValidYearMonth(ym)) allYms.add(ym);
+      });
+      Object.values(getFinExpensesStore()).forEach(e => {
+        if (e && e.ym && isValidYearMonth(e.ym)) allYms.add(e.ym);
+      });
+      const sortedAll = Array.from(allYms).sort();
+
+      if (mode === 'this_month') return { label: formatYearMonthLabelFr(currentMonthStr), months: [currentMonthStr] };
+      if (mode === 'last_month') {
+        const prev = getPreviousYearMonth(currentMonthStr);
+        return { label: formatYearMonthLabelFr(prev), months: [prev] };
+      }
+      if (mode === 'this_quarter') {
+        const curQ = getQuarterForMonth(currentMonthStr);
+        return { label: `Trimestre ${curQ.replace('-Q', ' T')}`, months: sortedAll.filter(ym => getQuarterForMonth(ym) === curQ) };
+      }
+      if (mode === 'this_year') {
+        const y = String(today.getFullYear());
+        return { label: `Année ${y}`, months: sortedAll.filter(ym => ym.startsWith(y)) };
+      }
+      if (mode === 'specific_month') {
+        const m = monthInp?.value || currentMonthStr;
+        return { label: formatYearMonthLabelFr(m), months: [m] };
+      }
+      return { label: 'Cumul complet', months: sortedAll };
+    }
+
+    function getPartnerBatchKey(entName, ym) {
+      return `${ym}__${String(entName || '').trim()}`;
+    }
+
+    function computeKorpoGrossRevenueForSale(v) {
+      // Revenu brut facturé par Korpo au partenaire = part rep + part Korpo (Olivier)
+      const cRep = Number(v.commission_rep || 0);
+      const cOli = Number(v.commission_olivier || 0);
+      return Math.round((cRep + cOli) * 100) / 100;
+    }
+
+    window.togglePartnerBatchPaid = (batchKey) => {
+      if (currentProfile?.role !== 'admin') return;
+      const store = getFinPartnerPaidStore();
+      if (store[batchKey]?.paid) {
+        delete store[batchKey];
+        toast('Facture partenaire remise en attente d’encaissement');
+      } else {
+        store[batchKey] = {
+          paid: true,
+          paidAt: localYmd(),
+          by: currentProfile.nom || 'Admin'
+        };
+        toast('Encaissement partenaire confirmé ✓');
+      }
+      saveFinPartnerPaidStore(store);
+      renderAdminFinances();
+    };
+
+    window.payAllReadyForRepInFinances = async (repId, monthsJson) => {
+      if (currentProfile?.role !== 'admin') return;
+      let months = [];
+      try { months = JSON.parse(decodeURIComponent(monthsJson)); } catch (e) {}
+      const partnerPaidStore = getFinPartnerPaidStore();
+      const toPay = (state.ventes || []).filter(v => {
+        if (String(v.representant_id) !== String(repId)) return false;
+        if (v.statut_paiement === 'paye' || v.statut_depot !== 'depot_recu') return false;
+        const ym = getSaleStatsMonth(v);
+        if (months.length && !months.includes(ym)) return false;
+        const entName = state.entreprises.find(e => String(e.id) === String(v.entreprise_id))?.nom || resolveSaleArchivedEntName(v) || '';
+        return Boolean(partnerPaidStore[getPartnerBatchKey(entName, ym)]?.paid);
+      });
+      if (!toPay.length) return toast('Aucune commission encaissée prête à verser pour ce représentant.', 'error');
+      const repNom = state.representants.find(r => String(r.id) === String(repId))?.nom || 'Représentant';
+      const totalAmt = toPay.reduce((s, v) => s + Number(v.commission_rep || 0), 0);
+      const ok = await askConfirm(
+        `Marquer ${toPay.length} commission(s) payée(s) ?`,
+        `Confirmer le versement de ${fmtMoney(totalAmt)} à ${repNom} (dossiers déjà encaissés par Korpo).`
+      );
+      if (!ok) return;
+      const ids = toPay.map(v => v.id);
+      const { error } = await sb.from('ventes').update({ statut_paiement: 'paye' }).in('id', ids);
+      if (error) return toast(error.message, 'error');
+      for (const id of ids) {
+        await recordSaleAudit(id, 'Commission versée au représentant', `Payé depuis Finances Korpo (${fmtMoney(totalAmt)})`, '💸');
+      }
+      toast(`Versement de ${fmtMoney(totalAmt)} enregistré pour ${repNom} ✓`);
+      await loadAllData();
+    };
+
+    window.deleteFinExpense = (expId) => {
+      if (currentProfile?.role !== 'admin') return;
+      const store = getFinExpensesStore();
+      delete store[expId];
+      saveFinExpensesStore(store);
+      renderAdminFinances();
+      toast('Dépense supprimée');
+    };
+
+    window.applyRecurringExpensesToCurrentMonth = () => {
+      if (currentProfile?.role !== 'admin') return;
+      const store = getFinExpensesStore();
+      const existingThisMonth = Object.values(store).filter(e => e && e.ym === currentMonthStr);
+      const recurringTemplates = new Map();
+      Object.values(store).forEach(e => {
+        if (e && e.recurring && e.label) {
+          recurringTemplates.set(`${e.category}__${e.label.trim().toLowerCase()}`, e);
+        }
+      });
+      if (!recurringTemplates.size) {
+        return toast('Aucun frais fixe récurrent enregistré. Cochez « Frais fixe mensuel » lors de l’ajout d’une dépense.', 'error');
+      }
+      let added = 0;
+      recurringTemplates.forEach((tpl, key) => {
+        const alreadyExists = existingThisMonth.some(x => `${x.category}__${String(x.label || '').trim().toLowerCase()}` === key);
+        if (!alreadyExists) {
+          const id = `exp_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
+          store[id] = {
+            id,
+            date: `${currentMonthStr}-01`,
+            ym: currentMonthStr,
+            category: tpl.category,
+            label: tpl.label,
+            amountHt: Number(tpl.amountHt || 0),
+            recurring: true,
+            createdAt: new Date().toISOString()
+          };
+          added++;
+        }
+      });
+      if (!added) return toast(`Tous vos frais fixes (${recurringTemplates.size}) sont déjà présents pour ${currentMonthStr}.`);
+      saveFinExpensesStore(store);
+      renderAdminFinances();
+      toast(`${added} frais fixe(s) généré(s) pour ${currentMonthStr} ✓`);
+    };
+
+    document.getElementById('form-fin-expense')?.addEventListener('submit', (e) => {
+      e.preventDefault();
+      if (currentProfile?.role !== 'admin') return;
+      const dateVal = document.getElementById('fin-exp-date')?.value || localYmd();
+      const catVal = document.getElementById('fin-exp-cat')?.value || 'Autre dépense';
+      const labelVal = document.getElementById('fin-exp-label')?.value.trim() || '';
+      const amtVal = parseFloat(document.getElementById('fin-exp-amount')?.value) || 0;
+      const recVal = Boolean(document.getElementById('fin-exp-recurring')?.checked);
+      if (!labelVal || amtVal <= 0) return toast('Entrez une description et un montant valide.', 'error');
+
+      const id = `exp_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
+      const store = getFinExpensesStore();
+      store[id] = {
+        id,
+        date: dateVal,
+        ym: dateVal.slice(0, 7),
+        category: catVal,
+        label: labelVal,
+        amountHt: Math.round(amtVal * 100) / 100,
+        recurring: recVal,
+        createdAt: new Date().toISOString()
+      };
+      saveFinExpensesStore(store);
+      document.getElementById('fin-exp-label').value = '';
+      document.getElementById('fin-exp-amount').value = '';
+      document.getElementById('fin-exp-recurring').checked = false;
+      renderAdminFinances();
+      toast(`Dépense enregistrée (${fmtMoney(amtVal)} HT) ✓`);
+    });
+
+    window.handleWaveReconcileCsvUpload = async (inputEl) => {
+      const file = inputEl?.files?.[0];
+      if (!file) return;
+      try {
+        const text = await file.text();
+        const lines = text.split(/?
+/).filter(l => l.trim());
+        if (lines.length < 2) return toast('Fichier CSV Wave vide.', 'error');
+        const sep = lines[0].includes(';') ? ';' : ',';
+        const headers = parseCsvLine(lines[0], sep).map(h => h.toLowerCase().trim());
+
+        const idxCustomer = headers.findIndex(h => h.includes('customer') || h.includes('client') || h.includes('contact') || h.includes('description'));
+        const idxAmount = headers.findIndex(h => h.includes('amount') || h.includes('total') || h.includes('montant') || h.includes('paid'));
+        const idxStatus = headers.findIndex(h => h.includes('status') || h.includes('statut') || h.includes('state'));
+        const idxInvNum = headers.findIndex(h => h.includes('invoice') || h.includes('facture') || h.includes('number'));
+
+        const waveRows = [];
+        for (let i = 1; i < lines.length; i++) {
+          const cols = parseCsvLine(lines[i], sep);
+          const amt = idxAmount >= 0 ? Math.abs(parseAmount(cols[idxAmount])) : NaN;
+          if (isNaN(amt) || amt <= 0) continue;
+          waveRows.push({
+            customer: idxCustomer >= 0 ? String(cols[idxCustomer] || '').trim() : '',
+            invoiceNum: idxInvNum >= 0 ? String(cols[idxInvNum] || '').trim() : '',
+            status: idxStatus >= 0 ? String(cols[idxStatus] || '').trim() : '',
+            amount: Math.round(amt * 100) / 100
+          });
+        }
+
+        const partnerPaidStore = getFinPartnerPaidStore();
+        const { months } = getFinPeriodMonths();
+        const batches = buildPartnerBatchesForMonths(months);
+        let autoMatched = 0;
+
+        batches.forEach(b => {
+          const match = waveRows.find(w => {
+            const custMatch = w.customer.toLowerCase().includes(b.entName.toLowerCase()) ||
+              w.invoiceNum.toLowerCase().startsWith(getWaveCompanyPrefix(b.entName).toLowerCase());
+            if (!custMatch) return false;
+            const isPaidStatus = !w.status || /paid|pay[eé]|complet|deposit|d[eé]p[oô]t/i.test(w.status);
+            const amtMatchesHt = Math.abs(w.amount - b.grossHt) <= 2.0;
+            const amtMatchesTtc = Math.abs(w.amount - b.grossTtc) <= 2.0;
+            return isPaidStatus && (amtMatchesHt || amtMatchesTtc);
+          });
+          if (match && !partnerPaidStore[b.batchKey]?.paid) {
+            partnerPaidStore[b.batchKey] = {
+              paid: true,
+              paidAt: localYmd(),
+              waveRef: match.invoiceNum || 'Import CSV Wave',
+              by: 'Rapprochement Wave'
+            };
+            autoMatched++;
+          }
+        });
+
+        if (autoMatched > 0) saveFinPartnerPaidStore(partnerPaidStore);
+        waveReconcileResults = {
+          filename: file.name,
+          totalRows: waveRows.length,
+          autoMatched,
+          totalWaveAmt: waveRows.reduce((s, r) => s + r.amount, 0)
+        };
+        renderAdminFinances();
+        toast(`Rapprochement Wave terminé : ${autoMatched} lot(s) partenaire(s) rapproché(s) ✓`);
+      } catch (err) {
+        toast('Erreur lecture CSV Wave : ' + err.message, 'error');
+      } finally {
+        inputEl.value = '';
+      }
+    };
+
+    function buildPartnerBatchesForMonths(monthsList) {
+      const partnerPaidStore = getFinPartnerPaidStore();
+      const map = new Map();
+      (state.ventes || []).forEach(v => {
+        if (v.statut_depot !== 'depot_recu') return;
+        const ym = getSaleStatsMonth(v);
+        if (monthsList && monthsList.length && !monthsList.includes(ym)) return;
+        const entName = state.entreprises.find(e => String(e.id) === String(v.entreprise_id))?.nom || resolveSaleArchivedEntName(v) || 'Autre';
+        const batchKey = getPartnerBatchKey(entName, ym);
+        const cur = map.get(batchKey) || {
+          batchKey,
+          entName,
+          ym,
+          count: 0,
+          salesVolume: 0,
+          grossHt: 0,
+          grossTtc: 0,
+          repComm: 0,
+          paidInfo: partnerPaidStore[batchKey] || null
+        };
+        const gross = computeKorpoGrossRevenueForSale(v);
+        cur.count += 1;
+        cur.salesVolume += Number(v.valeur || 0);
+        cur.grossHt = Math.round((cur.grossHt + gross) * 100) / 100;
+        cur.grossTtc = Math.round(cur.grossHt * (1 + QC_TAX_RATE) * 100) / 100;
+        cur.repComm = Math.round((cur.repComm + Number(v.commission_rep || 0)) * 100) / 100;
+        map.set(batchKey, cur);
+      });
+      return Array.from(map.values()).sort((a, b) => b.ym.localeCompare(a.ym) || b.grossHt - a.grossHt);
+    }
+
+    function renderAdminFinances() {
+      if (currentProfile?.role !== 'admin') return;
+      const expDateIn = document.getElementById('fin-exp-date');
+      if (expDateIn && !expDateIn.value) expDateIn.value = localYmd();
+
+      const { label: periodLabel, months } = getFinPeriodMonths();
+      const partnerPaidStore = getFinPartnerPaidStore();
+      const expensesStore = getFinExpensesStore();
+      const taxMult = finTaxMode === 'ttc' ? (1 + QC_TAX_RATE) : 1;
+      const modeTag = finTaxMode === 'ttc' ? 'TTC' : 'HT';
+
+      // 1. Calcul des revenus, encaissements, commissions à recevoir et à payer sur la période
+      const periodSales = (state.ventes || []).filter(v => {
+        const ym = getSaleStatsMonth(v);
+        return !months.length || months.includes(ym);
+      });
+      const confirmedSales = periodSales.filter(v => v.statut_depot === 'depot_recu');
+
+      let totalFacturableHt = 0;
+      let totalEncaisseHt = 0;
+      let totalARecevoirPartenairesHt = 0;
+      let totalCommRepsPayees = 0;
+      let totalCommRepsAPayer = 0;
+
+      confirmedSales.forEach(v => {
+        const ym = getSaleStatsMonth(v);
+        const entName = state.entreprises.find(e => String(e.id) === String(v.entreprise_id))?.nom || resolveSaleArchivedEntName(v) || 'Autre';
+        const isPartnerPaid = Boolean(partnerPaidStore[getPartnerBatchKey(entName, ym)]?.paid);
+        const grossHt = computeKorpoGrossRevenueForSale(v);
+        const cRep = Number(v.commission_rep || 0);
+
+        totalFacturableHt += grossHt;
+        if (isPartnerPaid) totalEncaisseHt += grossHt;
+        else totalARecevoirPartenairesHt += grossHt;
+
+        if (v.statut_paiement === 'paye') totalCommRepsPayees += cRep;
+        else totalCommRepsAPayer += cRep;
+      });
+
+      const periodExpenses = Object.values(expensesStore)
+        .filter(e => e && (!months.length || months.includes(e.ym)))
+        .sort((a, b) => String(b.date || '').localeCompare(String(a.date || '')));
+      const totalExpensesHt = periodExpenses.reduce((s, e) => s + Number(e.amountHt || 0), 0);
+
+      // Profit réel conservé par Korpo = Encaissé (ou facturable HT) - Commissions reps (payées + dues) - Dépenses HT
+      const totalCommRepsAll = totalCommRepsPayees + totalCommRepsAPayer;
+      const profitReelEncaisseHt = totalEncaisseHt - totalCommRepsAll - totalExpensesHt;
+      const profitProjetePeriodHt = totalFacturableHt - totalCommRepsAll - totalExpensesHt;
+
+      const tpsTvqPercue = Math.round(totalEncaisseHt * QC_TAX_RATE * 100) / 100;
+      const tpsTvqPayeeDepenses = Math.round(totalExpensesHt * QC_TAX_RATE * 100) / 100;
+      const tpsTvqNetARemettre = Math.max(0, Math.round((tpsTvqPercue - tpsTvqPayeeDepenses) * 100) / 100);
+
+      // Rendu des 5 cartes KPI Finances
+      const cardsEl = document.getElementById('fin-kpi-cards');
+      if (cardsEl) {
+        cardsEl.innerHTML = `
+          <div class="bg-white p-4 rounded-2xl border border-emerald-200/90 shadow-xs space-y-1.5">
+            <div class="text-[11px] font-bold text-emerald-700">1. Argent encaissé (${modeTag})</div>
+            <div class="text-xl font-extrabold text-emerald-700 tabular-nums">${fmtMoney(totalEncaisseHt * taxMult)}</div>
+            <div class="text-[10.5px] text-slate-500">Reçu des partenaires (${esc(periodLabel)})</div>
+          </div>
+
+          <div class="bg-white p-4 rounded-2xl border border-sky-200/90 shadow-xs space-y-1.5">
+            <div class="text-[11px] font-bold text-sky-700">2. À recevoir partenaires (${modeTag})</div>
+            <div class="text-xl font-extrabold text-sky-800 tabular-nums">${fmtMoney(totalARecevoirPartenairesHt * taxMult)}</div>
+            <div class="text-[10.5px] text-slate-500">Factures en attente de règlement</div>
+          </div>
+
+          <div class="bg-white p-4 rounded-2xl border border-amber-200/90 shadow-xs space-y-1.5">
+            <div class="text-[11px] font-bold text-amber-700">3. Comm. à payer aux reps</div>
+            <div class="text-xl font-extrabold text-amber-700 tabular-nums">${fmtMoney(totalCommRepsAPayer)}</div>
+            <div class="text-[10.5px] text-slate-500">Déjà versées : ${fmtMoney(totalCommRepsPayees)}</div>
+          </div>
+
+          <div class="bg-white p-4 rounded-2xl border border-rose-200/90 shadow-xs space-y-1.5">
+            <div class="text-[11px] font-bold text-rose-700">4. Dépenses &amp; frais fixes (${modeTag})</div>
+            <div class="text-xl font-extrabold text-rose-700 tabular-nums">${fmtMoney(totalExpensesHt * taxMult)}</div>
+            <div class="text-[10.5px] text-slate-500">${periodExpenses.length} dépense(s) inscrite(s)</div>
+          </div>
+
+          <div class="bg-gradient-to-br from-slate-900 to-indigo-950 p-4 rounded-2xl text-white shadow-md space-y-1.5">
+            <div class="text-[11px] font-bold text-indigo-200">5. Profit réel conservé (Net)</div>
+            <div class="text-xl font-extrabold ${profitReelEncaisseHt >= 0 ? 'text-emerald-400' : 'text-rose-400'} tabular-nums">${fmtMoney(profitReelEncaisseHt)}</div>
+            <div class="text-[10.5px] text-slate-300 tabular-nums">Après encaissement total : ${fmtMoney(profitProjetePeriodHt)}</div>
+          </div>
+        `;
+      }
+
+      const taxBanner = document.getElementById('fin-tax-cash-banner');
+      if (taxBanner) {
+        taxBanner.innerHTML = `
+          <div class="flex flex-wrap items-center gap-4">
+            <span>🧾 <strong>Provision TPS/TVQ (14,975 %) :</strong></span>
+            <span class="text-slate-600 tabular-nums">Perçue sur encaissements : <strong>${fmtMoney(tpsTvqPercue)}</strong></span>
+            <span class="text-slate-600 tabular-nums">CTI/RTI sur dépenses : <strong>− ${fmtMoney(tpsTvqPayeeDepenses)}</strong></span>
+          </div>
+          <div class="px-3 py-1 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 font-extrabold tabular-nums">
+            Solde TPS/TVQ à mettre de côté : ${fmtMoney(tpsTvqNetARemettre)}
+          </div>
+        `;
+      }
+
+      // 2. Tableau Commissions partenaires & Rapprochement Wave
+      const batches = buildPartnerBatchesForMonths(months);
+      const tbodyPartners = document.getElementById('tbody-fin-partners');
+      if (tbodyPartners) {
+        if (!batches.length) {
+          tbodyPartners.innerHTML = `<tr><td colspan="5" class="py-6 text-center text-xs text-slate-400">Aucune vente confirmée sur cette période.</td></tr>`;
+        } else {
+          tbodyPartners.innerHTML = batches.map(b => {
+            const isPaid = Boolean(b.paidInfo?.paid);
+            const safeKey = b.batchKey.replace(/'/g, "'");
+            return `
+              <tr class="hover:bg-slate-50">
+                <td class="py-3 px-3.5">
+                  <div class="font-extrabold text-slate-900">${esc(b.entName)}</div>
+                  <div class="text-[11px] text-slate-500">${esc(formatYearMonthLabelFr(b.ym))} • Volume : ${fmtMoney0(b.salesVolume)}</div>
+                </td>
+                <td class="py-3 px-2.5 text-center font-bold text-slate-700 tabular-nums">${b.count}</td>
+                <td class="py-3 px-2.5 text-right font-extrabold text-slate-900 tabular-nums">${fmtMoney(b.grossHt)}</td>
+                <td class="py-3 px-2.5 text-right font-semibold text-slate-500 tabular-nums">${fmtMoney(b.grossTtc)}</td>
+                <td class="py-3 px-3.5 text-right">
+                  <button type="button" onclick="togglePartnerBatchPaid('${safeKey}')" class="px-3 py-1.5 text-[11px] font-extrabold rounded-xl transition cursor-pointer ${isPaid ? 'bg-emerald-100 text-emerald-800 border border-emerald-300' : 'bg-amber-50 text-amber-900 border border-amber-300 hover:bg-amber-100'}">
+                    ${isPaid ? `✓ Encaissé (${esc(b.paidInfo.paidAt || '')})` : '⏳ Marquer encaissé'}
+                  </button>
+                </td>
+              </tr>
+            `;
+          }).join('');
+        }
+      }
+
+      const waveBox = document.getElementById('fin-wave-reconcile-box');
+      if (waveBox) {
+        if (!waveReconcileResults) {
+          waveBox.classList.add('hidden');
+        } else {
+          waveBox.classList.remove('hidden');
+          waveBox.innerHTML = `
+            <div class="flex items-center justify-between gap-2">
+              <div class="text-xs font-extrabold text-emerald-950">✓ Fichier Wave analysé : ${esc(waveReconcileResults.filename)}</div>
+              <button type="button" onclick="waveReconcileResults=null; renderAdminFinances();" class="text-xs font-bold text-slate-500 hover:text-slate-800">✕</button>
+            </div>
+            <div class="text-[11px] text-emerald-900 tabular-nums">
+              ${waveReconcileResults.totalRows} transaction(s) lue(s) (${fmtMoney(waveReconcileResults.totalWaveAmt)}) • <strong>${waveReconcileResults.autoMatched} lot(s) partenaire(s) rapproché(s) automatiquement</strong>.
+            </div>
+          `;
+        }
+      }
+
+      // 3. Tableau Commissions à payer aux représentants
+      const tbodyPayouts = document.getElementById('tbody-fin-rep-payouts');
+      if (tbodyPayouts) {
+        const repRows = (state.representants || [])
+          .filter(r => r.role !== 'admin')
+          .map(rep => {
+            const repSales = confirmedSales.filter(v => String(v.representant_id) === String(rep.id) && v.statut_paiement !== 'paye');
+            let readyAmt = 0;
+            let waitingPartnerAmt = 0;
+            repSales.forEach(v => {
+              const ym = getSaleStatsMonth(v);
+              const entName = state.entreprises.find(e => String(e.id) === String(v.entreprise_id))?.nom || resolveSaleArchivedEntName(v) || '';
+              const isPartnerPaid = Boolean(partnerPaidStore[getPartnerBatchKey(entName, ym)]?.paid);
+              if (isPartnerPaid) readyAmt += Number(v.commission_rep || 0);
+              else waitingPartnerAmt += Number(v.commission_rep || 0);
+            });
+            return { rep, readyAmt, waitingPartnerAmt };
+          });
+
+        const monthsEncoded = encodeURIComponent(JSON.stringify(months));
+        tbodyPayouts.innerHTML = repRows.map(({ rep, readyAmt, waitingPartnerAmt }) => `
+          <tr class="hover:bg-slate-50">
+            <td class="py-3 px-3.5 font-extrabold text-slate-900">${esc(rep.nom)}</td>
+            <td class="py-3 px-2.5 text-right font-extrabold text-emerald-700 tabular-nums">${fmtMoney(readyAmt)}</td>
+            <td class="py-3 px-2.5 text-right font-semibold text-amber-700 tabular-nums">${fmtMoney(waitingPartnerAmt)}</td>
+            <td class="py-3 px-3.5 text-right">
+              ${readyAmt > 0
+                ? `<button type="button" onclick="payAllReadyForRepInFinances('${esc(rep.id)}', '${monthsEncoded}')" class="px-2.5 py-1 text-[11px] font-extrabold text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg transition cursor-pointer">Verser</button>`
+                : `<span class="text-[11px] text-slate-400">—</span>`}
+            </td>
+          </tr>
+        `).join('');
+      }
+
+      // 4. Tableau Dépenses & frais fixes
+      const tbodyExp = document.getElementById('tbody-fin-expenses');
+      if (tbodyExp) {
+        if (!periodExpenses.length) {
+          tbodyExp.innerHTML = `<tr><td colspan="8" class="py-6 text-center text-xs text-slate-400">Aucune dépense enregistrée sur cette période.</td></tr>`;
+        } else {
+          tbodyExp.innerHTML = periodExpenses.map(exp => {
+            const ht = Number(exp.amountHt || 0);
+            const tax = Math.round(ht * QC_TAX_RATE * 100) / 100;
+            const ttc = Math.round((ht + tax) * 100) / 100;
+            return `
+              <tr class="hover:bg-slate-50">
+                <td class="py-2.5 px-4 whitespace-nowrap text-slate-600 tabular-nums">${esc(exp.date)}</td>
+                <td class="py-2.5 px-3 font-semibold text-slate-700">${esc(exp.category)}</td>
+                <td class="py-2.5 px-3 font-bold text-slate-900">${esc(exp.label)}</td>
+                <td class="py-2.5 px-3 text-center">
+                  ${exp.recurring
+                    ? '<span class="px-2 py-0.5 text-[10px] font-extrabold rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200">Fixe mensuel</span>'
+                    : '<span class="px-2 py-0.5 text-[10px] font-semibold rounded-full bg-slate-100 text-slate-600">Ponctuelle</span>'}
+                </td>
+                <td class="py-2.5 px-3 text-right font-bold text-slate-800 tabular-nums">${fmtMoney(ht)}</td>
+                <td class="py-2.5 px-3 text-right text-slate-500 tabular-nums">${fmtMoney(tax)}</td>
+                <td class="py-2.5 px-4 text-right font-extrabold text-slate-900 tabular-nums">${fmtMoney(ttc)}</td>
+                <td class="py-2.5 px-3 text-right">
+                  <button type="button" onclick="deleteFinExpense('${esc(exp.id)}')" class="px-2 py-1 text-[11px] font-bold text-rose-600 hover:bg-rose-50 rounded-lg cursor-pointer">✕</button>
+                </td>
+              </tr>
+            `;
+          }).join('');
+        }
+      }
+
+      // 5. Prévisions financières mensuelles & annuelles (12 mois de l'année en cours)
+      const curYear = String(today.getFullYear());
+      const months12 = Array.from({ length: 12 }, (_, idx) => `${curYear}-${String(idx + 1).padStart(2, '0')}`);
+
+      // Moyennes historiques pour projeter les mois futurs sans ventes
+      const activeRepsCount = Math.max(1, getActiveKpiReps().length);
+      const teamMonthlySalesObj = ALL_KPI_REPS.reduce((s, rn) => s + getSalesTargetForRep(rn, currentMonthStr), 0);
+      const avgGrossRate = 0.10; // ~10 % marge brute globale Korpo (Rep + Olivier)
+      const avgRepShareRatio = 0.58; // ~58 % reversé aux reps, ~42 % conservé par Korpo
+      const recurringMonthlyFixed = Object.values(expensesStore)
+        .filter(e => e && e.recurring)
+        .reduce((acc, e) => {
+          acc.set(`${e.category}__${String(e.label || '').trim().toLowerCase()}`, Number(e.amountHt || 0));
+          return acc;
+        }, new Map());
+      const baseRecurringSum = Array.from(recurringMonthlyFixed.values()).reduce((s, v) => s + v, 0);
+
+      let annualRev = 0;
+      let annualRepComm = 0;
+      let annualExp = 0;
+      let annualNet = 0;
+
+      const forecastRows = months12.map(ym => {
+        const mSales = (state.ventes || []).filter(v => getSaleStatsMonth(v) === ym);
+        const mExp = Object.values(expensesStore).filter(e => e && e.ym === ym).reduce((s, e) => s + Number(e.amountHt || 0), 0);
+        const isPast = ym < currentMonthStr;
+        const isCurrent = ym === currentMonthStr;
+
+        let revHt = mSales.reduce((s, v) => s + computeKorpoGrossRevenueForSale(v), 0);
+        let repComm = mSales.reduce((s, v) => s + Number(v.commission_rep || 0), 0);
+        let expHt = mExp > 0 ? mExp : (!isPast ? baseRecurringSum : 0);
+        let statusTag = '';
+
+        if (isPast) {
+          statusTag = '<span class="px-2 py-0.5 rounded-full bg-white/10 text-slate-300 text-[10px] font-bold">Réel</span>';
+        } else if (isCurrent) {
+          const dayRatio = Math.min(1, Math.max(0.15, today.getDate() / 30));
+          const projectedRestRev = Math.max(0, (teamMonthlySalesObj * avgGrossRate) * (1 - dayRatio));
+          revHt = Math.round((revHt + projectedRestRev) * 100) / 100;
+          repComm = Math.round((repComm + projectedRestRev * avgRepShareRatio) * 100) / 100;
+          statusTag = '<span class="px-2 py-0.5 rounded-full bg-amber-500/25 text-amber-300 text-[10px] font-extrabold">En cours + Proj.</span>';
+        } else {
+          // Mois futur : inclut le pipeline futur déjà vendu + projection à 85 % des objectifs
+          const targetProjectedRev = Math.round(teamMonthlySalesObj * avgGrossRate * 0.85);
+          if (revHt < targetProjectedRev) {
+            const addRev = targetProjectedRev - revHt;
+            revHt += addRev;
+            repComm += Math.round(addRev * avgRepShareRatio);
+          }
+          statusTag = mSales.length > 0
+            ? `<span class="px-2 py-0.5 rounded-full bg-indigo-500/30 text-indigo-200 text-[10px] font-extrabold">Pipeline (${mSales.length}) + Proj.</span>`
+            : '<span class="px-2 py-0.5 rounded-full bg-white/10 text-slate-400 text-[10px] font-semibold">Prévisionnel</span>';
+        }
+
+        const netProfit = Math.round((revHt - repComm - expHt) * 100) / 100;
+        annualRev += revHt;
+        annualRepComm += repComm;
+        annualExp += expHt;
+        annualNet += netProfit;
+
+        return { ym, label: formatYearMonthLabelFr(ym, true), fullLabel: formatYearMonthLabelFr(ym), statusTag, revHt, repComm, expHt, netProfit, isCurrent };
+      });
+
+      const annualPill = document.getElementById('fin-annual-summary-pill');
+      if (annualPill) {
+        annualPill.innerHTML = `
+          <div class="text-[11px] uppercase tracking-wider text-indigo-300 font-semibold">Profit net annuel projeté (${curYear})</div>
+          <div class="text-2xl sm:text-3xl font-extrabold ${annualNet >= 0 ? 'text-emerald-400' : 'text-rose-400'} tabular-nums">${fmtMoney0(annualNet)}</div>
+          <div class="text-[11px] text-slate-300 tabular-nums">Revenus Korpo : ${fmtMoney0(annualRev)} • Charges : ${fmtMoney0(annualExp)}</div>
+        `;
+      }
+
+      const maxNet = Math.max(1, ...forecastRows.map(r => Math.abs(r.netProfit)));
+      const chartEl = document.getElementById('fin-forecast-chart');
+      if (chartEl) {
+        chartEl.innerHTML = forecastRows.map(r => {
+          const hPct = Math.max(12, Math.round((Math.abs(r.netProfit) / maxNet) * 100));
+          const barColor = r.netProfit >= 0
+            ? (r.isCurrent ? 'bg-amber-400' : 'bg-emerald-400')
+            : 'bg-rose-500';
+          return `
+            <div class="flex flex-col items-center gap-1.5">
+              <div class="text-[10px] font-extrabold tabular-nums ${r.netProfit >= 0 ? 'text-emerald-300' : 'text-rose-300'}">${fmtMoney0(r.netProfit)}</div>
+              <div class="w-full h-24 bg-white/5 rounded-xl flex items-end p-1 border border-white/10">
+                <div class="w-full ${barColor} rounded-lg transition-all" style="height: ${hPct}%"></div>
+              </div>
+              <div class="text-[10px] font-bold ${r.isCurrent ? 'text-amber-300' : 'text-slate-300'}">${esc(r.label)}</div>
+            </div>
+          `;
+        }).join('');
+      }
+
+      const tbodyForecast = document.getElementById('tbody-fin-forecast');
+      if (tbodyForecast) {
+        tbodyForecast.innerHTML = forecastRows.map(r => `
+          <tr class="${r.isCurrent ? 'bg-white/10' : 'hover:bg-white/5'} transition">
+            <td class="py-2.5 px-4 font-bold text-white">${esc(r.fullLabel)}</td>
+            <td class="py-2.5 px-3">${r.statusTag}</td>
+            <td class="py-2.5 px-3 text-right tabular-nums text-slate-200">${fmtMoney0(r.revHt)}</td>
+            <td class="py-2.5 px-3 text-right tabular-nums text-amber-300">− ${fmtMoney0(r.repComm)}</td>
+            <td class="py-2.5 px-3 text-right tabular-nums text-rose-300">− ${fmtMoney0(r.expHt)}</td>
+            <td class="py-2.5 px-4 text-right tabular-nums font-extrabold ${r.netProfit >= 0 ? 'text-emerald-300' : 'text-rose-400'}">${fmtMoney0(r.netProfit)}</td>
+          </tr>
+        `).join('') + `
+          <tr class="bg-indigo-950/90 font-extrabold border-t-2 border-indigo-400/40">
+            <td colspan="2" class="py-3 px-4 text-white">TOTAL ANNUEL PROJETÉ (${curYear})</td>
+            <td class="py-3 px-3 text-right tabular-nums text-white">${fmtMoney0(annualRev)}</td>
+            <td class="py-3 px-3 text-right tabular-nums text-amber-300">− ${fmtMoney0(annualRepComm)}</td>
+            <td class="py-3 px-3 text-right tabular-nums text-rose-300">− ${fmtMoney0(annualExp)}</td>
+            <td class="py-3 px-4 text-right tabular-nums text-emerald-400 text-sm">${fmtMoney0(annualNet)}</td>
+          </tr>
+        `;
+      }
+    }
+
+    initApp();
     });
 
     document.getElementById('btn-reset-cfg')?.addEventListener('click', () => {
