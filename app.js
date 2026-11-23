@@ -14087,10 +14087,39 @@
       return `${ym}__${String(entName || '').trim()}`;
     }
 
+    function isOlivierOrAdminRep(repId, repNomFallback = '') {
+      const repObj = (state.representants || []).find(r => String(r.id) === String(repId));
+      if (repObj) {
+        if (repObj.role === 'admin') return true;
+        if (normalizeMentionStr(repObj.nom).includes('olivier')) return true;
+        return false;
+      }
+      const resolved = resolveKpiRepName(repNomFallback || '');
+      return normalizeMentionStr(resolved).includes('olivier');
+    }
+
+    function isSaleBillableByKorpoToPartner(v, entNameResolved = '') {
+      const entName = (entNameResolved || state.entreprises.find(e => String(e.id) === String(v.entreprise_id))?.nom || resolveSaleArchivedEntName(v) || '').trim();
+      // Règle Toitex : Korpo facture uniquement les ventes personnelles d'Olivier (10 %)
+      if (normalizeMentionStr(entName).includes('toitex')) {
+        return isOlivierOrAdminRep(v.representant_id, v.rep_nom || resolveSaleArchivedRepName(v));
+      }
+      return true;
+    }
+
     function computeKorpoGrossRevenueForSale(v) {
-      // Revenu brut facturé par Korpo au partenaire = part rep + part Korpo (Olivier)
+      const entName = (state.entreprises.find(e => String(e.id) === String(v.entreprise_id))?.nom || resolveSaleArchivedEntName(v) || '').trim();
+      if (!isSaleBillableByKorpoToPartner(v, entName)) return 0;
       const cRep = Number(v.commission_rep || 0);
       const cOli = Number(v.commission_olivier || 0);
+      // Pour Toitex (ventes propres d'Olivier), le montant facturé est 10 % (ou la somme cRep + cOli si déjà configurée)
+      if (normalizeMentionStr(entName).includes('toitex')) {
+        const val = Number(v.valeur || 0);
+        const sumComm = Math.round((cRep + cOli) * 100) / 100;
+        if (sumComm > 0) return sumComm;
+        return Math.round(val * 0.10 * 100) / 100;
+      }
+      // Autres partenaires : revenu brut facturé par Korpo = part rep + part Korpo (Olivier)
       return Math.round((cRep + cOli) * 100) / 100;
     }
 
@@ -14123,6 +14152,7 @@
         const ym = getSaleStatsMonth(v);
         if (months.length && !months.includes(ym)) return false;
         const entName = state.entreprises.find(e => String(e.id) === String(v.entreprise_id))?.nom || resolveSaleArchivedEntName(v) || '';
+        if (!isSaleBillableByKorpoToPartner(v, entName)) return false;
         return Boolean(partnerPaidStore[getPartnerBatchKey(entName, ym)]?.paid);
       });
       if (!toPay.length) return toast('Aucune commission encaissée prête à verser pour ce représentant.', 'error');
@@ -14382,8 +14412,8 @@ serve(async (req) => {
     }
 
     if (action === "create_invoice") {
-      // 3. Créer une facture brouillon dans Wave pour un partenaire Korpo
-      const { customerName, invoiceNumber, invoiceDate, title, description, amountHt } = body;
+      // 3. Créer une facture brouillon dans Wave pour un partenaire Korpo (1 ligne par client)
+      const { customerName, invoiceNumber, invoiceDate, title, description, amountHt, lineItems } = body;
       const custData = await waveGraphQL(token, \`
         query($businessId: ID!) {
           business(id: $businessId) {
@@ -14416,6 +14446,20 @@ serve(async (req) => {
         throw new Error("Créez au moins un produit/service de vente dans Wave (ex. Commissions Korpo) avant d'exporter.");
       }
 
+      const waveItems = Array.isArray(lineItems) && lineItems.length > 0
+        ? lineItems.map((it: any) => ({
+            productId: soldProduct.id,
+            description: String(it.description || "Commission client"),
+            quantity: 1,
+            unitPrice: Number(it.unitPrice || 0).toFixed(2),
+          }))
+        : [{
+            productId: soldProduct.id,
+            description: description || "Commissions sur ventes",
+            quantity: 1,
+            unitPrice: Number(amountHt || 0).toFixed(2),
+          }];
+
       const createdInv = await waveGraphQL(token, \`
         mutation($input: InvoiceCreateInput!) {
           invoiceCreate(input: $input) {
@@ -14431,12 +14475,7 @@ serve(async (req) => {
           invoiceNumber: invoiceNumber || undefined,
           invoiceDate: invoiceDate || new Date().toISOString().slice(0, 10),
           title: title || "Facture Commissions Korpo Solutions",
-          items: [{
-            productId: soldProduct.id,
-            description: description || "Commissions sur ventes",
-            quantity: 1,
-            unitPrice: Number(amountHt || 0).toFixed(2),
-          }],
+          items: waveItems,
         },
       });
 
@@ -14573,14 +14612,43 @@ serve(async (req) => {
     window.createDraftInvoiceInWaveForBatch = async (entName, ym, amountHt, countDossiers) => {
       if (currentProfile?.role !== 'admin') return;
       if (!sb) return;
+
+      // Extraire tous les dossiers confirmés facturables par Korpo de cette entreprise pour ce mois (1 ligne = 1 client + montant)
+      const matchingSales = (state.ventes || [])
+        .filter(v => {
+          if (v.statut_depot !== 'depot_recu') return false;
+          if (getSaleStatsMonth(v) !== ym) return false;
+          const vEnt = state.entreprises.find(e => String(e.id) === String(v.entreprise_id))?.nom || resolveSaleArchivedEntName(v) || 'Autre';
+          if (vEnt !== entName) return false;
+          return isSaleBillableByKorpoToPartner(v, vEnt);
+        })
+        .sort((a, b) => String(a.date_vente || '').localeCompare(String(b.date_vente || '')));
+
+      const lineItems = matchingSales.map(v => {
+        const cliNom = state.clients.find(c => String(c.id) === String(v.client_id))?.nom || v.client_nom || 'Client';
+        const noteClean = cleanDisplaySaleNote(v.note || '');
+        const contractTag = noteClean ? ` (${noteClean})` : '';
+        const dateTag = v.date_vente ? ` — ${v.date_vente}` : '';
+        const itemAmt = computeKorpoGrossRevenueForSale(v);
+        return {
+          clientNom: cliNom,
+          description: `${cliNom}${contractTag}${dateTag}`,
+          unitPrice: itemAmt
+        };
+      });
+
+      const previewLines = lineItems.length
+        ? '\n• ' + lineItems.map(li => `${li.clientNom} : ${fmtMoney(li.unitPrice)}`).join('\n• ')
+        : '';
+
       const ok = await askConfirm(
-        `Créer une facture dans Wave ?`,
-        `Générer une facture brouillon dans Wave pour ${entName} (${formatYearMonthLabelFr(ym)}) d'un montant de ${fmtMoney(amountHt)} + taxes (${countDossiers} dossier(s)) ?`
+        `Créer une facture dans Wave (${lineItems.length || countDossiers} ligne(s)) ?`,
+        `Générer une facture brouillon dans Wave pour ${entName} (${formatYearMonthLabelFr(ym)}) — Total : ${fmtMoney(amountHt)} + taxes :${previewLines}`
       );
       if (!ok) return;
 
       try {
-        toast('Création de la facture dans Wave...');
+        toast('Création de la facture détaillée dans Wave...');
         const seqMap = getWaveCompanySeqMap();
         const nextNum = Number(seqMap[entName] || 100) + 1;
         const invNumber = `${getWaveCompanyPrefix(entName)}${nextNum}`;
@@ -14595,7 +14663,8 @@ serve(async (req) => {
             invoiceDate: localYmd(),
             title: `Commissions Korpo Solutions — ${formatYearMonthLabelFr(ym)}`,
             description: `Commissions sur ventes confirmées (${countDossiers} dossier(s) — ${formatYearMonthLabelFr(ym)})`,
-            amountHt: Number(amountHt || 0)
+            amountHt: Number(amountHt || 0),
+            lineItems
           }
         });
 
@@ -14606,7 +14675,7 @@ serve(async (req) => {
 
         seqMap[entName] = nextNum;
         await saveWaveCompanySeqMap(seqMap);
-        toast(`Facture ${invNumber} créée dans Wave ✓`);
+        toast(`Facture ${invNumber} créée dans Wave avec ${lineItems.length || 1} ligne(s) client ✓`);
         if (data?.invoice?.viewUrl) {
           window.open(data.invoice.viewUrl, '_blank', 'noopener');
         }
@@ -14693,6 +14762,7 @@ serve(async (req) => {
         const ym = getSaleStatsMonth(v);
         if (monthsList && monthsList.length && !monthsList.includes(ym)) return;
         const entName = state.entreprises.find(e => String(e.id) === String(v.entreprise_id))?.nom || resolveSaleArchivedEntName(v) || 'Autre';
+        if (!isSaleBillableByKorpoToPartner(v, entName)) return;
         const batchKey = getPartnerBatchKey(entName, ym);
         const cur = map.get(batchKey) || {
           batchKey,
@@ -14755,6 +14825,8 @@ serve(async (req) => {
       confirmedSales.forEach(v => {
         const ym = getSaleStatsMonth(v);
         const entName = state.entreprises.find(e => String(e.id) === String(v.entreprise_id))?.nom || resolveSaleArchivedEntName(v) || 'Autre';
+        const billableByKorpo = isSaleBillableByKorpoToPartner(v, entName);
+        if (!billableByKorpo) return;
         const isPartnerPaid = Boolean(partnerPaidStore[getPartnerBatchKey(entName, ym)]?.paid);
         const grossHt = computeKorpoGrossRevenueForSale(v);
         const cRep = Number(v.commission_rep || 0);
@@ -14894,6 +14966,7 @@ serve(async (req) => {
             repSales.forEach(v => {
               const ym = getSaleStatsMonth(v);
               const entName = state.entreprises.find(e => String(e.id) === String(v.entreprise_id))?.nom || resolveSaleArchivedEntName(v) || '';
+              if (!isSaleBillableByKorpoToPartner(v, entName)) return;
               const isPartnerPaid = Boolean(partnerPaidStore[getPartnerBatchKey(entName, ym)]?.paid);
               if (isPartnerPaid) readyAmt += Number(v.commission_rep || 0);
               else waitingPartnerAmt += Number(v.commission_rep || 0);
@@ -14977,7 +15050,7 @@ serve(async (req) => {
         const isCurrent = ym === currentMonthStr;
 
         let revHt = mSales.reduce((s, v) => s + computeKorpoGrossRevenueForSale(v), 0);
-        let repComm = mSales.reduce((s, v) => s + Number(v.commission_rep || 0), 0);
+        let repComm = mSales.reduce((s, v) => s + (isSaleBillableByKorpoToPartner(v) ? Number(v.commission_rep || 0) : 0), 0);
         let expHt = mExp > 0 ? mExp : (!isPast ? baseRecurringSum : 0);
         let statusTag = '';
 
