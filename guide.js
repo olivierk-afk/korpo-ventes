@@ -1,4 +1,4 @@
-/* Korpo — Guide de démarrage (v2, avec mise en évidence animée)
+/* Korpo — Guide de démarrage (v3, avec mise en évidence animée)
    S'affiche une seule fois par utilisateur à la première ouverture, puis reste accessible
    depuis le menu du compte (« Revoir le guide de démarrage »). Mémorisé dans le navigateur. */
 (function () {
@@ -27,15 +27,17 @@
     W.welcome,
     adm('tab-admin-ventes', '📋', 'Registre des ventes', 'Toutes les ventes de l\'équipe : valide et gère les dossiers.'),
     adm('tab-admin-dashboard', '📈', 'Tableau de bord', 'L\'analytique de la direction, la paie et les courriels.'),
-    adm('tab-admin-taux', '⚙️', 'Grille des taux', 'Les commissions et les règles par client.'),
-    adm('tab-admin-equipe', '🏢', 'Entreprises et équipe', 'Les objectifs, les représentants et les entreprises partenaires.'),
+    adm('tab-admin-finances', '🏦', 'Finances Korpo', 'Les encaissements, les dépenses et le profit réel.'),
+    adm('tab-admin-entreprises', '🏢', 'Entreprises partenaires', 'Les contrats, la facturation et les marges. La grille des taux de commission se trouve dans la fiche de chaque entreprise.'),
+    adm('tab-admin-equipe', '👥', 'Représentants et équipe', 'Les profils, les objectifs et la paie.'),
     W.route, W.chat, W.phone, W.bell, W.refresh, W.account
   ];
-  let steps = [], i = 0, cur = null, placed = false;
+  let steps = [], i = 0, cur = null, placed = false, prevFocus = null;
   const who = () => (typeof currentProfile !== 'undefined' && currentProfile) || {};
-  const key = () => 'korpo_guide_v1_' + (who().id || who().nom || 'anon');
+  const key = () => 'korpo_guide_v2_' + (who().id || who().nom || 'anon');
   const isDone = () => { try { return localStorage.getItem(key()) === '1'; } catch (e) { return false; } };
   const markDone = () => { try { localStorage.setItem(key(), '1'); } catch (e) {} };
+  const tabExists = t => !t || !!document.querySelector('.nav-btn[data-tab="' + t + '"]');
   const find = s => {
     for (const sel of s.sel || []) for (const el of document.querySelectorAll(sel)) {
       const r = el.getBoundingClientRect();
@@ -67,6 +69,13 @@
   const onMove = () => { cancelAnimationFrame(raf); raf = requestAnimationFrame(place); };
   function onKey(e) {
     if (e.key === 'Escape') close();
+    else if (e.key === 'Tab') {
+      const f = [...document.querySelectorAll('#guide-card button')];
+      if (!f.length) return;
+      const a = document.activeElement, first = f[0], last = f[f.length - 1];
+      if (e.shiftKey && (a === first || !f.includes(a))) { e.preventDefault(); last.focus(); }
+      else if (!e.shiftKey && (a === last || !f.includes(a))) { e.preventDefault(); first.focus(); }
+    }
     else if (e.key === 'ArrowRight') $('guide-next')?.click();
     else if (e.key === 'ArrowLeft') $('guide-prev')?.click();
   }
@@ -77,6 +86,8 @@
     window.removeEventListener('scroll', onMove, true);
     $('guide-card')?.remove(); $('guide-overlay')?.remove(); $('guide-style')?.remove();
     cur = null; placed = false;
+    try { prevFocus?.focus?.(); } catch (e) {}
+    prevFocus = null;
     if (typeof switchTab === 'function') switchTab('tab-mes-ventes');
   }
 
@@ -93,8 +104,8 @@
     const b = 'px-3.5 py-2 text-xs font-bold rounded-xl ';
     el.innerHTML = '<div class="bg-white rounded-3xl border border-slate-200 shadow-2xl p-5 space-y-3">' +
       '<div class="flex items-start gap-3"><span class="guide-ico w-10 h-10 rounded-2xl bg-indigo-600 text-white flex items-center justify-center text-lg shrink-0">' + s.icon + '</span>' +
-      '<div class="min-w-0"><h3 class="text-base font-extrabold text-slate-900">' + s.t + '</h3><p class="text-sm text-slate-600 mt-1 leading-relaxed">' + s.d + '</p></div></div>' +
-      '<div class="flex items-center justify-between gap-2"><div class="flex items-center gap-1" aria-hidden="true">' + dots + '</div><div class="flex items-center gap-1.5">' +
+      '<div class="min-w-0"><h3 id="guide-title" class="text-base font-extrabold text-slate-900">' + s.t + '</h3><p class="text-sm text-slate-600 mt-1 leading-relaxed">' + s.d + '</p></div></div>' +
+      '<div class="flex items-center justify-between gap-2"><span class="sr-only" aria-live="polite">Étape ' + (i + 1) + ' sur ' + steps.length + '</span><div class="flex items-center gap-1" aria-hidden="true">' + dots + '</div><div class="flex items-center gap-1.5">' +
       (last ? '' : '<button type="button" id="guide-skip" class="' + b + 'text-slate-500 hover:bg-slate-100">Passer</button>') +
       (i ? '<button type="button" id="guide-prev" class="' + b + 'text-slate-700 bg-slate-100 hover:bg-slate-200">Précédent</button>' : '') +
       '<button type="button" id="guide-next" class="' + b + 'text-white bg-indigo-600 hover:bg-indigo-700">' + (last ? 'Terminer' : 'Suivant') + '</button></div></div></div>';
@@ -106,14 +117,14 @@
 
   function start() {
     if ($('guide-card')) return;
-    steps = (who().role === 'admin' ? ADMIN : REP).filter(s => !s.req || find(s));
-    i = 0; placed = false;
+    steps = (who().role === 'admin' ? ADMIN : REP).filter(s => tabExists(s.tab) && (!s.req || find(s)));
+    i = 0; placed = false; prevFocus = document.activeElement;
     const st = document.createElement('style'); st.id = 'guide-style'; st.textContent = CSS; document.head.appendChild(st);
     const ov = document.createElement('div'); ov.id = 'guide-overlay'; ov.className = 'guide-dim no-print';
     ov.innerHTML = '<div id="guide-spot"></div>';
     document.body.appendChild(ov);
     const card = document.createElement('div');
-    card.id = 'guide-card'; card.setAttribute('role', 'dialog'); card.setAttribute('aria-label', 'Guide de démarrage');
+    card.id = 'guide-card'; card.setAttribute('role', 'dialog'); card.setAttribute('aria-modal', 'true'); card.setAttribute('aria-labelledby', 'guide-title');
     document.body.appendChild(card);
     document.addEventListener('keydown', onKey);
     window.addEventListener('resize', onMove);
